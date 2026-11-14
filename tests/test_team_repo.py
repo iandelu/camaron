@@ -387,6 +387,41 @@ def test_share_does_not_auto_share_from_its_own_checkpoint(kit, tmp_path, monkey
     assert r["status"] == "pushed" and "docs/note.md" in remote_files(remote)
 
 
+def test_share_does_not_auto_share_from_its_board_repair_after_sync(kit, tmp_path, monkeypatch):
+    kit.services.templates.init_templates("demo", log=lambda _: None)
+    remote = bare(tmp_path)
+    kit.services.share.set_remote(str(remote))
+    assert kit.services.share.share(log=lambda _: None)["status"] == "pushed"
+    mate = tmp_path / "mate"                                  # a teammate's push leaves the board needing a repair
+    git(tmp_path, "clone", "-q", str(remote), str(mate))
+    (mate / "docs" / "mirror.md").write_text("stale\n", encoding="utf-8")
+    git(mate, "add", "docs/mirror.md")
+    git(mate, "commit", "-q", "-m", "mate")
+    git(mate, "push", "-q", "origin", "main")
+    mirror = kit.root / "docs" / "mirror.md"
+
+    def repair(warn=None):                                    # fixes what the rebase brought in, once
+        if mirror.is_file() and mirror.read_text(encoding="utf-8") == "stale\n":
+            mirror.write_text("fresh\n", encoding="utf-8")
+            return ["docs/mirror.md"]
+        return []
+    # share and checkpoint_commit call `board_repair` as a global of their own module
+    monkeypatch.setattr(kit.services.share, "board_repair", repair)
+    kit.services.share.set_auto_share(True)
+    (kit.root / "docs" / "note.md").write_text("# note\n", encoding="utf-8")
+    calls, real = [], kit.services.share.share
+
+    def counted(log=print):
+        calls.append(1)
+        return real(log=log)
+    monkeypatch.setattr(kit.services.share, "share", counted)
+    r = kit.services.share.share(log=lambda _: None)
+    assert calls == [1]                                   # the repair's checkpoint did not share (push) a second time
+    assert r["status"] == "pushed"
+    assert git(remote, "show", "main:docs/mirror.md") == "fresh"
+    assert "docs(camarones): board repaired after sync" in git(remote, "log", "--format=%s", "main").splitlines()
+
+
 def test_auto_share_failure_keeps_the_local_commit(kit, tmp_path, capsys):
     kit.services.templates.init_templates("demo", log=lambda _: None)
     kit.services.share.set_remote(str(tmp_path / "missing.git"))
