@@ -1,15 +1,16 @@
 """Docs model: workspace, repo sync, incremental state, trust (draft/confirmed), translations, llms.txt, search."""
 from __future__ import annotations
 
-import datetime as dt, hashlib, json, math, os, re, shutil, subprocess, tarfile, tempfile
+import hashlib, json, math, os, re, shutil, subprocess, tarfile, tempfile
 from collections import Counter
 from pathlib import Path
-from typing import Callable
 
 import yaml
 
 from .core import yamlio
+from .core.clock import now
 from .core.paths import cli_cmd
+from .ports import Log
 from .common import (KIT, ROOT, DOCS, WS_FILE, CACHE, WORKSPACE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run,
                      load_json, save_json, through_link)
 
@@ -17,11 +18,6 @@ STATE_FILE = DOCS / ".state.json"
 STATUS_FILE = DOCS / ".status.json"
 FM_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.S)
 GI_START, GI_END = "# >>> camarones repos >>>", "# <<< camarones repos <<<"
-Log = Callable[[str], None]
-
-
-def now() -> str:
-    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
 
 # ---------- workspace ----------
