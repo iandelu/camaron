@@ -42,7 +42,7 @@ def pytest_unconfigure(config) -> None:
     bytecode.pytest_unconfigure(config)
 
 
-MODULES = ("common", "docs", "plan", "serve", "projects", "migrate", "quality", "codemap", "install", "quickarch", "creds", "questionnaire", "usage", "onboard", "wizard", "bootstrap")
+MODULES = ("common", "plan", "serve", "projects", "migrate", "quality", "codemap", "install", "quickarch", "creds", "questionnaire", "usage", "onboard", "wizard", "bootstrap")
 # lib/domain/docs (hexagonal refactor F5a), as kit.<name>: pure modules a test calls like any other of the namespace
 DOMAIN_MODULES = ("frontmatter", "trust_levels", "logical_paths", "page_outline", "directives", "synonyms")
 

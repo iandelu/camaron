@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Sequence
 
 from ..core import yamlio
-from .. import docs
 from ..common import IS_MAC, IS_WIN, KIT, ROOT, out, run, which
 from ..harness.locks import FileLock
 from . import ARCHIVE, BACKLOG, BOARD, CONFIG, DRAFTS, LOCK, PREFIX, PRIORITIES, STATUSES, TASKS, TYPES

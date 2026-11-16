@@ -55,7 +55,7 @@ def test_menu_errors_are_shown_not_raised(kit, fake_wizard, monkeypatch):
 # ---------- quick C4 draft (first look) ----------
 @pytest.fixture
 def first_look(kit, monkeypatch):
-    page = kit.docs.DOCS / "architecture" / "model.c4"                         # a saved draft: its C4 files
+    page = kit.common.DOCS / "architecture" / "model.c4"                         # a saved draft: its C4 files
     page.parent.mkdir(parents=True)
     page.write_text("model {\n}\n", encoding="utf-8")
     calls = {"draft": 0, "portal": []}
@@ -86,7 +86,7 @@ def test_escape_on_a_saved_first_look_goes_back(kit, first_look, fake_wizard):
 
 
 def test_a_first_look_page_without_a_model_drafts_again(kit, fake_wizard, monkeypatch):
-    page = kit.docs.DOCS / "architecture" / "first-look.md"
+    page = kit.common.DOCS / "architecture" / "first-look.md"
     page.parent.mkdir(parents=True)
     page.write_text("# First look\n", encoding="utf-8")
     drafts = []
@@ -96,7 +96,7 @@ def test_a_first_look_page_without_a_model_drafts_again(kit, fake_wizard, monkey
 
 def test_the_c4_prompt_names_first_look_md_only_when_it_exists(kit, fake_wizard):
     assert "first-look.md" not in fake_wizard([]).arch_prompt()
-    page = kit.docs.DOCS / "architecture" / "first-look.md"
+    page = kit.common.DOCS / "architecture" / "first-look.md"
     page.parent.mkdir(parents=True)
     page.write_text("# First look\n", encoding="utf-8")
     assert "architecture/first-look.md` to match" in fake_wizard([]).arch_prompt()
@@ -129,7 +129,7 @@ def test_stack_step_accepts_the_detected_stack(kit, stack_screen, fake_wizard):
     w = fake_wizard(["view", "ok"])
     assert w.stack_flow() == "done"
     assert stack_screen == ["#/docs/overview/tooling.md"]
-    assert (kit.docs.DOCS / "overview" / "tooling.md").exists()
+    assert (kit.common.DOCS / "overview" / "tooling.md").exists()
     assert all("stack" not in r for r in kit.services.workspace.workspace()["repos"])
 
 
@@ -139,7 +139,7 @@ def test_stack_step_fixes_a_repo_stack(kit, stack_screen, fake_wizard):
     rows = {r["name"]: r for r in kit.services.workspace.workspace()["repos"]}
     assert rows["api"]["stack"] == "Java 21 · Spring Boot"
     assert "stack" not in rows["web"]                                     # same as detected: nothing to override
-    assert "Java 21 · Spring Boot" in (kit.docs.DOCS / "overview" / "tooling.md").read_text(encoding="utf-8")
+    assert "Java 21 · Spring Boot" in (kit.common.DOCS / "overview" / "tooling.md").read_text(encoding="utf-8")
 
 
 def test_stack_step_escape_goes_back(kit, stack_screen, fake_wizard):

@@ -67,7 +67,7 @@ budget: app
 bump: app
 c4edit: app
 ci: app
-docs: app
+docs: facade
 doctor: app
 env: facade
 exporters: app

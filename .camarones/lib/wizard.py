@@ -17,10 +17,10 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Table
 from rich.text import Text
 
-from .common import (ROOT, HOME, PREFS, WORK, WS_FILE, CACHE, IS_WIN, IS_MAC, CAM_DIR, CAM_LAYOUT, WORKSPACE, which, cli_cmd,
+from .common import (ROOT, DOCS, HOME, PREFS, WORK, WS_FILE, CACHE, IS_WIN, IS_MAC, CAM_DIR, CAM_LAYOUT, WORKSPACE, which, cli_cmd,
                      load_json, save_json, out, repo_dir)
 from .app import services
-from . import ci, docs, genblocks, install_state, plan, creds, questionnaire, quickarch, radar, sessions, tutorial, upgrade, usage
+from . import ci, genblocks, install_state, plan, creds, questionnaire, quickarch, radar, sessions, tutorial, upgrade, usage
 from .adapters import runners
 from .harness.ports import RunRequest
 from .common import VERSIONS
@@ -1436,7 +1436,7 @@ class W:
 
     def arch_flow(self) -> str:
         """Returns 'saved', 'skipped' or BACK."""
-        page = docs.DOCS / "architecture" / "model.c4"           # written when a draft is saved (both layouts)
+        page = DOCS / "architecture" / "model.c4"           # written when a draft is saved (both layouts)
         while page.exists():
             self.banner()
             when = time.strftime("%Y-%m-%d %H:%M", time.localtime(page.stat().st_mtime))
@@ -1473,7 +1473,7 @@ class W:
                     break
                 if c == "skip":
                     return "skipped"
-                exists = (docs.DOCS / "architecture" / "model.c4").exists()
+                exists = (DOCS / "architecture" / "model.c4").exists()
                 overwrite = False
                 if exists:
                     overwrite = bool(self.yes(self.t("a_overwrite"), default=False))

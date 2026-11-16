@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import secrets
+from pathlib import Path
 
 from .ops import BoardError
 from ..domain.docs import frontmatter, logical_paths, page_outline
@@ -21,7 +22,7 @@ def _decision(logical: str) -> str | None:
     return f"DEC-{m.group(1)}" if m else None
 
 
-def _pages() -> dict[str, "docs.Path"]:
+def _pages() -> dict[str, Path]:
     return dict(services.current().docs.iter_docs())
 
 

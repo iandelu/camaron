@@ -12,10 +12,10 @@ from typing import Callable
 import yaml
 
 from .core import yamlio
-from .common import (CAM_DIR, CAM_LAYOUT, IS_WIN, VERSIONS, cli_cmd, ensure_path, find_project_marker, load_json,
+from .common import (CAM_DIR, CAM_LAYOUT, DOCS, IS_WIN, VERSIONS, cli_cmd, ensure_path, find_project_marker, load_json,
                      repo_dir, run, save_json, ws_rel)
 from .harness.ctx import Ctx
-from . import docs, plan, projects
+from . import plan, projects
 from .app import services
 
 STEPS = ("name", "repos", "tools", "setup", "stack", "arch", "intro")   # first-run steps, saved by id
@@ -392,7 +392,7 @@ def arch_prompt(lang: str) -> str:
               if CAM_LAYOUT else "")
     code = ("`graphify query` in the repos, " if "graphify" in services.current().components.components() else "")
     first_look = (f" Update `{arch}/first-look.md` to match."            # an old-layout project's page
-                  if (docs.DOCS / "architecture" / "first-look.md").exists() else "")
+                  if (DOCS / "architecture" / "first-look.md").exists() else "")
     return f"""Camarones session — improve the first-look architecture draft.
 {layout}
 `{arch}/model.c4` + `views.c4` hold the architecture draft; it started from a static scan (no AI) that guessed repos,
@@ -536,7 +536,7 @@ def arch_save(overwrite: bool = False) -> dict:
     draft = last_draft()
     if not draft:
         raise ValueError("draft")
-    if (docs.DOCS / "architecture" / "model.c4").exists() and not overwrite:
+    if (DOCS / "architecture" / "model.c4").exists() and not overwrite:
         return {"exists": True}
     return {"written": quickarch.save(draft, overwrite=overwrite, page=pages.layout() == "old"), "exists": False}
 

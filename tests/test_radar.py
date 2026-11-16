@@ -126,7 +126,7 @@ def test_build_output_and_dependencies_are_ignored(radar):
 def test_page_is_a_valid_draft_with_resolvable_sources(radar):
     add_files(radar, TOOLING)
     written = radar.radar.run()
-    page = radar.docs.DOCS / "overview" / "tooling.md"
+    page = radar.common.DOCS / "overview" / "tooling.md"
     assert written == page and page.exists()
     fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
     assert fm["type"] == "overview" and fm["x-owner"] == "ai" and "x-confirmed" not in fm
@@ -149,7 +149,7 @@ def test_removed_tool_shows_as_orphan_until_rescanned(radar):
 
 def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
     radar.radar.run()
-    page = radar.docs.DOCS / "overview" / "tooling.md"
+    page = radar.common.DOCS / "overview" / "tooling.md"
     radar.services.doc_review.confirm([str(page)], by="ana")
     radar.radar.run()                                                            # same repos → still confirmed
     assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
@@ -195,7 +195,7 @@ def test_cli_radar_json_and_stack(radar):
     data = json.loads(r.stdout)
     assert data["web"]["stack"] == "TypeScript · React 18"
     assert "backstage" in {t["id"] for t in data["api"]["tools"]}
-    assert (radar.docs.DOCS / "overview" / "tooling.md").exists()
+    assert (radar.common.DOCS / "overview" / "tooling.md").exists()
     r = cli(radar, "stack", "web", "--reset")
     assert r.returncode == 0 and "stack" not in radar.services.workspace.workspace()["repos"][1]
     r = cli(radar, "stack", "nope", "Go")

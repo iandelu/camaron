@@ -55,13 +55,8 @@ _MAP: dict[str, tuple[str, ...]] = {
 HOME: dict[str, str] = {name: home for home, names in _MAP.items() for name in names}
 # Names that join a store from another module (plan Q5), not docs names: the facade does not re-export them.
 FROM_ONBOARD = {"WS_HEADER": "adapters.stores.workspace", "write_workspace": "adapters.stores.workspace"}
-# MOVED: the homes whose names have moved; each task adds its own
-MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.docs.trust_levels", "domain.docs.page_outline",
-                   "domain.docs.logical_paths", "domain.docs.directives", "domain.docs.synonyms",
-                   "adapters.stores.workspace", "adapters.git.repos",
-                   "adapters.stores.doc_state", "adapters.stores.doc_store",
-                   "adapters.npm_vendor", "app.doc_status", "app.llms", "app.doc_review",
-                   "app.translations", "app.search"}
+# MOVED: the homes whose names have moved (all of them since docs.py became a facade)
+MOVED: set[str] = set(_MAP)
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it
@@ -87,6 +82,21 @@ def test_every_docs_name_has_one_home():
     assert sorted({n for n in listed if listed.count(n) > 1}) == []
     assert set(HOME) == DOCS_NAMES
     assert not set(FROM_ONBOARD) & DOCS_NAMES
+
+
+def test_the_facade_re_exports_every_docs_name():
+    docs = importlib.import_module("lib.docs")
+    wrong = [f"lib.docs.{n} is not lib.{home}.{n}" for n, home in sorted(HOME.items())
+             if getattr(docs, n, None) is not getattr(importlib.import_module(f"lib.{home}"), n)]
+    assert wrong == []
+
+
+def test_docs_is_a_facade():
+    docs = importlib.import_module("lib.docs")
+    assert docs.__facade__
+    assert set(docs.__all__) == set(HOME)
+    assert _layer("docs") == "facade"
+    assert sorted(a for a, b in archscan.edges(archscan.modules(KIT_DIR)) if b == "docs") == []   # read nowhere
 
 
 def test_moved_names_live_in_their_home(kit):

@@ -22,7 +22,7 @@ from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from .common import CACHE, load_json, save_json
+from .common import CACHE, DOCS, load_json, save_json
 from .domain.docs import frontmatter
 from .app import services
 
@@ -171,9 +171,8 @@ def _evidence(cell: str) -> list[str]:
 def debt_items(repos: list[str]) -> dict[str, list[dict]]:
     """The items of the quality pages, per repo plus `_project` for those citing no known repo. A page that is missing
     or has no table adds nothing; an absent column reads as "" (impact as "unknown")."""
-    from . import docs                              # lazily: the coverage readers above need no project
     out: dict[str, list[dict]] = {**{r: [] for r in repos}, "_project": []}
-    pages = [(p, docs.DOCS / p) for p in DEBT_PAGES]
+    pages = [(p, DOCS / p) for p in DEBT_PAGES]
     pages = [(p, f) for p, f in pages if f.is_file()]
     trust = {r["path"]: r["trust"] for r in services.current().doc_status.collect()} if pages else {}
     for page, f in pages:
@@ -270,7 +269,6 @@ def _context() -> dict:
 
 
 def _review() -> int:
-    from . import docs
     return len(services.current().doc_review.review_queue())
 
 
@@ -347,7 +345,7 @@ def _inventory() -> tuple[dict, list[dict]]:
 
 def build(log=print) -> dict:
     """Read every source, compute the areas, save the snapshot and return it."""
-    from . import docs, sonar
+    from . import sonar
     log("reading the machine…")
     machine = _guard(_machine, log)
     ws = _guard(services.current().workspace.workspace)
