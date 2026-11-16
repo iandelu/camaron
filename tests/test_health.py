@@ -193,7 +193,7 @@ def test_no_quality_pages_means_no_debt(kit):
 def test_debt_trust_follows_the_page(kit):
     from lib import health
     f = quality_page(kit, "tech-debt.md", "# Debt\n\n## Items\n\n| Item | Impact | Evidence |\n|---|---|---|\n| A | high | `api:x` |\n")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     assert health.debt_items(["api"])["api"][0]["trust"] == "confirmed"
 
 
@@ -425,7 +425,7 @@ def test_build_writes_a_snapshot_the_api_can_load(probed):
     assert snap["v"] == 1 and snap["at"] and health.load() == snap
     assert json.loads(health.SNAPSHOT.read_text(encoding="utf-8")) == snap
     assert health.SNAPSHOT.name == "health.json"
-    assert set(snap["repos"]) == set(probed.docs.repo_names())
+    assert set(snap["repos"]) == set(probed.services.workspace.repo_names())
     assert snap["machine"]["missing"] == ["uv", "gitleaks"] and snap["machine"]["drift"] == 1
     assert snap["inventory"] == {"at": None, "scanned": False}
     assert snap["areas"]["code"]["figures"][1] == {"key": "code.vulnHigh", "n": None}          # never scanned: "—", not 0
@@ -473,7 +473,7 @@ def test_an_inventory_of_the_wrong_shape_does_not_stop_the_build(probed, saved):
     from lib import health, inventory
     probed.common.save_json(inventory.DATA, saved)
     snap = health.build(log=quiet)
-    assert snap["inventory"]["error"] and set(snap["repos"]) == set(probed.docs.repo_names())
+    assert snap["inventory"]["error"] and set(snap["repos"]) == set(probed.services.workspace.repo_names())
     code = snap["areas"]["code"]
     assert code["state"] == "warn" and code["next"] == {"key": "code.unread", "row": "libs"}
     assert code["figures"] == [{"key": "code.libraries", "n": None}, {"key": "code.vulnHigh", "n": None}]
@@ -533,7 +533,7 @@ def test_one_failing_source_does_not_stop_the_rest(probed, monkeypatch):
     snap = health.build(log=quiet)
     assert snap["docs"]["context"] == {"error": "no budget today"}
     assert isinstance(snap["docs"]["review"], int) and snap["machine"]["missing"]
-    assert set(snap["areas"]) == {"machine", "docs", "code"} and set(snap["repos"]) == set(probed.docs.repo_names())
+    assert set(snap["areas"]) == {"machine", "docs", "code"} and set(snap["repos"]) == set(probed.services.workspace.repo_names())
     assert snap["areas"]["docs"]["state"] == "warn" and "docs.unread" in [v["key"] for v in snap["verdict"]]
     assert health.load() == snap
 

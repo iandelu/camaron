@@ -204,8 +204,8 @@ def test_writing_without_ai_renders_the_proposed_file_and_opens_the_review(adr, 
     f = kit.root / "docs" / "decisions" / "0001-a.md"
     assert a["path"] == "decisions/0001-a.md" and f.read_text(encoding="utf-8").startswith("---\n")
     assert a["state"]["phase"] == "review" and a["chip"] == "review" and a["notice"] is None
-    assert a["sections"]["context"] == "why" and a["sha"] == kit.docs.body_sha(kit.docs.split_fm(a["raw"])[1])
-    fm, _ = kit.docs.split_fm(a["raw"])
+    assert a["sections"]["context"] == "why" and a["sha"] == kit.frontmatter.body_sha(kit.frontmatter.split_fm(a["raw"])[1])
+    fm, _ = kit.frontmatter.split_fm(a["raw"])
     assert fm["x-owner"] == "ai"
 
 
@@ -250,7 +250,7 @@ def test_writing_without_ai_brings_the_evidence_of_the_pack(adr, kit):
     a = adr.write_without_ai(got["id"])
     assert a["sections"]["evidence"] == (FRAMED + "\n| Documented in Orders \\| flow | `docs/architecture/orders.md` |"
                                          "\n| Related decision 0007 | `docs/decisions/0007-jpa.md` |")
-    assert kit.docs.split_fm(a["raw"])[0]["x-sources"] == ["api:a.java"]
+    assert kit.frontmatter.split_fm(a["raw"])[0]["x-sources"] == ["api:a.java"]
 
 
 def test_writing_without_ai_with_no_pack_or_a_broken_one_names_the_touches_only(adr, kit):

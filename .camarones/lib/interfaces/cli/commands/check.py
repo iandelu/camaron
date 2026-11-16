@@ -444,8 +444,8 @@ class Status(Command):
         parser.add_argument("--json", action="store_true")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        rows = docs.collect()
+        from lib.domain.docs import trust_levels
+        rows = cli.services.doc_status.collect()
         if args.json:
             print(json.dumps(rows, indent=2, ensure_ascii=False))
         else:
@@ -454,7 +454,7 @@ class Status(Command):
                 extra = ([f"ORPHAN({len(r['orphan_sources'])})"] if r["orphan_sources"] else []) + \
                         [f"{k}:{v}" for k, v in r["i18n"].items() if v != "current"]
                 print(f"{icon[r['trust']]} {r['path']:<60} {' '.join(extra)}")
-            s = docs.summary(rows)
+            s = trust_levels.summary(rows)
             print(f"\n{s['total']} docs — confirmed {s['confirmed']}, needs-reconfirm {s['needs-reconfirm']}, "
                   f"draft {s['draft']}, orphans {s['orphans']}, untranslated {s['untranslated']}")
         return 0
@@ -467,8 +467,7 @@ class Check(Command):
         parser.add_argument("--secrets", action="store_true", help="only the secret scan (CI gate before committing)")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        errors, warns = docs.check(args.strict, secrets_only=args.secrets)
+        errors, warns = cli.services.doc_status.check(args.strict, secrets_only=args.secrets)
         for w in warns:
             print("WARN ", w)
         for e in errors:

@@ -8,14 +8,14 @@ import datetime as dt
 import hashlib
 
 from ..common import DOCS, ROOT, WORK, save_json
-from .. import docs
+from ..app import services
 
 RESULTS = WORK / "evals" / "comply"
 
 
 def score(paths: list[str]) -> dict:
     from .. import quality
-    every = docs.collect()
+    every = services.current().doc_status.collect()
     rows = {r["path"]: r for r in every}
     chosen = [rows[p] for p in paths if p in rows]
     found = []

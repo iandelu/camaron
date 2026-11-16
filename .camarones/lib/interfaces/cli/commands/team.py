@@ -206,8 +206,7 @@ class Confirm(Command):
         parser.add_argument("--by", required=True)
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        for f in docs.confirm(args.files, args.by):
+        for f in cli.services.doc_review.confirm(args.files, args.by):
             print(f"confirmed {f} by {args.by}")
         return 0
 
@@ -218,8 +217,7 @@ class Translated(Command):
         parser.add_argument("files", nargs="+")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        for f in docs.translated(args.files):
+        for f in cli.services.translations.translated(args.files):
             print("stamped", f)
         return 0
 
@@ -327,8 +325,8 @@ class Feedback(Command):
         parser.add_argument("--by", default="")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs, plan
-        docs.add_feedback(args.file, args.text, args.by or os.environ.get("USER", "human"))
+        from lib import plan
+        cli.services.docs.add_feedback(args.file, args.text, args.by or os.environ.get("USER", "human"))
         plan.ensure("review-fixes", "review-fixes")
-        print(f"feedback recorded in {plan._at(docs.FEEDBACK)}; unit review-fixes is ready")
+        print(f"feedback recorded in {plan._at(cli.services.docs.FEEDBACK)}; unit review-fixes is ready")
         return 0

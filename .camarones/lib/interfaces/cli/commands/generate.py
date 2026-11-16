@@ -37,7 +37,7 @@ class Run(Command):
 
 
 def cmd_pr(a) -> int:
-    from lib import docs
+    from lib.app import services
     from lib import pr
     if a.action == "propose":
         from lib import propose
@@ -58,8 +58,8 @@ def cmd_pr(a) -> int:
         print(json.dumps(r, indent=2, ensure_ascii=False) if a.json else
               "\n".join(f"{k}: {v}" for k, v in r.items() if v not in ("", None)))
         return 0
-    if a.repo not in docs.repo_names():
-        print(f"unknown repo {a.repo}: one of {', '.join(docs.repo_names()) or '—'}", file=sys.stderr)
+    if a.repo not in services.current().workspace.repo_names():
+        print(f"unknown repo {a.repo}: one of {', '.join(services.current().workspace.repo_names()) or '—'}", file=sys.stderr)
         return 2
     base = a.base or (None if a.files else "main")
     result = pr.impact(a.repo, base=base, files=a.files, head=a.head or None)

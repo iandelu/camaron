@@ -24,9 +24,11 @@ from pathlib import Path
 import yaml
 
 from .core import yamlio
-from . import adr_doc, docs
+from . import adr_doc
 from .common import CACHE, CAM_DIR, DOCS, WORK, retry_busy
 from .harness.locks import FileLock
+from .domain.docs import frontmatter, page_outline
+from .app import services
 
 KINDS = ("new", "retro")
 PHASES = ("problem", "evidence", "review", "accepted", "rejected")
@@ -159,7 +161,7 @@ def chip(state: dict | None, status: str) -> str:
 
 
 def _title(id: str, fm: dict, body: str) -> str:
-    heading = docs.first_heading(body) or str(fm.get("title") or "")
+    heading = frontmatter.first_heading(body) or str(fm.get("title") or "")
     bare = re.sub(rf"^\s*(?:ADR[\s_-]*)?0*{int(id)}\b[\s.:—–-]*", "", heading, flags=re.I).strip()
     return bare or heading or id
 
@@ -207,7 +209,7 @@ def _decided_on(state: dict | None, status: str, body: str) -> str:
     if date or status not in ("accepted", "rejected"):
         return date
     line = next((l for l in (adr_doc.section(body, "status") or "").splitlines() if l.strip()), "")
-    found = _ISO.search(docs.COMMENT_RE.sub("", line))
+    found = _ISO.search(page_outline.COMMENT_RE.sub("", line))
     return found[0] if found else ""
 
 
@@ -222,7 +224,7 @@ def _stamp(*paths: Path | None) -> str:
 
 
 def _row(id: str, path: Path | None, state: dict | None, text: str) -> dict:
-    fm, body = docs.split_fm(text)
+    fm, body = frontmatter.split_fm(text)
     status = adr_doc.status_of(body)[0] if path else "proposed"
     points = (state or {}).get("points") or []
     return {"id": id, "slug": path.stem[5:] if path else (state or {}).get("slug", ""),
@@ -265,7 +267,7 @@ def _affected(state: dict | None) -> list[str]:
         return []
     from . import adr_pack
     found = []
-    for logical, f in docs.iter_docs():
+    for logical, f in services.current().docs.iter_docs():
         page = adr_pack.read_page(logical, f) if f.is_relative_to(DOCS) else None
         if page and _covers(touches, logical, _sources(page[0])):
             found.append(logical)
@@ -278,13 +280,13 @@ def get(id: str) -> dict:
     if path is None and state is None:
         raise KeyError(id)
     text = _read(path) if path else ""
-    body = docs.split_fm(text)[1]
+    body = frontmatter.split_fm(text)[1]
     sections = {key: adr_doc.section(body, key) or "" for key in adr_doc.KEYS}
     parts = (state or {}).get("parts") or {}
     return {**_row(id, path, state, text), "state": state, "sections": sections,
             "parts": [{"id": p, "status": parts.get(p) or "pending"} for p in parts_of(state, sections)] if state else [],
             "points": list((state or {}).get("points") or []), "affected": _affected(state),
-            "sha": docs.body_sha(body) if path else "", "raw": text, "notice": None}
+            "sha": frontmatter.body_sha(body) if path else "", "raw": text, "notice": None}
 
 
 # ---------- framing ----------
@@ -335,7 +337,7 @@ def _decision(prose: str, points: list[dict]) -> str:
 
 
 def _prose(raw: str) -> str:
-    section = adr_doc.section(docs.split_fm(raw)[1], "decision") or ""
+    section = adr_doc.section(frontmatter.split_fm(raw)[1], "decision") or ""
     found = _POINTS_RE.search(section)
     return (section[:found.start()] if found else section).strip()
 
@@ -396,7 +398,7 @@ def start_review(id: str) -> dict:
             path = _files().get(id)
             if path is None:
                 raise KeyError(id)
-            fm, body = docs.split_fm(_read(path))
+            fm, body = frontmatter.split_fm(_read(path))
             _refuse_decided(id, body)
             save_state({"id": id, "slug": path.stem[5:], "kind": "retro", "mode": "manual", "title": _title(id, fm, body),
                         "problem": "", "drivers": [], "constraints": [], "options_hint": [],
@@ -468,7 +470,7 @@ def _need_state(id: str) -> dict:
         path = _files().get(id)
         if path is None:
             raise KeyError(id)
-        _refuse_decided(id, docs.split_fm(_read(path))[1])
+        _refuse_decided(id, frontmatter.split_fm(_read(path))[1])
         raise AdrError(f"{id} was not created here: start its review in the app first (Decisiones › Revisar en sesión)")
     return state
 
@@ -482,7 +484,7 @@ def _open(id: str, base_sha: str) -> tuple[dict, Path, str]:
     if state.get("phase") != "review":
         raise AdrError(f"{id} is already {state.get('phase')}: it can no longer be edited")
     raw = _read(_in_decisions(path))
-    sha = docs.body_sha(docs.split_fm(raw)[1])
+    sha = frontmatter.body_sha(frontmatter.split_fm(raw)[1])
     if base_sha != sha:
         raise AdrConflict(f"{id} changed while you were editing it: reload it", sha)
     if "�" in raw:
@@ -636,7 +638,7 @@ def _considered(state: dict, raw: str) -> str | None:
     points = state.get("points") or []
     if not points:
         return None
-    current = adr_doc.section(docs.split_fm(raw)[1], "options") or ""
+    current = adr_doc.section(frontmatter.split_fm(raw)[1], "options") or ""
     if adr_doc.unwritten(current) or current.strip() == adr_doc.render_hints(state.get("options_hint") or []):
         return adr_doc.render_options(points)
     missing = adr_doc.render_options(points, current)
@@ -658,26 +660,26 @@ def _supersession(state: dict, id: str, name: str) -> tuple[Path, str] | None:
     if "�" in raw:
         raise AdrError(f"{path.name} is not UTF-8: convert it before superseding it")
     text = adr_doc.replace_status(raw, f"Superseded by [{id}]({name})")
-    fm, body = docs.split_fm(text)
+    fm, body = frontmatter.split_fm(text)
     described = adr_doc.describe(fm, (_load_or_none(old) or {}).get("title") or _title(old, fm, body), "superseded")
-    return path, text if described == fm else docs.join_fm(described, body)
+    return path, text if described == fm else frontmatter.join_fm(described, body)
 
 
 def _owned(raw: str, name: str, id: str, state: dict, status: str) -> str:
     """The file with `x-owner: human`, the description the kit wrote reworded for `status` and every other key as it was.
     A file with no frontmatter gets the few keys a page needs to be confirmed; one whose frontmatter cannot be read is
     never rewritten."""
-    fm, body, valid = docs.parse_fm(raw)
+    fm, body, valid = frontmatter.parse_fm(raw)
     if not valid:
         raise AdrError(f"the frontmatter of {name} cannot be read: fix it before deciding")
     fm = ({**adr_doc.describe(fm, state.get("title"), status), "x-owner": "human"} if fm
           else {"type": "decision", "title": f"{id} — {state.get('title') or id}", "x-owner": "human"})
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)
 
 
 def _seal(path: Path, text: str, who: str) -> None:
     _write(path, text)
-    docs.confirm([str(path)], who)
+    services.current().doc_review.confirm([str(path)], who)
 
 
 def _closed(state: dict, phase: str, date: str, who: str, **more) -> dict:
@@ -704,8 +706,8 @@ def accept(id: str, by: str, attendees: list[str] | None, base_sha: str) -> dict
         if old:
             old_path, old_text = old
             _write(old_path, old_text)
-            if docs.split_fm(old_text)[0]:                  # a file with no frontmatter cannot be confirmed, and gets none
-                docs.confirm([str(old_path)], who)
+            if frontmatter.split_fm(old_text)[0]:           # a file with no frontmatter cannot be confirmed, and gets none
+                services.current().doc_review.confirm([str(old_path)], who)
         save_state(_closed(state, "accepted", date, who, attendees=names))
     return get(id)
 
@@ -728,15 +730,15 @@ def covering(logical: str) -> list[dict]:
     """The accepted ADRs a page falls under (`_covers`: the pages their review called affected). Read from the files, so
     an accepted ADR written elsewhere covers too. A decision page (`adr_doc.is_decision`) is never covered: it has its own
     status."""
-    page = docs.find_page(logical)
+    page = services.current().docs.find_page(logical)
     if page is None:
         return []
-    mine = docs.split_fm(_read(page))[0]
+    mine = frontmatter.split_fm(_read(page))[0]
     if adr_doc.is_decision(logical, mine.get("type")):
         return []
     found = []
     for id, path in sorted(_files().items()):
-        fm, body = docs.split_fm(_read(path))
+        fm, body = frontmatter.split_fm(_read(path))
         if adr_doc.status_of(body)[0] != "accepted":
             continue
         if _covers(set(_touches_of(_sources(fm))), logical, _sources(mine)):

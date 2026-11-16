@@ -23,7 +23,7 @@ def test_broken_internal_links_are_errors(kit):
     page(kit, "guides/a.md", "See [b](b.md), [c](../c.md#top), [web](https://x.io/y.md) and [anchor](#x).\n"
                              "```\n[in code](nowhere.md)\n```\nInline `[code](nope.md)` is not a link.\n")
     page(kit, "c.md", "# C\n")
-    errors, warns = kit.quality.check_links(kit.docs.collect())
+    errors, warns = kit.quality.check_links(kit.services.doc_status.collect())
     assert errors == ["docs/guides/a.md:6: broken link → b.md"]
     assert warns == ["docs/guides/a.md:6: no heading for #x in guides/a.md"]          # #top always exists
 
@@ -39,7 +39,7 @@ def test_glossary_terms_warn_and_fail_only_when_strict(kit):
     page(kit, "domain/glossary.md", "| Term | Meaning | Avoid |\n|---|---|---|\n| Pet Owner | person | Client, Customer |\n",
          title="Glossary")
     page(kit, "flows/visit.md", "A Client books a visit.\nThe Pet Owner pays.\n`Client` in code is fine.\n")
-    rows = kit.docs.collect()
+    rows = kit.services.doc_status.collect()
     errors, warns = kit.quality.check_terms(rows)
     assert errors == [] and warns == ['docs/flows/visit.md:6: "Client" → use "Pet Owner" (glossary)']
     errors, _ = kit.quality.check_terms(rows, strict=True)
@@ -48,7 +48,7 @@ def test_glossary_terms_warn_and_fail_only_when_strict(kit):
 
 def test_missing_mermaid_cli_is_one_warning(kit, no_tools):
     page(kit, "arch.md", "```mermaid\ngraph TD; A-->B\n```\n")
-    errors, warns = kit.quality.check_mermaid(kit.docs.collect())
+    errors, warns = kit.quality.check_mermaid(kit.services.doc_status.collect())
     assert errors == [] and len(warns) == 1 and "mmdc" in warns[0]
 
 
@@ -62,7 +62,7 @@ def test_missing_gitleaks_skips_the_secret_scan(kit, no_tools):
 def test_check_aggregates_all_gates(kit, no_tools):
     (kit.root / "docs").mkdir(parents=True)
     (kit.root / "docs" / "bare.md").write_text("# no frontmatter\n[x](missing.md)\n", encoding="utf-8")
-    errors, warns = kit.docs.check()
+    errors, warns = kit.services.doc_status.check()
     assert "docs/bare.md: missing frontmatter" in errors
     assert any("broken link" in e for e in errors)
     assert any("gitleaks" in w for w in warns)
@@ -78,7 +78,7 @@ def test_a_generated_page_skips_the_skeleton(kit):
         f = kit.root / "docs" / "index.md"
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(fm.format(extra=extra) + body, encoding="utf-8")
-        _, warns = kit.quality.check_structure(kit.docs.collect())
+        _, warns = kit.quality.check_structure(kit.services.doc_status.collect())
         return [w for w in warns if w.startswith("docs/index.md:") and "skeleton" in w]
 
     assert skeleton_warnings("x-generated: true\n") == []

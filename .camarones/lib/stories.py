@@ -20,10 +20,11 @@ from typing import Sequence, TypedDict
 import yaml
 
 from .core import yamlio
-from . import codemap, docs
+from . import codemap
 from .common import ROOT
 from .kanban import deps, index
 from .kanban.state import id_key
+from .app import services
 
 log = logging.getLogger("camaron.stories")
 
@@ -267,7 +268,7 @@ def _group(touch: str, groups: dict[str, str]) -> str:
 
 def _small() -> dict[str, int]:
     """`workspace.yaml → stories.small` over the defaults; only positive whole numbers override."""
-    section = docs.workspace().get("stories")
+    section = services.current().workspace.workspace().get("stories")
     given = section.get("small") if isinstance(section, dict) else None
     given = given if isinstance(given, dict) else {}
     ok = lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0     # noqa: E731

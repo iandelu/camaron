@@ -109,9 +109,9 @@ def test_archives_done_after_days(wired):
 
 def test_archive_after_days_from_workspace(wired):
     from lib.kanban import ARCHIVE
-    ws = wired.docs.workspace()
+    ws = wired.services.workspace.workspace()
     ws["board"] = {"archive_after_days": 3}
-    wired.docs.save_workspace(ws)
+    wired.services.workspace.save_workspace(ws)
     f = mk(wired, "WI-1", "Soon", status="Done", **{"x-uid": "old00001"})
     put_board({"WI-1": card("old00001", "Done", t={"status": "2026-10-20T08:00:00Z a@b"})})
     run_repair(today=date(2026, 10, 25))

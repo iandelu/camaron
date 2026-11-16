@@ -5,14 +5,13 @@ import os
 import re
 import subprocess
 
-from lib import docs
 from lib.app import services
 from lib.common import CACHE, IS_WIN, KIT, ROOT, run, which
 from lib.ports import Log
 
 
 def project_id() -> str:
-    return docs.workspace()["project"].get("id") or re.sub(r"[^a-z0-9]+", "-", ROOT.name.lower()).strip("-") or "project"
+    return services.current().workspace.workspace()["project"].get("id") or re.sub(r"[^a-z0-9]+", "-", ROOT.name.lower()).strip("-") or "project"
 
 
 def compose_cmd() -> list[str]:

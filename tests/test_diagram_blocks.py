@@ -296,11 +296,11 @@ def system_repos(dg):
 
 
 def add_repos(dg, n):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     for i in range(n):
         dg.put(f"svc{i}", "package.json", f'{{"name": "svc{i}"}}\n')
         ws["repos"].append({"name": f"svc{i}", "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
 
 
 def test_context_map_draws_repos_stores_and_calls(dg):
@@ -340,9 +340,9 @@ def test_context_needs_a_repo_and_only_exists_for_the_system(dg):
     system_repos(dg)
     assert dg.mod.ids("context", "api") == [] and dg.mod.render("context", "api", None) is None
     assert dg.mod.render("context", SYSTEM, "x") is None
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"] = []
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     assert dg.mod.ids("context", SYSTEM) == [] and dg.mod.render("context", SYSTEM, None) is None
 
 
@@ -379,19 +379,19 @@ def test_two_brokers_share_the_name_broker(dg):
 
 
 def test_a_hyphenated_repo_gets_an_aliased_participant(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"].append({"name": "pet-api", "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     dg.put("pet-api", "src/Bus.java", 'class Bus { void f() { kafkaTemplate.send("pet-created", m); } }\n')
     code = mermaid(dg.mod.render("messaging", SYSTEM, "pet-created")[0])
     assert "participant pet_api as pet-api" in code and "pet_api->>Broker: publish pet-created" in code
 
 
 def test_sequence_keywords_as_repo_names_get_safe_participants(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     for name in ("loop", "alt"):
         ws["repos"].append({"name": name, "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     dg.put("loop", "src/Bus.java", 'class Bus { void f() { kafkaTemplate.send("pet-created", m); } }\n')
     dg.put("alt", "src/Sub.java", 'class Sub { @KafkaListener(topics = "pet-created") void on(String m) {} }\n')
     code = mermaid(dg.mod.render("messaging", SYSTEM, "pet-created")[0])
@@ -467,7 +467,7 @@ def test_write_pages_creates_the_system_map_and_repo_pages(dg):
     written = dg.mod.write_pages()
     assert sorted(written) == ["docs/architecture/system-map.md", "docs/repos/api/diagrams.md"]
     for rel, h1 in (("architecture/system-map.md", "# System map"), ("repos/api/diagrams.md", "# api diagrams")):
-        fm, body = dg.kit.docs.split_fm(page_text(dg, rel))
+        fm, body = dg.kit.frontmatter.split_fm(page_text(dg, rel))
         assert fm["x-generated"] is True and fm["x-owner"] == "ai" and fm["type"] == "overview" and fm["x-sources"]
         assert h1 in body and "> **TL;DR:**" in body and "no AI" in body and "camaron diagrams" in body
     system = page_text(dg, "architecture/system-map.md")
@@ -486,9 +486,9 @@ def test_no_page_without_diagrams(dg):
 
 
 def test_nothing_to_draw_writes_nothing(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"] = []
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     assert dg.mod.write_pages() == []
     assert not (dg.kit.root / "docs" / "architecture" / "system-map.md").exists()
 
@@ -564,7 +564,7 @@ def test_a_gone_enum_leaves_the_page_unless_confirmed(dg):
     dg.mod.write_pages()
     text = f.read_text(encoding="utf-8")
     assert keys(text) == [("endpoints-map", "api", None), ("states", "api", "PetState")] and kept in text
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert any("diagrams.md" in i for i in issues)
 
 
@@ -686,7 +686,7 @@ def test_first_look_survives_a_diagram_failure(dg, monkeypatch):
         raise RuntimeError("no map today")
     monkeypatch.setattr(dg.mod, "write_pages", boom)
     llms = []
-    monkeypatch.setattr("lib.docs.llms", lambda *a, **k: llms.append(1))
+    monkeypatch.setattr("lib.app.llms.llms", lambda *a, **k: llms.append(1))
     logs = []
     assert serve.first_look(log=logs.append) is True
     assert llms and any("diagrams skipped" in line for line in logs)
@@ -818,7 +818,7 @@ def test_a_repo_missing_from_this_machine_leaves_the_system_map_alone(dg):
     assert sm.read_bytes() == before
     assert sum("system-map.md" in line for line in logs) == 1
     assert dg.mod.render("context", SYSTEM, None) is None and dg.mod.render("messaging", SYSTEM, "visit-booked") is None
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert not [i for i in issues if "system-map.md" in i]
 
 
@@ -845,7 +845,7 @@ def test_a_confirmed_block_of_a_repo_not_on_this_machine_is_not_reported(dg):
     got = {m["id"]: s for m, s, _ in dg.gb.states(text, dg.gb.Scanner())}
     assert got == {None: "unknown", "OrderStatus": "confirmed"}
     for strict in (False, True):
-        issues, warns = dg.gb.check(dg.kit.docs.collect(), strict=strict)
+        issues, warns = dg.gb.check(dg.kit.services.doc_status.collect(), strict=strict)
         assert not [i for i in issues + warns if "diagrams.md" in i]
     dg.gb.refresh()
     assert kept in f.read_text(encoding="utf-8")
@@ -879,7 +879,7 @@ def test_one_refresh_scans_the_architecture_once(dg, monkeypatch):
     dg.gb.refresh()
     assert len(calls) == 1
     calls.clear()
-    dg.gb.check(dg.kit.docs.collect())
+    dg.gb.check(dg.kit.services.doc_status.collect())
     assert len(calls) == 1
 
 
@@ -897,7 +897,7 @@ def test_status_enums_are_read_once_per_pass(dg, monkeypatch):
     dg.mod.write_pages()
     calls, real = [], dg.mod.status_enums
     monkeypatch.setattr(dg.mod, "status_enums", lambda *a: calls.append(a) or real(*a))
-    dg.gb.check(dg.kit.docs.collect())
+    dg.gb.check(dg.kit.services.doc_status.collect())
     assert len(calls) == 1
 
 
@@ -920,7 +920,7 @@ def test_a_diagram_whose_source_is_gone_is_reported(dg):
     text = f.read_text(encoding="utf-8")
     assert text.count(edited) == 1
     assert {m["id"]: s for m, s, _ in dg.gb.states(text, dg.gb.Scanner())}["OrderStatus"] == "gone"
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert [i for i in issues if "the code no longer has this diagram's source" in i and "diagrams.md" in i
             and "states api OrderStatus" in i]
 
@@ -937,7 +937,7 @@ def test_a_moved_block_of_a_gone_topic_is_reported(dg):
     dg.mod.write_pages()
     dg.gb.refresh()
     assert flow.read_bytes() == before
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert [i for i in issues if "no longer has this diagram's source" in i and "booking.md" in i]
 
 
@@ -971,7 +971,7 @@ def test_a_render_bug_never_aborts_refresh_or_check(dg, monkeypatch):
     text = (dg.kit.root / "docs" / "repos" / "api" / "diagrams.md").read_text(encoding="utf-8")
     assert {s for _, s, _ in dg.gb.states(text, dg.gb.Scanner())} == {"unknown"}
     assert dg.gb.refresh()["updated"] == []
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert not [i for i in issues if "diagrams.md" in i or "system-map.md" in i]
 
 
@@ -981,7 +981,7 @@ def test_the_confirmed_stale_warning_says_how_to_take_the_code(dg):
     f = dg.kit.root / "docs" / "repos" / "api" / "diagrams.md"
     confirm(dg, f, "OrderStatus")
     dg.put("api", "src/main/java/demo/OrderStatus.java", ORDER.replace("SHIPPED", "SHIPPED, LOST"))
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     msg = next(i for i in issues if "was confirmed" in i)
     assert "remove `confirmed=` and `by=`" in msg and "diagrams" in msg and "confirm it again" in msg
 

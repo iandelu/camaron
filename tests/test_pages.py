@@ -224,7 +224,7 @@ def test_the_messaging_page_exists_only_with_topics(pg):
 
 def test_the_pages_list_the_sources_of_their_blocks_once(pg):
     pg.put("api", "src/main/resources/openapi.yaml", OPENAPI)
-    fm = pg.kit.docs.split_fm(pg.mod.repo_page("api", {}))[0]
+    fm = pg.kit.frontmatter.split_fm(pg.mod.repo_page("api", {}))[0]
     assert "api:src/main/resources/openapi.yaml" in fm["x-sources"] and len(fm["x-sources"]) == len(set(fm["x-sources"]))
     assert (fm["type"], fm["x-owner"], fm["x-generated"]) == ("overview", "ai", True)
 
@@ -253,7 +253,7 @@ def test_the_generated_pages_pass_check(pg, monkeypatch):
     for rel, text in pages:
         write_doc(pg, rel, text)
     assert "(architecture/messaging.md)" in pages[0][1] and "(overview/tooling.md)" in pages[0][1]
-    errors, _warns = pg.kit.docs.check()
+    errors, _warns = pg.kit.services.doc_status.check()
     assert [e for e in errors if "index.md" in e or "messaging.md" in e] == []
 
 
@@ -330,7 +330,7 @@ def test_a_persons_title_survives_a_rewrite(pg):
                     encoding="utf-8", newline="\n")
     pg.put("api", "src/main/java/demo/OrderStatus.java", ORDER)
     pg.mod.write()
-    fm = pg.kit.docs.split_fm(page.read_text(encoding="utf-8"))[0]
+    fm = pg.kit.frontmatter.split_fm(page.read_text(encoding="utf-8"))[0]
     assert (fm["title"], fm["x-team"]) == ("The API", "pets")
     assert "api:src/main/java/demo/OrderStatus.java" in fm["x-sources"]
 
@@ -391,7 +391,7 @@ def test_prose_keeps_the_tldr_and_folds_a_new_table(pg):
     assert ":::details Endpoints\n<!-- generated:endpoints repo=api" in text
     assert text.index("generated:endpoints-map") < text.index(":::details Endpoints") < text.index(":::details How this")
     assert any("has text a person or an agent wrote, only its blocks" in line for line in logs)
-    assert "api:src/main/resources/openapi.yaml" in pg.kit.docs.split_fm(text)[0]["x-sources"]
+    assert "api:src/main/resources/openapi.yaml" in pg.kit.frontmatter.split_fm(text)[0]["x-sources"]
 
 
 def test_a_confirmed_kit_page_only_gets_its_blocks(pg):
@@ -406,7 +406,7 @@ def test_a_confirmed_kit_page_only_gets_its_blocks(pg):
     logs = []
     pg.mod.write(logs.append)
     text = page.read_text(encoding="utf-8")
-    assert pg.kit.docs.split_fm(text)[0]["x-confirmed"] == {"body_sha": "abc", "by": "ana"} and "id=OrderStatus" in text
+    assert pg.kit.frontmatter.split_fm(text)[0]["x-confirmed"] == {"body_sha": "abc", "by": "ana"} and "id=OrderStatus" in text
     assert tldr in text and "generated:endpoints-map repo=api" in text            # the TL;DR a person confirmed stays
     assert any("confirmed by a person" in line and "only its blocks" in line for line in logs)
 

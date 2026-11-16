@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 
-from lib import docs
 from lib.interfaces.http import inputs
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
@@ -190,7 +189,7 @@ def get_stories(req: Request) -> Response:
     return json_response({"enabled": kanban.enabled(), "writable": req.can_write,
                           "ai": stories_ai.status(),
                           "lint_words": {lg: stories.lint_words(lg) for lg in ("es", "en")},
-                          "repos": sorted(docs.repo_names()) + [DOCS_REPO],   # Toca's new-file prefixes
+                          "repos": sorted(req.services.workspace.repo_names()) + [DOCS_REPO],  # Toca's new-file prefixes
                           "stories": stories_save.list_stories() if kanban.enabled() else []})
 
 

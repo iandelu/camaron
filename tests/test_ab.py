@@ -73,9 +73,9 @@ def test_a_free_question_has_no_answer_key(kit, ab, fake_ask):
 
 
 def test_the_team_can_turn_ab_off(kit, ab, fake_ask):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["ab"] = {"enabled": False}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert not ab.enabled()
     with pytest.raises(RuntimeError, match="ab.enabled"):
         ab.run([QUESTION], "claude", echo=lambda _: None)

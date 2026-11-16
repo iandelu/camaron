@@ -81,7 +81,7 @@ def test_resuming_a_started_interview_offers_the_team_questionnaire(kit, ui):
     # questionnaire → back on the main menu: Esc, and "yes" to leave
     ui.play(ENTER, ENTER, ESC, YES, fn=kit.wizard.W()._run)
     assert ui.launched == ["Camarón session — unit `questionnaire`: " + unit(kit, "questionnaire")["title"]]
-    assert kit.docs.interview_mode() == "team"
+    assert kit.services.workspace.interview_mode() == "team"
     assert unit(kit, "interview-context")["status"] == "todo"
 
 
@@ -90,14 +90,14 @@ def test_choosing_live_resumes_the_interview_session(kit, ui):
     # live → the usual resume menu of a started unit: "new session" is first
     ui.play(ENTER, DOWN, ENTER, ENTER, ESC, YES, fn=kit.wizard.W()._run)
     assert ui.launched[0].startswith("Camarón session — unit `interview-context`")
-    assert kit.docs.workspace()["project"]["interviews"] == "live"
+    assert kit.services.workspace.workspace()["project"]["interviews"] == "live"
 
 
 def test_escape_on_the_mode_question_changes_nothing(kit, ui):
     started_interview(kit)
     ui.play(ENTER, ESC, ESC, YES, fn=kit.wizard.W()._run)
     assert ui.launched == []
-    assert "interviews" not in kit.docs.workspace()["project"]
+    assert "interviews" not in kit.services.workspace.workspace()["project"]
     assert unit(kit, "interview-context")["status"] == "doing"
 
 
@@ -113,14 +113,14 @@ def test_the_question_is_asked_once(kit, ui):
 def test_menu_entry_switches_a_started_interview_to_the_team(kit, ui):
     started_interview(kit)
     ui.play(ENTER, ENTER, fn=kit.wizard.W().do_team)                          # switch? yes · start it now? yes
-    assert kit.docs.interview_mode() == "team"
+    assert kit.services.workspace.interview_mode() == "team"
     assert ui.launched[0].startswith("Camarón session — unit `questionnaire`")
 
 
 def test_menu_entry_can_be_declined(kit, ui):
     started_interview(kit)
     ui.play("n", fn=kit.wizard.W().do_team)
-    assert kit.docs.interview_mode() == "live" and ui.launched == []
+    assert kit.services.workspace.interview_mode() == "live" and ui.launched == []
 
 
 # ---------- the answers step ----------

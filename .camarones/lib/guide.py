@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import docs
 from .app import services
+from .domain.docs import frontmatter
 
 ORDER = ("using", "app", "portal", "internals", "tutorial")
 
@@ -19,7 +19,7 @@ def guides(lang: str, base: Path | None = None) -> list[dict]:
         if not en.is_file():
             continue
         es = base / "i18n" / "es" / "guides" / f"{name}.md"
-        fm, body = docs.split_fm((es if lang == "es" and es.is_file() else en).read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm((es if lang == "es" and es.is_file() else en).read_text(encoding="utf-8"))
         out.append({"name": name, "title": str(fm.get("title") or name), "description": str(fm.get("description") or ""),
                     "markdown": body})
     return out

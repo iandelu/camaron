@@ -44,31 +44,31 @@ def pages(kit):
 
 def test_a_generic_term_finds_the_products_that_implement_it(kit):
     pages(kit)
-    assert kit.docs.search("what database does it use")[0]["path"] == "architecture/first-look.md"
+    assert kit.services.search.search("what database does it use")[0]["path"] == "architecture/first-look.md"
 
 
 def test_a_spanish_question_finds_an_english_page(kit):
     pages(kit)
-    assert kit.docs.search("qué base de datos usa")[0]["path"] == "architecture/first-look.md"
+    assert kit.services.search.search("qué base de datos usa")[0]["path"] == "architecture/first-look.md"
 
 
 def test_the_kit_guides_never_outrank_a_project_page(kit):
     pages(kit)
-    hits = kit.docs.search("how do I use the portal in CI with maven")
+    hits = kit.services.search.search("how do I use the portal in CI with maven")
     assert hits[0]["path"] == "overview/tooling.md"
     assert [h["path"] for h in hits].index("guides/tutorial.md") > 0
 
 
 def test_a_question_about_the_kit_still_finds_its_guide(kit):
     pages(kit)
-    assert kit.docs.search("camaron portal ci")[0]["path"] == "guides/tutorial.md"
+    assert kit.services.search.search("camaron portal ci")[0]["path"] == "guides/tutorial.md"
 
 
 def test_exact_words_still_rank_above_their_expansions(kit):
     pages(kit)
     write(kit, "data/postgres.md", "---\ntitle: Orders store\n---\n# Orders store\n\nThe database of orders.\n",
           confirm=False)
-    assert kit.docs.search("database")[0]["path"] == "data/postgres.md"
+    assert kit.services.search.search("database")[0]["path"] == "data/postgres.md"
 
 
 def test_ask_answers_with_the_first_look_section(kit):
@@ -94,7 +94,7 @@ def test_the_first_look_cites_what_it_read_so_agents_may_use_it(kit, monkeypatch
     from lib import quickarch, serve
     monkeypatch.setattr(quickarch, "which", lambda name: None)                     # no LikeC4 build in tests
     quickarch.save(quickarch.draft(log=lambda _: None))
-    fm = kit.docs.split_fm((kit.root / "docs" / "architecture" / "first-look.md").read_text(encoding="utf-8"))[0]
+    fm = kit.frontmatter.split_fm((kit.root / "docs" / "architecture" / "first-look.md").read_text(encoding="utf-8"))[0]
     assert "api:src/main/resources/application.properties" in fm["x-sources"] and "api:pom.xml" in fm["x-sources"]
     assert fm["x-sources"] == sorted(fm["x-sources"])
     hit = serve.api_ask("which database does it use?")["sections"][0]

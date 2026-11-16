@@ -104,7 +104,7 @@ def test_check_warns_about_hand_edits_and_unlocked_folders(wired, store, tmp_pat
     other = wired.root / ".camarones" / "plugins" / "loose"
     other.mkdir()
     (other / "plugin.yaml").write_text("name: loose\nversion: 1.0.0\nprovides: {prompts: [p.md]}\n", encoding="utf-8")
-    _, warns = wired.docs.check()
+    _, warns = wired.services.doc_status.check()
     assert any("adr-lint" in w and "plugins.lock" in w and "edited" in w for w in warns)
     assert any("loose" in w and "not in plugins.lock" in w for w in warns)
 
@@ -113,7 +113,7 @@ def test_projects_without_a_lock_keep_working(wired, store):
     folder = wired.root / ".camarones" / "plugins" / "old"
     folder.mkdir(parents=True)
     (folder / "plugin.yaml").write_text("name: old\nversion: 1.0.0\nprovides: {prompts: [p.md]}\n", encoding="utf-8")
-    errors, _ = wired.docs.check()
+    errors, _ = wired.services.doc_status.check()
     assert not any("plugins" in e for e in errors)
 
 

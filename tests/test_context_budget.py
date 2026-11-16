@@ -33,7 +33,7 @@ def test_the_kit_wiring_stays_under_its_budget(wired):
 
 
 def test_doctor_context_json_and_over_budget(wired):
-    ws = wired.docs.workspace(); ws["context"] = {"budget": 10}; wired.docs.save_workspace(ws)
+    ws = wired.services.workspace.workspace(); ws["context"] = {"budget": 10}; wired.services.workspace.save_workspace(ws)
     r = _doctor(wired, "--json")
     assert r.returncode == 0, r.stderr
     data = json.loads(r.stdout)
@@ -46,8 +46,8 @@ def test_llms_txt_gives_a_token_estimate_per_page(kit):
     page = kit.root / "docs" / "flows" / "checkout.md"
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text("---\ntitle: Checkout\n---\n# Checkout\n\n" + "word " * 400, encoding="utf-8")
-    kit.docs.confirm([str(page)], by="ana")
-    kit.docs.llms()
+    kit.services.doc_review.confirm([str(page)], by="ana")
+    kit.services.llms.llms()
     lines = [l for l in (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8").splitlines() if l.startswith("- [")]
     assert lines and all("tokens)" in l for l in lines)
     assert any("Checkout" in l and "(~50" in l for l in lines)                     # ~2000 chars of body

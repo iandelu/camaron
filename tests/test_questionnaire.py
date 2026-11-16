@@ -17,15 +17,15 @@ def ids(data):
 
 
 def set_mode(kit, mode):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["interviews"] = mode
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
 
 
 # ---------- plan ----------
 def test_projects_without_the_key_keep_live_interviews(kit):
     """3.x projects have no `interviews` key: same plan as before, no questionnaire units."""
-    assert kit.docs.interview_mode() == "live"
+    assert kit.services.workspace.interview_mode() == "live"
     data = kit.plan.sync()
     assert "questionnaire" not in ids(data) and "answers" not in ids(data)
     assert unit(data, "interview-context")["deps"] == ["discovery-cross"]
@@ -43,7 +43,7 @@ def test_team_mode_adds_questionnaire_then_answers_before_the_interviews(kit):
 
 def test_unknown_mode_falls_back_to_live(kit):
     set_mode(kit, "carrier-pigeon")
-    assert kit.docs.interview_mode() == "live"
+    assert kit.services.workspace.interview_mode() == "live"
 
 
 def test_switching_back_to_live_drops_the_pending_questionnaire(kit):
@@ -309,7 +309,7 @@ def test_first_interview_asks_live_or_team(kit, quiet, launched, fake_wizard):
     kit.plan.sync()
     finish(kit, "setup", "discovery")
     fake_wizard(["team"]).run_unit(unit(kit.plan.load(), "interview-context"))
-    assert kit.docs.interview_mode() == "team"
+    assert kit.services.workspace.interview_mode() == "team"
     assert "unit `questionnaire`" in launched[0]                             # the agent writes the questionnaire first
     assert unit(kit.plan.load(), "interview-context")["status"] == "todo"
 
@@ -370,7 +370,7 @@ def test_live_choice_keeps_the_interview(kit, quiet, launched, fake_wizard):
     kit.plan.sync()
     finish(kit, "setup", "discovery")
     fake_wizard(["live"]).run_unit(unit(kit.plan.load(), "interview-context"))
-    assert kit.docs.workspace()["project"]["interviews"] == "live"
+    assert kit.services.workspace.workspace()["project"]["interviews"] == "live"
     assert "unit `interview-context`" in launched[0]
     fake_wizard([]).run_unit(unit(kit.plan.load(), "interview-language"))   # asked once per project
 
@@ -405,11 +405,11 @@ def test_team_interview_prompt_consolidates_instead_of_asking(kit, q):
 
 def test_whether_the_mode_was_chosen(kit):
     """A project without the key runs live, but nobody chose it: the app asks before an interview starts."""
-    assert kit.docs.interview_mode_chosen() is False
-    kit.docs.set_interview_mode("live")
-    assert kit.docs.interview_mode_chosen() is True
+    assert kit.services.workspace.interview_mode_chosen() is False
+    kit.services.workspace.set_interview_mode("live")
+    assert kit.services.workspace.interview_mode_chosen() is True
     set_mode(kit, "carrier-pigeon")
-    assert kit.docs.interview_mode_chosen() is False
+    assert kit.services.workspace.interview_mode_chosen() is False
     assert kit.serve.api_interview()["chosen"] is False
-    kit.docs.set_interview_mode("team")
+    kit.services.workspace.set_interview_mode("team")
     assert kit.serve.api_interview()["chosen"] is True

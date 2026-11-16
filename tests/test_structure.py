@@ -51,14 +51,14 @@ def write(kit, rel, text):
 
 def issues(kit, rel, text):
     write(kit, rel, text)
-    errors, warns = kit.quality.check_structure(kit.docs.collect())
+    errors, warns = kit.quality.check_structure(kit.services.doc_status.collect())
     assert errors == []
     return [w.split(": ", 1)[1] for w in warns if w.startswith(f"docs/{rel}:")]
 
 
 @pytest.mark.parametrize("skeleton", SKELETONS, ids=lambda p: p.stem)
 def test_every_skeleton_passes_its_own_check(kit, skeleton):
-    fm, _ = kit.docs.split_fm(skeleton.read_text(encoding="utf-8"))
+    fm, _ = kit.frontmatter.split_fm(skeleton.read_text(encoding="utf-8"))
     rel = (fm.get("x-skeleton-for") or f"x/{skeleton.stem}.md").replace("*", "api")
     assert issues(kit, rel, skeleton.read_text(encoding="utf-8")) == []
 
@@ -124,13 +124,13 @@ def test_skipped_pages(kit, rel, text):
 
 def test_strict_turns_the_warnings_into_errors(kit):
     write(kit, "flows/checkout.md", GOOD.replace("> **TL;DR:** The cart", "The cart"))
-    errors, warns = kit.quality.check_structure(kit.docs.collect(), strict=True)
+    errors, warns = kit.quality.check_structure(kit.services.doc_status.collect(), strict=True)
     assert warns == [] and any("TL;DR" in e for e in errors)
 
 
 def test_check_runs_it(kit):
     write(kit, "flows/checkout.md", GOOD.replace("> **TL;DR:** The cart", "The cart"))
-    _, warns = kit.docs.check()
+    _, warns = kit.services.doc_status.check()
     assert any("flows/checkout.md" in w and "TL;DR" in w for w in warns)
 
 
@@ -165,5 +165,5 @@ def test_a_fresh_project_has_no_structure_warnings(kit):
     from conftest import wire_project
     wire_project(kit)
     (kit.root / "docs" / "overview.md").unlink()                  # the fixture's own bare page
-    _, warns = kit.quality.check_structure(kit.docs.collect())
+    _, warns = kit.quality.check_structure(kit.services.doc_status.collect())
     assert warns == []

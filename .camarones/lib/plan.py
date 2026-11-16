@@ -27,13 +27,14 @@ import yaml
 
 from .core import yamlio
 from .common import CTX, KIT, PREFS, ROOT, load_json, WORK, CAM_LAYOUT, CAM_DIR, WORKSPACE, cli_cmd, kill_tree, ws_rel, rel_file, IS_WIN, which
-from . import docs, sessions
+from . import sessions
 from .adapters import runners
 from .adapters.runners.base import LIMIT_HINTS  # noqa: F401  (kept for callers)
 from .harness import awake, drafts, freshness, handoff, kpis, ledger, pipeline, routing
 from .harness.events import EventLog
 from .harness.locks import FileLock
 from .harness.ports import RunRequest
+from .app import services
 
 PLAN = WORK / "plan.yaml"
 PLAN_LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "plan.lock"   # git-ignored, shared by worktrees
@@ -123,7 +124,7 @@ def title(u: dict, lang: str = "en") -> str:
 
 def project_pipeline() -> tuple[dict, list[str]]:
     """The kit pipeline of the project's profile, with .camarones/pipeline.yaml applied when there is one."""
-    default = "quick" if docs.workspace()["project"].get("profile") == "quick" else "full"
+    default = "quick" if services.current().workspace.workspace()["project"].get("profile") == "quick" else "full"
     if not OVERRIDE.exists():
         return pipeline.load(default), []
     try:
@@ -142,7 +143,7 @@ def pipeline_problems() -> list[str]:
 def pipeline_units() -> list[dict]:
     """The project's pipeline expanded for its repos, with how each unit runs (for `pipeline show`)."""
     out = []
-    for n in _nodes(docs.repo_names()):
+    for n in _nodes(services.current().workspace.repo_names()):
         t = pipeline.types().get(n["type"], {})
         s = {"tier": t.get("tier", "agentic-heavy"), "isolation": t.get("isolation", "none"), "runner": None,
              **n["settings"]}
@@ -156,7 +157,7 @@ def _nodes(repos: list[str]) -> list[dict]:
     spec, problems = project_pipeline()
     if problems:
         raise PipelineError("; ".join(problems))
-    return pipeline.expand(spec, repos, {"team-interviews": docs.interview_mode() == "team"})
+    return pipeline.expand(spec, repos, {"team-interviews": services.current().workspace.interview_mode() == "team"})
 
 
 def blueprint(repos: list[str]) -> list[dict]:
@@ -194,7 +195,7 @@ def plugin_guidance(uid: str) -> str:
 def settings(uid: str) -> dict:
     """How a unit runs: its type's tier and isolation, then what the pipeline sets for that node."""
     try:
-        node = next((n for n in _nodes(docs.repo_names()) if n["id"] == uid), None)
+        node = next((n for n in _nodes(services.current().workspace.repo_names()) if n["id"] == uid), None)
     except PipelineError:
         node = None
     type_ = node["type"] if node else next((u["type"] for u in load()["units"] if u["id"] == uid), "")
@@ -210,8 +211,8 @@ def sync() -> dict:
     fresh = not PLAN.exists()
     data = load()
     old_profile = data.get('profile', 'full')
-    profile = docs.workspace()['project'].get('profile', 'full')
-    repos = docs.repo_names()
+    profile = services.current().workspace.workspace()['project'].get('profile', 'full')
+    repos = services.current().workspace.repo_names()
     try:
         nodes = _nodes(repos)
     except PipelineError:
@@ -245,8 +246,8 @@ def sync() -> dict:
     for u in merged:
         if u["id"] in ("i18n", "confirm", "diagrams"):
             u["deps"] = sorted(set(u["deps"]) | set(flow_ids))
-    comps = docs.workspace()["project"].get("components")
-    wiki_repos = docs.wiki_repos()
+    comps = services.current().workspace.workspace()["project"].get("components")
+    wiki_repos = services.current().workspace.wiki_repos()
     for u in merged:
         if u["type"] != "repo-wiki":
             continue
@@ -262,7 +263,7 @@ def sync() -> dict:
         if u["status"] in ("todo", "blocked"):
             u["status"], u["notes"] = "dropped", why
     # questionnaire units only while the team answers it: not in live mode, nor once the interviews ran live
-    team = docs.interview_mode() == "team"
+    team = services.current().workspace.interview_mode() == "team"
     live_done = any(u["id"] == "interview-context" and u["status"] == "done" for u in merged)
     for u in merged:
         if u["type"] not in ("questionnaire", "answers"):
@@ -283,7 +284,7 @@ def sync() -> dict:
 def set_interview_mode(mode: str) -> dict:
     """Switch how the interviews run. In team mode a live interview that was already started goes back to todo: it now
     waits for the team's answers (its checkpoints stay, so the consolidation sees what was said live)."""
-    docs.set_interview_mode(mode)
+    services.current().workspace.set_interview_mode(mode)
     data = sync()
     if mode == "team" and any(u["type"] in INTERVIEW_TYPES and u["status"] == "doing" for u in data["units"]):
         for u in data["units"]:
@@ -567,7 +568,6 @@ def render(data: dict | None = None) -> str:
 
 # ---------- session prompts ----------
 def prompt(uid: str, lang: str = "es", unattended: bool = False) -> str:
-    from .app import services
     services.current().templates.sync_kit_docs()  # the session reads the project's PLAYBOOK copy: bring it up to this kit
     data = load()
     u = get(data, uid) if uid != "update" else {"id": "update", "title": "Incremental update", "type": "update", "phase": "-"}
@@ -633,7 +633,7 @@ def prompt(uid: str, lang: str = "es", unattended: bool = False) -> str:
                  f"outdated/missing translations (then `{cli} translated <files>`), generated-block WARNs (`{cli} blocks`) "
                  "and structure WARNs (CONVENTIONS §11). "
                  f"Finish with `{cli} llms` and a clean `check`.\n")
-    elif u.get("type") in INTERVIEW_TYPES and docs.interview_mode() == "team":
+    elif u.get("type") in INTERVIEW_TYPES and services.current().workspace.interview_mode() == "team":
         qdir = ws_rel("docs/interview/questionnaire")
         extra = (f"\nTEAM MODE — do not interview anyone: the team already answered a questionnaire. Input: "
                  f"`{qdir}/questionnaire.yaml` (this unit's questions are those with topic `{u['type'].split('-', 1)[1]}`) "
@@ -741,7 +741,7 @@ def _runner(target: str):
 def _agents(log, tier: str = "agentic-heavy", runner: str | None = None, allow_local: bool = False) -> list[str]:
     """Installed targets for a tier in routing order (defaults: claude, then codex), or for the one runner a
     pipeline node asks for."""
-    routes = {tier: [runner]} if runner else routing.table(docs.workspace(), load_json(PREFS, {}))
+    routes = {tier: [runner]} if runner else routing.table(services.current().workspace.workspace(), load_json(PREFS, {}))
     keep, notes = routing.candidates(tier, routes, allow_local)
     out = []
     for r in keep:
@@ -986,7 +986,7 @@ def _autopilot(agents: list[str], lang: str, max_units: int | None, poll_seconds
     log = lambda t: _autopilot_log(t, echo)                                    # noqa: E731
     run_id = _RUN.get()[1]
     # team interviews only consolidate written answers: nothing to ask, so they can run unattended
-    skip = set() if include_interviews or docs.interview_mode() == "team" else INTERVIEW_TYPES
+    skip = set() if include_interviews or services.current().workspace.interview_mode() == "team" else INTERVIEW_TYPES
     limited: dict[str, dt.datetime] = {}
     throttles: dict[str, int] = {}           # agent → server rate limits in a row: a short rest, not the quota's pause
     noted: set[str] = set()

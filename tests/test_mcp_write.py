@@ -19,7 +19,7 @@ def mcp(kit):
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(FLOW.replace("title: Checkout", "title: Checkout\nx-owner: human") if "mine" in rel else FLOW,
                      encoding="utf-8")
-    kit.docs.confirm([str(kit.root / "docs" / "flows" / "confirmed.md")], by="ana")
+    kit.services.doc_review.confirm([str(kit.root / "docs" / "flows" / "confirmed.md")], by="ana")
     return importlib.import_module("lib.mcp")
 
 
@@ -32,7 +32,7 @@ def test_a_draft_section_is_edited_in_place_and_stays_a_draft(kit, mcp):
     assert "applied" in out
     text = read(kit, "flows/draft.md")
     assert "retry twice on timeout" in text and "The `orders` table." in text and "## Steps" in text
-    assert next(r for r in kit.docs.collect() if r["path"] == "flows/draft.md")["trust"] == "draft"
+    assert next(r for r in kit.services.doc_status.collect() if r["path"] == "flows/draft.md")["trust"] == "draft"
 
 
 @pytest.mark.parametrize("rel", ["flows/confirmed.md", "flows/mine.md"])
@@ -80,9 +80,9 @@ def test_running_units_needs_an_opt_in(kit, mcp, monkeypatch):
     started = []
     monkeypatch.setattr(mcp, "_spawn_run", lambda uid: started.append(uid) or "r-1")
     assert "disabled" in mcp.run_node("discovery:api") and started == []
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["mcp"] = {"pipeline_control": True}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert "r-1" in mcp.run_node("discovery:api") and started == ["discovery:api"]
     assert "unknown unit" in mcp.run_node("nope")
 

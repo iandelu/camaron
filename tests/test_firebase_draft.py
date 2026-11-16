@@ -38,10 +38,10 @@ exports.vote = functions.https.onCall(async (data) => admin.firestore().collecti
 
 @pytest.fixture
 def firebase(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     for r in ws["repos"]:
         r["kind"] = {"worker": "mobileApp", "web": "webapp"}.get(r["name"], r["kind"])
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     admin, web = kit.ws / "worker", kit.ws / "web"
     (admin / "pubspec.yaml").write_text(PUBSPEC, encoding="utf-8")
     (admin / "lib").mkdir()

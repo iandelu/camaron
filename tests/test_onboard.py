@@ -144,8 +144,8 @@ def test_manifests(kit):
 def test_detect_repos_takes_a_workspace(kit, tmp_path):
     other = tmp_path / "other"
     make_repo(other / "solo", {"go.mod": "module solo\n"})
-    assert [r["name"] for r in kit.docs.detect_repos(other)] == ["solo"]
-    assert [r["name"] for r in kit.docs.detect_repos()] == ["api", "web", "worker"]     # no argument: the kit's workspace
+    assert [r["name"] for r in kit.services.repos.detect_repos(other)] == ["solo"]
+    assert [r["name"] for r in kit.services.repos.detect_repos()] == ["api", "web", "worker"]     # no argument: the kit's workspace
 
 
 # ---------- first-run state shared by the CLI and the app: name, start, steps ----------
@@ -227,8 +227,8 @@ def test_start_writes_what_the_cli_name_step_writes(kit, fake_wizard, tmp_path):
     ws = umbrella(tmp_path / "u")
     project = ws_yaml(kit.onboard.start(ws, "Mi Proyecto"))["project"]
     project.pop("kind")
-    fake_wizard(["Mi Proyecto"]).fr_name(kit.docs.workspace())
-    cli = kit.docs.workspace()["project"]
+    fake_wizard(["Mi Proyecto"]).fr_name(kit.services.workspace.workspace())
+    cli = kit.services.workspace.workspace()["project"]
     assert project == {k: cli[k] for k in ("name", "id", "canonical_language", "translations")}
 
 
@@ -249,7 +249,7 @@ def test_inspect_an_unreadable_folder_reads_as_no_repos(kit, tmp_path, monkeypat
     monkeypatch.setattr(kit.projects, "has_repos", denied)
     r = kit.onboard.inspect(tmp_path / "locked")
     assert (r["case"], r["repos"]) == ("empty", [])
-    monkeypatch.setattr(kit.docs, "detect_repos", denied)
+    monkeypatch.setattr(kit.services.repos, "detect_repos", denied)
     assert kit.onboard.inspect(tmp_path / "locked")["repos"] == []
 
 
@@ -313,9 +313,9 @@ def test_install_tools_reports_failures(kit, monkeypatch):
 
 
 def test_greenfield_without_repos_sets_up_and_plans(kit, monkeypatch):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"], ws["project"]["kind"] = [], "greenfield"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     monkeypatch.setattr(kit.services.setup, "setup", lambda ci=False, log=print, comps=None: True)
     assert kit.onboard.run_setup(lambda _: None) is True
     data = kit.plan.load()
@@ -331,9 +331,9 @@ def test_a_failed_setup_is_not_marked_done(kit, monkeypatch):
 
 
 def test_missing_repos_are_those_with_a_url_and_no_clone(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"].append({"name": "ghost", "url": "https://example.test/ghost.git", "branch": "main", "kind": "service"})
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert kit.onboard.missing_repos() == ["ghost"]
 
 
@@ -517,15 +517,15 @@ def test_git_init_refuses_home_and_a_root(kit):
 
 
 def test_an_existing_project_in_home_is_not_refused(kit):
-    docs = kit.home / "cam-docs"
-    (docs / ".camarones").mkdir(parents=True)
-    (docs / ".camarones" / "workspace.yaml").write_text("project:\n  name: mine\nrepos: []\n", encoding="utf-8")
+    cam_docs = kit.home / "cam-docs"
+    (cam_docs / ".camarones").mkdir(parents=True)
+    (cam_docs / ".camarones" / "workspace.yaml").write_text("project:\n  name: mine\nrepos: []\n", encoding="utf-8")
     r = kit.onboard.inspect(kit.home)
     assert (r["case"], r["warning"]) == ("project", "")
-    before = tree(docs)
-    assert kit.onboard.start(kit.home) == docs.resolve()
-    assert tree(docs) == before
-    assert any(Path(p["path"]).resolve() == docs.resolve() for p in kit.projects.load())
+    before = tree(cam_docs)
+    assert kit.onboard.start(kit.home) == cam_docs.resolve()
+    assert tree(cam_docs) == before
+    assert any(Path(p["path"]).resolve() == cam_docs.resolve() for p in kit.projects.load())
 
 
 def test_a_picked_cam_docs_of_a_real_project_means_its_parent(kit):

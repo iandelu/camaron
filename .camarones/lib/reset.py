@@ -19,8 +19,9 @@ from pathlib import Path
 from .common import CAM_DIR, CAM_LAYOUT, DOCS, ROOT, WORK, WS_FILE, load_json, out, rel_file, run as run_cmd
 from .core.locks import pid_alive
 from .core.paths import WIKI_LOCK
-from . import docs, plan
+from . import plan
 from .app import services
+from .domain.docs import frontmatter
 
 MODES = ("redo", "wipe")
 KEEP_TYPES = {"setup", "ci", "questionnaire", "answers", *plan.INTERVIEW_TYPES}   # stay done in both modes
@@ -52,7 +53,7 @@ def persons(f: Path) -> bool:
     """A page a person owns: `x-owner: human` or any `x-confirmed` (as `pages` reads it)."""
     from .pages import _persons
     try:
-        return bool(_persons(docs.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0]))
+        return bool(_persons(frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0]))
     except OSError:
         return True
 
@@ -62,7 +63,7 @@ def _template_copy(f: Path) -> bool:
     t = services.current().templates.TEMPLATES / f.relative_to(ROOT)
     try:
         return t.is_file() and f.read_text(encoding="utf-8") == services.current().templates.fill(t.read_text(encoding="utf-8"),
-                                                                         docs.workspace()["project"]["name"])
+                                                                         services.current().workspace.workspace()["project"]["name"])
     except (OSError, UnicodeDecodeError, ValueError):
         return False
 
@@ -90,8 +91,8 @@ def doomed() -> tuple[list[Path], list[Path]]:
                 (kept if _kept_page(f) else gone).append(f)
             elif f.suffix == ".c4":
                 gone.append(f)
-    for r in docs.repo_names():
-        w = docs.wiki_dir(r)
+    for r in services.current().workspace.repo_names():
+        w = services.current().docs.wiki_dir(r)
         if not w.is_dir():
             continue
         for f in sorted(w.rglob("*")):
@@ -173,7 +174,7 @@ def _delete(files: list[Path]) -> None:
         f.unlink(missing_ok=True)
     for d in sorted({p.parent for p in files}, key=lambda p: len(p.parts), reverse=True):
         while d not in (DOCS, WORK, ROOT / "wikis") and d.is_dir() and not any(d.iterdir()) \
-                and not any(d == docs.wiki_dir(r) for r in docs.repo_names()):      # a wiki folder: a repo links to it
+                and not any(d == services.current().docs.wiki_dir(r) for r in services.current().workspace.repo_names()):  # a wiki folder: a repo links to it
             d.rmdir()
             d = d.parent
 
@@ -204,8 +205,8 @@ def _regenerate(log) -> None:
         genblocks.refresh()
     except Exception as e:  # noqa: BLE001 — the reset is done; the pages from the code can be written later
         log(f"⚠ the pages from the code were not written ({e}): run `pages`")
-    docs.collect()
-    docs.llms()
+    services.current().doc_status.collect()
+    services.current().llms.llms()
 
 
 def run(mode: str, templates: bool = False, log=lambda _: None) -> dict:
@@ -237,7 +238,7 @@ def main(mode: str, dry_run: bool = False, yes: bool = False, templates: bool = 
     if why:
         print(why)
         return 1
-    name = docs.workspace()["project"]["name"]
+    name = services.current().workspace.workspace()["project"]["name"]
     what = {"redo": "redo: reopen every finished unit to review and update its pages",
             "wipe": "wipe: delete the generated docs and start the plan over"}[mode]
     print(f"Reset the docs of {name} — {what}\n")

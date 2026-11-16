@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from pathlib import PurePosixPath
 
 from .common import CACHE, GRAPHS
-from . import docs
+from .adapters.stores import workspace
 
 CACHE_DIR = CACHE / "codemap"
 FORMAT = 3
@@ -42,7 +42,7 @@ def graph_file(repo: str):
 
 
 def available() -> list[str]:
-    return [n for n in docs.repo_names() if graph_file(n).is_file()]
+    return [n for n in workspace.repo_names() if graph_file(n).is_file()]
 
 
 def _code_files(g: dict) -> dict[str, list[dict]]:

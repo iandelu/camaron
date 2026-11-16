@@ -9,7 +9,7 @@ def page(kit, rel, fm_type, body):
 
 
 def warns(kit):
-    return kit.quality.check_diagrams(kit.docs.collect())[1]
+    return kit.quality.check_diagrams(kit.services.doc_status.collect())[1]
 
 
 SEQ = "```mermaid\nsequenceDiagram\n  a->>b: hi\n```"
@@ -53,7 +53,7 @@ def test_working_notes_are_not_judged(kit):
 
 def test_check_reports_the_gaps_as_warnings_only(kit):
     page(kit, "flows/checkout.md", "business-flow", "Steps.")
-    errors, w = kit.docs.check()
+    errors, w = kit.services.doc_status.check()
     assert not any("sequenceDiagram" in e for e in errors)
     assert any("sequenceDiagram" in x for x in w)
 

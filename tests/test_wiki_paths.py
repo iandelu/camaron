@@ -28,12 +28,12 @@ def setup_wiki(kit):
 
 
 def rows_by_file(kit):
-    return {r["file"]: r for r in kit.docs.collect()}
+    return {r["file"]: r for r in kit.services.doc_status.collect()}
 
 
 def test_a_wiki_index_and_the_repo_page_have_different_paths(kit):
     setup_wiki(kit)
-    rows = kit.docs.collect()
+    rows = kit.services.doc_status.collect()
     paths = [r["path"] for r in rows]
     assert len(paths) == len(set(paths))
     by_file = {r["file"]: r for r in rows}
@@ -44,7 +44,7 @@ def test_a_wiki_index_and_the_repo_page_have_different_paths(kit):
 
 
 def broken(kit):
-    errors, _ = kit.quality.check_links(kit.docs.collect())
+    errors, _ = kit.quality.check_links(kit.services.doc_status.collect())
     return [e for e in errors if "broken link" in e]
 
 
@@ -71,7 +71,7 @@ def test_links_written_for_the_old_wiki_paths_keep_resolving(kit):
 
 def test_link_target_maps_a_resolved_link_to_a_page(kit):
     known = {"repos/api/index.md", "flows/orders.md", "wikis/api/index.md", "wikis/api/quickstart.md"}
-    t = kit.docs.link_target
+    t = kit.logical_paths.link_target
     assert t("docs/flows/orders.md", known) == "flows/orders.md"
     assert t("flows/orders.md", known) == "flows/orders.md"
     assert t("repos/api/quickstart.md", known) == "wikis/api/quickstart.md"   # old wiki path, no docs page there
@@ -82,7 +82,7 @@ def test_link_target_maps_a_resolved_link_to_a_page(kit):
 
 def test_a_page_is_found_by_its_old_wiki_path(kit):
     setup_wiki(kit)
-    find = kit.docs.find_page
+    find = kit.services.docs.find_page
     assert find("repos/api/quickstart.md").as_posix().endswith("wikis/api/quickstart.md")
     assert find("wikis/api/quickstart.md").as_posix().endswith("wikis/api/quickstart.md")
     assert find("docs/repos/api/index.md").as_posix().endswith("docs/repos/api/index.md")
@@ -106,7 +106,7 @@ def test_freshness_stamps_under_the_old_wiki_path_carry_over(kit):
     from lib.harness import freshness
     work = freshness.FILE
     work.parent.mkdir(parents=True, exist_ok=True)
-    sha = kit.docs.body_sha(kit.docs.split_fm(text)[1])                     # unchanged since its stamp
+    sha = kit.frontmatter.body_sha(kit.frontmatter.split_fm(text)[1])                     # unchanged since its stamp
     old = {"body_sha": sha, "at": "2026-01-01T00:00:00Z", "sources": {"api:pom.xml": freshness.fingerprint("api:pom.xml")},
            "flag": {"reason": "wrong port", "by": "agent", "at": "2026-01-02T00:00:00Z"}}
     work.write_text(json.dumps({"v": 1, "pages": {"repos/api/quickstart.md": old}}), encoding="utf-8")
@@ -126,9 +126,9 @@ def test_a_wiki_translation_at_its_old_path_is_still_read(kit):
     assert by_file["wikis/api/quickstart.md"]["i18n"]["es"] == "outdated"      # found, not "missing"
     assert by_file["wikis/api/index.md"]["i18n"]["es"] == "missing"            # that one is the repo page's
     assert by_file["docs/repos/api/index.md"]["i18n"]["es"] == "outdated"
-    tf = kit.docs.translation_file("wikis/api/quickstart.md", "es")
+    tf = kit.services.docs.translation_file("wikis/api/quickstart.md", "es")
     assert tf.as_posix().endswith("docs/i18n/es/repos/api/quickstart.md")
-    assert kit.docs.translation_file("wikis/api/index.md", "es").as_posix().endswith("docs/i18n/es/wikis/api/index.md")
+    assert kit.services.docs.translation_file("wikis/api/index.md", "es").as_posix().endswith("docs/i18n/es/wikis/api/index.md")
 
 
 def test_an_ai_draft_copy_under_the_old_wiki_path_is_kept(kit):
@@ -138,7 +138,7 @@ def test_an_ai_draft_copy_under_the_old_wiki_path_is_kept(kit):
     drafts.FILE.parent.mkdir(parents=True, exist_ok=True)
     ai = "# Quickstart\n\nThe AI's words.\n"
     text = (root / "wikis" / "api" / "quickstart.md").read_text(encoding="utf-8")
-    now = kit.docs.body_sha(kit.docs.split_fm(text)[1])                      # the page has not changed since
+    now = kit.frontmatter.body_sha(kit.frontmatter.split_fm(text)[1])                      # the page has not changed since
     drafts.FILE.write_text(json.dumps({"pages": {"repos/api/quickstart.md": {
         "sha": now, "body": ai, "unit": "repo-wiki:api", "at": "2026-01-01T00:00:00Z", "confirmations": []}}}),
         encoding="utf-8")

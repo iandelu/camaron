@@ -90,10 +90,10 @@ def test_unit_types_are_unchanged(kit):
 @pytest.mark.parametrize("mode", ["live", "team"])
 @pytest.mark.parametrize("repos", [[], ["api"], ["api", "web", "worker"]])
 def test_blueprint_is_unchanged_for_every_combination(kit, profile, mode, repos):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["profile"] = profile
-    kit.docs.save_workspace(ws)
-    kit.docs.set_interview_mode(mode)
+    kit.services.workspace.save_workspace(ws)
+    kit.services.workspace.set_interview_mode(mode)
     assert kit.plan.blueprint(repos) == legacy_blueprint(repos, profile, mode == "team")
 
 

@@ -81,7 +81,7 @@ def test_the_hooks_command(wired, hooks):
     env = {**os.environ, "CAMARONES_ROOT": str(wired.root)}
     out = subprocess.run([sys.executable, str(wired.kit_dir / "camarones.py"), "hooks", "on"], env=env,
                          capture_output=True, text=True, encoding="utf-8")
-    assert out.returncode == 0 and wired.docs.workspace()["hooks"]["method"] is True
+    assert out.returncode == 0 and wired.services.workspace.workspace()["hooks"]["method"] is True
     assert kit_hooks(wired)["Stop"]
 
 

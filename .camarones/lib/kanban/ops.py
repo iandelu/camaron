@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Sequence
 
 from ..core import yamlio
-from .. import docs
 from ..common import IS_MAC, IS_WIN, KIT, ROOT, out, run, which
 from ..harness.locks import FileLock
 from . import ARCHIVE, BACKLOG, BOARD, CONFIG, DRAFTS, LOCK, PREFIX, PRIORITIES, STATUSES, TASKS, TYPES
@@ -24,6 +23,7 @@ from .items import (Item, _as_list, checklist, default_dod, description, file_na
 from .items import add_criteria as append_criteria
 from .merge import driver_command
 from .state import dump_board, id_key, load_board, new_uid, next_id, place, stamp, stamp_time
+from ..app import services
 
 DRIVER = "camaron-board"
 ATTR_LINE = "backlog/board.yaml merge=camaron-board"
@@ -103,7 +103,7 @@ def ensure_driver() -> bool:
 
 
 def _managed_config() -> dict[str, object]:
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     lang = ws["project"].get("language") or "en"
     dod = list(default_dod(lang))
     for extra in (ws.get("board") or {}).get("definition_of_done") or []:
@@ -376,7 +376,7 @@ def add(type_: str, title: str, *, epic: str | None = None, parent: str | None =
 
 
 def docs_lang() -> str:
-    return str(docs.workspace()["project"].get("language") or "en")
+    return str(services.current().workspace.workspace()["project"].get("language") or "en")
 
 
 def _node(row: dict, archived: bool = False) -> graph.Node:

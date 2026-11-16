@@ -8,7 +8,6 @@ import json, sys
 from pathlib import Path
 
 from .common import CACHE, DOCS, KIT, ROOT, uv
-from . import docs
 from .app import services
 
 CAP = 1800                                        # characters the session start adds to the agent's context
@@ -18,7 +17,7 @@ TAG = '" hook '
 
 
 def enabled() -> bool:
-    return bool((docs.workspace().get("hooks") or {}).get("method"))
+    return bool((services.current().workspace.workspace().get("hooks") or {}).get("method"))
 
 
 def command(name: str) -> str:
@@ -48,9 +47,9 @@ def apply(st: dict) -> dict:
 
 
 def set_enabled(on: bool) -> None:
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     ws["hooks"] = {**(ws.get("hooks") or {}), "method": bool(on)}
-    docs.save_workspace(ws)
+    services.current().workspace.save_workspace(ws)
     services.current().setup.write_agent_config(services.current().components.components())
 
 
@@ -68,7 +67,7 @@ def session_start() -> str:
         last = handoff.read_text(encoding="utf-8").split("## Last session", 1)
         if len(last) > 1:
             parts.append("Last session:" + last[1].strip()[:700])
-    feedback = docs.pending_feedback()
+    feedback = services.current().docs.pending_feedback()
     if feedback:
         parts.append(f"{len(feedback)} review comment(s) wait in docs/.work/review-feedback.md (unit review-fixes).")
     return "\n".join(parts)[:CAP]
@@ -84,7 +83,7 @@ def post_edit(payload: dict) -> tuple[int, str]:
         rel = Path(path).resolve().relative_to(DOCS.resolve()).as_posix()
     except ValueError:
         return 0, ""
-    rows = [r for r in docs.collect() if r["path"] == rel]
+    rows = [r for r in services.current().doc_status.collect() if r["path"] == rel]
     if not rows:
         return 0, ""
     problems = []
@@ -106,7 +105,7 @@ def stop(payload: dict) -> str:
     marker = CACHE / "hooks" / f"stop-{sid or 'anon'}"
     if marker.exists():
         return ""
-    moved = {r: c["status"] for r, c in docs.changes().items() if c.get("status") != "up-to-date"}
+    moved = {r: c["status"] for r, c in services.current().doc_state.changes().items() if c.get("status") != "up-to-date"}
     if not moved:
         return ""
     marker.parent.mkdir(parents=True, exist_ok=True)

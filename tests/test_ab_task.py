@@ -66,9 +66,9 @@ def test_a_check_command_scores_each_variant(wired, ab):
 
 
 def test_tasks_respect_the_projects_switch(wired, ab):
-    ws = wired.docs.workspace()
+    ws = wired.services.workspace.workspace()
     ws["ab"] = {"enabled": False}
-    wired.docs.save_workspace(ws)
+    wired.services.workspace.save_workspace(ws)
     with pytest.raises(RuntimeError, match="turned off"):
         ab.run_task("x", "fake", echo=lambda _: None)
 
@@ -88,9 +88,9 @@ def test_sampling_is_off_by_default(wired, ab, monkeypatch):
 
 
 def test_sampling_needs_the_machine_to_opt_in_too(wired, ab, monkeypatch):
-    ws = wired.docs.workspace()
+    ws = wired.services.workspace.workspace()
     ws["ab"] = {"sampling": {"enabled": True, "rate": 0.1}}
-    wired.docs.save_workspace(ws)
+    wired.services.workspace.save_workspace(ws)
     assert sample(ab, monkeypatch) is False
     ab.set_machine_sampling(True)
     assert sample(ab, monkeypatch) is True and ab.samples()[0]["prompt"] == HOOK["prompt"]

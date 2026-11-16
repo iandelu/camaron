@@ -1,4 +1,4 @@
-"""The managed `.gitignore` block (docs.write_gitignore): kit checkouts and zips at the project root are ignored,
+"""The managed `.gitignore` block (write_gitignore, lib/adapters/stores/workspace.py): kit checkouts and zips at the project root are ignored,
 but a doc folder named after a repo that starts like the kit (`docs/repos/camarones-documenter/`) is not."""
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def test_an_old_block_is_replaced_by_anchored_kit_patterns(kit):
     (root / ".gitignore").write_text("my-own/\n\n" + OLD_BLOCK + "\n!keep-me/\n", encoding="utf-8")
     assert ignored(root, "docs/repos/camarones-documenter/brief.md")         # the bug, before the fix
 
-    kit.docs.write_gitignore()
+    kit.services.workspace.write_gitignore()
 
     text = (root / ".gitignore").read_text(encoding="utf-8")
     assert text.count("# >>> camarones repos >>>") == 1 and text.count("# <<< camarones repos <<<") == 1
@@ -50,7 +50,7 @@ def test_an_old_block_is_replaced_by_anchored_kit_patterns(kit):
 
 
 def test_rewriting_the_block_is_idempotent(kit):
-    kit.docs.write_gitignore()
+    kit.services.workspace.write_gitignore()
     first = (kit.root / ".gitignore").read_text(encoding="utf-8")
-    kit.docs.write_gitignore()
+    kit.services.workspace.write_gitignore()
     assert (kit.root / ".gitignore").read_text(encoding="utf-8") == first

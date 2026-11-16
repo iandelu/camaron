@@ -22,7 +22,9 @@ from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from .common import CACHE, load_json, save_json
+from .common import CACHE, DOCS, load_json, save_json
+from .domain.docs import frontmatter
+from .app import services
 
 MAX_REPORT_BYTES = 5_000_000
 REPORT_GLOBS = (("jacoco", "target/site/jacoco/jacoco.xml"), ("jacoco", "build/reports/jacoco/**/*.xml"),
@@ -169,13 +171,12 @@ def _evidence(cell: str) -> list[str]:
 def debt_items(repos: list[str]) -> dict[str, list[dict]]:
     """The items of the quality pages, per repo plus `_project` for those citing no known repo. A page that is missing
     or has no table adds nothing; an absent column reads as "" (impact as "unknown")."""
-    from . import docs                              # lazily: the coverage readers above need no project
     out: dict[str, list[dict]] = {**{r: [] for r in repos}, "_project": []}
-    pages = [(p, docs.DOCS / p) for p in DEBT_PAGES]
+    pages = [(p, DOCS / p) for p in DEBT_PAGES]
     pages = [(p, f) for p, f in pages if f.is_file()]
-    trust = {r["path"]: r["trust"] for r in docs.collect()} if pages else {}
+    trust = {r["path"]: r["trust"] for r in services.current().doc_status.collect()} if pages else {}
     for page, f in pages:
-        _, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        _, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         table = _first_table(body, "Items" if page.endswith("tech-debt.md") else None)
         if len(table) < 2:
             continue
@@ -268,8 +269,7 @@ def _context() -> dict:
 
 
 def _review() -> int:
-    from . import docs
-    return len(docs.review_queue())
+    return len(services.current().doc_review.review_queue())
 
 
 def _docs(now: str, names: list[str]) -> dict:
@@ -345,11 +345,11 @@ def _inventory() -> tuple[dict, list[dict]]:
 
 def build(log=print) -> dict:
     """Read every source, compute the areas, save the snapshot and return it."""
-    from . import docs, sonar
+    from . import sonar
     log("reading the machine…")
     machine = _guard(_machine, log)
-    ws = _guard(docs.workspace)
-    names = _guard(lambda: [r["name"] for r in docs.workspace()["repos"]])
+    ws = _guard(services.current().workspace.workspace)
+    names = _guard(lambda: [r["name"] for r in services.current().workspace.workspace()["repos"]])
     servers = sonar.Session(log)                # hosts that did not answer, so a dead server costs one timeout
     last = load() or {}                         # the last Sonar figures, kept for a repo whose read fails now
     last = last.get("repos") if isinstance(last.get("repos"), dict) else {}

@@ -171,9 +171,9 @@ def test_the_preview_is_the_docs_branch_as_a_static_portal(wired, pr, monkeypatc
 
 
 def test_the_label_is_configurable(kit, ci):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["ci"] = {"target": "self-hosted", "propose_label": "docs-please"}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     gh = yaml.safe_load(ci.render_propose("github"))
     assert "github.event.label.name == 'docs-please'" in gh["jobs"]["docs-propose"]["if"]
     assert "docs-please" in yaml.safe_load(ci.render_propose("gitlab"))["docs:propose"]["rules"][0]["if"]

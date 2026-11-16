@@ -58,7 +58,7 @@ def test_state_describes_a_first_run(app_server, kit):
     assert st["step"] == "repos"                                                      # nothing saved: the first listed
     assert {r["name"] for r in st["repos"]} == {"api", "web", "worker"}
     assert {r["name"] for r in st["found"]} == {"api", "web", "worker"}
-    assert st["name"] == kit.onboard.docs.workspace()["project"]["name"] and st["name"]   # the wizard's header
+    assert st["name"] == kit.services.workspace.workspace()["project"]["name"] and st["name"]   # the wizard's header
 
 
 def test_state_reads_old_position_files(app_server, kit):
@@ -85,9 +85,9 @@ def test_one_function_decides_the_mode_for_the_cli_and_the_app(kit):
 
 
 def test_greenfield_state_has_the_short_steps(app_server, kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["kind"] = "greenfield"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     st = call(f"{app_server}/api/app/onboard/state", token=TOKEN)[1]
     assert st["kind"] == "greenfield" and st["steps"] == ["repos", "tools", "setup", "intro"]
 
@@ -125,10 +125,10 @@ def test_repos_validation(app_server, kit):
     assert post(app_server, "repos", {})[0] == 400
     code, st = post(app_server, "repos", {"repos": [row]})
     assert code == 200 and st["repos"] == [{"name": "api", "url": row["url"], "branch": "main", "kind": "service"}]
-    assert [r["name"] for r in kit.docs.workspace()["repos"]] == ["api"]
-    ws = kit.docs.workspace()
+    assert [r["name"] for r in kit.services.workspace.workspace()["repos"]] == ["api"]
+    ws = kit.services.workspace.workspace()
     ws["project"]["kind"] = "greenfield"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     code, st = post(app_server, "repos", {"repos": []})
     assert code == 200 and st["repos"] == []
 
@@ -148,12 +148,12 @@ def test_a_repo_url_cannot_be_an_option(app_server):
 
 
 def test_repos_keep_what_the_wizard_already_knows(app_server, kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"][0]["stack"] = "Spring Boot"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     name = ws["repos"][0]["name"]
     post(app_server, "repos", {"repos": [{"name": name, "branch": "dev", "kind": "webapp"}]})
-    row = kit.docs.workspace()["repos"][0]
+    row = kit.services.workspace.workspace()["repos"][0]
     assert (row["stack"], row["branch"], row["kind"]) == ("Spring Boot", "dev", "webapp")
 
 

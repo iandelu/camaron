@@ -22,6 +22,8 @@ if "prompt " + first in text:                 # the first unit, the first time: 
     Path(pids).write_text(str(os.getpid()), encoding="utf-8")
     print('{"type": "assistant", "message": {"content": [{"type": "text", "text": "working"}]}}', flush=True)
     time.sleep(120)
+from lib import bootstrap
+bootstrap.build()                           # a process of its own builds its services first
 from lib import plan
 plan.set_status(first if first in text else text.split()[1], "done")
 """
@@ -31,6 +33,8 @@ import faulthandler, signal, sys
 if hasattr(signal, "SIGUSR1"):                # a pilot that outlives its Stop dumps its threads into its log
     faulthandler.register(signal.SIGUSR1, all_threads=True)
 sys.path.insert(0, {kit!r})
+from lib import bootstrap
+bootstrap.build()                           # a process of its own builds its services first
 from lib import plan
 from lib.adapters.runners import base
 from lib.adapters.runners.claude import Claude

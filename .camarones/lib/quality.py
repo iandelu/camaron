@@ -1,5 +1,5 @@
 """Quality gate beyond frontmatter/trust: internal links, Mermaid diagrams (mermaid-cli), secrets (gitleaks) and
-glossary terms. Checks take docs.collect() rows and return (errors, warns); a missing optional tool is one WARN."""
+glossary terms. Checks take doc_status.collect() rows and return (errors, warns); a missing optional tool is one WARN."""
 from __future__ import annotations
 
 import hashlib, os, re, sys, tempfile
@@ -7,7 +7,9 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from .common import ROOT, DOCS, CACHE, IS_WIN, run, which, load_json, save_json, rel_file
-from . import binaries, docs
+from . import binaries
+from .domain.docs import directives, frontmatter, logical_paths, page_outline
+from .app import services
 
 Issues = tuple[list[str], list[str]]
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -24,8 +26,8 @@ def pages(rows: list[dict]) -> list[tuple[str, Path, str]]:
     """(logical path, file, lang) for every published page: canonical docs + wikis, and each translation, which the
     portal shows under the canonical logical path (so its relative links resolve against that path too)."""
     out = [(r["path"], ROOT / r["file"], "") for r in rows]
-    for lang in docs.workspace()["project"].get("translations", []):
-        out += [(r["path"], f, lang) for r in rows if (f := docs.translation_file(r["path"], lang)).is_file()]
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
+        out += [(r["path"], f, lang) for r in rows if (f := services.current().docs.translation_file(r["path"], lang)).is_file()]
     return out
 
 
@@ -60,14 +62,14 @@ def resolve(base: str, href: str) -> str:
 # ---------- H1: internal links ----------
 def check_links(rows: list[dict], strict: bool = False) -> Issues:
     """Broken page links are errors; a `#anchor` the target page has no heading for is a WARN (ERROR with --strict).
-    Anchors resolve like the portal: docs.slug() of the heading. Translations are skipped for anchors."""
+    Anchors resolve like the portal: page_outline.slug() of the heading. Translations are skipped for anchors."""
     known = {r["path"]: ROOT / r["file"] for r in rows}
     slugs: dict[str, set[str]] = {}
 
     def anchors(path: str) -> set[str]:
         if path not in slugs:
-            body = docs.split_fm(known[path].read_text(encoding="utf-8", errors="replace"))[1]
-            slugs[path] = {h["slug"] for h in docs.headings(body)}
+            body = frontmatter.split_fm(known[path].read_text(encoding="utf-8", errors="replace"))[1]
+            slugs[path] = {h["slug"] for h in page_outline.headings(body)}
         return slugs[path]
     errors, warns = [], []
     for logical, f, lang in pages(rows):
@@ -78,11 +80,11 @@ def check_links(rows: list[dict], strict: bool = False) -> Issues:
                 target, _, anchor = unquote(href.split("?", 1)[0]).partition("#")
                 if target and not target.endswith(".md"):
                     continue
-                page = docs.link_target(resolve(logical, target), known) if target else logical
+                page = logical_paths.link_target(resolve(logical, target), known) if target else logical
                 if target and page not in known:
                     errors.append(f"{rel_file(f)}:{n}: broken link → {href}")
                 elif (anchor and anchor != "top" and not lang and page in known
-                      and docs.slug(anchor) not in anchors(page)):
+                      and page_outline.slug(anchor) not in anchors(page)):
                     warns.append(f"{rel_file(f)}:{n}: no heading for #{anchor} in {page}")
     return (errors + warns, []) if strict else (errors, warns)
 
@@ -151,7 +153,7 @@ def _gitleaks(args: list[str], cwd: Path | None = None) -> list[dict] | None:
 
 def scan_targets() -> list[Path]:
     """What gets committed and published: docs/ (incl. translations and working notes) and every repo wiki."""
-    return [d for d in [DOCS, *(docs.wiki_dir(n) for n in docs.repo_names())] if d.is_dir()]
+    return [d for d in [DOCS, *(services.current().docs.wiki_dir(n) for n in services.current().workspace.repo_names())] if d.is_dir()]
 
 
 def scan_dirs() -> list[dict] | None:
@@ -230,7 +232,7 @@ def glossary(f: Path) -> list[tuple[list[str], list[str]]]:
 
 def check_terms(rows: list[dict], strict: bool = False) -> Issues:
     by_lang = {"": glossary(DOCS / "domain" / "glossary.md")}
-    for lang in docs.workspace()["project"].get("translations", []):
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
         by_lang[lang] = glossary(DOCS / "i18n" / lang / "domain" / "glossary.md")
     if not any(by_lang.values()):
         return [], []
@@ -327,7 +329,7 @@ def skeletons() -> list[dict]:
             if f.name in seen or f.name == "README.md":
                 continue
             seen.add(f.name)
-            fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+            fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
             required = [_norm_heading(m.group(2)) for line in body.splitlines()
                         if (m := HEADING.match(line)) and len(m.group(1)) == 2 and not m.group(3)]
             out.append({"name": f.stem, "type": fm.get("type"), "for": fm.get("x-skeleton-for"), "required": required})
@@ -341,7 +343,7 @@ def skeleton_for(path: str, page_type: str, known: list[dict]) -> dict | None:
 
 
 def structure_issues(path: str, text: str, known: list[dict]) -> list[str]:
-    fm, body = docs.split_fm(text)
+    fm, body = frontmatter.split_fm(text)
     kind, out = fm.get("type"), []
     if kind not in TYPES:
         out.append(f"type '{kind}' is not one of {', '.join(TYPES)}" if kind else "no type in the frontmatter")
@@ -429,7 +431,7 @@ def check_rules(rows: list[dict], strict: bool = False) -> Issues:
         if r.get("space", "docs") != "docs":
             continue
         f = ROOT / r["file"]
-        for rule in docs.rules(f.read_text(encoding="utf-8", errors="replace")):
+        for rule in directives.rules(f.read_text(encoding="utf-8", errors="replace")):
             rid, where = rule["id"], rel_file(f)
             if rid in seen:
                 errors.append(f"{where}: rule {rid} is already defined in {seen[rid]}")

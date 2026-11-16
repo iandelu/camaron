@@ -12,29 +12,29 @@ def unit(data, uid):
 
 # ---------- plan ----------
 def test_wiki_units_only_for_the_chosen_repos(kit):
-    plan, docs = kit.plan, kit.docs
+    plan, store = kit.plan, kit.services.workspace
     data = plan.sync()
     assert unit(data, "repo-wiki:api")["status"] == "dropped"
     assert unit(data, "repo-wiki:api")["notes"] == plan.NO_WIKI
-    docs.set_wiki_repos(["api"])
+    store.set_wiki_repos(["api"])
     data = plan.sync()
     assert unit(data, "repo-wiki:api")["status"] == "todo" and unit(data, "repo-wiki:api")["notes"] == ""
     assert unit(data, "repo-wiki:web")["status"] == "dropped"
 
 
 def test_no_wiki_units_without_the_openwiki_component(kit):
-    kit.docs.set_wiki_repos(["api"])
+    kit.services.workspace.set_wiki_repos(["api"])
     kit.services.components.set_components(["likec4", "agents"])
     assert unit(kit.plan.sync(), "repo-wiki:api")["notes"] == "OpenWiki not selected"
 
 
 def test_sync_keeps_progress_and_drops_removed_repos(kit):
-    plan, docs = kit.plan, kit.docs
+    plan, store = kit.plan, kit.services.workspace
     plan.sync()
     plan.set_status("discovery:web", "done")
-    ws = docs.workspace()
+    ws = store.workspace()
     ws["repos"] = [r for r in ws["repos"] if r["name"] != "worker"]
-    docs.save_workspace(ws)
+    store.save_workspace(ws)
     data = plan.sync()
     assert unit(data, "discovery:web")["status"] == "done"
     assert unit(data, "discovery:worker")["status"] == "dropped"
@@ -122,7 +122,7 @@ def test_brief_is_not_a_page(wired):
     assert wired.services.wiki.wiki_pages("web") == [] and wired.services.wiki.wiki_brief_ready("web")
     (wiki / "overview.md").write_text("# overview", encoding="utf-8")
     assert [p.name for p in wired.services.wiki.wiki_pages("web")] == ["overview.md"]
-    assert "repos/web/INSTRUCTIONS.md" not in [l for l, _ in wired.docs.iter_docs()]
+    assert "repos/web/INSTRUCTIONS.md" not in [l for l, _ in wired.services.docs.iter_docs()]
 
 
 def test_one_wiki_run_at_a_time(wired, monkeypatch):
@@ -159,7 +159,7 @@ def engine(wired, monkeypatch):
     monkeypatch.setattr(wk, "stream", stream)
     monkeypatch.setattr(wk, "wiki_graph", lambda *a, **kw: True)
     monkeypatch.setattr(wired.services.share, "checkpoint_commit", lambda *a, **kw: True)
-    wired.docs.set_wiki_repos(["api"])
+    wired.services.workspace.set_wiki_repos(["api"])
     wired.plan.sync()
     return box
 
@@ -205,7 +205,7 @@ def test_an_unstamped_wiki_is_old_warned_and_expanded_on_update(wired, engine, m
     (wiki / "index.md").write_text("# api\n", encoding="utf-8")          # written by a kit before scope stamps
     assert wk.wiki_scope("api") == 1
     assert {w["repo"]: w for w in wk.wikis()}["api"]["old"]
-    assert any("wikis/api" in w and "older" in w for w in wired.docs.check()[1])
+    assert any("wikis/api" in w and "older" in w for w in wired.services.doc_status.check()[1])
     assert "Expand" in wk.wiki_prompt("api", "update")
     prompts = []
     real = wk.stream
@@ -213,7 +213,7 @@ def test_an_unstamped_wiki_is_old_warned_and_expanded_on_update(wired, engine, m
     assert wk.openwiki_generate("api", log=lambda _: None) is True
     assert "Expand" in prompts[0]
     assert not {w["repo"]: w for w in wk.wikis()}["api"]["old"]
-    assert not any("wikis/api" in w and "older" in w for w in wired.docs.check()[1])
+    assert not any("wikis/api" in w and "older" in w for w in wired.services.doc_status.check()[1])
 
 
 def test_openwiki_own_engine_counts_as_complete_only_with_a_coverage_brief(wired, engine, monkeypatch):

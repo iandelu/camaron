@@ -5,7 +5,8 @@ from __future__ import annotations
 import datetime as dt
 
 from .common import DOCS, rel_file
-from . import docs
+from .domain.docs import frontmatter
+from .app import services
 
 LOGICAL = "overview/removed.md"
 PAGE = DOCS / LOGICAL
@@ -65,7 +66,7 @@ def _write(f, lang: str, row: str, extra: dict) -> None:
     else:
         fm = {"type": "overview", "title": page["title"], "description": page["description"], "tags": ["decisions"],
               "x-owner": "ai", **extra}
-        text = docs.join_fm(fm, page["body"].format(table=page["head"] + row))
+        text = frontmatter.join_fm(fm, page["body"].format(table=page["head"] + row))
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(text, encoding="utf-8", newline="\n")
 
@@ -78,19 +79,19 @@ def add(what: str, why: str, decision: str = "", when: str | None = None) -> str
         link = f"[{target.rsplit('/', 1)[-1].removesuffix('.md')}](../{target})"
     row = f"| {_cell(what)} | {when} | {_cell(why)} | {link} |\n"
     _write(PAGE, "en", row, {})
-    _, body = docs.split_fm(PAGE.read_text(encoding="utf-8"))
-    for lang in docs.workspace()["project"].get("translations", []):
+    _, body = frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
         tf = DOCS / "i18n" / lang / LOGICAL
         if lang not in PAGES or (tf.exists() and not _ours(tf)):
             continue
         _write(tf, lang, row, {})
-        fm, tbody = docs.split_fm(tf.read_text(encoding="utf-8"))
-        fm["x-translation-of"] = {"path": LOGICAL, "lang": lang, "body_sha": docs.body_sha(body)}
-        tf.write_text(docs.join_fm(fm, tbody), encoding="utf-8", newline="\n")
+        fm, tbody = frontmatter.split_fm(tf.read_text(encoding="utf-8"))
+        fm["x-translation-of"] = {"path": LOGICAL, "lang": lang, "body_sha": frontmatter.body_sha(body)}
+        tf.write_text(frontmatter.join_fm(fm, tbody), encoding="utf-8", newline="\n")
     return rel_file(PAGE)
 
 
 def _ours(f) -> bool:
     """A translation someone rewrote by hand is theirs: the kit stops touching it."""
-    fm, _ = docs.split_fm(f.read_text(encoding="utf-8"))
+    fm, _ = frontmatter.split_fm(f.read_text(encoding="utf-8"))
     return fm.get("x-owner") != "human" and not fm.get("x-confirmed")

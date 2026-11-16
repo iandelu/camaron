@@ -15,27 +15,27 @@ def write(kit, rel: str, text: str):
 
 
 def test_unquoted_colon_in_a_value_is_read(kit):
-    fm, body = kit.docs.split_fm(GLOSSARY)
+    fm, body = kit.frontmatter.split_fm(GLOSSARY)
     assert fm["description"] == "Lenguaje ubicuo de chub: término, definición, nombre en el código."
     assert fm["tags"] == ["domain", "glossary"] and fm["x-sources"] == ["api:pom.xml"]
     assert body == "# Glosario\n"
 
 
 def test_broken_frontmatter_never_leaks_into_the_body(kit):
-    fm, body = kit.docs.split_fm("---\ntitle: [unclosed\n  - : :\n---\n# Doc\n")
+    fm, body = kit.frontmatter.split_fm("---\ntitle: [unclosed\n  - : :\n---\n# Doc\n")
     assert fm == {} and body == "# Doc\n"
 
 
 def test_collect_survives_a_broken_translation(kit):
     write(kit, "domain/glossary.md", "---\ntitle: Glossary\n---\n# Glossary\n")
     write(kit, "i18n/es/domain/glossary.md", "---\ntitle: [unclosed\n  - : :\n---\n# Glosario\n")
-    rows = {r["path"]: r for r in kit.docs.collect()}
+    rows = {r["path"]: r for r in kit.services.doc_status.collect()}
     assert rows["domain/glossary.md"]["i18n"]["es"] == "outdated"
 
 
 def test_check_reports_unreadable_frontmatter(kit):
     write(kit, "broken.md", "---\ntitle: [unclosed\n  - : :\n---\n# Broken\n")
-    errors, _ = kit.docs.check()
+    errors, _ = kit.services.doc_status.check()
     assert any("broken.md" in e and "invalid frontmatter" in e for e in errors)
 
 
@@ -52,7 +52,7 @@ def windows_newlines(monkeypatch):
 def test_confirming_a_page_writes_unix_line_endings_on_every_os(kit, monkeypatch):
     f = write(kit, "domain/glossary.md", GLOSSARY)
     windows_newlines(monkeypatch)
-    kit.docs.confirm([str(f)], "Test")
+    kit.services.doc_review.confirm([str(f)], "Test")
     raw = f.read_bytes()
     assert b"\r\n" not in raw and b"x-confirmed:" in raw
 
@@ -61,6 +61,6 @@ def test_marking_a_translation_writes_unix_line_endings_on_every_os(kit, monkeyp
     write(kit, "domain/glossary.md", GLOSSARY)
     f = write(kit, "i18n/es/domain/glossary.md", "---\ntitle: Glosario\n---\n# Glosario\n")
     windows_newlines(monkeypatch)
-    kit.docs.translated([str(f)])
+    kit.services.translations.translated([str(f)])
     raw = f.read_bytes()
     assert b"\r\n" not in raw and b"x-translation-of:" in raw

@@ -180,9 +180,9 @@ def test_legacy_graphify_traces_are_deleted_not_moved(un, before):
 
 def test_a_repo_dropped_from_workspace_yaml_is_cleaned_too(un, before):
     kit = un
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"] = [r for r in ws["repos"] if r["name"] != "web"]
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     run(kit, backup=False)
     assert snapshot(kit.ws / "web") == before["web"]
 

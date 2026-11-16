@@ -34,10 +34,10 @@ def test_xid_prefix_by_folder(wired):
 
 
 def test_confirmed_page_stays_confirmed(wired):
-    from lib import docs
+    from lib.domain.docs import frontmatter, trust_levels
     from lib.kanban import xid
     f = page(wired, "flows/payments.md", PAYMENTS)
-    docs.confirm(["docs/flows/payments.md"], "ana")
+    wired.services.doc_review.confirm(["docs/flows/payments.md"], "ana")
     # confirm re-dumps the frontmatter (and, on Windows, writes CRLF); a person then adds a comment line
     lines = raw(f).splitlines()
     lines.insert(lines.index("title: Payments") + 1, "# human note")
@@ -45,12 +45,12 @@ def test_confirmed_page_stays_confirmed(wired):
     before = raw(f)
     assert "# human note" in before
     new = xid.ensure_xid("flows/payments.md")
-    fm, body, _ = docs.parse_fm(raw(f))
-    assert docs.trust_of(fm, docs.body_sha(body)) == "confirmed"
+    fm, body, _ = frontmatter.parse_fm(raw(f))
+    assert trust_levels.trust_of(fm, frontmatter.body_sha(body)) == "confirmed"
     assert fm["x-id"] == new
     kept = [l for l in before.split("---\n")[1].splitlines()]
     assert [l for l in raw(f).split("---\n")[1].splitlines() if l != f"x-id: {new}"] == kept
-    assert docs.parse_fm(before)[1] == body
+    assert frontmatter.parse_fm(before)[1] == body
 
 
 def test_page_without_frontmatter_gets_one(wired):
@@ -156,11 +156,10 @@ def test_add_and_link_resolve_refs(board, wired):
 
 
 def test_list_filter_docs_state(board, wired, monkeypatch):
-    from lib import docs
     from lib.harness import freshness
     page(wired, "flows/payments.md", PAYMENTS)
     page(wired, "flows/refunds.md", "---\ntitle: Refunds\n---\n# Refunds\n")
-    docs.confirm(["docs/flows/refunds.md"], "ana")
+    wired.services.doc_review.confirm(["docs/flows/refunds.md"], "ana")
     board.add("story", "Draft link", docs=["flows/payments.md#retries"])
     board.add("story", "Confirmed link", docs=["flows/refunds.md"])
     board.add("story", "No link")
@@ -279,12 +278,11 @@ def test_scalar_reference_fields_are_one_entry(board, wired):
 
 def snapshot_files(wired):
     import subprocess
-    from lib import docs
     from lib.harness import freshness
     status = subprocess.run(["git", "status", "--porcelain", "--ignored"], cwd=wired.root, capture_output=True,
                             text=True, encoding="utf-8").stdout
     one = lambda p: p.read_bytes() if p.exists() else None   # noqa: E731
-    return status, one(docs.STATUS_FILE), one(freshness.FILE)
+    return status, one(wired.services.doc_state.STATUS_FILE), one(freshness.FILE)
 
 
 def test_reads_do_not_write_tracked_files(board, wired):

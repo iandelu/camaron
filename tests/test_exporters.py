@@ -46,7 +46,7 @@ def ex(kit):
     f = kit.root / "docs" / "flows" / "checkout.md"
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(FLOW, encoding="utf-8")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     return importlib.import_module("lib.exporters")
 
 

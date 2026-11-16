@@ -9,7 +9,7 @@ import json, re, shutil
 from pathlib import Path
 
 from .common import DOCS, CACHE, run, which, repo_dir
-from . import docs
+from .adapters.stores import workspace
 
 SKIP_DIRS = {".git", "node_modules", "target", "build", "dist", ".gradle", ".idea", ".venv", "venv", "__pycache__",
              "graphify-out", "openwiki", ".dart_tool", ".next", "coverage", ".claude", ".codex", ".agents", "vendor"}
@@ -162,7 +162,7 @@ def _split(blob: str, prefix: str) -> tuple[str, str]:
 def scan() -> dict:
     """Returns {repos: {name: {...}}, dbs: {key: {...}}, brokers: set, idps: set, edges: [...], sources: set}; sources
     are the `repo:path` files the stack and the relations were read from, for the first-look page's x-sources."""
-    ws = docs.workspace()
+    ws = workspace.workspace()
     names = [r["name"] for r in ws["repos"] if repo_dir(r["name"]).is_dir()]
     kinds = {r["name"]: r.get("kind", "service") for r in ws["repos"]}
     fixed = {r["name"]: r["stack"] for r in ws["repos"] if r.get("stack")}    # stack confirmed by a human or an agent
@@ -307,7 +307,7 @@ def render_c4(model: dict, project: str) -> dict[str, str]:
 
 def draft(log=print) -> dict:
     """Scan, write the draft to .camarones/.cache/firstlook, validate and (if LikeC4 is installed) build a one-file viewer."""
-    project = docs.workspace()["project"]["name"]
+    project = workspace.workspace()["project"]["name"]
     log("scanning repos (stack, databases, brokers, HTTP calls)…")
     model = scan()
     log(f"✔ {len(model['repos'])} repos, {len(model['dbs'])} datastores, {len(model['brokers'])} brokers, "

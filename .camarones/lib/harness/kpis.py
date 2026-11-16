@@ -11,6 +11,7 @@ from typing import Callable
 from ..common import CACHE, WORK, load_json, retry_busy
 from . import runs
 from .locks import FileLock
+from ..app import services
 
 DIR = WORK / "kpis"
 LOCK = CACHE / "locks" / "kpis.lock"
@@ -111,14 +112,13 @@ def _team_runs() -> dict[str, dict]:
 
 
 def coverage(run_check: bool = True) -> dict:
-    from .. import docs
     from ..common import DOCS
-    repos = docs.repo_names()
+    repos = services.current().workspace.repo_names()
     flows = [f for f in (DOCS / "flows").glob("*.md") if f.stem != "index"] if (DOCS / "flows").is_dir() else []
     arch = DOCS / "architecture"
     errors = warnings = None
     if run_check:
-        e, w = docs.check()
+        e, w = services.current().doc_status.check()
         errors, warnings = len(e), len(w)
     return {"repos": len(repos), "repos_with_brief": sum(1 for r in repos if (DOCS / "repos" / r / "brief.md").exists()),
             "flows": len(flows), "c4_files": len(list(arch.rglob("*.c4"))) if arch.is_dir() else 0,
@@ -160,12 +160,12 @@ def report(months: int = 3, today: date | None = None, run_check: bool = True) -
 def dashboard(months: int = 6, today: date | None = None) -> dict:
     """Everything the portal's KPIs tab shows, in one call: the CLI's `kpis` and `stats`, plus coverage per repo,
     freshness, the C4 model's confirmed share and this machine's questions nobody found an answer to."""
-    from .. import c4edit, docs, usage
+    from .. import c4edit, usage
     from . import freshness
     r = report(months=months, today=today, run_check=False)
-    repos = docs.repo_names()
+    repos = services.current().workspace.repo_names()
     by = {n: {"repo": n, "pages": 0, "confirmed": 0, "draft": 0, "needsReconfirm": 0} for n in [*repos, "(project)"]}
-    for row in docs.collect():
+    for row in services.current().doc_status.collect():
         owner = next((n for n in repos if row["path"].startswith((f"repos/{n}/", f"wikis/{n}/"))), "(project)")
         key = {"confirmed": "confirmed", "draft": "draft", "needs-reconfirm": "needsReconfirm"}.get(row.get("trust"))
         by[owner]["pages"] += 1

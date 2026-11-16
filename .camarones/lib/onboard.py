@@ -1,6 +1,6 @@
 """Onboarding: what a folder picked in the desktop app is, before any project exists, and the first-run state the CLI
 wizard and the app share (step lists, position in `firstrun.json`, the name step, `start`). `inspect` reads the disk
-(and `git remote`/`rev-parse` through docs.detect_repos) and never writes; it must work on any folder, so it takes
+(and `git remote`/`rev-parse` through adapters/git/repos.py detect_repos) and never writes; it must work on any folder, so it takes
 everything from its argument and none from this process's project globals. Never imports `wizard` at module level."""
 from __future__ import annotations
 
@@ -12,17 +12,16 @@ from typing import Callable
 import yaml
 
 from .core import yamlio
-from .common import (CAM_DIR, CAM_LAYOUT, IS_WIN, VERSIONS, cli_cmd, ensure_path, find_project_marker, load_json,
+from .common import (CAM_DIR, CAM_LAYOUT, DOCS, IS_WIN, VERSIONS, cli_cmd, ensure_path, find_project_marker, load_json,
                      repo_dir, run, save_json, ws_rel)
 from .harness.ctx import Ctx
-from . import docs, plan, projects
+from . import plan, projects
 from .app import services
 
 STEPS = ("name", "repos", "tools", "setup", "stack", "arch", "intro")   # first-run steps, saved by id
 LEGACY_STEPS = ("name", "repos", "tools", "setup", "arch", "intro")     # firstrun.json before 3.3 kept only the index
 JOIN_STEPS = ("tools", "setup", "intro")   # joining a team's cam-docs: the rest is shared and already decided
 GREENFIELD_STEPS = ("name", "repos", "tools", "setup", "intro")   # nothing to read yet: no stack scan, no C4 draft
-WS_HEADER = "# Camarón workspace: which repos form this project. Edit freely, then run sync.\n"
 
 # a file that says "there is code here"; *.csproj is matched by suffix (its name is the project's)
 MANIFESTS = ("pom.xml", "build.gradle", "build.gradle.kts", "package.json", "pyproject.toml", "go.mod", "Cargo.toml",
@@ -123,7 +122,7 @@ def _has_repos(f: Path) -> bool:
 
 def inspect(folder: Path) -> dict:
     """What `folder` is, first match wins: project · repo · umbrella · code · empty. Returns `case`, `kind`,
-    `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (docs.detect_repos
+    `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (detect_repos
     rows), `siblings` (repo case: the other repos next to it) and `warning`: `home` when the workspace is the user's home or a
     filesystem root and no project is there yet (wins over the rest), else `no-git` for code without a repository. A picked `cam-docs` folder
     is read as the workspace it belongs to, and a folder inside a git repository as that repository. Code with a manifest
@@ -152,7 +151,7 @@ def inspect(folder: Path) -> dict:
     if case != "project" and is_home_or_root(workspace):     # a project already there keeps opening (AGENTS 2.3)
         warning = "home"
     try:
-        repos = docs.detect_repos(workspace) if workspace.is_dir() else []
+        repos = services.current().repos.detect_repos(workspace) if workspace.is_dir() else []
     except OSError:                         # unreadable folder: no repos to show, not a crash
         repos = []
     if case == "repo" or (case == "code" and workspace != f):        # code at the top: the repo it will be
@@ -163,12 +162,6 @@ def inspect(folder: Path) -> dict:
 
 
 # ---------- first-run state: one implementation for the CLI wizard and the app ----------
-def write_workspace(ws_file: Path, ws: dict) -> None:
-    ws_file.parent.mkdir(parents=True, exist_ok=True)   # global install: .camarones/ may not exist yet
-    ws_file.write_text(WS_HEADER + yaml.safe_dump(ws, sort_keys=False, allow_unicode=True), encoding="utf-8",
-                       newline="\n")
-
-
 def name_project(ws: dict, name: str, fallback: str) -> dict:
     """The name step's whole effect on `ws`: name, id (a slug of it), canonical language and translations defaults."""
     p = ws.setdefault("project", {})
@@ -233,12 +226,12 @@ def state() -> dict:
     from .common import ROOT
     saved = load_json(firstrun_file(ROOT), {})
     m = mode(saved)
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     kind = kind_of(ws)
     ids = [s for s in steps("new" if m == "done" else m, kind) if s != "name"]
     step = resume_id(saved)
     try:
-        found = docs.detect_repos()
+        found = services.current().repos.detect_repos()
     except OSError:
         found = []
     return {"name": ws["project"].get("name") or "", "mode": m, "kind": kind, "steps": ids,
@@ -275,7 +268,7 @@ def start(folder: Path, name: str | None = None) -> Path:
     root = projects.adopt(Path(info["workspace"]), label)        # registers it too
     ws = name_project({"project": {}, "repos": info["repos"]}, label, info["name"])
     ws["project"]["kind"] = info["kind"]
-    write_workspace(Ctx.for_root(root).ws_file, ws)             # this process's module globals point at another project
+    services.current().workspace.write_workspace(Ctx.for_root(root).ws_file, ws)  # this process's module globals point at another project
     save_position(root, "repos", "new")
     return root
 
@@ -368,7 +361,7 @@ def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
     cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done."""
     if cancelled and cancelled():
         return False
-    services.current().templates.init_templates(docs.workspace()["project"]["name"], log=lambda _: None)   # `log` counts setup's own steps
+    services.current().templates.init_templates(services.current().workspace.workspace()["project"]["name"], log=lambda _: None)  # `log` counts setup's own steps
     try:
         ok = services.current().setup.setup(log=log)
     finally:
@@ -383,7 +376,7 @@ def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
 
 def missing_repos() -> list[str]:
     """Repos the workspace lists with a URL and no clone on this machine yet."""
-    return [r["name"] for r in docs.workspace()["repos"] if r.get("url") and not (repo_dir(r["name"]) / ".git").exists()]
+    return [r["name"] for r in services.current().workspace.workspace()["repos"] if r.get("url") and not (repo_dir(r["name"]) / ".git").exists()]
 
 
 # ---------- architecture (C4) ----------
@@ -399,7 +392,7 @@ def arch_prompt(lang: str) -> str:
               if CAM_LAYOUT else "")
     code = ("`graphify query` in the repos, " if "graphify" in services.current().components.components() else "")
     first_look = (f" Update `{arch}/first-look.md` to match."            # an old-layout project's page
-                  if (docs.DOCS / "architecture" / "first-look.md").exists() else "")
+                  if (DOCS / "architecture" / "first-look.md").exists() else "")
     return f"""Camarones session — improve the first-look architecture draft.
 {layout}
 `{arch}/model.c4` + `views.c4` hold the architecture draft; it started from a static scan (no AI) that guessed repos,
@@ -448,7 +441,7 @@ def set_repos(rows: list) -> dict:
     least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate`."""
     if not isinstance(rows, list):
         raise ValueError("repos")
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     old = {r["name"]: r for r in ws["repos"]}
     out, seen = [], set()
     for r in rows:
@@ -468,7 +461,7 @@ def set_repos(rows: list) -> dict:
     if not out and kind_of(ws) == "legacy":
         raise ValueError("repos")
     ws["repos"] = out
-    docs.save_workspace(ws)
+    services.current().workspace.save_workspace(ws)
     return state()
 
 
@@ -543,7 +536,7 @@ def arch_save(overwrite: bool = False) -> dict:
     draft = last_draft()
     if not draft:
         raise ValueError("draft")
-    if (docs.DOCS / "architecture" / "model.c4").exists() and not overwrite:
+    if (DOCS / "architecture" / "model.c4").exists() and not overwrite:
         return {"exists": True}
     return {"written": quickarch.save(draft, overwrite=overwrite, page=pages.layout() == "old"), "exists": False}
 
@@ -552,5 +545,5 @@ def done() -> dict:
     """Close the first run and checkpoint what it wrote."""
     from .common import ROOT
     m = mode(load_json(firstrun_file(ROOT), {}))
-    finish(ROOT, len(steps("new" if m == "done" else m, kind_of(docs.workspace()))))
+    finish(ROOT, len(steps("new" if m == "done" else m, kind_of(services.current().workspace.workspace()))))
     return {"committed": bool(services.current().share.checkpoint_commit("first setup"))}

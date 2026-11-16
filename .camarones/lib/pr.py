@@ -7,8 +7,8 @@ import json, os
 import urllib.error, urllib.request
 
 from .common import repo_dir, run
-from . import docs
 from .harness import freshness
+from .app import services
 
 MARKER = "<!-- camaron:docs-fresh -->"
 
@@ -64,7 +64,7 @@ def impact(repo: str, base: str | None = None, files: list[str] | None = None, h
     files = sorted(set(files)) if files is not None else changed_files(repo, base or "main", head or "HEAD")
     at_head = _reader_at(head) if head else None
     touched = set(files)
-    rows = {r["path"]: r for r in docs.collect()}
+    rows = {r["path"]: r for r in services.current().doc_status.collect()}
     pages_now = freshness._pages()
     freshness.stamp_all(pages_now)                  # pages never fingerprinted get their baseline, as `fresh` does
     data = freshness._load()["pages"]

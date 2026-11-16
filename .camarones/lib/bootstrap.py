@@ -95,6 +95,56 @@ def _export_site() -> object:
     return export_site
 
 
+def _workspace() -> object:
+    from lib.adapters.stores import workspace
+    return workspace
+
+
+def _repos() -> object:
+    from lib.adapters.git import repos
+    return repos
+
+
+def _doc_state() -> object:
+    from lib.adapters.stores import doc_state
+    return doc_state
+
+
+def _docs() -> object:
+    from lib.adapters.stores import doc_store
+    return doc_store
+
+
+def _vendor() -> object:
+    from lib.adapters import npm_vendor
+    return npm_vendor
+
+
+def _doc_status() -> object:
+    from lib.app import doc_status
+    return doc_status
+
+
+def _llms() -> object:
+    from lib.app import llms
+    return llms
+
+
+def _doc_review() -> object:
+    from lib.app import doc_review
+    return doc_review
+
+
+def _translations() -> object:
+    from lib.app import translations
+    return translations
+
+
+def _search() -> object:
+    from lib.app import search
+    return search
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -113,6 +163,16 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "wiki": _wiki,
     "portal": _portal,
     "export_site": _export_site,
+    "workspace": _workspace,
+    "repos": _repos,
+    "doc_state": _doc_state,
+    "docs": _docs,
+    "vendor": _vendor,
+    "doc_status": _doc_status,
+    "llms": _llms,
+    "doc_review": _doc_review,
+    "translations": _translations,
+    "search": _search,
 }
 
 

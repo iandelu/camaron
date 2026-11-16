@@ -32,7 +32,7 @@ def test_each_card_says_what_a_click_will_do(wired, monkeypatch):
     monkeypatch.setattr(wiki, "wiki_engines", lambda: ["claude"])
     r = row(wired, "api")
     assert r["chosen"] is False and r["brief"] is None and r["canGenerate"] is True
-    wired.docs.set_wiki_repos(["api"])
+    wired.services.workspace.set_wiki_repos(["api"])
     wiki.starter_brief("api")
     assert row(wired, "api")["canGenerate"] is True and row(wired, "api")["brief"] == "starter"
     monkeypatch.setattr(wiki, "wiki_engines", lambda: [])
@@ -46,7 +46,7 @@ def test_each_card_says_what_a_click_will_do(wired, monkeypatch):
 ])
 def test_without_an_engine_the_exact_fix(wired, monkeypatch, comps, installed, fix):
     wiki = wired.services.wiki
-    ws = wired.docs.workspace(); ws["project"]["components"] = comps; wired.docs.save_workspace(ws)
+    ws = wired.services.workspace.workspace(); ws["project"]["components"] = comps; wired.services.workspace.save_workspace(ws)
     monkeypatch.setattr(wired.services.toolchain, "openwiki_installed", lambda: installed)
     monkeypatch.setattr(wired.services.wiki_engine, "openwiki_credentials", lambda: False)
     monkeypatch.setattr(wiki, "which", lambda name: None)
@@ -120,7 +120,7 @@ def test_a_shim_with_no_package_beside_it_still_asks_npm(wired, tmp_path, monkey
 
 
 def test_the_portal_chooses_the_repo_writes_the_starter_brief_and_generates(wired, engine):  # noqa: F811
-    wired.docs.set_wiki_repos([])
+    wired.services.workspace.set_wiki_repos([])
     wired.plan.sync()
     assert unit(wired.plan.load(), "repo-wiki:api")["status"] == "dropped"
     job = wired.serve.wiki({"repo": "api", "choose": True, "starter": True})
@@ -129,13 +129,13 @@ def test_the_portal_chooses_the_repo_writes_the_starter_brief_and_generates(wire
             break
         time.sleep(0.05)
     assert wired.serve.JOBS[job["id"]]["status"] == "done", wired.serve.JOBS[job["id"]]["log"]
-    assert "api" in wired.docs.wiki_repos() and engine["calls"] == 1
+    assert "api" in wired.services.workspace.wiki_repos() and engine["calls"] == 1
     assert unit(wired.plan.load(), "repo-wiki:api")["status"] == "done"
     assert row(wired, "api")["brief"] == "starter"
 
 
 def test_without_the_flags_the_portal_changes_nothing(wired, engine):  # noqa: F811
-    wired.docs.set_wiki_repos([])
+    wired.services.workspace.set_wiki_repos([])
     with pytest.raises(ValueError, match="not chosen"):
         wired.serve.wiki({"repo": "api"})
     assert not (wired.root / "wikis" / "api" / "INSTRUCTIONS.md").exists() and engine["calls"] == 0
@@ -196,15 +196,15 @@ def held(wired, monkeypatch):
 
 
 def test_while_one_repos_wiki_runs_another_repo_is_busy_and_nothing_is_chosen(wired, held):
-    wired.docs.set_wiki_repos([])
+    wired.services.workspace.set_wiki_repos([])
     wired.plan.sync()
     first = wired.serve.wiki({"repo": "api", "choose": True})
     assert first["status"] == "running" and first["repo"] == "api"
-    ws_file, plan_file = wired.docs.ws_file(), wired.plan.PLAN
+    ws_file, plan_file = wired.services.workspace.ws_file(), wired.plan.PLAN
     ws_before, plan_before = ws_file.read_bytes(), plan_file.read_bytes()
     assert wired.serve.wiki({"repo": "web", "choose": True, "starter": True}) == {"error": "busy", "repo": "api"}
     assert ws_file.read_bytes() == ws_before and plan_file.read_bytes() == plan_before
-    assert "web" not in wired.docs.wiki_repos()
+    assert "web" not in wired.services.workspace.wiki_repos()
     assert not (wired.root / "wikis" / "web" / "INSTRUCTIONS.md").exists()
     assert wired.serve.wiki({"repo": "api"})["id"] == first["id"]                 # the same repo attaches
     held.set()
@@ -214,7 +214,7 @@ def test_a_second_repo_during_the_first_ones_preparation_is_busy(wired, held, mo
     """The first repo's run is claimed before choosing it and writing its starter brief (seconds on real repos): a
     second repo clicked meanwhile is busy and nothing of it is chosen or written."""
     import threading
-    wired.docs.set_wiki_repos([])
+    wired.services.workspace.set_wiki_repos([])
     wired.plan.sync()
     preparing, release = threading.Event(), threading.Event()
     real = wired.services.wiki.starter_brief
@@ -235,14 +235,14 @@ def test_a_second_repo_during_the_first_ones_preparation_is_busy(wired, held, mo
         release.set()
         t.join(10)
     assert second == {"error": "busy", "repo": "api"}
-    assert "web" not in wired.docs.wiki_repos()
+    assert "web" not in wired.services.workspace.wiki_repos()
     assert not (wired.root / "wikis" / "web" / "INSTRUCTIONS.md").exists()
     assert first["repo"] == "api" and first["status"] == "running"
     held.set()
 
 
 def test_a_preparation_that_fails_leaves_no_running_wiki(wired, held, monkeypatch):
-    wired.docs.set_wiki_repos(["api", "web"])
+    wired.services.workspace.set_wiki_repos(["api", "web"])
 
     def boom(repo):
         raise OSError("disk full")
@@ -261,7 +261,7 @@ def test_the_busy_answer_is_a_409(wired, held, monkeypatch):
     import json, threading, urllib.error, urllib.request
     from http.server import ThreadingHTTPServer
     monkeypatch.setattr("lib.interfaces.http.server.APP_TOKEN", "tok")
-    wired.docs.set_wiki_repos(["api", "web"])
+    wired.services.workspace.set_wiki_repos(["api", "web"])
     wired.serve.wiki({"repo": "api"})
     srv = ThreadingHTTPServer(("127.0.0.1", 0), wired.serve.Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()

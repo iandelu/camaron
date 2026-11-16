@@ -23,7 +23,7 @@ def test_repos_only_get_the_optional_claude_pointer(wired):
 
 
 def test_repos_stay_clean_without_the_pointer(kit):
-    for r in kit.docs.repo_names():
+    for r in kit.services.workspace.repo_names():
         kit.services.setup.wire_repo(r, log=lambda _: None, comps=["openwiki"])
         assert porcelain(kit.ws / r) == set()
 

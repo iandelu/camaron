@@ -19,7 +19,9 @@ import yaml
 
 from .core import yamlio
 from .common import DOCS, ROOT, cli_cmd, repo_dir, rel_file
-from . import diagrams, docs, quickarch
+from . import diagrams, quickarch
+from .domain.docs import frontmatter
+from .app import services
 
 KINDS = ("commands", "env", "endpoints", "topics", "schema")
 DIAGRAM_KINDS = diagrams.KINDS                                              # not in KINDS: they never join a reference page
@@ -320,7 +322,7 @@ class Scanner:
     the diagrams share (the architecture scan, status enums, endpoint maps, topics): it lives as long as the Scanner."""
 
     def __init__(self):
-        self.repos = set(docs.repo_names())
+        self.repos = set(services.current().workspace.repo_names())
         self.cache: dict[tuple, tuple[str, list[str]] | None] = {}
         self.failed: set[tuple] = set()                                    # diagrams whose drawing raised: no judgement
         self.memo: dict = {}
@@ -374,7 +376,7 @@ def states(text: str, scan: Scanner):
 
 
 def _pages():
-    return [(r, ROOT / r["file"]) for r in docs.collect() if r.get("space", "docs") == "docs"]
+    return [(r, ROOT / r["file"]) for r in services.current().doc_status.collect() if r.get("space", "docs") == "docs"]
 
 
 def refresh(force: bool = False) -> dict:
@@ -399,9 +401,9 @@ def refresh(force: bool = False) -> dict:
             parts += [text[last:m.start()], block(m["kind"], m["repo"], body, id=m["id"])]
             last = m.end()
         new = "".join(parts) + text[last:]
-        fm, body_text = docs.split_fm(new)
+        fm, body_text = frontmatter.split_fm(new)
         if fm.get("x-generated") and sources:
-            new = docs.join_fm({**fm, "x-sources": list(dict.fromkeys(sources))}, body_text)
+            new = frontmatter.join_fm({**fm, "x-sources": list(dict.fromkeys(sources))}, body_text)
         if new != text:
             f.write_text(new, encoding="utf-8", newline="\n")
             out["updated"].append(rel_file(f))
@@ -440,7 +442,7 @@ def reference_page(repo: str, scan: Scanner) -> str:
 
 {blocks['topics']}
 """
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)
 
 
 def write_reference(log=lambda _: None) -> list[str]:

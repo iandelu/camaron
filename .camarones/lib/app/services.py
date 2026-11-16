@@ -17,6 +17,11 @@ from lib.ports.launcher import Launcher
 from lib.ports.toolchain import Toolchain
 from lib.ports.vcs import Vcs
 from lib.ports.wiki_engine import WikiEngine
+from lib.ports.workspace_store import WorkspaceStore
+from lib.ports.repo_sync import RepoSync
+from lib.ports.doc_state import DocState
+from lib.ports.doc_store import DocStore
+from lib.ports.vendor import Vendor
 
 
 class Services:
@@ -32,6 +37,11 @@ class Services:
     wiki_engine: WikiEngine
     containers: ContainerRuntime
     vcs: Vcs
+    workspace: WorkspaceStore
+    repos: RepoSync
+    doc_state: DocState
+    docs: DocStore
+    vendor: Vendor
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType
@@ -40,6 +50,11 @@ class Services:
     wiki: ModuleType
     portal: ModuleType
     export_site: ModuleType
+    doc_status: ModuleType
+    llms: ModuleType
+    doc_review: ModuleType
+    translations: ModuleType
+    search: ModuleType
 
     def __init__(self, providers: Mapping[str, Callable[[], object]]) -> None:
         object.__setattr__(self, "_providers", dict(providers))

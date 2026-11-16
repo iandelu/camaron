@@ -11,7 +11,8 @@ import json, os, subprocess
 from datetime import datetime, timezone
 
 from .common import HOME, PREFS, load_json, repo_dir
-from . import binaries, docs
+from . import binaries
+from .adapters.stores import workspace
 
 DB_DIR = HOME / ".camarones" / "osv-db"
 TIMEOUT = 900                 # the first offline run downloads the databases
@@ -126,7 +127,7 @@ def attach(rows: list[dict], log=print) -> dict | None:
         return None
     found: dict[tuple[str, str, str], list[dict]] = {}        # (repo, ecosystem, name): a finding stays in its repo
     failed = []
-    repos = sorted({r["repo"] for r in rows} | {n for n in docs.repo_names() if repo_dir(n).is_dir()})
+    repos = sorted({r["repo"] for r in rows} | {n for n in workspace.repo_names() if repo_dir(n).is_dir()})
     for n, name in enumerate(repos, 1):                     # `[n/total]`: the desktop app's bar counts these lines
         log(f"[{n}/{len(repos)}] {name}: scanning for known vulnerabilities{' (offline database)' if not online() else ''}…")
         data = scan_repo(exe, name)

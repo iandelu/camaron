@@ -118,9 +118,9 @@ def test_write_creates_a_reference_page_per_repo(kit, gb):
     assert "docs/repos/api/reference.md" in written
     text = (kit.root / "docs" / "repos" / "api" / "reference.md").read_text(encoding="utf-8")
     assert "<!-- generated:env repo=api sha=" in text and "`DB_HOST`" in text and "`./mvnw test`" in text
-    fm, _ = kit.docs.split_fm(text)
+    fm, _ = kit.frontmatter.split_fm(text)
     assert "api:src/main/resources/openapi.yml" in fm["x-sources"] and fm["x-generated"] is True
-    _, warns = kit.quality.check_structure(kit.docs.collect())
+    _, warns = kit.quality.check_structure(kit.services.doc_status.collect())
     assert not [w for w in warns if "reference.md" in w]
 
 
@@ -152,7 +152,7 @@ def test_a_hand_edit_is_kept_and_flagged(kit, gb):
     r = gb.refresh()
     assert r["updated"] == [] and r["edited"] == ["docs/repos/api/reference.md (env, api)"]
     assert "`DATABASE_HOST`" in page.read_text(encoding="utf-8")
-    _, warns = kit.docs.check()
+    _, warns = kit.services.doc_status.check()
     assert any("reference.md" in w and "edited by hand" in w for w in warns)
     assert gb.refresh(force=True)["updated"] == ["docs/repos/api/reference.md"]
     assert "`DATABASE_HOST`" not in page.read_text(encoding="utf-8")
@@ -161,7 +161,7 @@ def test_a_hand_edit_is_kept_and_flagged(kit, gb):
 def test_check_warns_when_the_code_moved_past_a_block(kit, gb):
     gb.write_reference()
     put(kit, "api", "src/main/resources/application.yml", APP_YML + "  cache: ${CACHE_TTL:60}\n")
-    _, warns = kit.docs.check()
+    _, warns = kit.services.doc_status.check()
     assert any("reference.md" in w and "out of date" in w and "blocks" in w for w in warns)
 
 
@@ -243,7 +243,7 @@ def test_the_code_moving_past_a_confirmed_block_is_reported(kit, gb):
     put(kit, "api", "src/main/resources/openapi.yml", OPENAPI + "  /owners:\n    get: {summary: List owners}\n")
     before = f.read_bytes()
     assert [s for _, s, _ in gb.states(f.read_text(encoding="utf-8"), gb.Scanner())] == ["confirmed-stale"]
-    issues = gb.check(kit.docs.collect())[1]
+    issues = gb.check(kit.services.doc_status.collect())[1]
     assert len(issues) == 1 and "the code changed since this diagram was confirmed" in issues[0]
     assert gb.refresh(force=True)["updated"] == [] and f.read_bytes() == before
 
@@ -287,7 +287,7 @@ def test_check_flags_a_marker_it_cannot_read(kit, gb):
     f.write_text("---\ntitle: notes\n---\n# Notes\n\n<!-- generated:endpoints sha=abc -->\nx\n<!-- /generated:endpoints -->\n\n"
                  "Quoted: `<!-- generated:endpoints sha=abc -->`\n\n```md\n<!-- generated:env -->\n```\n\n"
                  "`<!-- generated:env -->` too.\n", encoding="utf-8", newline="\n")
-    _, warns = gb.check(kit.docs.collect())
+    _, warns = gb.check(kit.services.doc_status.collect())
     bad = [w for w in warns if "notes.md" in w]
     assert len(bad) == 1 and "line 6" in bad[0] and "cannot be read" in bad[0]
 
@@ -296,4 +296,4 @@ def test_a_page_that_quotes_the_syntax_in_a_fence_is_not_flagged(kit, gb):
     f = kit.root / "docs" / "guide.md"
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text("---\ntitle: guide\n---\n# Guide\n\n~~~\n<!-- generated:<kind> repo=<repo> -->\n~~~\n", encoding="utf-8")
-    assert not [w for w in gb.check(kit.docs.collect())[1] if "guide.md" in w]
+    assert not [w for w in gb.check(kit.services.doc_status.collect())[1] if "guide.md" in w]

@@ -17,7 +17,9 @@ def run(root: str, home: str, rounds: int, bump: str, want: str, start=None) -> 
     for k in ("CAMARONES_GLOBAL", "CAMARONES_STATE_ROOT"):
         os.environ.pop(k, None)
     sys.path.insert(0, str(KIT_DIR))
+    from lib import bootstrap
     from lib.kanban import index
+    bootstrap.build()                         # a process of its own builds its services first
 
     if start is not None:
         start.wait(120)                       # both processes leave the gate together

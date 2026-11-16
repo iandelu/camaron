@@ -16,6 +16,8 @@ from pathlib import Path
 
 from ..common import CAM_DIR, CTX, ROOT, WORK, load_json, repo_dir, save_json
 from .locks import FileLock
+from ..domain.docs import frontmatter, logical_paths
+from ..app import services
 
 FILE = WORK / "fresh.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "fresh.lock"
@@ -152,18 +154,16 @@ def check_source(ref: str, stamp: dict | None, read=None) -> str:
 
 def _pages() -> dict:
     """logical path → (frontmatter, body sha) for every page."""
-    from .. import docs
     out = {}
-    for logical, f in docs.iter_docs():
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
-        out[logical] = (fm or {}, docs.body_sha(body))
+    for logical, f in services.current().docs.iter_docs():
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
+        out[logical] = (fm or {}, frontmatter.body_sha(body))
     return out
 
 
 def docs_alias(logical: str, known) -> str:
     """The page's logical path today for one written as `docs/…` or a wiki page's pre-4.81 repos/<repo>/…."""
-    from .. import docs
-    return docs.link_target(logical, known)
+    return logical_paths.link_target(logical, known)
 
 
 def _sources(fm: dict) -> list[str]:
@@ -288,8 +288,7 @@ def status(logical: str) -> dict:
 
 
 def policy() -> str:
-    from .. import docs
-    return (docs.workspace().get("freshness") or {}).get("ai_policy", "block")
+    return (services.current().workspace.workspace().get("freshness") or {}).get("ai_policy", "block")
 
 
 def code_paths(refs: list[str]) -> list[str]:

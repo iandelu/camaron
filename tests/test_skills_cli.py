@@ -58,9 +58,9 @@ def test_fork_reset_and_note_print_data_with_json(wired):
 
 
 def test_fork_renders_only_where_the_kit_wires_the_agents(wired):
-    ws = wired.docs.workspace()
+    ws = wired.services.workspace.workspace()
     ws["project"]["components"] = ["quality"]
-    wired.docs.save_workspace(ws)
+    wired.services.workspace.save_workspace(ws)
     shutil.rmtree(wired.root / ".claude" / "skills")
     r = cli(wired, "fork", "cam-docs-update")
     assert r.returncode == 0, r.stderr

@@ -81,7 +81,7 @@ def test_windows_gets_long_paths(wired, monkeypatch):
 
 def test_worktrees_are_not_taken_for_repos(wired, wt):
     wt.add("discovery:api")
-    assert ".cw" not in {r["name"] for r in wired.docs.detect_repos()}
+    assert ".cw" not in {r["name"] for r in wired.services.repos.detect_repos()}
 
 
 def test_a_worktree_context_reads_its_tree_keeps_state_in_main_and_sees_the_repos(wired, wt, monkeypatch):

@@ -26,14 +26,14 @@ def model(kit):
 
 
 def orphans(kit, rel):
-    return next(r for r in kit.docs.collect() if r["file"] == f"docs/{rel}")["orphan_sources"]
+    return next(r for r in kit.services.doc_status.collect() if r["file"] == f"docs/{rel}")["orphan_sources"]
 
 
 def test_an_existing_c4_element_is_not_an_orphan(kit):
     model(kit)
     page(kit, "domain/contexts.md", ["c4:shop.orders", "c4:shop"])
     assert orphans(kit, "domain/contexts.md") == []
-    errors, _ = kit.docs.check()
+    errors, _ = kit.services.doc_status.check()
     assert not any("sources no longer exist" in e for e in errors)
 
 
@@ -41,7 +41,7 @@ def test_a_missing_c4_element_is_an_orphan(kit):
     model(kit)
     page(kit, "domain/contexts.md", ["c4:shop.orders", "c4:shop.billing"])
     assert orphans(kit, "domain/contexts.md") == ["c4:shop.billing"]
-    errors, _ = kit.docs.check()
+    errors, _ = kit.services.doc_status.check()
     assert any("sources no longer exist" in e and "c4:shop.billing" in e for e in errors)
 
 

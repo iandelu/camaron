@@ -101,13 +101,13 @@ def test_removed_on_purpose_page(kit):
     assert "[0007-drop-soap](../decisions/0007-drop-soap.md)" in text
     cli("add", "Legacy cron", "--why", "moved to the scheduler")
     assert page.read_text(encoding="utf-8").count("\n| ") == 3                           # header + 2 rows
-    _, warns = kit.quality.check_structure(kit.docs.collect())
+    _, warns = kit.quality.check_structure(kit.services.doc_status.collect())
     assert not [w for w in warns if "removed.md" in w]
 
 
 
 def test_removed_keeps_its_spanish_twin_current(kit):
-    ws = kit.docs.workspace(); ws["project"]["translations"] = ["es"]; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["project"]["translations"] = ["es"]; kit.services.workspace.save_workspace(ws)
     env = {**os.environ, "CAMARONES_ROOT": str(kit.root)}
     for what in ("SOAP billing endpoint", "Old admin UI"):
         r = subprocess.run([sys.executable, str(KIT_DIR / "camarones.py"), "removed", "add", what, "--why", "gone"],
@@ -115,7 +115,7 @@ def test_removed_keeps_its_spanish_twin_current(kit):
         assert r.returncode == 0, r.stderr
     es = (kit.root / "docs" / "i18n" / "es" / "overview" / "removed.md").read_text(encoding="utf-8")
     assert "Quitado a propósito" in es and "| Old admin UI |" in es
-    row = next(r for r in kit.docs.collect() if r["path"] == "overview/removed.md")
+    row = next(r for r in kit.services.doc_status.collect() if r["path"] == "overview/removed.md")
     assert row["i18n"] == {"es": "current"}
 
 

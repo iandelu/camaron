@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 
 from .common import ROOT
-from . import docs, skills
+from . import skills
+from .domain.docs import frontmatter
+from .app import services
 
 BUDGET = 6000           # standing tokens; `context: {budget: N}` in workspace.yaml changes it
 
@@ -18,7 +20,7 @@ def tokens(text: str) -> int:
 def _skills() -> list[dict]:
     out = []
     for f in sorted((ROOT / ".claude" / "skills").glob("*/SKILL.md")):
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         head = f"{fm.get('name', f.parent.name)}: {fm.get('description', '')}"
         out.append({"kind": "skill", "path": f.relative_to(ROOT).as_posix(), "tokens": tokens(head),
                     "on_use": tokens(body), "kit": skills.origin(f.parent.name) == "kit"})
@@ -41,7 +43,7 @@ def standing() -> dict:
     items = [{"kind": "rules", "path": name, "tokens": tokens(f.read_text(encoding="utf-8")), "on_use": 0, "kit": True}
              for name in ("AGENTS.md", "CLAUDE.md") if (f := ROOT / name).is_file()]
     items += _skills() + _mcp()
-    budget = int(((docs.workspace().get("context") or {}).get("budget")) or BUDGET)
+    budget = int(((services.current().workspace.workspace().get("context") or {}).get("budget")) or BUDGET)
     total = sum(i["tokens"] for i in items)
     return {"total": total, "budget": budget, "over": total > budget, "items": items,
             "on_use": sum(i["on_use"] for i in items)}

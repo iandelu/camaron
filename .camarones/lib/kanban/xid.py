@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import re
 import secrets
+from pathlib import Path
 
-from .. import docs
 from .ops import BoardError
+from ..domain.docs import frontmatter, logical_paths, page_outline
+from ..app import services
 
 PREFIXES = {"flows": "FLOW", "domain": "DOM", "architecture": "ARCH"}
 ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"           # base32 without i, l, o, u
@@ -20,8 +22,8 @@ def _decision(logical: str) -> str | None:
     return f"DEC-{m.group(1)}" if m else None
 
 
-def _pages() -> dict[str, "docs.Path"]:
-    return dict(docs.iter_docs())
+def _pages() -> dict[str, Path]:
+    return dict(services.current().docs.iter_docs())
 
 
 def _read(f) -> tuple[str, str]:
@@ -34,8 +36,8 @@ def index() -> dict[str, str]:
     """x-id -> logical path, built from frontmatter on each call (decisions also answer to DEC-nnnn from their name)."""
     found: dict[str, str] = {}
     named: dict[str, str] = {}
-    for logical, f in docs.iter_docs():
-        fm = docs.parse_fm(_read(f)[1])[0]
+    for logical, f in services.current().docs.iter_docs():
+        fm = frontmatter.parse_fm(_read(f)[1])[0]
         if fm.get("x-id"):
             found.setdefault(str(fm["x-id"]), logical)
         dec = _decision(logical)
@@ -69,18 +71,18 @@ def _new_id(logical: str, taken: dict[str, str]) -> str:
 def ensure_xid(logical: str) -> str:
     """The page's x-id; written as the last frontmatter line if it has none (a page without frontmatter gets one)."""
     pages = _pages()
-    logical = docs.link_target(logical, pages)          # a wiki page's pre-4.81 repos/<repo>/… path still names it
+    logical = logical_paths.link_target(logical, pages)  # a wiki page's pre-4.81 repos/<repo>/… path still names it
     f = pages.get(logical)
     if f is None:
         raise BoardError(f"no page {logical} in the docs")
     bom, text = _read(f)
-    fm, _, valid = docs.parse_fm(text)
+    fm, _, valid = frontmatter.parse_fm(text)
     if not valid:
         raise BoardError(f"{logical}: its frontmatter is unreadable, fix it before linking")
     if fm.get("x-id"):
         return str(fm["x-id"])
     new = _new_id(logical, index())
-    m = docs.FM_RE.match(text)
+    m = frontmatter.FM_RE.match(text)
     if m:
         at = m.end(1) - (1 if m.group(1).endswith("\r") else 0)
         eol = "\r\n" if m.group(1).endswith("\r") else "\n"
@@ -104,24 +106,24 @@ def format_link(xid: str, section: str | None, hash_: str | None) -> str:
 
 
 def _body(logical: str) -> str:
-    f = docs.find_page(logical, _pages())
+    f = services.current().docs.find_page(logical, _pages())
     if f is None:
         raise BoardError(f"no page {logical} in the docs")
-    return docs.parse_fm(_read(f)[1])[1]
+    return frontmatter.parse_fm(_read(f)[1])[1]
 
 
 def _section(body: str, section: str | None) -> tuple[str | None, str]:
     """(canonical slug, text) of the section, or (None, whole body)."""
     if not section:
         return None, body
-    found = docs.section_text(body, section)
+    found = page_outline.section_text(body, section)
     if found is None:
         raise BoardError(f"no section {section!r} in that page")
     return found[0]["slug"], found[1]
 
 
 def section_hash(logical: str, section: str | None) -> str:
-    return docs.body_sha(_section(_body(logical), section)[1])[:8]
+    return frontmatter.body_sha(_section(_body(logical), section)[1])[:8]
 
 
 def resolve_ref(ref: str) -> str:
@@ -134,7 +136,7 @@ def resolve_ref(ref: str) -> str:
     if logical is None:
         raise BoardError(f"unknown page {p['xid']} (use an x-id or a path like flows/payments.md)")
     slug, text = _section(_body(logical), p["section"])
-    return format_link(ensure_xid(logical), slug, docs.body_sha(text)[:8])
+    return format_link(ensure_xid(logical), slug, frontmatter.body_sha(text)[:8])
 
 
 def _fresh() -> dict[str, dict] | None:
@@ -156,13 +158,13 @@ def _fresh() -> dict[str, dict] | None:
 
 def page_rows(paths=None) -> dict[str, dict]:
     """Trust, title and freshness of the given pages (default all), by logical path (what link_state reads). Read-only:
-    unlike docs.collect() it writes no status file and stamps nothing; `fresh` is None when it cannot be read that way."""
+    unlike doc_status.collect() it writes no status file and stamps nothing; `fresh` is None when it cannot be read that way."""
     pages = _pages()
     fresh = _fresh()
     rows = {}
     for p in (pages if paths is None else paths):
         if p in pages:
-            r = docs.doc_status(p, pages[p], [])
+            r = services.current().doc_status.doc_status(p, pages[p], [])
             r["fresh"] = None if fresh is None else (fresh.get(p) or {}).get("state")
             rows[p] = r
     return rows

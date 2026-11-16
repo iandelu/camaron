@@ -214,6 +214,8 @@ def test_a_lock_written_by_an_older_kit_is_understood(locks, tmp_path):
 WRITER = """
 import sys
 sys.path.insert(0, sys.argv[1])
+from lib import bootstrap
+bootstrap.build()                           # a process of its own builds its services first
 from lib import plan
 tag = sys.argv[2]
 for i in range(50):

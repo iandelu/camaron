@@ -19,7 +19,7 @@ def test_checkbox_with_nothing_selectable_goes_back(kit):
 
 
 def test_wikis_menu_with_no_ready_repo_does_not_crash(wired, fake_wizard, monkeypatch):
-    wired.docs.set_wiki_repos(["api"])                                           # chosen, but no INSTRUCTIONS.md yet
+    wired.services.workspace.set_wiki_repos(["api"])                                           # chosen, but no INSTRUCTIONS.md yet
     wired.plan.sync()
     monkeypatch.setattr(wired.services.wiki, "openwiki_generate", lambda *a, **kw: pytest.fail("must not start a run"))
     w = fake_wizard(["gen", None])
@@ -31,7 +31,7 @@ def test_choosing_wiki_repos_updates_the_plan(wired, fake_wizard):
     wired.plan.sync()
     w = fake_wizard(["choose", ["web"], None])
     w.do_wikis()
-    assert wired.docs.wiki_repos() == ["web"]
+    assert wired.services.workspace.wiki_repos() == ["web"]
     units = {u["id"]: u["status"] for u in wired.plan.load()["units"]}
     assert units["repo-wiki:web"] == "todo" and units["repo-wiki:api"] == "dropped"
 
@@ -55,7 +55,7 @@ def test_menu_errors_are_shown_not_raised(kit, fake_wizard, monkeypatch):
 # ---------- quick C4 draft (first look) ----------
 @pytest.fixture
 def first_look(kit, monkeypatch):
-    page = kit.docs.DOCS / "architecture" / "model.c4"                         # a saved draft: its C4 files
+    page = kit.common.DOCS / "architecture" / "model.c4"                         # a saved draft: its C4 files
     page.parent.mkdir(parents=True)
     page.write_text("model {\n}\n", encoding="utf-8")
     calls = {"draft": 0, "portal": []}
@@ -86,7 +86,7 @@ def test_escape_on_a_saved_first_look_goes_back(kit, first_look, fake_wizard):
 
 
 def test_a_first_look_page_without_a_model_drafts_again(kit, fake_wizard, monkeypatch):
-    page = kit.docs.DOCS / "architecture" / "first-look.md"
+    page = kit.common.DOCS / "architecture" / "first-look.md"
     page.parent.mkdir(parents=True)
     page.write_text("# First look\n", encoding="utf-8")
     drafts = []
@@ -96,7 +96,7 @@ def test_a_first_look_page_without_a_model_drafts_again(kit, fake_wizard, monkey
 
 def test_the_c4_prompt_names_first_look_md_only_when_it_exists(kit, fake_wizard):
     assert "first-look.md" not in fake_wizard([]).arch_prompt()
-    page = kit.docs.DOCS / "architecture" / "first-look.md"
+    page = kit.common.DOCS / "architecture" / "first-look.md"
     page.parent.mkdir(parents=True)
     page.write_text("# First look\n", encoding="utf-8")
     assert "architecture/first-look.md` to match" in fake_wizard([]).arch_prompt()
@@ -129,17 +129,17 @@ def test_stack_step_accepts_the_detected_stack(kit, stack_screen, fake_wizard):
     w = fake_wizard(["view", "ok"])
     assert w.stack_flow() == "done"
     assert stack_screen == ["#/docs/overview/tooling.md"]
-    assert (kit.docs.DOCS / "overview" / "tooling.md").exists()
-    assert all("stack" not in r for r in kit.docs.workspace()["repos"])
+    assert (kit.common.DOCS / "overview" / "tooling.md").exists()
+    assert all("stack" not in r for r in kit.services.workspace.workspace()["repos"])
 
 
 def test_stack_step_fixes_a_repo_stack(kit, stack_screen, fake_wizard):
     w = fake_wizard(["fix", "api", "Java 21 · Spring Boot", "fix", "web", "Node.js · React", "ok"])
     assert w.stack_flow() == "done"
-    rows = {r["name"]: r for r in kit.docs.workspace()["repos"]}
+    rows = {r["name"]: r for r in kit.services.workspace.workspace()["repos"]}
     assert rows["api"]["stack"] == "Java 21 · Spring Boot"
     assert "stack" not in rows["web"]                                     # same as detected: nothing to override
-    assert "Java 21 · Spring Boot" in (kit.docs.DOCS / "overview" / "tooling.md").read_text(encoding="utf-8")
+    assert "Java 21 · Spring Boot" in (kit.common.DOCS / "overview" / "tooling.md").read_text(encoding="utf-8")
 
 
 def test_stack_step_escape_goes_back(kit, stack_screen, fake_wizard):
@@ -289,8 +289,8 @@ def test_first_run_mode_table(kit, state, shared, local, mode):
 
 
 def test_fr_name_writes(kit, fake_wizard):
-    fake_wizard(["Mi Proyecto"]).fr_name(kit.docs.workspace())
-    p = kit.docs.workspace()["project"]
+    fake_wizard(["Mi Proyecto"]).fr_name(kit.services.workspace.workspace())
+    p = kit.services.workspace.workspace()["project"]
     assert (p["name"], p["id"], p["canonical_language"], p["translations"]) == ("Mi Proyecto", "mi-proyecto", "en", ["es"])
     assert p["kind"] == "legacy"                      # the kit's own workspace has repos in it
 
@@ -305,7 +305,7 @@ def test_cli_name_step_on_an_empty_folder_makes_a_greenfield_project(kit, fake_w
     real_name = kit.wizard.W.fr_name
     monkeypatch.setattr(kit.wizard.W, "fr_name", lambda self, ws: ran.append("fr_name") or real_name(self, ws))
     assert fake_wizard(["Idea"]).first_run()
-    assert kit.docs.workspace()["project"]["kind"] == "greenfield"
+    assert kit.services.workspace.workspace()["project"]["kind"] == "greenfield"
     assert ran == ["fr_name", "fr_repos", "fr_tools", "fr_setup", "fr_intro"]       # the list shrinks once the name step set the kind
     assert kit.common.load_json(kit.wizard.FIRSTRUN, {}) == {"step": 5, "done": True}
 
@@ -317,9 +317,9 @@ def test_resume_index_only_firstrun(kit):
 
 
 def test_first_run_of_a_greenfield_project_skips_stack_and_arch(kit, fake_wizard, monkeypatch):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["kind"] = "greenfield"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     ran = []
     for step in ("fr_name", "fr_repos", "fr_tools", "fr_setup", "fr_stack", "fr_arch", "fr_intro"):
         monkeypatch.setattr(kit.wizard.W, step, lambda self, ws, s=step: ran.append(s))
@@ -331,8 +331,8 @@ def test_first_run_of_a_greenfield_project_skips_stack_and_arch(kit, fake_wizard
 @pytest.mark.parametrize("kind, disabled", [("legacy", True), ("greenfield", False)])
 def test_repos_step_needs_a_repo_only_for_legacy(kit, fake_wizard, monkeypatch, kind, disabled):
     ws = {"project": {"kind": kind}, "repos": []}
-    monkeypatch.setattr(kit.docs, "detect_repos", lambda *a: [])
-    monkeypatch.setattr(kit.docs, "save_workspace", lambda ws: None)
+    monkeypatch.setattr(kit.services.repos, "detect_repos", lambda *a: [])
+    monkeypatch.setattr(kit.services.workspace, "save_workspace", lambda ws: None)
     seen = []
     w = fake_wizard([])
     monkeypatch.setattr(kit.wizard.W, "sel", lambda self, msg, choices, **kw: seen.append(choices[0].disabled) or None)

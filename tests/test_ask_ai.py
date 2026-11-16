@@ -57,7 +57,7 @@ def test_nothing_found_means_no_model_call(kit, answerer):
 
 def test_it_can_be_turned_off(kit, answerer):
     from lib import answers
-    ws = kit.docs.workspace(); ws["ask"] = {"ai": False}; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["ask"] = {"ai": False}; kit.services.workspace.save_workspace(ws)
     assert answers.runner() is None
     with pytest.raises(RuntimeError):
         answers.answer("how are failed payments retried?")
@@ -88,7 +88,7 @@ def test_the_model_runs_in_an_empty_folder_with_a_cheap_model(kit, answerer):
     assert not Path(cwd).resolve().is_relative_to(kit.common.WORKSPACE.resolve())   # no project CLAUDE.md, hooks or MCP
     assert args == [""]                                                             # fake runner: no cheap default
     assert answers.model("claude") == "haiku" and answers.model("claude:opus") is None
-    ws = kit.docs.workspace(); ws["ask"] = {"model": "sonnet"}; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["ask"] = {"model": "sonnet"}; kit.services.workspace.save_workspace(ws)
     assert answers.model("claude") == "sonnet" and answers.model("fake") == "sonnet"
 
 

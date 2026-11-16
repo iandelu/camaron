@@ -7,31 +7,33 @@ import threading
 import time
 from pathlib import Path
 
-from lib import docs, plan, sourcelinks, usage
+from lib import plan, sourcelinks, usage
 from lib.app import portal_views
 from lib.app.portal_views import doc_file, read, status, tree
 from lib.core.paths import DOCS, ROOT
 from lib.core.process import out
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
+from lib.domain.docs import frontmatter, page_outline
+from lib.app import services
 
 
 def api_ask(question: str) -> dict:
     """Ask the docs (R34): the sections that best answer a question, each with its citation, trust and freshness.
     No model: the same retrieval as the MCP `ask`, through the same freshness gate."""
     from lib.harness import freshness
-    hits = docs.search(question, 20) if question.strip() else []
+    hits = services.current().search.search(question, 20) if question.strip() else []
     usage.record("portal:ask", channel="human", hit=bool(hits), query=question)
-    rows, out = {r["path"]: r for r in docs.collect()}, []
+    rows, out = {r["path"]: r for r in services.current().doc_status.collect()}, []
     for h in hits:
         r = rows.get(h["path"], {})
         ok, notice = freshness.gate(h["path"], r.get("trust", "draft"), r.get("freshness"))
-        f = docs.find_page(h["path"])
+        f = services.current().docs.find_page(h["path"])
         if not f:
             continue
-        body = docs.split_fm(f.read_text(encoding="utf-8"))[1]
-        found = docs.section_text(body, h["section"]) if h.get("section") else None
-        tldr = docs.tldr(body)
+        body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
+        found = page_outline.section_text(body, h["section"]) if h.get("section") else None
+        tldr = page_outline.tldr(body)
         whole = body.replace(tldr, "", 1) if tldr else body              # the portal shows the TL;DR above the text
         out.append({"cite": h["path"] + (f"#{h['section']}" if found else ""), "title": h["title"],
                     "trust": r.get("trust"), "fresh": r.get("fresh"), "notice": notice, "withheld_for_agents": not ok,
@@ -94,7 +96,7 @@ def api_doc(q: dict) -> dict:
 
 def api_search(q: dict) -> list[dict]:
     """Only full searches (`track`) count: the palette searches on every keystroke."""
-    hits = docs.search(q.get("q", ""))
+    hits = services.current().search.search(q.get("q", ""))
     if q.get("track"):
         usage.record("portal:search", channel="human", hit=bool(hits), query=q.get("q", ""))
     return hits
@@ -115,7 +117,7 @@ def create(path: str, title: str) -> dict:
     if f.exists():
         raise ValueError(f"{path} already exists")
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(docs.join_fm({"title": title, "description": "", "type": "guide", "x-owner": "human"},
+    f.write_text(frontmatter.join_fm({"title": title, "description": "", "type": "guide", "x-owner": "human"},
                               f"\n# {title}\n\n"), encoding="utf-8")
     return read(path)
 
@@ -144,7 +146,7 @@ def post_new(req: Request) -> Response:
 @route("POST", "/api/confirm")
 def post_confirm(req: Request) -> Response:
     b = req.body
-    docs.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by)
+    req.services.doc_review.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by)
     return json_response(read(b["path"], b.get("lang", "")))
 
 
@@ -164,7 +166,7 @@ def get_search(req: Request) -> Response:
 
 @route("GET", "/api/check")
 def get_check(req: Request) -> Response:
-    return json_response(dict(zip(("errors", "warnings"), docs.check())))
+    return json_response(dict(zip(("errors", "warnings"), req.services.doc_status.check())))
 
 
 @route("GET", "/api/status")
@@ -198,6 +200,6 @@ def post_review_decide(req: Request) -> Response:
 
 @route("POST", "/api/commit")
 def post_commit(req: Request) -> Response:
-    docs.llms()
+    req.services.llms.llms()
     ok = req.services.share.checkpoint_commit(req.body.get("message") or "docs edited in the portal")
     return json_response({"committed": ok, "head": out(["git", "log", "-1", "--format=%h %s"], cwd=ROOT)})

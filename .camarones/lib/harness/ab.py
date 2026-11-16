@@ -13,6 +13,7 @@ from pathlib import Path
 from ..common import IS_WIN, WORK, WORKSPACE, load_json, repo_dir, run as run_cmd, save_json
 from . import evals
 from .ports import RunRequest
+from ..app import services
 
 RESULTS = WORK / "evals" / "ab"
 CODE_TOOLS = ("Read", "Glob", "Grep")
@@ -20,19 +21,16 @@ METRICS = ("seconds", "tokens_in", "tokens_cache", "tokens_out", "cost_usd", "to
 
 
 def enabled() -> bool:
-    from .. import docs
-    return bool((docs.workspace().get("ab") or {}).get("enabled", True))
+    return bool((services.current().workspace.workspace().get("ab") or {}).get("enabled", True))
 
 
 @contextlib.contextmanager
 def control_workspace():
     """A folder with links to the repos only, outside the project (so walking up never reaches cam-docs). Links are
     removed without following them: repos are never touched."""
-    from .. import docs
-    from ..app import services
     tmp = Path(tempfile.mkdtemp(prefix="camaron-ab-")).resolve()
     try:
-        for r in docs.repo_names():
+        for r in services.current().workspace.repo_names():
             if repo_dir(r).is_dir():
                 _link(tmp / r, repo_dir(r).resolve())
         yield tmp
@@ -126,12 +124,11 @@ def task_workspace(with_docs: bool):
     """A folder outside the project with a detached git worktree of every repo at HEAD (and, with docs, of cam-docs,
     with the agent config next to it like the real workspace). Your checkouts are never touched; the worktrees are
     removed afterwards."""
-    from .. import docs
     from ..common import ROOT
     tmp = Path(tempfile.mkdtemp(prefix="camaron-ab-task-")).resolve()
     made: list[tuple[Path, Path]] = []
     try:
-        for r in docs.repo_names():
+        for r in services.current().workspace.repo_names():
             if repo_dir(r).is_dir():
                 _git("worktree", "add", "-q", "--detach", str(tmp / r), "HEAD", cwd=repo_dir(r))
                 made.append((repo_dir(r), tmp / r))
@@ -146,7 +143,6 @@ def task_workspace(with_docs: bool):
                     (tmp / name).write_bytes((tmp / "cam-docs" / name).read_bytes())
         yield tmp
     finally:
-        from ..app import services
         for child in list(tmp.iterdir()):
             if services.current().links._is_link(child):
                 try:
@@ -167,9 +163,8 @@ def _task_prompt(task: str) -> str:
 
 
 def _diff(tmp: Path) -> tuple[int, str]:
-    from .. import docs
     files, text = 0, []
-    for r in docs.repo_names():
+    for r in services.current().workspace.repo_names():
         if (tmp / r).is_dir():
             _git("add", "-A", "-N", ".", cwd=tmp / r)                 # new files show in the diff too
             names = [l for l in _git("diff", "--name-only", cwd=tmp / r).splitlines() if l.strip()]
@@ -217,8 +212,7 @@ def _samples_file() -> Path:
 
 
 def sampling() -> dict:
-    from .. import docs
-    s = (docs.workspace().get("ab") or {}).get("sampling") or {}
+    s = (services.current().workspace.workspace().get("ab") or {}).get("sampling") or {}
     return {"enabled": bool(s.get("enabled")), "rate": float(s.get("rate", 0.05))}
 
 

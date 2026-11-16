@@ -29,12 +29,14 @@ from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from pathlib import PurePosixPath
 
-from .. import codemap, docs
+from .. import codemap
 from ..common import CACHE, CAM_DIR, ROOT, WS_FILE
 from . import ARCHIVE, BOARD, TASKS
 from .deps import Node, norm_touch
 from .items import load_dir
 from .state import id_key
+from ..domain.docs import frontmatter
+from ..adapters.stores import doc_store, workspace
 
 log = logging.getLogger("camaron.board.index")
 
@@ -73,9 +75,9 @@ def _stats() -> Iterator[tuple[str, int, int]]:
     files = [("workspace", WS_FILE), ("board", BOARD)]
     files += [(f"task/{f.name}", f) for f in TASKS.glob("*.md")]
     files += [(f"archive/{f.name}", f) for f in ARCHIVE.glob("*.md")]
-    for logical, f in docs.iter_docs():
+    for logical, f in doc_store.iter_docs():
         files.append((f"doc/{logical}", f))
-    for repo in docs.repo_names():
+    for repo in workspace.repo_names():
         files.append((f"graph/{repo}", codemap.graph_file(repo)))
     for name, f in files:
         try:
@@ -202,18 +204,18 @@ def _build(conn: sqlite3.Connection, snap: str) -> None:
         deps += [(row["id"], d) for d in sorted(set(row["dependencies"]))]
 
     cites, pages = [], []
-    for logical, f in docs.iter_docs():
+    for logical, f in doc_store.iter_docs():
         try:
-            fm, body, _ = docs.parse_fm(f.read_text(encoding="utf-8"))
+            fm, body, _ = frontmatter.parse_fm(f.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError):
             continue
         page = _page_touch(logical, f)
-        pages.append((page, str(fm.get("title") or docs.first_heading(body) or logical)))
+        pages.append((page, str(fm.get("title") or frontmatter.first_heading(body) or logical)))
         for rp in sorted({s for s in map(_source, _strings(fm.get("x-sources"))) if s}):
             cites.append((page, rp[0], rp[1], groups.of(*rp)))
 
     files, edges = [], []                            # the whole code map of every repo that has a graph
-    for repo in docs.repo_names():
+    for repo in workspace.repo_names():
         if codemap.graph_file(repo).is_file():
             files += [(repo, path, grp) for path, grp in sorted(groups.map(repo).items())]
             edges += [(repo, s, d) for s, d in sorted(codemap.file_edges(repo))]

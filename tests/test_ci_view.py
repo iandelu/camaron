@@ -37,7 +37,7 @@ def test_after_camaron_ci_it_is_installed_and_current(kit, ci):
 
 
 def test_self_hosted_projects_also_get_the_proposal_job(kit, ci):
-    ws = kit.docs.workspace(); ws["ci"] = {"target": "self-hosted"}; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["ci"] = {"target": "self-hosted"}; kit.services.workspace.save_workspace(ws)
     s = ci.status("gitlab")
     assert s["target"] == "self-hosted" and "pr propose" in s["snippets"]["propose"]
     assert "propose" in s["installed"]

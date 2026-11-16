@@ -1,9 +1,8 @@
 # Today's debts against the layer rule (spec §5). Entries only ever leave this file.
-largest_cycle: 43
-cycle_modules: 47
+largest_cycle: 30
+cycle_modules: 36
 oversize:
   - adr
-  - docs
   - kanban.ops
   - pages
   - plan
@@ -13,7 +12,6 @@ oversize:
   - wizard
 violations:
   - "adapters.runners -> harness.plugins"
-  - "adr_doc -> docs"
   - "adr_pack -> history"
   - "adr_pack -> inventory"
   - "adr_pack -> kanban.index"
@@ -33,10 +31,7 @@ violations:
   - "budget -> mcp"
   - "bump -> inventory"
   - "c4edit -> harness.symbols"
-  - "codemap -> docs"
-  - "diagrams -> docs"
   - "diagrams -> genblocks"
-  - "docs -> creds"
   - "exporters -> harness.symbols"
   - "genblocks -> diagrams"
   - "genblocks -> quickarch"
@@ -44,7 +39,7 @@ violations:
   - "harness.freshness -> harness.symbols"
   - "harness.handoff -> sessions"
   - "harness.integrate -> harness.worktrees"
-  - "harness.ledger -> docs"
+  - "harness.ledger -> app.services"
   - "harness.ledger -> harness.kpis"
   - "harness.ledger -> harness.runs"
   - "harness.ledger -> harness.transcripts"
@@ -59,7 +54,6 @@ violations:
   - "health -> inventory"
   - "health -> radar"
   - "health -> sonar"
-  - "history -> docs"
   - "install_state -> kanban"
   - "interfaces.cli.commands.analyze -> history"
   - "interfaces.cli.commands.analyze -> inventory"
@@ -81,27 +75,23 @@ violations:
   - "interfaces.http.routes.machine -> machine"
   - "interfaces.http.routes.runs -> harness.events"
   - "interfaces.http.routes.terminals -> terminals"
-  - "inventory -> docs"
   - "inventory -> pages"
   - "kanban.deps -> kanban"
-  - "kanban.index -> docs"
   - "kanban.index -> kanban.ops"
   - "kanban.ops -> kanban"
   - "kanban.ops -> kanban.index"
   - "kanban.repair -> kanban"
-  - "kanban.xid -> docs"
+  - "kanban.xid -> app.services"
   - "kanban.xid -> harness.freshness"
   - "kanban.xid -> kanban.ops"
   - "machine -> agents"
   - "machine -> app.services"
-  - "machine -> docs"
   - "machine -> install_state"
   - "mcp -> harness.events"
   - "mcp -> kanban"
   - "onboard -> quickarch"
   - "onboard -> radar"
   - "onboard -> wizard"
-  - "osv -> docs"
   - "pages -> diagrams"
   - "pages -> inventory"
   - "pages -> quickarch"
@@ -114,15 +104,12 @@ violations:
   - "projects -> creds"
   - "propose -> adapters.runners"
   - "quality -> binaries"
-  - "quickarch -> docs"
-  - "radar -> docs"
   - "radar -> pages"
-  - "schemas -> docs"
   - "schemas -> genblocks"
   - "sourcelinks -> harness.symbols"
   - "sourcelinks -> history"
+  - "stories -> app.services"
   - "stories -> codemap"
-  - "stories -> docs"
   - "stories -> kanban.index"
   - "stories_ai -> kanban.index"
   - "stories_ai -> mcp"

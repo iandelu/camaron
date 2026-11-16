@@ -8,10 +8,10 @@ import re
 import shutil
 from pathlib import Path
 
-from lib import docs
 from lib.app import components, services, viewers, wiki
 from lib.common import CACHE, DOCS, IS_WIN, ROOT, out, ws_rel
 from lib.ports import Log
+from lib.domain.docs import frontmatter
 
 
 def forge_edit_base() -> str:
@@ -37,7 +37,7 @@ def export_site(log: Log = print) -> Path:
     shutil.copytree(portal_views.UI, tmp)
     html = (tmp / "index.html").read_text(encoding="utf-8")
     (tmp / "index.html").write_text(html.replace('content="live"', 'content="static"'), encoding="utf-8")
-    docs.llms()
+    services.current().llms.llms()
     shutil.copyfile(DOCS / "llms.txt", tmp / "llms.txt")
     shutil.copyfile(DOCS / "llms-full.txt", tmp / "llms-full.txt")
     api = tmp / "api"
@@ -60,10 +60,10 @@ def export_site(log: Log = print) -> Path:
             doc["decisions"] = decisions
             dump(f"doc/{lang or '_'}/{d['path']}.json", doc)
             index.append({"path": d["path"], "lang": lang, "title": doc["title"], "trust": d["trust"],
-                          "text": docs.split_fm(doc["raw"])[1][:20000]})
+                          "text": frontmatter.split_fm(doc["raw"])[1][:20000]})
     log(f"✔ {len(t['docs'])} docs" + (f" + translations ({', '.join(t['langs'])})" if t["langs"] else ""))
     images = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
-    folders = [(DOCS, tmp / "raw")] + [(docs.wiki_dir(n), tmp / "raw" / "wikis" / n) for n in docs.repo_names()]
+    folders = [(DOCS, tmp / "raw")] + [(services.current().docs.wiki_dir(n), tmp / "raw" / "wikis" / n) for n in services.current().workspace.repo_names()]
     for src, out_dir in folders:                    # a wiki page's images: raw/wikis/<repo>/… as the server serves them
         for f in (src.rglob("*") if src.is_dir() else ()):
             if f.is_file() and f.suffix.lower() in images:
@@ -96,12 +96,12 @@ def export_site(log: Log = print) -> Path:
         dump(f"codemap/{n}.json", codemap.load(n))
     dump("search.json", index)
     for lib in portal_views.UI_LIBS:
-        f = docs.vendor_file(*lib)
+        f = services.current().vendor.vendor_file(*lib)
         if f:
             dst = tmp / "vendor" / f"{lib[0]}@{lib[1]}" / lib[2]
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, dst)
-    k, failed = docs.vendor(tmp)
+    k, failed = services.current().vendor.vendor(tmp)
     log(f"✔ offline libraries ({k + len(portal_views.UI_LIBS)})" + (f" — still on CDN: {failed}" if failed else ""))
     shutil.rmtree(site, ignore_errors=True)
     tmp.rename(site)
@@ -114,7 +114,7 @@ portal = export_site
 
 
 def portal_steps() -> int:
-    wikis_n = sum(1 for n in docs.repo_names() if wiki.wiki_pages(n))
+    wikis_n = sum(1 for n in services.current().workspace.repo_names() if wiki.wiki_pages(n))
     c4 = 1 if (services.current().diagrams.arch_dir() / "likec4.config.json").exists() else 0
     return 4 + 2 * c4 + 2 * wikis_n
 

@@ -12,7 +12,6 @@ import shutil
 from collections import deque
 from pathlib import Path
 
-from lib import docs
 from lib.adapters import runners
 from lib.app import components, services, setup, share, viewers
 from lib.common import CAM_DIR, CTX, ROOT, VERSIONS, WORKSPACE, cli_cmd, rel_file, repo_dir, run, which, ws_rel
@@ -20,11 +19,12 @@ from lib.core.paths import WIKI_STAMP
 from lib.core.process import stream
 from lib.harness.ports import RunRequest
 from lib.ports import Log
+from lib.domain.docs import frontmatter, logical_paths
 
 
 # ---------- OpenWiki ----------
 def wiki_graph(repo: str, dest: Path | None = None, log: Log = print) -> bool:
-    wiki, dest = docs.wiki_dir(repo), dest or viewers.VIEWERS / "wiki-graph" / repo
+    wiki, dest = services.current().docs.wiki_dir(repo), dest or viewers.VIEWERS / "wiki-graph" / repo
     if not wiki_pages(repo):
         return False
     log(f"exporting the wiki graph of {repo}…")
@@ -78,7 +78,7 @@ def wiki_engine_help() -> str | None:
 
 def wiki_pages(repo: str) -> list[Path]:
     """Generated pages only: INSTRUCTIONS.md is the user-authored brief, not a page."""
-    wiki = docs.wiki_dir(repo)
+    wiki = services.current().docs.wiki_dir(repo)
     return [f for f in wiki.rglob("*.md") if not any(p.startswith(".") for p in f.relative_to(wiki).parts)
             and f.relative_to(wiki).as_posix() != "INSTRUCTIONS.md"] if wiki.is_dir() else []
 
@@ -88,7 +88,7 @@ WIKI_LINK_RE = re.compile(r"\]\(([^)\s#]+\.md)(?:#[^)]*)?\)")
 
 def wiki_nav(repo: str) -> dict:
     """A wiki's own navigation: pages in the order of its index.md, then the rest, plus backlinks between pages."""
-    wiki = docs.wiki_dir(repo)
+    wiki = services.current().docs.wiki_dir(repo)
     files = {f.relative_to(wiki).as_posix(): f for f in wiki_pages(repo) if f.name != "log.md"}
     if not files:
         return {"home": None, "pages": [], "backlinks": {}}
@@ -103,14 +103,14 @@ def wiki_nav(repo: str) -> dict:
     order = list(dict.fromkeys(order + sorted(files)))
     pages = []
     for rel in order:
-        fm, body = docs.split_fm(files[rel].read_text(encoding="utf-8", errors="replace"))
-        pages.append({"path": docs.wiki_path(repo, rel), "title": fm.get("title") or docs.first_heading(body) or Path(rel).stem})
+        fm, body = frontmatter.split_fm(files[rel].read_text(encoding="utf-8", errors="replace"))
+        pages.append({"path": logical_paths.wiki_path(repo, rel), "title": fm.get("title") or frontmatter.first_heading(body) or Path(rel).stem})
     backlinks: dict[str, set] = {}
     for rel in files:
         for target in links(rel):
             if target != rel:
-                backlinks.setdefault(docs.wiki_path(repo, target), set()).add(docs.wiki_path(repo, rel))
-    home = next((docs.wiki_path(repo, p) for p in ("quickstart.md", "index.md", "README.md") if p in files), pages[0]["path"])
+                backlinks.setdefault(logical_paths.wiki_path(repo, target), set()).add(logical_paths.wiki_path(repo, rel))
+    home = next((logical_paths.wiki_path(repo, p) for p in ("quickstart.md", "index.md", "README.md") if p in files), pages[0]["path"])
     return {"home": home, "pages": pages, "backlinks": {k: sorted(v) for k, v in sorted(backlinks.items())}}
 
 
@@ -120,13 +120,13 @@ WIKI_SCOPE = 2                 # 1: repo internals only (kit <= 3.9) · 2: a com
 def wiki_scope(repo: str) -> int:
     """Scope a wiki was written for; wikis from before the stamp existed are scope 1."""
     try:
-        return int(json.loads((docs.wiki_dir(repo) / WIKI_STAMP).read_text(encoding="utf-8")).get("scope", 1))
+        return int(json.loads((services.current().docs.wiki_dir(repo) / WIKI_STAMP).read_text(encoding="utf-8")).get("scope", 1))
     except (OSError, ValueError, TypeError, AttributeError):
         return 1
 
 
 def stamp_wiki(repo: str, **extra) -> None:
-    f = docs.wiki_dir(repo) / WIKI_STAMP
+    f = services.current().docs.wiki_dir(repo) / WIKI_STAMP
     f.write_text(json.dumps({"scope": WIKI_SCOPE, **extra}, indent=2) + "\n", encoding="utf-8")
 
 
@@ -135,7 +135,7 @@ def wiki_old(repo: str) -> bool:
 
 
 def old_wikis() -> list[str]:
-    return [n for n in docs.repo_names() if wiki_old(n)]
+    return [n for n in services.current().workspace.repo_names() if wiki_old(n)]
 
 
 STARTER_MARK = "<!-- camarones:starter-brief -->"
@@ -147,12 +147,12 @@ COVERAGE = ("Overview: what the repo does for the project and how to run it loca
 def starter_brief(repo: str) -> bool:
     """A brief written without AI from the static scan (stack, tools, detected relations), so a first wiki does not
     wait for repo-brief; repo-brief replaces it (it starts with STARTER_MARK). Never written over an existing brief."""
-    f = docs.wiki_dir(repo) / "INSTRUCTIONS.md"
+    f = services.current().docs.wiki_dir(repo) / "INSTRUCTIONS.md"
     if f.exists():
         return False
     from lib import quickarch, radar
     path = repo_dir(repo)
-    cfg = next((r for r in docs.workspace()["repos"] if r["name"] == repo), {})
+    cfg = next((r for r in services.current().workspace.workspace()["repos"] if r["name"] == repo), {})
     stack = cfg.get("stack") or quickarch.stack(path, quickarch.repo_blob(path)) or "an undetected stack"
     tools = radar.scan_repo(repo, path)
     cats = {t["category"] for t in tools}
@@ -168,7 +168,7 @@ def starter_brief(repo: str) -> bool:
     if "ui" in cats:
         coverage.append("Screens and navigation")
     coverage += COVERAGE[2:]
-    project = docs.workspace()["project"]["name"]
+    project = services.current().workspace.workspace()["project"]["name"]
     text = "\n".join([
         STARTER_MARK,
         f"# {repo} — wiki brief",
@@ -200,7 +200,7 @@ def starter_brief(repo: str) -> bool:
 
 def wiki_brief_kind(repo: str) -> str | None:
     """`ai` (written by repo-brief or a person), `starter` (STARTER_MARK) or None (no brief yet)."""
-    f = docs.wiki_dir(repo) / "INSTRUCTIONS.md"
+    f = services.current().docs.wiki_dir(repo) / "INSTRUCTIONS.md"
     if not f.is_file():
         return None
     return "starter" if f.read_text(encoding="utf-8", errors="replace").startswith(STARTER_MARK) else "ai"
@@ -209,16 +209,16 @@ def wiki_brief_kind(repo: str) -> str | None:
 def wiki_brief_ready(repo: str) -> bool:
     """A first wiki needs the brief that repo-brief writes (role, bounded context, glossary), or OpenWiki writes a
     generic wiki that ignores the project's language and repeats what docs/ already covers."""
-    return (docs.wiki_dir(repo) / "INSTRUCTIONS.md").is_file()
+    return (services.current().docs.wiki_dir(repo) / "INSTRUCTIONS.md").is_file()
 
 
 def wikis() -> list[dict]:
     from lib import plan
     units = {u["id"]: u["status"] for u in plan.load()["units"]}
-    chosen = docs.wiki_repos()
+    chosen = services.current().workspace.wiki_repos()
     can_run = bool(wiki_engines())
     rows = []
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         pages, nav = wiki_pages(n), wiki_nav(n)
         at, graph_at = viewers.newest(pages), viewers.newest([viewers.VIEWERS / "wiki-graph" / n / "index.html"])
         rows.append({"repo": n, "pages": len(nav["pages"]), "nav": nav, "at": at, "stale": bool(pages) and viewers.repo_changed_at(n) > at,
@@ -226,8 +226,8 @@ def wikis() -> list[dict]:
                      "unit": units.get(f"repo-wiki:{n}"),
                      "cloned": repo_dir(n).is_dir(), "chosen": n in chosen, "ready": bool(pages) or wiki_brief_ready(n),
                      "brief": wiki_brief_kind(n), "canGenerate": can_run and repo_dir(n).is_dir(),
-                     "index": next((docs.wiki_path(n, p) for p in ("quickstart.md", "index.md", "README.md")
-                                    if (docs.wiki_dir(n) / p).exists()), None)})
+                     "index": next((logical_paths.wiki_path(n, p) for p in ("quickstart.md", "index.md", "README.md")
+                                    if (services.current().docs.wiki_dir(n) / p).exists()), None)})
     return rows
 
 
@@ -368,12 +368,12 @@ def openwiki_generate(repo: str, mode: str = "", log: Log = print, engine: str =
     if record:
         record.finish(ok)
     if ok:
-        brief = docs.wiki_dir(repo) / "INSTRUCTIONS.md"
+        brief = services.current().docs.wiki_dir(repo) / "INSTRUCTIONS.md"
         if engine != "openwiki" or (brief.is_file() and "## Coverage" in brief.read_text(encoding="utf-8")):
             stamp_wiki(repo, mode=mode, engine=engine, kit=VERSIONS["kit"])
         if known:
             plan.set_status(uid, "done", f"OpenWiki {mode} via {engine}")
-        docs.llms()
+        services.current().llms.llms()
         wiki_graph(repo, log=log)
         share.checkpoint_commit(f"{uid} ({mode})")
         log(f"✔ wiki {repo}: {len(wiki_pages(repo))} pages")

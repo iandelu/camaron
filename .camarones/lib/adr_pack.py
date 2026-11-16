@@ -16,9 +16,11 @@ from fnmatch import fnmatchcase
 from itertools import zip_longest
 from pathlib import Path, PurePosixPath
 
-from . import adr, adr_doc, c4edit, docs, history, inventory, quickarch
+from . import adr, adr_doc, c4edit, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
+from .domain.docs import frontmatter, page_outline, trust_levels
+from .app import services
 
 NEIGHBOURS, PAGES, ADRS, COMMITS, MONTHS, QUESTIONS, C4, LIBRARIES = 30, 15, 10, 40, 12, 10, 20, 30
 LIMIT = 20000
@@ -56,7 +58,7 @@ def read_page(logical: str, f: Path) -> tuple[dict, str] | None:
     """(frontmatter, body) of a doc page; None when it cannot be read or is a decision (`adr_doc.is_decision`): a
     decision has its own status and is never evidence about or affected by another."""
     try:
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return None
     return None if adr_doc.is_decision(logical, fm.get("type")) else (fm, body)
@@ -80,7 +82,7 @@ def _neighbours(conn, touches: list[str]) -> list[str]:
 
 def _citing(conn, touches: list[str]) -> list[tuple[str, Path]]:
     """(logical path, file) of the doc pages citing the touches, sorted; wiki pages are not under `docs/`."""
-    files = dict(docs.iter_docs())
+    files = dict(services.current().docs.iter_docs())
     found = []
     for touch in index.pages_citing(conn, touches):
         logical = touch[len(_DOCS):] if touch.startswith(_DOCS) else ""
@@ -96,8 +98,8 @@ def _pages(cited: list[tuple[str, Path]]) -> list[dict]:
         if read is None:
             continue
         fm, body = read
-        found.append({"page": logical, "title": _text(fm.get("title") or docs.first_heading(body) or logical),
-                      "description": _text(fm.get("description")), "trust": docs.trust_of(fm, docs.body_sha(body))})
+        found.append({"page": logical, "title": _text(fm.get("title") or frontmatter.first_heading(body) or logical),
+                      "description": _text(fm.get("description")), "trust": trust_levels.trust_of(fm, frontmatter.body_sha(body))})
         if len(found) == PAGES:
             break
     return found
@@ -114,7 +116,7 @@ def _commits(touches: list[str]) -> list[dict]:
     """Per touched code repo, the commits that changed a touched file (only those files listed), in `git log` order;
     repos take turns so that a busy one does not hide the others. Only the project's repos: a touch is pulled data, and
     its repo could name any folder."""
-    per_repo, known = [], set(docs.repo_names())
+    per_repo, known = [], set(services.current().workspace.repo_names())
     for repo, paths in sorted(index.by_repo(touches).items()):
         if repo == index.DOCS_REPO or repo not in known or not (repo_dir(repo) / ".git").exists():
             continue
@@ -258,7 +260,7 @@ def _deploy_files(root: Path) -> list[tuple[str, str]]:
 
 def _from_deployment() -> list[tuple]:
     found = []
-    for repo in docs.repo_names():
+    for repo in services.current().workspace.repo_names():
         root = repo_dir(repo)
         if root.is_dir():
             found += [("deploy", name, _DEPLOY[name], [repo], [f"{repo}:{rel}"]) for name, rel in _deploy_files(root)]
@@ -285,12 +287,12 @@ def _covered() -> list[str]:
         fm, body = {}, ""
         try:
             if row["path"]:
-                fm, body = docs.split_fm((DOCS / row["path"]).read_text(encoding="utf-8"))
+                fm, body = frontmatter.split_fm((DOCS / row["path"]).read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError):
             pass
         tags = fm.get("tags")
         tags = tags if isinstance(tags, list) else str(tags or "").split(",")
-        texts += [_words(str(t)) for t in (row["title"], *tags, docs.tldr(body)) if t]
+        texts += [_words(str(t)) for t in (row["title"], *tags, page_outline.tldr(body)) if t]
     return texts
 
 

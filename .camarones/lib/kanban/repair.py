@@ -7,13 +7,13 @@ import re
 from collections import defaultdict
 from datetime import date, datetime, timezone
 
-from .. import docs
 from ..common import ROOT, repo_dir
 from . import ARCHIVE, BACKLOG, BOARD, CONFIG, STATUSES, TASKS
 from . import ops, xid
 from .deps import norm_touch, sccs
 from .items import _as_list, file_name, load_dir
 from .state import dump_board, id_key, new_uid, next_id, stamp, stamp_time
+from ..app import services
 
 ARCHIVE_AFTER_DAYS = 14
 _LINK = re.compile(r"^[A-Z]{2,5}-[0-9a-z]{4}$")
@@ -26,7 +26,7 @@ def _rel(path) -> str:
 
 def _archive_days() -> int:
     try:
-        return int((docs.workspace().get("board") or {}).get("archive_after_days", ARCHIVE_AFTER_DAYS))
+        return int((services.current().workspace.workspace().get("board") or {}).get("archive_after_days", ARCHIVE_AFTER_DAYS))
     except (TypeError, ValueError):
         return ARCHIVE_AFTER_DAYS
 

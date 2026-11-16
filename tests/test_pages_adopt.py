@@ -96,13 +96,13 @@ def add_paragraph(fx, rel, text):
 
 
 def make_human(fx, rel):
-    fm, body = fx.kit.docs.split_fm(doc(fx, rel).read_text(encoding="utf-8"))
-    doc(fx, rel).write_text(fx.kit.docs.join_fm({**fm, "x-owner": "human"}, body), encoding="utf-8", newline="\n")
+    fm, body = fx.kit.frontmatter.split_fm(doc(fx, rel).read_text(encoding="utf-8"))
+    doc(fx, rel).write_text(fx.kit.frontmatter.join_fm({**fm, "x-owner": "human"}, body), encoding="utf-8", newline="\n")
 
 
 def run_check(fx):
     """The issue strings of the project's quality check (its errors: what makes `camaron check` fail)."""
-    return fx.kit.docs.check()[0]
+    return fx.kit.services.doc_status.check()[0]
 
 
 def pages(fx):
@@ -232,7 +232,7 @@ def test_adopt_brings_the_blocks_into_an_agents_home(old_project):
     assert "> **TL;DR:** demo sells pets.\n\n:::cards\n<!-- generated:repos repo=_system" in text
     assert "generated:context repo=_system" in text and "The team ships every Friday.\n\n## Domain\n\nPets and owners." in text
     assert "docs/architecture/system-map.md" in out["deleted"] and old_project.mod.layout() == "new"
-    fm = old_project.kit.docs.split_fm(text)[0]
+    fm = old_project.kit.frontmatter.split_fm(text)[0]
     assert fm["x-owner"] == "ai" and fm["x-sources"] and "x-generated" not in fm
     assert old_project.mod.adopt()["moved"] == [] and doc(old_project, "index.md").read_text(encoding="utf-8") == text
 
@@ -356,13 +356,13 @@ def test_a_home_with_no_owner_is_an_agents(old_project):
     text = doc(old_project, "index.md").read_text(encoding="utf-8")
     assert "> **TL;DR:** demo sells pets.\n\n:::cards\n<!-- generated:repos repo=_system" in text
     assert "The team ships every Friday." in text and "docs/architecture/system-map.md" in out["deleted"]
-    assert "x-owner" not in old_project.kit.docs.split_fm(text)[0]
+    assert "x-owner" not in old_project.kit.frontmatter.split_fm(text)[0]
 
 
 def test_adopt_keeps_an_old_page_a_person_confirmed(old_project):
     f = doc(old_project, "repos/api/reference.md")
-    fm, body = old_project.kit.docs.split_fm(f.read_text(encoding="utf-8"))
-    f.write_text(old_project.kit.docs.join_fm({**fm, "x-confirmed": {"by": "ana", "at": "2026-10-01", "body_sha": "x"}}, body),
+    fm, body = old_project.kit.frontmatter.split_fm(f.read_text(encoding="utf-8"))
+    f.write_text(old_project.kit.frontmatter.join_fm({**fm, "x-confirmed": {"by": "ana", "at": "2026-10-01", "body_sha": "x"}}, body),
                  encoding="utf-8", newline="\n")
     before = f.read_bytes()
     out = old_project.mod.adopt()
@@ -506,7 +506,7 @@ def test_relink_lists_a_page_it_cannot_write(old_project, monkeypatch):
 
 
 def test_adopt_regenerates_llms_txt(old_project):
-    old_project.kit.docs.llms()
+    old_project.kit.services.llms.llms()
     assert "reference.md" in doc(old_project, "llms.txt").read_text(encoding="utf-8")
     old_project.mod.adopt()
     text = doc(old_project, "llms.txt").read_text(encoding="utf-8")
@@ -514,7 +514,7 @@ def test_adopt_regenerates_llms_txt(old_project):
 
 
 def test_adopt_logs_an_llms_txt_failure(old_project, monkeypatch):
-    monkeypatch.setattr(old_project.kit.docs, "llms", lambda: (_ for _ in ()).throw(RuntimeError("no llms today")))
+    monkeypatch.setattr(old_project.kit.services.llms, "llms", lambda: (_ for _ in ()).throw(RuntimeError("no llms today")))
     logs = []
     out = old_project.mod.adopt(log=logs.append)
     assert "docs/repos/api/reference.md" in out["deleted"] and any("no llms today" in line for line in logs)
@@ -575,7 +575,7 @@ def test_adopt_never_edits_a_generated_block(old_project):
 
 
 def test_relink_lists_a_page_that_is_not_utf8_and_has_such_a_link(old_project):
-    """`docs.collect` cannot read such a page, so `adopt` never gets here with one: `_relink` is called as it is."""
+    """`collect` (app/doc_status.py) cannot read such a page, so `adopt` never gets here with one: `_relink` is called as it is."""
     page, other = doc(old_project, "guides/latin.md"), doc(old_project, "guides/latin2.md")
     page.parent.mkdir(parents=True, exist_ok=True)
     head = b"---\ntitle: x\nx-owner: ai\n---\n# x\n\n"

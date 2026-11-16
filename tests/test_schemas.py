@@ -175,7 +175,7 @@ def test_each_repo_gets_a_data_page_with_a_generated_er_block(kit, repos):
     written = repos.write_pages(log=lambda _: None)
     assert written == ["docs/data/api.md", "docs/data/web.md"]
     page = (kit.root / "docs" / "data" / "api.md").read_text(encoding="utf-8")
-    fm, body = kit.docs.split_fm(page)
+    fm, body = kit.frontmatter.split_fm(page)
     assert fm["type"] == "data-model" and fm["x-generated"] is True and fm["x-owner"] == "ai"
     assert "api:src/main/resources/db/migration/V1__init.sql" in fm["x-sources"]
     assert "<!-- generated:schema repo=api" in body and "erDiagram" in body
@@ -199,7 +199,7 @@ def test_an_existing_page_is_never_overwritten(kit, repos):
     page = kit.root / "docs" / "data" / "api.md"
     page.parent.mkdir(parents=True)
     page.write_text("---\ntitle: Our data\n---\n# Our data\n\nWritten by the team.\n", encoding="utf-8")
-    kit.docs.confirm([str(page)], by="ana")
+    kit.services.doc_review.confirm([str(page)], by="ana")
     before = page.read_text(encoding="utf-8")
     assert repos.write_pages(log=lambda _: None) == ["docs/data/web.md"]
     assert page.read_text(encoding="utf-8") == before

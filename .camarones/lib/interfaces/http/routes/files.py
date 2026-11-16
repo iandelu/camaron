@@ -6,11 +6,11 @@ from __future__ import annotations
 import mimetypes
 from pathlib import Path
 
-from lib import docs
 from lib.app.portal_views import APP
 from lib.common import CACHE, DOCS, KIT
 from lib.interfaces.http.messages import Request, Response, not_found, redirect
 from lib.interfaces.http.router import route
+from lib.app import services
 
 DESKTOP = KIT / "desktop" / "renderer-build"  # the desktop app's own UI (desktop/renderer): its project windows load it here
 SITE = CACHE / "site"
@@ -20,7 +20,7 @@ mimetypes.add_type("font/woff2", ".woff2")    # the portal theme fonts; older Py
 
 def cdn_local(html: str) -> str:
     """Graph viewers pull libraries from CDNs; point them at /vendor/ (npm-fetched once) so they work offline."""
-    return docs.CDN_RE.sub(lambda m: f"/vendor/{m.group(1)}@{m.group(2)}/{m.group(3)}", html)
+    return services.current().vendor.CDN_RE.sub(lambda m: f"/vendor/{m.group(1)}@{m.group(2)}/{m.group(3)}", html)
 
 
 def file_response(f: Path, local_cdn: bool = False) -> Response:
@@ -71,7 +71,7 @@ def firstlook(req: Request) -> Response:
 def raw_wiki(req: Request) -> Response:
     """Images next to a wiki page (wikis/<repo>/<page>)."""
     repo, _, rel = req.params["rest"].partition("/")
-    ok = repo in docs.repo_names() and static_response(docs.wiki_dir(repo), rel)
+    ok = repo in req.services.workspace.repo_names() and static_response(req.services.docs.wiki_dir(repo), rel)
     return ok or not_found()
 
 
@@ -84,7 +84,7 @@ def raw(req: Request) -> Response:
 @route("GET", "/vendor/{pkg:(?:@[\\w.-]+/)?[\\w.-]+}@{ver:[\\w.+-]+}/{file:[\\w./+-]+}")
 def vendor(req: Request) -> Response:
     pkg, ver, file = req.params["pkg"], req.params["ver"], req.params["file"]
-    f = docs.vendor_file(pkg, ver, file)
+    f = req.services.vendor.vendor_file(pkg, ver, file)
     if f:
         return file_response(f)
     return redirect(302, f"https://cdn.jsdelivr.net/npm/{pkg}@{ver}/{file}")

@@ -126,13 +126,13 @@ def test_build_output_and_dependencies_are_ignored(radar):
 def test_page_is_a_valid_draft_with_resolvable_sources(radar):
     add_files(radar, TOOLING)
     written = radar.radar.run()
-    page = radar.docs.DOCS / "overview" / "tooling.md"
+    page = radar.common.DOCS / "overview" / "tooling.md"
     assert written == page and page.exists()
-    fm, body = radar.docs.split_fm(page.read_text(encoding="utf-8"))
+    fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
     assert fm["type"] == "overview" and fm["x-owner"] == "ai" and "x-confirmed" not in fm
     assert "api:catalog-info.yaml" in fm["x-sources"]
     assert "team-pets" in body and "https://sonar.acme.test/dashboard?id=acme_api" in body
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert not [e for e in errors if "tooling.md" in e]
 
 
@@ -140,24 +140,24 @@ def test_removed_tool_shows_as_orphan_until_rescanned(radar):
     add_files(radar, TOOLING)
     radar.radar.run()
     (radar.ws / "api" / "sonar-project.properties").unlink()
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert any("tooling.md" in e and "sonar-project.properties" in e for e in errors)
     radar.radar.run()
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert not [e for e in errors if "tooling.md" in e]
 
 
 def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
     radar.radar.run()
-    page = radar.docs.DOCS / "overview" / "tooling.md"
-    radar.docs.confirm([str(page)], by="ana")
+    page = radar.common.DOCS / "overview" / "tooling.md"
+    radar.services.doc_review.confirm([str(page)], by="ana")
     radar.radar.run()                                                            # same repos → still confirmed
-    assert radar.docs.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
+    assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
     add_files(radar, TOOLING)
     radar.radar.run()                                                            # new tools → the human re-checks
-    assert radar.docs.doc_status("overview/tooling.md", page, [])["trust"] == "needs-reconfirm"
-    fm, body = radar.docs.split_fm(page.read_text(encoding="utf-8"))
-    page.write_text(radar.docs.join_fm({**fm, "x-owner": "human"}, body + "\nHand notes.\n"), encoding="utf-8")
+    assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "needs-reconfirm"
+    fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
+    page.write_text(radar.frontmatter.join_fm({**fm, "x-owner": "human"}, body + "\nHand notes.\n"), encoding="utf-8")
     radar.radar.run()
     assert "Hand notes." in page.read_text(encoding="utf-8")
 
@@ -165,12 +165,12 @@ def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
 # ---------- stack override (workspace.yaml repos[i].stack) ----------
 def test_stack_override_wins_and_can_be_reset(radar):
     radar.radar.set_stack("api", "Java 21 · Spring Boot 3")
-    assert radar.docs.workspace()["repos"][0]["stack"] == "Java 21 · Spring Boot 3"
+    assert radar.services.workspace.workspace()["repos"][0]["stack"] == "Java 21 · Spring Boot 3"
     res = radar.radar.scan()
     assert res["api"]["stack"] == "Java 21 · Spring Boot 3" and res["api"]["detected_stack"] == "Java"
     assert radar.quickarch.scan()["repos"]["api"]["tech"] == "Java 21 · Spring Boot 3"   # C4 draft agrees
     radar.radar.set_stack("api", None)
-    assert "stack" not in radar.docs.workspace()["repos"][0]
+    assert "stack" not in radar.services.workspace.workspace()["repos"][0]
     assert radar.radar.scan()["api"]["stack"] == "Java"
 
 
@@ -195,9 +195,9 @@ def test_cli_radar_json_and_stack(radar):
     data = json.loads(r.stdout)
     assert data["web"]["stack"] == "TypeScript · React 18"
     assert "backstage" in {t["id"] for t in data["api"]["tools"]}
-    assert (radar.docs.DOCS / "overview" / "tooling.md").exists()
+    assert (radar.common.DOCS / "overview" / "tooling.md").exists()
     r = cli(radar, "stack", "web", "--reset")
-    assert r.returncode == 0 and "stack" not in radar.docs.workspace()["repos"][1]
+    assert r.returncode == 0 and "stack" not in radar.services.workspace.workspace()["repos"][1]
     r = cli(radar, "stack", "nope", "Go")
     assert r.returncode != 0
 

@@ -65,3 +65,9 @@ def test_importing_common_alone_extends_path(isolated_env, monkeypatch):
         assert str(extra) in os.environ["PATH"].split(os.pathsep)
     finally:
         purge_kit_modules()
+
+
+def test_now_is_utc_to_the_second():
+    """now() moved from docs.py to core/clock.py (F5a): an ISO time in UTC without microseconds, as .state.json keeps it."""
+    now = importlib.import_module("lib.core.clock").now()
+    assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", now)

@@ -7,7 +7,7 @@ import re
 import shutil
 from pathlib import Path
 
-from lib import binaries, docs
+from lib import binaries
 from lib.app import components, services, templates, viewers
 from lib.common import (CAM_DIR, CAM_LAYOUT, DOCS, HOME, ROOT, VERSIONS, WORKSPACE, WS_FILE, cli_cmd, ensure_path,
                         load_json, out, repo_dir, run, save_json, sdkman_dir, uv, which)
@@ -19,7 +19,7 @@ JVM_MARKERS = ("pom.xml", "build.gradle", "build.gradle.kts", "mvnw", "gradlew",
 
 
 def jvm_repos() -> list[str]:
-    return [n for n in docs.repo_names() if any((repo_dir(n) / m).exists() for m in JVM_MARKERS)]
+    return [n for n in services.current().workspace.repo_names() if any((repo_dir(n) / m).exists() for m in JVM_MARKERS)]
 
 
 def java_info() -> dict:
@@ -37,7 +37,7 @@ def java_info() -> dict:
                                                     if (p / "current").exists())) + ")" if (sdkman_dir() / "candidates").is_dir() else "SDKMAN ✔")
     if tools:
         note.append("build: " + ", ".join(tools))
-    rc = [n for n in docs.repo_names() if (repo_dir(n) / ".sdkmanrc").exists()]
+    rc = [n for n in services.current().workspace.repo_names() if (repo_dir(n) / ".sdkmanrc").exists()]
     if rc:
         note.append(".sdkmanrc in: " + ", ".join(rc) + " → `sdk env` inside those repos")
     return {"ok": bool(ver), "need": False, "found": f"java {ver}" if ver else "—", "sdkman": sdk,
@@ -233,7 +233,7 @@ def add_repo_pointer(name: str) -> bool:
 
 def wire_one(name: str, log: Log = print, comps: list[str] | None = None) -> None:
     wire_repo(name, log, comps)
-    if docs.workspace()["project"].get("repo_pointer"):
+    if services.current().workspace.workspace()["project"].get("repo_pointer"):
         add_repo_pointer(name)
 
 
@@ -260,7 +260,7 @@ def setup_steps(comps: list[str] | None = None) -> int:
     """How many ✔ lines setup() will print — drives the progress bar."""
     comps = components.components() if comps is None else comps
     n = sum(1 for t in components.KIT_TOOLS if t in comps) + 1          # tools + repos synced
-    n += len(docs.repo_names())                              # repos wired
+    n += len(services.current().workspace.repo_names())      # repos wired
     n += 1                                                   # umbrella
     n += 1 if "graphify" in comps else 0
     n += 1 if "agents" in comps and CAM_LAYOUT else 0
@@ -275,13 +275,13 @@ def setup(ci: bool = False, log: Log = print, comps: list[str] | None = None) ->
         raise RuntimeError("missing prerequisites: " + ", ".join(missing))
     install_tools(log, comps)
     log("syncing repositories…")
-    failed = docs.sync_repos(lambda m: log(m.strip()))
+    failed = services.current().repos.sync_repos(lambda m: log(m.strip()))
     if failed:
         raise RuntimeError('Repository sync failed: ' + ', '.join(failed))
-    log(f"✔ {len(docs.repo_names())} repo(s) in sync")
+    log(f"✔ {len(services.current().workspace.repo_names())} repo(s) in sync")
     if ci:
         return True
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         if (repo_dir(n) / ".git").exists():
             wire_one(n, log, comps)
             log(f"✔ {n}")

@@ -10,8 +10,9 @@ import sqlite3, tempfile
 from pathlib import Path
 from typing import Literal, Sequence
 
-from . import docs, stories
+from . import stories
 from .kanban import deps, index
+from .app import services
 
 WHAT = ("rewrite", "criteria", "tasks")
 TIMEOUT = 90                   # seconds a person waits in the wizard
@@ -25,7 +26,7 @@ _GIVEN = {"es": "Dado … cuando … entonces …", "en": "Given … when … th
 
 
 def _section() -> dict:
-    section = docs.workspace().get("stories")
+    section = services.current().workspace.workspace().get("stories")
     return section if isinstance(section, dict) else {}
 
 

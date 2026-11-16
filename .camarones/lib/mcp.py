@@ -10,8 +10,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .common import HOME, ROOT, DOCS, WORK, WS_FILE, VERSIONS, run, which
 from .core.paths import CACHE
 from .harness import freshness
-from . import docs, usage
+from . import usage
 from .app import services
+from .domain.docs import directives, frontmatter, logical_paths, page_outline, trust_levels
 
 PROTOCOL = "2025-06-18"
 
@@ -82,22 +83,22 @@ TOOLS = [
 
 
 def _rows() -> dict[str, dict]:
-    return {r["path"]: r for r in docs.collect()}
+    return {r["path"]: r for r in services.current().doc_status.collect()}
 
 
 def _file(path: str):
-    return docs.find_page(path)
+    return services.current().docs.find_page(path)
 
 
 def _logical(path: str) -> str:
     """The logical path of the page `path` names (`docs/…`, or a wiki page's pre-4.81 repos/<repo>/…)."""
-    return docs.link_target(path, dict(docs.iter_docs()))
+    return logical_paths.link_target(path, dict(services.current().docs.iter_docs()))
 
 
 def search_docs(query: str, limit: int = 8) -> str:
     if not re.search(r"\w\w", query):
         return "Empty query."
-    hits = docs.search(query, limit)
+    hits = services.current().search.search(query, limit)
     usage.record("mcp:search_docs", channel="agent", hit=bool(hits), query=query)
     if not hits:
         return f"No page mentions: {query}"
@@ -131,38 +132,38 @@ def read_doc(path: str, section: str | None = None) -> str:
     if not ok:
         return notice
     text = f.read_text(encoding="utf-8")
-    fm, body = docs.split_fm(text)
-    body = docs.flatten_directives(body)                 # agents read plain Markdown, never portal syntax
-    text = docs.join_fm(fm, body) if fm else body
-    outline = ", ".join(s["slug"] for s in docs.sections(body))
+    fm, body = frontmatter.split_fm(text)
+    body = directives.flatten_directives(body)           # agents read plain Markdown, never portal syntax
+    text = frontmatter.join_fm(fm, body) if fm else body
+    outline = ", ".join(s["slug"] for s in page_outline.sections(body))
     head = (f"<!-- trust: {r.get('trust', '?')} · freshness: {r.get('fresh', '?')} · file: {r.get('file', '')}"
             + (f" · sections: {outline}" if outline else "") + " -->\n")
     warn = f"> ⚠ {notice}\n\n" if notice else ""
     if not section:
         return head + warn + text
-    found = docs.section_text(body, section)
+    found = page_outline.section_text(body, section)
     if not found:
         return f"No section '{section}' in {path}. Sections: {outline or 'none'}."
-    title = fm.get("title") or docs.first_heading(body) or path
-    return head + warn + f"# {title}\n\n" + (docs.tldr(body) + "\n\n" if docs.tldr(body) else "") + found[1] + "\n"
+    title = fm.get("title") or frontmatter.first_heading(body) or path
+    return head + warn + f"# {title}\n\n" + (page_outline.tldr(body) + "\n\n" if page_outline.tldr(body) else "") + found[1] + "\n"
 
 
 def list_docs() -> str:
     usage.record("mcp:list_docs")
-    rows = docs.collect()
+    rows = services.current().doc_status.collect()
     return "\n".join(f"- {r['path']} [{r['trust']}{'' if freshness.gate(r['path'], r['trust'], r.get('freshness'))[0] else ', withheld'}] "
                      f"{r['title']}" + (f" — {r['description']}" if r["description"] else "") for r in rows) or "No docs yet."
 
 
 def doc_status() -> str:
     usage.record("mcp:doc_status")
-    rows = docs.collect()
-    s = docs.summary(rows)
+    rows = services.current().doc_status.collect()
+    s = trust_levels.summary(rows)
     lines = [f"{s['total']} pages: confirmed {s['confirmed']}, draft {s['draft']}, needs-reconfirm {s['needs-reconfirm']}, "
              f"orphans {s['orphans']}, untranslated {s['untranslated']}"]
     lines += [f"- re-confirm: {r['path']}" for r in rows if r["trust"] == "needs-reconfirm"]
     lines += [f"- orphan sources in {r['path']}: {r['orphan_sources']}" for r in rows if r["orphan_sources"]]
-    for repo, c in docs.changes().items():
+    for repo, c in services.current().doc_state.changes().items():
         if c["status"] != "up-to-date":
             lines.append(f"- repo {repo}: {c['status']}" + (f" ({len(c.get('files', []))} files)" if c.get("files") else ""))
     return "\n".join(lines)
@@ -180,7 +181,7 @@ def repo_graph(question: str, repo: str | None = None) -> str:
 
 
 def ask(question: str, limit: int = 3) -> str:
-    hits = docs.search(question, 20) if re.search(r"\w\w", question) else []
+    hits = services.current().search.search(question, 20) if re.search(r"\w\w", question) else []
     usage.record("mcp:ask", channel="agent", hit=bool(hits), query=question)
     rows, parts = _rows(), []
     for h in hits:
@@ -189,10 +190,10 @@ def ask(question: str, limit: int = 3) -> str:
         f = _file(h["path"])
         if not ok or not f:
             continue
-        body = docs.flatten_directives(docs.split_fm(f.read_text(encoding="utf-8"))[1])
-        found = docs.section_text(body, h["section"]) if h.get("section") else None
+        body = directives.flatten_directives(frontmatter.split_fm(f.read_text(encoding="utf-8"))[1])
+        found = page_outline.section_text(body, h["section"]) if h.get("section") else None
         cite = h["path"] + (f"#{h['section']}" if found else "")
-        tl = docs.tldr(body)
+        tl = page_outline.tldr(body)
         text = found[1] if found else body.strip()
         parts.append(f"[{cite}] ({r.get('trust', '?')} · {r.get('fresh', '?')})\n" + (f"> ⚠ {notice}\n" if notice else "")
                      + (tl + "\n\n" if tl and found else "") + text)
@@ -209,7 +210,7 @@ PROPOSALS = WORK / "proposals"
 
 
 def _replace_section(body: str, section: str, text: str) -> str | None:
-    found = docs.section_text(body, section)
+    found = page_outline.section_text(body, section)
     if not found:
         return None
     lines = body.splitlines()
@@ -223,15 +224,15 @@ def propose_edit(path: str, text: str, section: str | None = None, reason: str =
     f = _file(logical)
     if not f:
         return f"No page at {path}."
-    text = docs.split_fm(text)[1] if text.lstrip().startswith("---") else text   # frontmatter is never taken
+    text = frontmatter.split_fm(text)[1] if text.lstrip().startswith("---") else text  # frontmatter is never taken
     r = _rows().get(logical, {})
     raw = f.read_text(encoding="utf-8")
-    fm, body = docs.split_fm(raw)
+    fm, body = frontmatter.split_fm(raw)
     if r.get("trust") == "draft" and r.get("owner") != "human" and r.get("space", "docs") == "docs":
         new = _replace_section(body, section, text) if section else text.strip() + "\n"
         if new is None:
-            return f"No section '{section}' in {path}. Sections: {', '.join(s['slug'] for s in docs.sections(body))}."
-        f.write_text(docs.join_fm(fm, new), encoding="utf-8", newline="\n")
+            return f"No section '{section}' in {path}. Sections: {', '.join(s['slug'] for s in page_outline.sections(body))}."
+        f.write_text(frontmatter.join_fm(fm, new), encoding="utf-8", newline="\n")
         usage.record("mcp:propose_edit", channel="agent", page=logical)
         return f"applied to {path} ({'section ' + section if section else 'whole page'}); it stays an AI draft."
     PROPOSALS.mkdir(parents=True, exist_ok=True)
@@ -239,7 +240,7 @@ def propose_edit(path: str, text: str, section: str | None = None, reason: str =
     out = PROPOSALS / f"{stamp}-{re.sub(r'[^a-z0-9]+', '-', logical.lower()).strip('-')}.md"
     out.write_text(f"# Proposal for `{logical}`" + (f" § {section}" if section else "") + "\n\n"
                    + (f"Why: {reason}\n\n" if reason else "") + text.strip() + "\n", encoding="utf-8", newline="\n")
-    docs.add_feedback(r.get("file", f"docs/{logical}"), f"proposed change ({out.relative_to(ROOT).as_posix()})"
+    services.current().docs.add_feedback(r.get("file", f"docs/{logical}"), f"proposed change ({out.relative_to(ROOT).as_posix()})"
                       + (f": {reason}" if reason else ""), by)
     usage.record("mcp:propose_edit", channel="agent", page=logical)
     return (f"{path} is {r.get('trust')}{' and owned by a person' if r.get('owner') == 'human' else ''}: not changed. "
@@ -251,7 +252,7 @@ def add_feedback(path: str, text: str, by: str = "agent") -> str:
     r = _rows().get(logical)
     if not r:
         return f"No page at {path}."
-    docs.add_feedback(r["file"], text, by)
+    services.current().docs.add_feedback(r["file"], text, by)
     return f"recorded for {path}: a person sees it in Review, and the review-fixes unit applies it."
 
 
@@ -287,7 +288,7 @@ def _spawn_run(uid: str) -> str:
 
 def run_node(unit: str) -> str:
     from . import plan
-    if not (docs.workspace().get("mcp") or {}).get("pipeline_control"):
+    if not (services.current().workspace.workspace().get("mcp") or {}).get("pipeline_control"):
         return ("Running units from the MCP is disabled: set `mcp: {pipeline_control: true}` in "
                 ".camarones/workspace.yaml to allow it (runs start agents, which costs).")
     if not any(u["id"] == unit for u in plan.load()["units"]):
@@ -367,14 +368,14 @@ def resources() -> list[dict]:
     out = [{"uri": "camdocs://llms.txt", "name": "llms.txt", "title": "Documentation index",
             "description": "Every page agents may read, with its trust level.", "mimeType": "text/plain"}]
     out += [{"uri": f"camdocs://{r['path']}", "name": r["path"], "title": r["title"],
-             "description": r["description"] or r["title"], "mimeType": "text/markdown"} for r in docs.readable()]
+             "description": r["description"] or r["title"], "mimeType": "text/markdown"} for r in services.current().llms.readable()]
     return out
 
 
 def read_resource(uri: str) -> str:
     path = uri.removeprefix("camdocs://")
     if path == "llms.txt":
-        docs.llms()
+        services.current().llms.llms()
         return (DOCS / "llms.txt").read_text(encoding="utf-8")
     return read_doc(path)
 
@@ -384,7 +385,7 @@ def handle(msg: dict) -> dict | None:
     if mid is None:
         return None                                    # notifications need no answer
     if method == "initialize":
-        name = docs.workspace()["project"]["name"] if WS_FILE.exists() else "no project"
+        name = services.current().workspace.workspace()["project"]["name"] if WS_FILE.exists() else "no project"
         result = {"protocolVersion": msg.get("params", {}).get("protocolVersion", PROTOCOL),
                   "capabilities": {"tools": {}, "resources": {}, "prompts": {}},
                   "serverInfo": {"name": "camarones", "version": VERSIONS["kit"]},

@@ -13,6 +13,7 @@ from .. import sessions
 from ..common import WORKSPACE, load_json
 from ..core.paths import WIKI_STAMP
 from . import kpis, pricing, runs, transcripts
+from ..app import services
 
 KEEP = 500                     # sessions kept per machine file
 WHY = {"codex-session": "Codex session", "openwiki-native": "native OpenWiki", "transcript-missing": "transcript not found",
@@ -169,7 +170,6 @@ def _add_cost(a, b):
 
 
 def _unmeasured(epoch, team_sessions: dict, rows: dict, plan_units: dict) -> list[dict]:
-    from .. import docs
     out = []
     folder = sessions.claude_dir(WORKSPACE)
     for rec in _records():
@@ -187,7 +187,7 @@ def _unmeasured(epoch, team_sessions: dict, rows: dict, plan_units: dict) -> lis
     for uid, u in plan_units.items():
         if u.get("type") != "repo-wiki" or u.get("status") != "done" or uid in rows or not u.get("repo"):
             continue
-        stamp = load_json(docs.wiki_dir(u["repo"]) / WIKI_STAMP, {})
+        stamp = load_json(services.current().docs.wiki_dir(u["repo"]) / WIKI_STAMP, {})
         if isinstance(stamp, dict) and stamp.get("engine") == "openwiki":
             out.append({"unit": uid, "why": "openwiki-native"})
     return [dict(t) for t in dict.fromkeys(tuple(sorted(x.items())) for x in out)]
@@ -195,9 +195,9 @@ def _unmeasured(epoch, team_sessions: dict, rows: dict, plan_units: dict) -> lis
 
 def bill() -> dict:
     """The current plan's bill for the whole team (spec: docs/superpowers/specs/2026-10-27-plan-cost-design.md §9)."""
-    from .. import docs, plan, usage
+    from .. import plan, usage
     notes: list[str] = []
-    workspace = docs.workspace()
+    workspace = services.current().workspace.workspace()
     tbl, problems = pricing.table(workspace)
     data = plan.load()
     plan_units = {u["id"]: u for u in data.get("units") or []}
