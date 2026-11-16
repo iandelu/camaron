@@ -224,3 +224,16 @@ def test_trust_still_asks_for_permissions_that_widen_access(wired):
     f.write_text(json.dumps({"permissions": {"deny": ["Skill(x)"], "allow": ["Bash(curl:*)"]}}), encoding="utf-8")
     asked = [it for it, _ in trust.pending() if it.id == "claude permissions (local)"]
     assert asked and "allow" in asked[0].detail and "Skill(x)" not in asked[0].detail
+
+
+def test_a_hand_written_off_list_counts_though_yaml_reads_off_as_false(wired):
+    s = skills(wired)
+    f = wired.root / ".camarones" / "workspace.yaml"
+    f.write_text(f.read_text(encoding="utf-8") + "skills:\n  off: [cam-retro]\n", encoding="utf-8")
+    assert s.project_off() == {"cam-retro"}
+
+
+def test_turning_the_last_skill_back_on_leaves_no_empty_key(wired):
+    assert cli(wired, "disable", "cam-retro").returncode == 0
+    assert cli(wired, "enable", "cam-retro").returncode == 0
+    assert "skills" not in wired.services.workspace.workspace()

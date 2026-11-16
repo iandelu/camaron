@@ -153,7 +153,15 @@ def project_off() -> set[str]:
         ws = yamlio.safe_load(WS_FILE.read_text(encoding="utf-8")) if WS_FILE.is_file() else None
     except (OSError, ValueError, yamlio.yaml.YAMLError):
         return set()
-    off = ((ws or {}).get("skills") or {}).get("off") if isinstance(ws, dict) else None
+    return off_list(ws.get("skills") if isinstance(ws, dict) else None)
+
+
+def off_list(cfg) -> set[str]:
+    """The names under `off` in a `skills:` mapping. YAML 1.1 reads a bare `off:` key as False, so a list written by
+    hand counts as much as the one the kit writes (quoted)."""
+    if not isinstance(cfg, dict):
+        return set()
+    off = cfg.get("off", cfg.get(False))
     return {n for n in off if isinstance(n, str)} if isinstance(off, list) else set()
 
 

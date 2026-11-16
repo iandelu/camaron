@@ -136,10 +136,15 @@ def _switch(a, on: bool) -> int:
     else:
         from lib.app import services
         ws = services.current().workspace.workspace()
+        from lib import skills
         cfg = ws.get("skills") if isinstance(ws.get("skills"), dict) else {}
-        off = {n for n in cfg.get("off") or [] if isinstance(n, str)}
-        off = off - {name} if on else off | {name}
-        ws["skills"] = {**cfg, "off": sorted(off)}
+        off = skills.off_list(cfg) - {name} if on else skills.off_list(cfg) | {name}
+        rest = {k: v for k, v in cfg.items() if k not in ("off", False)}
+        cfg = {**rest, "off": sorted(off)} if off else rest
+        if cfg:
+            ws["skills"] = cfg
+        else:
+            ws.pop("skills", None)                     # back to what a workspace without the key always meant
         services.current().workspace.save_workspace(ws)
         _rerender()
         where = "for the project"
