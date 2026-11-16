@@ -72,6 +72,37 @@ def test_prune_forgets_worktrees_whose_folder_and_branch_are_gone(wired, wt):
     assert wt.get("discovery:api") is None and wt.list() == []
 
 
+def test_attach_puts_a_named_worktree_on_its_branch_and_keeps_it_on_a_rerun(wired):
+    from lib.harness import worktrees
+    path = wired.ws / ".cw" / "wi-21"
+    worktrees.attach(wired.root, path, "cam/wi-21-change-phases", "HEAD")
+    assert git(path, "rev-parse", "--abbrev-ref", "HEAD") == "cam/wi-21-change-phases"
+    (path / "docs" / "draft.md").write_text("half done", encoding="utf-8")
+    worktrees.attach(wired.root, path, "cam/wi-21-change-phases", "HEAD")            # a rerun keeps the work
+    assert (path / "docs" / "draft.md").read_text(encoding="utf-8") == "half done"
+
+
+def test_attach_rebuilds_a_deleted_folder_from_its_branch(wired):
+    from lib.harness import worktrees
+    path = wired.ws / ".cw" / "wi-21"
+    worktrees.attach(wired.root, path, "cam/wi-21-x", "HEAD")
+    (path / "docs" / "kept.md").write_text("committed", encoding="utf-8")
+    git(path, "add", "-A")
+    git(path, "commit", "-qm", "change work")
+    rmtree(path)
+    worktrees.attach(wired.root, path, "cam/wi-21-x", "HEAD")
+    assert (path / "docs" / "kept.md").read_text(encoding="utf-8") == "committed"
+
+
+def test_detach_removes_the_folder_and_keeps_the_branch(wired):
+    from lib.harness import worktrees
+    path = wired.ws / ".cw" / "wi-21"
+    worktrees.attach(wired.root, path, "cam/wi-21-x", "HEAD")
+    worktrees.detach(wired.root, path)
+    assert not path.exists() and str(path) not in git(wired.root, "worktree", "list")
+    assert "cam/wi-21-x" in git(wired.root, "branch", "--list", "cam/wi-21-x")
+
+
 def test_windows_gets_long_paths(wired, monkeypatch):
     from lib.harness import worktrees
     monkeypatch.setattr(worktrees, "IS_WIN", True)
