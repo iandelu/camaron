@@ -125,6 +125,11 @@ def _doc_status() -> object:
     return doc_status
 
 
+def _llms() -> object:
+    from lib.app import llms
+    return llms
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -149,6 +154,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "docs": _docs,
     "vendor": _vendor,
     "doc_status": _doc_status,
+    "llms": _llms,
 }
 
 

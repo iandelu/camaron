@@ -12,7 +12,6 @@ import shutil
 from collections import deque
 from pathlib import Path
 
-from lib import docs
 from lib.adapters import runners
 from lib.app import components, services, setup, share, viewers
 from lib.common import CAM_DIR, CTX, ROOT, VERSIONS, WORKSPACE, cli_cmd, rel_file, repo_dir, run, which, ws_rel
@@ -374,7 +373,7 @@ def openwiki_generate(repo: str, mode: str = "", log: Log = print, engine: str =
             stamp_wiki(repo, mode=mode, engine=engine, kit=VERSIONS["kit"])
         if known:
             plan.set_status(uid, "done", f"OpenWiki {mode} via {engine}")
-        docs.llms()
+        services.current().llms.llms()
         wiki_graph(repo, log=log)
         share.checkpoint_commit(f"{uid} ({mode})")
         log(f"✔ wiki {repo}: {len(wiki_pages(repo))} pages")

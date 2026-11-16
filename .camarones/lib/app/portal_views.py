@@ -48,7 +48,7 @@ def tree() -> dict:
             "repos": services.current().workspace.repo_names(), "codeGraphs": list(services.current().viewers.code_graphs()),
             "engines": services.current().wiki.wiki_engines(), "engineHelp": services.current().wiki.wiki_engine_help(),
             "kitGuides": sorted(docs.kit_guides()),
-            "sections": docs.SECTIONS, "views": services.current().diagrams.c4_views(), "codeMaps": codemap.available(), "editBase": "",
+            "sections": services.current().llms.SECTIONS, "views": services.current().diagrams.c4_views(), "codeMaps": codemap.available(), "editBase": "",
             "docs": _with_adr_status(rows)}
 
 

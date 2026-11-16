@@ -42,7 +42,7 @@ def mcp(kit):
 
 
 def test_llms_txt_follows_llmstxt_org(kit, mcp):
-    kit.docs.llms()
+    kit.services.llms.llms()
     text = (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8")
     lines = text.splitlines()
     assert lines[0] == "# demo" and lines[2].startswith("> The demo shop, its services and how orders flow.")
@@ -52,7 +52,7 @@ def test_llms_txt_follows_llmstxt_org(kit, mcp):
 
 
 def test_llms_full_has_every_readable_page_without_frontmatter(kit, mcp):
-    kit.docs.llms()
+    kit.services.llms.llms()
     full = (kit.root / "docs" / "llms-full.txt").read_text(encoding="utf-8")
     assert "<!-- flows/checkout.md · confirmed · How an order goes" in full and "PaymentRetryJob" in full
     assert "\ntitle: Checkout" not in full and "Raw answers" not in full                  # no YAML, no interviews

@@ -13,7 +13,6 @@ from lib.interfaces.cli.registry import CliContext, Command, command
          en="Files changed since the docs were last updated")
 class Changes(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
         print(json.dumps(cli.services.doc_state.changes(), indent=2))
         return 0
 
@@ -21,8 +20,7 @@ class Changes(Command):
 @command("llms", "app", "analyze", es="Regenerar llms.txt", en="Regenerate llms.txt")
 class Llms(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        print(f"wrote docs/llms.txt ({docs.llms()} entries)")
+        print(f"wrote docs/llms.txt ({cli.services.llms.llms()} entries)")
         return 0
 
 
@@ -172,7 +170,6 @@ class MarkDocumented(Command):
         parser.add_argument("repos", nargs="*")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
         print("marked documented:", ", ".join(cli.services.doc_state.mark_documented(args.repos)))
         return 0
 

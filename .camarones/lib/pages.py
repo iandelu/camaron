@@ -18,7 +18,7 @@ from types import SimpleNamespace
 from urllib.parse import unquote
 
 from .common import DOCS, rel_file, repo_dir
-from . import diagrams, docs, genblocks, inventory, quality, quickarch, schemas
+from . import diagrams, genblocks, inventory, quality, quickarch, schemas
 from .domain.docs import frontmatter
 from .app import services
 
@@ -799,7 +799,7 @@ def adopt(log=lambda _: None) -> dict:
     _logged(out, log)
     if gone:                                                                 # llms.txt still lists the deleted pages
         try:
-            docs.llms()
+            services.current().llms.llms()
         except Exception as e:                                               # the move is done: say it, don't undo it
             log(f"· docs/llms.txt not regenerated ({e}): run camaron llms")
     return out

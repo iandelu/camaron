@@ -26,6 +26,6 @@ def test_agents_read_flattened_pages(kit):
     mcp = importlib.import_module("lib.mcp")
     for text in (mcp.read_doc("guides/build.md"), mcp.read_doc("guides/build.md", section="commands")):
         assert "**Maven**" in text and ":::" not in text and "::tab" not in text
-    kit.docs.llms()
+    kit.services.llms.llms()
     full = (kit.root / "docs" / "llms-full.txt").read_text(encoding="utf-8")
     assert "**Maven**" in full and "::tab" not in full

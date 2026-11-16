@@ -200,6 +200,6 @@ def post_review_decide(req: Request) -> Response:
 
 @route("POST", "/api/commit")
 def post_commit(req: Request) -> Response:
-    docs.llms()
+    req.services.llms.llms()
     ok = req.services.share.checkpoint_commit(req.body.get("message") or "docs edited in the portal")
     return json_response({"committed": ok, "head": out(["git", "log", "-1", "--format=%h %s"], cwd=ROOT)})

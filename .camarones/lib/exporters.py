@@ -8,7 +8,6 @@ import base64, html as htmllib, json, os, re, shutil, urllib.request
 from pathlib import Path
 
 from .common import CACHE, IS_MAC, IS_WIN, ROOT, run, which
-from . import docs
 from .domain.docs import directives, frontmatter, page_outline
 from .app import services
 
@@ -107,7 +106,7 @@ def to_html(md: str) -> str:
 def pages() -> list[tuple[dict, str]]:
     """(row, body) for every page agents may read, in llms.txt order; working notes stay out."""
     out = []
-    for r in docs.readable():
+    for r in services.current().llms.readable():
         if r["type"] == "interview" or r["path"].startswith("interview/") or r.get("space", "docs") != "docs":
             continue
         out.append((r, directives.flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1])))

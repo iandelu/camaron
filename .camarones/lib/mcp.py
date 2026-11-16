@@ -368,14 +368,14 @@ def resources() -> list[dict]:
     out = [{"uri": "camdocs://llms.txt", "name": "llms.txt", "title": "Documentation index",
             "description": "Every page agents may read, with its trust level.", "mimeType": "text/plain"}]
     out += [{"uri": f"camdocs://{r['path']}", "name": r["path"], "title": r["title"],
-             "description": r["description"] or r["title"], "mimeType": "text/markdown"} for r in docs.readable()]
+             "description": r["description"] or r["title"], "mimeType": "text/markdown"} for r in services.current().llms.readable()]
     return out
 
 
 def read_resource(uri: str) -> str:
     path = uri.removeprefix("camdocs://")
     if path == "llms.txt":
-        docs.llms()
+        services.current().llms.llms()
         return (DOCS / "llms.txt").read_text(encoding="utf-8")
     return read_doc(path)
 

@@ -19,7 +19,7 @@ from pathlib import Path
 from .common import CAM_DIR, CAM_LAYOUT, DOCS, ROOT, WORK, WS_FILE, load_json, out, rel_file, run as run_cmd
 from .core.locks import pid_alive
 from .core.paths import WIKI_LOCK
-from . import docs, plan
+from . import plan
 from .app import services
 from .domain.docs import frontmatter
 
@@ -206,7 +206,7 @@ def _regenerate(log) -> None:
     except Exception as e:  # noqa: BLE001 — the reset is done; the pages from the code can be written later
         log(f"⚠ the pages from the code were not written ({e}): run `pages`")
     services.current().doc_status.collect()
-    docs.llms()
+    services.current().llms.llms()
 
 
 def run(mode: str, templates: bool = False, log=lambda _: None) -> dict:

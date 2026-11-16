@@ -187,7 +187,7 @@ def integrate(uid: str, ctx: Ctx, gates=GATES, policy: str = "on-conflict", emit
                    f"Unit {uid} merges cleanly but adds errors: {detail}. Its work is in {rel} (branch {w.branch}): fix "
                    "them there, commit, then mark this unit done; the kit merges it again." if policy == "on-conflict" else None)
             return Result(uid, "gate-failed", detail)
-        _kit(tree, "from lib import docs\nfrom lib.app import services\nservices.current().doc_status.collect()\ndocs.llms()")
+        _kit(tree, "from lib.app import services\nservices.current().doc_status.collect()\nservices.current().llms.llms()")
         _git(w.path, "add", "-A", "--", *DERIVED)
         if _git(w.path, "diff", "--cached", "--quiet").returncode:
             _git(w.path, *_ident(w.path), "commit", "-q", "--no-verify", "-m", f"docs(camarones): {uid} derived files",

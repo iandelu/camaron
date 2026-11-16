@@ -47,7 +47,7 @@ def test_llms_txt_gives_a_token_estimate_per_page(kit):
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text("---\ntitle: Checkout\n---\n# Checkout\n\n" + "word " * 400, encoding="utf-8")
     kit.docs.confirm([str(page)], by="ana")
-    kit.docs.llms()
+    kit.services.llms.llms()
     lines = [l for l in (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8").splitlines() if l.startswith("- [")]
     assert lines and all("tokens)" in l for l in lines)
     assert any("Checkout" in l and "(~50" in l for l in lines)                     # ~2000 chars of body

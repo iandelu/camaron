@@ -138,7 +138,7 @@ def test_llms_txt_lists_withheld_pages_apart(kit, fresh):
     page(kit, "flows/b.md", ["api:README.md"])
     fresh.stamp_all()
     code(kit, ORIGINAL.replace("Api {", "Api implements Runnable {"))
-    kit.docs.llms()
+    kit.services.llms.llms()
     text = (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8")
     head, _, tail = text.partition("## Out of date")
     assert "flows/b.md" in head and "flows/a.md" not in head and "flows/a.md" in tail

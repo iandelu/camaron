@@ -506,7 +506,7 @@ def test_relink_lists_a_page_it_cannot_write(old_project, monkeypatch):
 
 
 def test_adopt_regenerates_llms_txt(old_project):
-    old_project.kit.docs.llms()
+    old_project.kit.services.llms.llms()
     assert "reference.md" in doc(old_project, "llms.txt").read_text(encoding="utf-8")
     old_project.mod.adopt()
     text = doc(old_project, "llms.txt").read_text(encoding="utf-8")
@@ -514,7 +514,7 @@ def test_adopt_regenerates_llms_txt(old_project):
 
 
 def test_adopt_logs_an_llms_txt_failure(old_project, monkeypatch):
-    monkeypatch.setattr(old_project.kit.docs, "llms", lambda: (_ for _ in ()).throw(RuntimeError("no llms today")))
+    monkeypatch.setattr(old_project.kit.services.llms, "llms", lambda: (_ for _ in ()).throw(RuntimeError("no llms today")))
     logs = []
     out = old_project.mod.adopt(log=logs.append)
     assert "docs/repos/api/reference.md" in out["deleted"] and any("no llms today" in line for line in logs)

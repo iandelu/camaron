@@ -2,7 +2,7 @@
 snapshot, the CI files, the code maps and the viewers; and the jobs that build them (first look, C4, graphs, wikis)."""
 from __future__ import annotations
 
-from lib import docs, plan
+from lib import plan
 from lib.app import portal_views, services
 from lib.core.paths import DOCS
 from lib.core.process import which
@@ -32,7 +32,7 @@ def schemas_write() -> dict:
     write = schemas.write_pages if pages.layout() == "old" else pages.write
     written = write(log=lambda _: None)
     genblocks.refresh()
-    docs.llms()
+    services.current().llms.llms()
     return {"written": written}
 
 
@@ -69,7 +69,7 @@ def first_look(log) -> bool:
             diagrams.write_pages(log=log)
         except Exception as e:  # noqa: BLE001 — the diagrams are a bonus: llms.txt and the C4 build still run
             log(f"⚠ diagrams skipped: {e}")
-    docs.llms()
+    services.current().llms.llms()
     if which("likec4"):
         services.current().viewers.build_c4(log=log)
     wrote = "index.md, a page per repo" if new else "architecture/first-look.md, architecture/system-map.md"

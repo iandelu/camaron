@@ -686,7 +686,7 @@ def test_first_look_survives_a_diagram_failure(dg, monkeypatch):
         raise RuntimeError("no map today")
     monkeypatch.setattr(dg.mod, "write_pages", boom)
     llms = []
-    monkeypatch.setattr("lib.docs.llms", lambda *a, **k: llms.append(1))
+    monkeypatch.setattr("lib.app.llms.llms", lambda *a, **k: llms.append(1))
     logs = []
     assert serve.first_look(log=logs.append) is True
     assert llms and any("diagrams skipped" in line for line in logs)

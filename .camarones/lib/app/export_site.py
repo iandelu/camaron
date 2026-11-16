@@ -8,7 +8,6 @@ import re
 import shutil
 from pathlib import Path
 
-from lib import docs
 from lib.app import components, services, viewers, wiki
 from lib.common import CACHE, DOCS, IS_WIN, ROOT, out, ws_rel
 from lib.ports import Log
@@ -38,7 +37,7 @@ def export_site(log: Log = print) -> Path:
     shutil.copytree(portal_views.UI, tmp)
     html = (tmp / "index.html").read_text(encoding="utf-8")
     (tmp / "index.html").write_text(html.replace('content="live"', 'content="static"'), encoding="utf-8")
-    docs.llms()
+    services.current().llms.llms()
     shutil.copyfile(DOCS / "llms.txt", tmp / "llms.txt")
     shutil.copyfile(DOCS / "llms-full.txt", tmp / "llms-full.txt")
     api = tmp / "api"
