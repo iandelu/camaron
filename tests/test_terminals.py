@@ -141,7 +141,9 @@ def test_accents_are_kept_as_the_program_wrote_them(pty):
 def test_a_big_paste_is_written_whole(pty):
     m = pty.open()
     until(lambda: b"ready" in screen(pty.t, m["id"]))
-    pty.t.write(m["id"], "a\r" * 20_000 + "end\r")                     # far more than a PTY's input buffer
+    # 60 kB, far more than a PTY's input buffer, in lines that fit the 80 columns: what costs time is the round trip
+    # of each line (ConPTY echoes it, the program answers), and 20,000 one-letter lines took 25-78 s on Windows
+    pty.t.write(m["id"], ("x" * 59 + "\r") * 1000 + "end\r")
     until(lambda: b"echo end (3)" in screen(pty.t, m["id"]), timeout=60)
 
 
