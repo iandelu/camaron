@@ -10,6 +10,7 @@ import difflib
 from ..common import CTX, WORK, load_json, save_json
 from .locks import FileLock
 from ..domain.docs import frontmatter, logical_paths, trust_levels
+from ..app import services
 
 FILE = WORK / "ai-drafts.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "ai-drafts.lock"
@@ -33,11 +34,10 @@ def edit_ratio(before: str, after: str) -> float:
 
 def snapshot(unit: str) -> int:
     """Copy the AI-written pages that changed since their last copy. Returns how many were copied."""
-    from .. import docs
     with FileLock(LOCK):
         data = _load()
         pages, changed = data["pages"], 0
-        canon = dict(docs.iter_docs())
+        canon = dict(services.current().docs.iter_docs())
         for old in [k for k in pages if k not in canon]:     # a wiki page's pre-4.81 path: keep the AI's copy
             new = logical_paths.link_target(old, canon)
             if new != old and new not in pages:
@@ -66,8 +66,7 @@ def record_confirmation(logical: str, body: str, by: str) -> float | None:
         entry = data["pages"].get(logical)
         old = "repos/" + logical[len("wikis/"):]
         if not entry and logical.startswith("wikis/") and old in data["pages"]:
-            from .. import docs                           # copied before 4.81 under repos/<repo>/…, unless that is a
-            if logical_paths.link_target(old, dict(docs.iter_docs())) == logical:  # docs page's own path
+            if logical_paths.link_target(old, dict(services.current().docs.iter_docs())) == logical:  # docs page's own path
                 entry = data["pages"][old]
         if not entry:
             return None

@@ -122,7 +122,7 @@ def test_brief_is_not_a_page(wired):
     assert wired.services.wiki.wiki_pages("web") == [] and wired.services.wiki.wiki_brief_ready("web")
     (wiki / "overview.md").write_text("# overview", encoding="utf-8")
     assert [p.name for p in wired.services.wiki.wiki_pages("web")] == ["overview.md"]
-    assert "repos/web/INSTRUCTIONS.md" not in [l for l, _ in wired.docs.iter_docs()]
+    assert "repos/web/INSTRUCTIONS.md" not in [l for l, _ in wired.services.docs.iter_docs()]
 
 
 def test_one_wiki_run_at_a_time(wired, monkeypatch):

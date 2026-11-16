@@ -154,9 +154,8 @@ def check_source(ref: str, stamp: dict | None, read=None) -> str:
 
 def _pages() -> dict:
     """logical path → (frontmatter, body sha) for every page."""
-    from .. import docs
     out = {}
-    for logical, f in docs.iter_docs():
+    for logical, f in services.current().docs.iter_docs():
         fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         out[logical] = (fm or {}, frontmatter.body_sha(body))
     return out
@@ -164,7 +163,6 @@ def _pages() -> dict:
 
 def docs_alias(logical: str, known) -> str:
     """The page's logical path today for one written as `docs/…` or a wiki page's pre-4.81 repos/<repo>/…."""
-    from .. import docs
     return logical_paths.link_target(logical, known)
 
 
@@ -290,7 +288,6 @@ def status(logical: str) -> dict:
 
 
 def policy() -> str:
-    from .. import docs
     return (services.current().workspace.workspace().get("freshness") or {}).get("ai_policy", "block")
 
 

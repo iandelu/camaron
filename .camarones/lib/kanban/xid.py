@@ -9,6 +9,7 @@ import secrets
 from .. import docs
 from .ops import BoardError
 from ..domain.docs import frontmatter, logical_paths, page_outline
+from ..app import services
 
 PREFIXES = {"flows": "FLOW", "domain": "DOM", "architecture": "ARCH"}
 ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"           # base32 without i, l, o, u
@@ -22,7 +23,7 @@ def _decision(logical: str) -> str | None:
 
 
 def _pages() -> dict[str, "docs.Path"]:
-    return dict(docs.iter_docs())
+    return dict(services.current().docs.iter_docs())
 
 
 def _read(f) -> tuple[str, str]:
@@ -35,7 +36,7 @@ def index() -> dict[str, str]:
     """x-id -> logical path, built from frontmatter on each call (decisions also answer to DEC-nnnn from their name)."""
     found: dict[str, str] = {}
     named: dict[str, str] = {}
-    for logical, f in docs.iter_docs():
+    for logical, f in services.current().docs.iter_docs():
         fm = frontmatter.parse_fm(_read(f)[1])[0]
         if fm.get("x-id"):
             found.setdefault(str(fm["x-id"]), logical)
@@ -105,7 +106,7 @@ def format_link(xid: str, section: str | None, hash_: str | None) -> str:
 
 
 def _body(logical: str) -> str:
-    f = docs.find_page(logical, _pages())
+    f = services.current().docs.find_page(logical, _pages())
     if f is None:
         raise BoardError(f"no page {logical} in the docs")
     return frontmatter.parse_fm(_read(f)[1])[1]

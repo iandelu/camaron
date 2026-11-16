@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from .common import ROOT, DOCS, CACHE, IS_WIN, run, which, load_json, save_json, rel_file
-from . import binaries, docs
+from . import binaries
 from .domain.docs import directives, frontmatter, logical_paths, page_outline
 from .app import services
 
@@ -27,7 +27,7 @@ def pages(rows: list[dict]) -> list[tuple[str, Path, str]]:
     portal shows under the canonical logical path (so its relative links resolve against that path too)."""
     out = [(r["path"], ROOT / r["file"], "") for r in rows]
     for lang in services.current().workspace.workspace()["project"].get("translations", []):
-        out += [(r["path"], f, lang) for r in rows if (f := docs.translation_file(r["path"], lang)).is_file()]
+        out += [(r["path"], f, lang) for r in rows if (f := services.current().docs.translation_file(r["path"], lang)).is_file()]
     return out
 
 
@@ -153,7 +153,7 @@ def _gitleaks(args: list[str], cwd: Path | None = None) -> list[dict] | None:
 
 def scan_targets() -> list[Path]:
     """What gets committed and published: docs/ (incl. translations and working notes) and every repo wiki."""
-    return [d for d in [DOCS, *(docs.wiki_dir(n) for n in services.current().workspace.repo_names())] if d.is_dir()]
+    return [d for d in [DOCS, *(services.current().docs.wiki_dir(n) for n in services.current().workspace.repo_names())] if d.is_dir()]
 
 
 def scan_dirs() -> list[dict] | None:

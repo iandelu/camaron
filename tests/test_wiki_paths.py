@@ -82,7 +82,7 @@ def test_link_target_maps_a_resolved_link_to_a_page(kit):
 
 def test_a_page_is_found_by_its_old_wiki_path(kit):
     setup_wiki(kit)
-    find = kit.docs.find_page
+    find = kit.services.docs.find_page
     assert find("repos/api/quickstart.md").as_posix().endswith("wikis/api/quickstart.md")
     assert find("wikis/api/quickstart.md").as_posix().endswith("wikis/api/quickstart.md")
     assert find("docs/repos/api/index.md").as_posix().endswith("docs/repos/api/index.md")
@@ -126,9 +126,9 @@ def test_a_wiki_translation_at_its_old_path_is_still_read(kit):
     assert by_file["wikis/api/quickstart.md"]["i18n"]["es"] == "outdated"      # found, not "missing"
     assert by_file["wikis/api/index.md"]["i18n"]["es"] == "missing"            # that one is the repo page's
     assert by_file["docs/repos/api/index.md"]["i18n"]["es"] == "outdated"
-    tf = kit.docs.translation_file("wikis/api/quickstart.md", "es")
+    tf = kit.services.docs.translation_file("wikis/api/quickstart.md", "es")
     assert tf.as_posix().endswith("docs/i18n/es/repos/api/quickstart.md")
-    assert kit.docs.translation_file("wikis/api/index.md", "es").as_posix().endswith("docs/i18n/es/wikis/api/index.md")
+    assert kit.services.docs.translation_file("wikis/api/index.md", "es").as_posix().endswith("docs/i18n/es/wikis/api/index.md")
 
 
 def test_an_ai_draft_copy_under_the_old_wiki_path_is_kept(kit):

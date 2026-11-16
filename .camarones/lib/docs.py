@@ -21,48 +21,6 @@ from .common import KIT, ROOT, DOCS, CACHE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_f
 # ---------- docs model ----------
 
 
-def iter_docs():
-    """(logical_path, file) for every canonical doc: docs/ + each repo's OpenWiki (cam-docs/wikis/<repo>)."""
-    if DOCS.is_dir():
-        for f in sorted(DOCS.rglob("*.md")):
-            rel = f.relative_to(DOCS)
-            if rel.parts[0] == "i18n" or any(p.startswith(".") for p in rel.parts):
-                continue
-            yield rel.as_posix(), f
-    for n in services.current().workspace.repo_names():
-        ow = wiki_dir(n)
-        if ow.is_dir():
-            for f in sorted(ow.rglob("*.md")):
-                rel = f.relative_to(ow)
-                if any(p.startswith(".") for p in rel.parts) or rel.name in ("INSTRUCTIONS.md", "log.md"):
-                    continue
-                yield logical_paths.wiki_path(n, rel.as_posix()), f
-
-
-def find_page(path: str, canon: dict | None = None) -> Path | None:
-    """The file of a page by any path that names it (logical, `docs/…`, or a wiki page's old repos/<repo>/… path)."""
-    canon = dict(iter_docs()) if canon is None else canon
-    return canon.get(logical_paths.link_target(path, canon))
-
-
-def translation_file(logical: str, lang: str) -> Path:
-    """Where a page's translation is: docs/i18n/<lang>/<logical>. A wiki page translated before 4.81 kept it under
-    i18n/<lang>/repos/<repo>/<page>; that file counts unless a docs page has that path (then it is that page's)."""
-    tf = DOCS / "i18n" / lang / logical
-    if not tf.exists() and logical.startswith("wikis/") and logical.count("/") >= 2:
-        _, repo, rel = logical.split("/", 2)
-        old = DOCS / "i18n" / lang / "repos" / repo / rel
-        if old.is_file() and not (DOCS / "repos" / repo / rel).exists():
-            return old
-    return tf
-
-
-def wiki_dir(repo: str) -> Path:
-    """A repo's OpenWiki lives in cam-docs/wikis/<repo> (the repo gets an untracked openwiki/ symlink to it)."""
-    own = ROOT / "wikis" / repo
-    return own if own.is_dir() or CAM_LAYOUT else repo_dir(repo) / "openwiki"
-
-
 def repo_file_exists(ref: str) -> bool:
     if ref.strip().startswith("c4:"):                   # `c4:<element>`: an element of docs/architecture/*.c4
         from .harness import freshness
@@ -95,7 +53,7 @@ def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
     missing = [s for s in (fm.get("x-sources") or []) if not repo_file_exists(str(s))]
     i18n = {}
     for lang in ([] if fm.get("type") == "interview" else langs):   # working notes are not translated
-        tf = translation_file(logical, lang)
+        tf = services.current().docs.translation_file(logical, lang)
         if not tf.exists():
             i18n[lang] = "missing"
         else:
@@ -111,7 +69,7 @@ def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
 
 def collect() -> list[dict]:
     langs = services.current().workspace.workspace()["project"].get("translations", [])
-    rows = [doc_status(l, f, langs) for l, f in iter_docs()]
+    rows = [doc_status(l, f, langs) for l, f in services.current().docs.iter_docs()]
     try:
         from .harness import freshness
         states = freshness.states()
@@ -124,24 +82,17 @@ def collect() -> list[dict]:
     return rows
 
 
-def resolve(p: str) -> Path:
-    f = Path(p)
-    if f.is_absolute():
-        return f
-    return (Path.cwd() / f).resolve() if (Path.cwd() / f).exists() else (ROOT / f).resolve()
-
-
 def confirm(files: list[str], by: str) -> list[str]:
     done = []
     for p in files:
-        f = resolve(p)
+        f = services.current().docs.resolve(p)
         fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         if not fm:
             raise RuntimeError(f"{p}: no frontmatter, refusing to confirm")
         fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": frontmatter.body_sha(body)}
         f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
         done.append(p)
-        logical = next((lp for lp, df in iter_docs() if df.resolve() == f.resolve()), None)
+        logical = next((lp for lp, df in services.current().docs.iter_docs() if df.resolve() == f.resolve()), None)
         if logical:
             from .harness import drafts, freshness
             try:
@@ -153,14 +104,14 @@ def confirm(files: list[str], by: str) -> list[str]:
 
 
 def translated(files: list[str]) -> list[str]:
-    canon = dict(iter_docs())
+    canon = dict(services.current().docs.iter_docs())
     done = []
     for p in files:
-        f = resolve(p)
+        f = services.current().docs.resolve(p)
         rel = f.relative_to(DOCS / "i18n")
         lang, logical = rel.parts[0], Path(*rel.parts[1:]).as_posix()
         if logical not in canon and (alias := logical_paths.old_wiki_path(logical)) in canon \
-                and translation_file(alias, lang).resolve() == f.resolve():
+                and services.current().docs.translation_file(alias, lang).resolve() == f.resolve():
             logical = alias                       # a wiki page's translation kept at its pre-4.81 path
         if logical not in canon:
             raise RuntimeError(f"{p}: no canonical doc at {logical}")
@@ -286,7 +237,7 @@ def search(query: str, limit: int = 20) -> list[dict]:
     if not terms:
         return []
     pages = []
-    for logical, f in iter_docs():
+    for logical, f in services.current().docs.iter_docs():
         fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))
         trust = trust_levels.trust_of(fm, frontmatter.body_sha(body))
         body = page_outline.COMMENT_RE.sub(lambda m: "\n" * m.group().count("\n"), body)     # markers are not content
@@ -366,7 +317,6 @@ def vendor_file(pkg: str, ver: str, path: str) -> Path | None:
 
 
 # ---------- human review ----------
-FEEDBACK = DOCS / ".work" / "review-feedback.md"
 REVIEW_ORDER = ["domain", "glossary", "business-flow", "architecture", "data-model", "deployment", "decision", "quality",
                 "overview", "guide"]
 
@@ -375,7 +325,7 @@ def review_queue() -> list[dict]:
     """Pages waiting for a human: re-confirmations first, then by how much the doc type matters to agents."""
     rows = [r for r in collect() if r["trust"] != "confirmed" and r["type"] != "interview" and r["owner"] != "human"
             and r["has_frontmatter"] and r["path"] != "status.md"]
-    waiting = {m.group(1) for l in pending_feedback() if (m := re.match(r"- \[ \] `([^`]+)`", l))}
+    waiting = {m.group(1) for l in services.current().docs.pending_feedback() if (m := re.match(r"- \[ \] `([^`]+)`", l))}
     rows = [r for r in rows if r["file"] not in waiting]      # changes requested: back in the queue once the AI fixed them
     def key(r):
         t = r["type"] if r["type"] in REVIEW_ORDER else "zzz"
@@ -383,16 +333,3 @@ def review_queue() -> list[dict]:
     return sorted(rows, key=key)
 
 
-def add_feedback(doc_file: str, text: str, by: str) -> None:
-    FEEDBACK.parent.mkdir(parents=True, exist_ok=True)
-    if not FEEDBACK.exists():
-        FEEDBACK.write_text("# Review feedback\n\nHuman review comments. Agents apply them in the `review-fixes` unit and tick them.\n\n",
-                            encoding="utf-8")
-    with FEEDBACK.open("a", encoding="utf-8") as fh:
-        fh.write(f"- [ ] `{doc_file}` — {text.strip()} _( {by}, {now()[:10]} )_\n")
-
-
-def pending_feedback() -> list[str]:
-    if not FEEDBACK.exists():
-        return []
-    return [l for l in FEEDBACK.read_text(encoding="utf-8").splitlines() if l.startswith("- [ ]")]

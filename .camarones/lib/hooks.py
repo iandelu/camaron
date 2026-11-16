@@ -68,7 +68,7 @@ def session_start() -> str:
         last = handoff.read_text(encoding="utf-8").split("## Last session", 1)
         if len(last) > 1:
             parts.append("Last session:" + last[1].strip()[:700])
-    feedback = docs.pending_feedback()
+    feedback = services.current().docs.pending_feedback()
     if feedback:
         parts.append(f"{len(feedback)} review comment(s) wait in docs/.work/review-feedback.md (unit review-fixes).")
     return "\n".join(parts)[:CAP]

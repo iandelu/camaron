@@ -10,6 +10,7 @@ import itertools, time
 from .common import WORK, load_json, save_json
 from . import docs
 from .domain.docs import frontmatter, page_outline
+from .app import services
 
 FILE = WORK / "reviews.json"
 DECISIONS = ("approve", "changes")
@@ -26,7 +27,7 @@ def _load() -> dict:
 
 def resolve_anchor(path: str, slug: str, snippet: str = "") -> str | None:
     """The section a comment points at now: its slug if it still exists, else the section holding the quoted text."""
-    f = docs.find_page(path)
+    f = services.current().docs.find_page(path)
     if not f:
         return None
     body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
@@ -48,7 +49,7 @@ def comment(path: str, text: str, by: str, slug: str = "", snippet: str = "") ->
     if not row:
         raise KeyError(path)
     where = f" § {slug}" + (f' ("{" ".join(snippet.split())[:80]}")' if snippet else "") if slug else ""
-    docs.add_feedback(row["file"], f"{text.strip()}{where}", by)
+    services.current().docs.add_feedback(row["file"], f"{text.strip()}{where}", by)
     return logical
 
 

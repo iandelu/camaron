@@ -92,7 +92,7 @@ def doomed() -> tuple[list[Path], list[Path]]:
             elif f.suffix == ".c4":
                 gone.append(f)
     for r in services.current().workspace.repo_names():
-        w = docs.wiki_dir(r)
+        w = services.current().docs.wiki_dir(r)
         if not w.is_dir():
             continue
         for f in sorted(w.rglob("*")):
@@ -174,7 +174,7 @@ def _delete(files: list[Path]) -> None:
         f.unlink(missing_ok=True)
     for d in sorted({p.parent for p in files}, key=lambda p: len(p.parts), reverse=True):
         while d not in (DOCS, WORK, ROOT / "wikis") and d.is_dir() and not any(d.iterdir()) \
-                and not any(d == docs.wiki_dir(r) for r in services.current().workspace.repo_names()):  # a wiki folder: a repo links to it
+                and not any(d == services.current().docs.wiki_dir(r) for r in services.current().workspace.repo_names()):  # a wiki folder: a repo links to it
             d.rmdir()
             d = d.parent
 

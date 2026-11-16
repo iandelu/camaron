@@ -15,6 +15,7 @@ from lib.core.process import out
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
 from lib.domain.docs import frontmatter, page_outline
+from lib.app import services
 
 
 def api_ask(question: str) -> dict:
@@ -27,7 +28,7 @@ def api_ask(question: str) -> dict:
     for h in hits:
         r = rows.get(h["path"], {})
         ok, notice = freshness.gate(h["path"], r.get("trust", "draft"), r.get("freshness"))
-        f = docs.find_page(h["path"])
+        f = services.current().docs.find_page(h["path"])
         if not f:
             continue
         body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]

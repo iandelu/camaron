@@ -959,7 +959,7 @@ class W:
             last = plan.last_note(u["id"])
             tbl.add_row(f"[bold]▶ {self.t('d_doing')}[/]", f"[{ORANGE}]{u['id']}[/]" +
                         (f"  [grey62]{self.t('d_last')}: {last[:90]}[/]" if last else ""))
-        fb = len(docs.pending_feedback())
+        fb = len(services.current().docs.pending_feedback())
         if fb:
             tbl.add_row("✏️", f"{fb} {self.t('d_fb')}")
         old = services.current().wiki.old_wikis()
@@ -1925,7 +1925,7 @@ class W:
             rows = docs.collect()
             s = trust_levels.summary(rows)
             errors, _ = docs.check()
-            fb = docs.pending_feedback()
+            fb = services.current().docs.pending_feedback()
             ch = {k: v for k, v in services.current().doc_state.changes().items() if v.get("status") in ("changed", "history-rewritten")}
             tbl = Table.grid(padding=(0, 2))
             tbl.add_row("✅", str(s["confirmed"]), "✨", str(s["draft"]), "⚠️", str(s["needs-reconfirm"]),
@@ -2011,7 +2011,7 @@ class W:
 
     def page_view(self, r: dict, i: int, n: int, show_es: bool, full: bool = False):
         f = (ROOT / r["file"]).resolve()
-        es_file = docs.translation_file(r["path"], "es")
+        es_file = services.current().docs.translation_file(r["path"], "es")
         use_es = show_es and es_file.exists()
         _, body = frontmatter.split_fm((es_file if use_es else f).read_text(encoding="utf-8"))
         lines = body.strip().splitlines()
@@ -2053,7 +2053,7 @@ class W:
             while True:
                 self.banner()
                 console.print(self.page_view(r, i, len(queue), show_es))
-                has_es = docs.translation_file(r["path"], "es").exists()
+                has_es = services.current().docs.translation_file(r["path"], "es").exists()
                 opts = [Choice(self.t("rv_confirm"), "ok"), Choice(self.t("rv_change"), "change"),
                         Choice(self.t("rv_full"), "full")]
                 if has_es:
@@ -2071,7 +2071,7 @@ class W:
                     txt = self.txt(self.t("rv_what"))
                     if not txt:
                         continue
-                    docs.add_feedback(r["file"], txt, by)
+                    services.current().docs.add_feedback(r["file"], txt, by)
                     plan.ensure("review-fixes", "review-fixes")
                     stats["f"] += 1
                 elif c == "ok":
@@ -2088,7 +2088,7 @@ class W:
         self.say(self.t("rv_sum", **stats), f"bold {ORANGE}")
         if stats["c"] or stats["f"]:
             self.checkpoint(f"review: {stats['c']} confirmed, {stats['f']} change requests")
-        if docs.pending_feedback():
+        if services.current().docs.pending_feedback():
             c = self.sel(self.t("menu"), [Choice(self.t("rv_fix_now"), "fix"), Choice(self.t("rv_later"), "later")],
                          back=False)
             if c == "fix":

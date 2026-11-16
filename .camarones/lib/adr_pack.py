@@ -16,7 +16,7 @@ from fnmatch import fnmatchcase
 from itertools import zip_longest
 from pathlib import Path, PurePosixPath
 
-from . import adr, adr_doc, c4edit, docs, history, inventory, quickarch
+from . import adr, adr_doc, c4edit, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
 from .domain.docs import frontmatter, page_outline, trust_levels
@@ -82,7 +82,7 @@ def _neighbours(conn, touches: list[str]) -> list[str]:
 
 def _citing(conn, touches: list[str]) -> list[tuple[str, Path]]:
     """(logical path, file) of the doc pages citing the touches, sorted; wiki pages are not under `docs/`."""
-    files = dict(docs.iter_docs())
+    files = dict(services.current().docs.iter_docs())
     found = []
     for touch in index.pages_citing(conn, touches):
         logical = touch[len(_DOCS):] if touch.startswith(_DOCS) else ""

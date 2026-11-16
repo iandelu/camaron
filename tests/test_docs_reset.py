@@ -42,7 +42,7 @@ def documented(wired):
     page(root, "docs/architecture/model.c4", body="model { }\n")
     (root / "docs" / "assets").mkdir(parents=True)
     (root / "docs" / "assets" / "logo.png").write_bytes(b"\x89PNG")
-    wiki = kit.docs.wiki_dir("api")
+    wiki = kit.services.docs.wiki_dir("api")
     page(wiki, "index.md", "title: api\n")
     page(wiki, "runbook.md", "title: Runbook\nx-owner: human\n")
     page(wiki, "INSTRUCTIONS.md", body="brief\n")
@@ -66,7 +66,7 @@ def test_wipe_preview_lists_what_goes_and_changes_nothing(documented, capsys):
 
 
 def test_wipe_deletes_the_generated_docs_and_keeps_what_people_wrote(documented):
-    root, wiki = documented.root, documented.docs.wiki_dir("api")
+    root, wiki = documented.root, documented.services.docs.wiki_dir("api")
     documented.reset.run("wipe")
     gone = ["docs/overview.md", "docs/domain/context-map.md", "docs/i18n/es/domain/context-map.md",
             "docs/architecture/model.c4", "docs/.state.json"]

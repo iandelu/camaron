@@ -262,7 +262,7 @@ def test_unmeasured_and_unrecorded_are_named(priced, ledger):
     kit.services.workspace.set_wiki_repos(["api"])
     kit.plan.sync()
     record(kit, "interview-context", None, agent="codex")
-    wiki = kit.docs.wiki_dir("api")
+    wiki = kit.services.docs.wiki_dir("api")
     wiki.mkdir(parents=True, exist_ok=True)
     (wiki / importlib.import_module("lib.core.paths").WIKI_STAMP).write_text(json.dumps({"scope": 2, "engine": "openwiki"}), encoding="utf-8")
     for uid in ("repo-wiki:api", "domain"):

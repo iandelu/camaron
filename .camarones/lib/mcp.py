@@ -87,12 +87,12 @@ def _rows() -> dict[str, dict]:
 
 
 def _file(path: str):
-    return docs.find_page(path)
+    return services.current().docs.find_page(path)
 
 
 def _logical(path: str) -> str:
     """The logical path of the page `path` names (`docs/…`, or a wiki page's pre-4.81 repos/<repo>/…)."""
-    return logical_paths.link_target(path, dict(docs.iter_docs()))
+    return logical_paths.link_target(path, dict(services.current().docs.iter_docs()))
 
 
 def search_docs(query: str, limit: int = 8) -> str:
@@ -240,7 +240,7 @@ def propose_edit(path: str, text: str, section: str | None = None, reason: str =
     out = PROPOSALS / f"{stamp}-{re.sub(r'[^a-z0-9]+', '-', logical.lower()).strip('-')}.md"
     out.write_text(f"# Proposal for `{logical}`" + (f" § {section}" if section else "") + "\n\n"
                    + (f"Why: {reason}\n\n" if reason else "") + text.strip() + "\n", encoding="utf-8", newline="\n")
-    docs.add_feedback(r.get("file", f"docs/{logical}"), f"proposed change ({out.relative_to(ROOT).as_posix()})"
+    services.current().docs.add_feedback(r.get("file", f"docs/{logical}"), f"proposed change ({out.relative_to(ROOT).as_posix()})"
                       + (f": {reason}" if reason else ""), by)
     usage.record("mcp:propose_edit", channel="agent", page=logical)
     return (f"{path} is {r.get('trust')}{' and owned by a person' if r.get('owner') == 'human' else ''}: not changed. "
@@ -252,7 +252,7 @@ def add_feedback(path: str, text: str, by: str = "agent") -> str:
     r = _rows().get(logical)
     if not r:
         return f"No page at {path}."
-    docs.add_feedback(r["file"], text, by)
+    services.current().docs.add_feedback(r["file"], text, by)
     return f"recorded for {path}: a person sees it in Review, and the review-fixes unit applies it."
 
 

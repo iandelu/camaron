@@ -517,15 +517,15 @@ def test_git_init_refuses_home_and_a_root(kit):
 
 
 def test_an_existing_project_in_home_is_not_refused(kit):
-    docs = kit.home / "cam-docs"
-    (docs / ".camarones").mkdir(parents=True)
-    (docs / ".camarones" / "workspace.yaml").write_text("project:\n  name: mine\nrepos: []\n", encoding="utf-8")
+    cam_docs = kit.home / "cam-docs"
+    (cam_docs / ".camarones").mkdir(parents=True)
+    (cam_docs / ".camarones" / "workspace.yaml").write_text("project:\n  name: mine\nrepos: []\n", encoding="utf-8")
     r = kit.onboard.inspect(kit.home)
     assert (r["case"], r["warning"]) == ("project", "")
-    before = tree(docs)
-    assert kit.onboard.start(kit.home) == docs.resolve()
-    assert tree(docs) == before
-    assert any(Path(p["path"]).resolve() == docs.resolve() for p in kit.projects.load())
+    before = tree(cam_docs)
+    assert kit.onboard.start(kit.home) == cam_docs.resolve()
+    assert tree(cam_docs) == before
+    assert any(Path(p["path"]).resolve() == cam_docs.resolve() for p in kit.projects.load())
 
 
 def test_a_picked_cam_docs_of_a_real_project_means_its_parent(kit):

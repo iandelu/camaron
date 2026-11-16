@@ -328,7 +328,7 @@ class Feedback(Command):
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import docs, plan
-        docs.add_feedback(args.file, args.text, args.by or os.environ.get("USER", "human"))
+        cli.services.docs.add_feedback(args.file, args.text, args.by or os.environ.get("USER", "human"))
         plan.ensure("review-fixes", "review-fixes")
-        print(f"feedback recorded in {plan._at(docs.FEEDBACK)}; unit review-fixes is ready")
+        print(f"feedback recorded in {plan._at(cli.services.docs.FEEDBACK)}; unit review-fixes is ready")
         return 0

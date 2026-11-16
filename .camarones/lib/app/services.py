@@ -20,6 +20,7 @@ from lib.ports.wiki_engine import WikiEngine
 from lib.ports.workspace_store import WorkspaceStore
 from lib.ports.repo_sync import RepoSync
 from lib.ports.doc_state import DocState
+from lib.ports.doc_store import DocStore
 
 
 class Services:
@@ -38,6 +39,7 @@ class Services:
     workspace: WorkspaceStore
     repos: RepoSync
     doc_state: DocState
+    docs: DocStore
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

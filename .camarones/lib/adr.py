@@ -28,6 +28,7 @@ from . import adr_doc, docs
 from .common import CACHE, CAM_DIR, DOCS, WORK, retry_busy
 from .harness.locks import FileLock
 from .domain.docs import frontmatter, page_outline
+from .app import services
 
 KINDS = ("new", "retro")
 PHASES = ("problem", "evidence", "review", "accepted", "rejected")
@@ -266,7 +267,7 @@ def _affected(state: dict | None) -> list[str]:
         return []
     from . import adr_pack
     found = []
-    for logical, f in docs.iter_docs():
+    for logical, f in services.current().docs.iter_docs():
         page = adr_pack.read_page(logical, f) if f.is_relative_to(DOCS) else None
         if page and _covers(touches, logical, _sources(page[0])):
             found.append(logical)
@@ -729,7 +730,7 @@ def covering(logical: str) -> list[dict]:
     """The accepted ADRs a page falls under (`_covers`: the pages their review called affected). Read from the files, so
     an accepted ADR written elsewhere covers too. A decision page (`adr_doc.is_decision`) is never covered: it has its own
     status."""
-    page = docs.find_page(logical)
+    page = services.current().docs.find_page(logical)
     if page is None:
         return []
     mine = frontmatter.split_fm(_read(page))[0]

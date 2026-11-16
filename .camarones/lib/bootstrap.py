@@ -110,6 +110,11 @@ def _doc_state() -> object:
     return doc_state
 
 
+def _docs() -> object:
+    from lib.adapters.stores import doc_store
+    return doc_store
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -131,6 +136,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "workspace": _workspace,
     "repos": _repos,
     "doc_state": _doc_state,
+    "docs": _docs,
 }
 
 
