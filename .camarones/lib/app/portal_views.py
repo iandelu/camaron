@@ -54,13 +54,14 @@ def tree() -> dict:
 
 
 def _with_adr_status(rows: list[dict]) -> list[dict]:
-    """The docs index rows; a decision page (`adr_doc.is_decision`) also says its ADR's status, read from the file as it
-    stands."""
+    """The docs index rows, each with its translations' titles (`i18n_titles`, what the sidebar, breadcrumb, pager and
+    ⌘K show in the reader's language); a decision page (`adr_doc.is_decision`) also says its ADR's status, read from the
+    file as it stands."""
     keys = ("path", "file", "title", "description", "type", "space", "trust", "owner", "i18n", "orphan_sources")
     files = dict(services.current().docs.iter_docs()) if any(_is_decision(r) for r in rows) else {}
     out = []
     for r in rows:
-        row = {k: r[k] for k in keys}
+        row = {k: r[k] for k in keys} | {"i18n_titles": r.get("i18n_titles", {})}
         if _is_decision(r) and r["path"] in files:
             try:
                 row["adr_status"] = adr_doc.status_of(frontmatter.split_fm(files[r["path"]].read_text(encoding="utf-8"))[1])[0]

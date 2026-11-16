@@ -31,7 +31,7 @@ export default function Search({ arg }) {
       )}
       {hits?.map((h) => (
         <div className="hit" key={h.path}>
-          <a href={core.hrefFor(h.path)}>{h.title}</a>
+          <a href={core.hrefFor(h.path)}>{core.byPath(h.path)?.title || h.title}</a>
           {space(h.path) && space(h.path) !== 'docs' && <span className="pal-tag">{t(space(h.path) === 'wiki' ? 'wikis' : 'notes')}</span>}
           <span className="muted small"> {h.path}</span>
           {h.lines.map((l, i) => <div className="snip" key={i}><Marked text={l} q={q} /></div>)}

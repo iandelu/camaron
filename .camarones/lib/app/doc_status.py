@@ -37,19 +37,21 @@ def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
     sha = frontmatter.body_sha(body)
     trust = trust_levels.trust_of(fm, sha)
     missing = [s for s in (fm.get("x-sources") or []) if not repo_file_exists(str(s))]
-    i18n = {}
+    i18n, i18n_titles = {}, {}                  # i18n_titles: what the portal names the page in each language
     for lang in ([] if fm.get("type") == "interview" else langs):   # working notes are not translated
         tf = services.current().docs.translation_file(logical, lang)
         if not tf.exists():
             i18n[lang] = "missing"
         else:
-            tfm, _ = frontmatter.split_fm(tf.read_text(encoding="utf-8"))
+            tfm, tbody = frontmatter.split_fm(tf.read_text(encoding="utf-8"))
             of = tfm.get("x-translation-of")                      # a hand-written one may be just the page's path
             i18n[lang] = "current" if isinstance(of, dict) and of.get("body_sha") == sha else "outdated"
+            if title := tfm.get("title") or frontmatter.first_heading(tbody):
+                i18n_titles[lang] = title
     return {"path": logical, "file": rel_file(f),
             "title": fm.get("title") or frontmatter.first_heading(body) or f.stem, "description": fm.get("description", ""),
             "type": fm.get("type", ""), "trust": trust, "owner": fm.get("x-owner", "ai"), "orphan_sources": missing,
-            "space": space_of(logical, f, fm), "i18n": i18n, "body_sha": sha,
+            "space": space_of(logical, f, fm), "i18n": i18n, "i18n_titles": i18n_titles, "body_sha": sha,
             "has_frontmatter": bool(fm) or not fm_valid, "frontmatter_valid": fm_valid}
 
 
