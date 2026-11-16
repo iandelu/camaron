@@ -97,12 +97,12 @@ def export_site(log: Log = print) -> Path:
         dump(f"codemap/{n}.json", codemap.load(n))
     dump("search.json", index)
     for lib in portal_views.UI_LIBS:
-        f = docs.vendor_file(*lib)
+        f = services.current().vendor.vendor_file(*lib)
         if f:
             dst = tmp / "vendor" / f"{lib[0]}@{lib[1]}" / lib[2]
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, dst)
-    k, failed = docs.vendor(tmp)
+    k, failed = services.current().vendor.vendor(tmp)
     log(f"✔ offline libraries ({k + len(portal_views.UI_LIBS)})" + (f" — still on CDN: {failed}" if failed else ""))
     shutil.rmtree(site, ignore_errors=True)
     tmp.rename(site)

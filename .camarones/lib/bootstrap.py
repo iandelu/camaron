@@ -115,6 +115,11 @@ def _docs() -> object:
     return doc_store
 
 
+def _vendor() -> object:
+    from lib.adapters import npm_vendor
+    return npm_vendor
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -137,6 +142,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "repos": _repos,
     "doc_state": _doc_state,
     "docs": _docs,
+    "vendor": _vendor,
 }
 
 

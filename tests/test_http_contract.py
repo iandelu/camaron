@@ -110,7 +110,7 @@ def test_vendor_serves_the_cached_file_else_redirects_to_the_cdn(kit, monkeypatc
     arm(monkeypatch)
     with serving(kit.serve.Handler) as base:
         with monkeypatch.context() as m:                # only the stub ends here; the isolated env stays in place
-            m.setattr(kit.docs, "vendor_file", lambda pkg, ver, file: None)   # a miss would run `npm pack`
+            m.setattr(kit.services.vendor, "vendor_file", lambda pkg, ver, file: None)   # a miss would run `npm pack`
             status, headers, raw = request(base, "GET", "/vendor/other@2.0.0/dist/a.min.js")
             assert (status, raw) == (302, b"")
             assert headers["location"] == "https://cdn.jsdelivr.net/npm/other@2.0.0/dist/a.min.js"

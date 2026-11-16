@@ -21,6 +21,7 @@ from lib.ports.workspace_store import WorkspaceStore
 from lib.ports.repo_sync import RepoSync
 from lib.ports.doc_state import DocState
 from lib.ports.doc_store import DocStore
+from lib.ports.vendor import Vendor
 
 
 class Services:
@@ -40,6 +41,7 @@ class Services:
     repos: RepoSync
     doc_state: DocState
     docs: DocStore
+    vendor: Vendor
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

@@ -1,7 +1,7 @@
 """Docs model: workspace, repo sync, incremental state, trust (draft/confirmed), translations, llms.txt, search."""
 from __future__ import annotations
 
-import math, os, re, shutil, tarfile, tempfile
+import math, os, re
 from collections import Counter
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from .app import services
 from .core.clock import now
 from .domain.docs import directives, frontmatter, logical_paths, page_outline, synonyms, trust_levels
 from .core.paths import cli_cmd
-from .common import KIT, ROOT, DOCS, CACHE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run, save_json
+from .common import KIT, ROOT, DOCS, CAM_DIR, repo_dir, rel_file, save_json
 
 
 # ---------- workspace ----------
@@ -265,55 +265,6 @@ def search(query: str, limit: int = 20) -> list[dict]:
     guides = set() if KIT_WORDS & set(re.findall(r"\w+", query.lower())) else kit_guides()
     hits.sort(key=lambda h: (h["path"] in guides, -h["score"]))
     return hits[:limit]
-
-
-CDN_RE = re.compile(r"https://(?:cdn\.jsdelivr\.net/npm|unpkg\.com)/((?:@[\w.-]+/)?[\w.-]+)@([\w.+-]+)/([\w./+-]+)")
-
-
-def vendor(site: Path) -> tuple[int, list[str]]:
-    """Graph viewers load libraries from CDNs: fetch them through npm (works with an internal npm mirror) and
-    serve them from /vendor/ so the portal works on-prem without internet."""
-    targets = [f for d in ("code-graph", "wiki-graph") if (site / d).exists()
-               for f in (site / d).rglob("*") if f.suffix in (".html", ".js")]
-    done, failed = set(), set()
-    for f in targets:
-        text = f.read_text(encoding="utf-8", errors="ignore")
-        def sub(m):
-            pkg, ver, path = m.groups()
-            key = f"{pkg}@{ver}"
-            src = None if key in failed else vendor_file(pkg, ver, path)
-            if not src:
-                failed.add(key)
-                return m.group(0)
-            done.add(key)
-            dst = site / "vendor" / key / path
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(src, dst)
-            return f"/vendor/{key}/{path}"
-        new = CDN_RE.sub(sub, text)
-        if new != text:
-            f.write_text(new, encoding="utf-8")
-    return len(done), sorted(failed)
-
-
-def vendor_file(pkg: str, ver: str, path: str) -> Path | None:
-    """One file of an npm package, fetched once with `npm pack` into the cache."""
-    cache = CACHE / "vendor-cache"
-    pkg_dir = cache / f"{pkg}@{ver}".replace("/", "__")
-    if not pkg_dir.exists():
-        cache.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory() as tmp:
-            r = run(["npm", "pack", f"{pkg}@{ver}", "--silent", "--pack-destination", tmp], check=False, capture=True)
-            tgz = next(Path(tmp).glob("*.tgz"), None)
-            if r.returncode != 0 or not tgz:
-                return None
-            with tarfile.open(tgz) as t:
-                try:
-                    t.extractall(pkg_dir, filter="data")
-                except TypeError:
-                    t.extractall(pkg_dir)
-    f = (pkg_dir / "package" / path).resolve()
-    return f if f.is_file() and pkg_dir.resolve() in f.parents else None
 
 
 # ---------- human review ----------
