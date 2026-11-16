@@ -215,6 +215,26 @@ def test_the_wrappers_end_keeps_a_mark_written_meanwhile(wired, monkeypatch):
     assert after["since"] == 0.0 and after["code"] == 0 and after["pid"] and after["session"] == "s-1"
 
 
+def test_the_wrappers_end_leaves_alone_a_record_a_newer_session_took(wired):
+    """Closing a canvas terminal can end the agent before its wrapper: the wrapper then still writes its end, after a
+    newer session (a takeover, the unit reopened) took the record. That session must not read as ended. The terminal's
+    own end already leaves such a record alone (lib/terminals.py `_end_record`); the wrapper did not."""
+    from lib import session_run, sessions
+    rec = sessions.start("u1", "claude", "s-1")
+
+    def take_over():
+        end = time.monotonic() + 15
+        while not sessions.load("u1").get("pid") and time.monotonic() < end:   # the wrapper is running the agent
+            time.sleep(0.02)
+        sessions.start("u1", "codex", None)
+    t = threading.Thread(target=take_over, daemon=True)
+    t.start()
+    assert session_run.main([str(rec), "--", sys.executable, "-c", "import time; time.sleep(1.5)"]) == 0
+    t.join(15)
+    after = sessions.load("u1")
+    assert after["agent"] == "codex" and "ended" not in after and "code" not in after
+
+
 def test_closing_the_record_keeps_a_mark_written_meanwhile(wired, monkeypatch):
     """The terminal closing the record from its reader thread (`update`) and hand_back's mark meet the same way."""
     from lib import sessions
