@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .common import CACHE, IS_MAC, IS_WIN, ROOT, run, which
 from . import docs
-from .domain.docs import frontmatter
+from .domain.docs import directives, frontmatter, page_outline
 
 OUT = CACHE / "export"
 
@@ -83,7 +83,7 @@ def to_html(md: str) -> str:
     for b in blocks(md):
         t = b["type"]
         if t == "heading":
-            parts.append(f'<h{b["level"]} id="{docs.slug(b["text"])}">{_inline(b["text"])}</h{b["level"]}>')
+            parts.append(f'<h{b["level"]} id="{page_outline.slug(b["text"])}">{_inline(b["text"])}</h{b["level"]}>')
         elif t == "paragraph":
             parts.append(f"<p>{_inline(b['text'])}</p>")
         elif t == "quote":
@@ -109,7 +109,7 @@ def pages() -> list[tuple[dict, str]]:
     for r in docs.readable():
         if r["type"] == "interview" or r["path"].startswith("interview/") or r.get("space", "docs") != "docs":
             continue
-        out.append((r, docs.flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1])))
+        out.append((r, directives.flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1])))
     return out
 
 
@@ -125,7 +125,7 @@ text-align:left;vertical-align:top}blockquote{margin:0;padding:.2rem 1rem;border
 
 def export_print() -> Path:
     ws = docs.workspace()
-    arts = [f'<article id="{docs.slug(r["path"])}"><p class="meta">{htmllib.escape(r["path"])} · {r["trust"]}</p>'
+    arts = [f'<article id="{page_outline.slug(r["path"])}"><p class="meta">{htmllib.escape(r["path"])} · {r["trust"]}</p>'
             f"{to_html(body)}</article>" for r, body in pages()]
     OUT.mkdir(parents=True, exist_ok=True)
     out = OUT / "docs.html"
@@ -164,7 +164,7 @@ def tour(path: str) -> dict:
     if not f:
         raise ExportError(f"no page at {path}")
     fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
-    found = docs.section_text(body, "steps")
+    found = page_outline.section_text(body, "steps")
     table = next((b for b in blocks(found[1]) if b["type"] == "table"), None) if found else None
     if not table or len(table["rows"]) < 2:
         raise ExportError(f"{path} has no Steps table to tour")
@@ -172,7 +172,7 @@ def tour(path: str) -> dict:
     col = lambda row, name: row[head.index(name)].strip("`") if name in head and head.index(name) < len(row) else ""  # noqa: E731
     steps = [{"title": col(r, "step") or r[0], "repo": col(r, "repo"), "entrypoint": col(r, "entrypoint"),
               "evidence": col(r, "evidence")} for r in table["rows"][1:]]
-    return {"title": fm.get("title") or logical, "summary": docs.tldr(body).replace("> **TL;DR:**", "").strip(" >"),
+    return {"title": fm.get("title") or logical, "summary": page_outline.tldr(body).replace("> **TL;DR:**", "").strip(" >"),
             "steps": steps, "path": logical}
 
 

@@ -19,7 +19,7 @@ from pathlib import Path, PurePosixPath
 from . import adr, adr_doc, c4edit, docs, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
-from .domain.docs import frontmatter, trust_levels
+from .domain.docs import frontmatter, page_outline, trust_levels
 
 NEIGHBOURS, PAGES, ADRS, COMMITS, MONTHS, QUESTIONS, C4, LIBRARIES = 30, 15, 10, 40, 12, 10, 20, 30
 LIMIT = 20000
@@ -291,7 +291,7 @@ def _covered() -> list[str]:
             pass
         tags = fm.get("tags")
         tags = tags if isinstance(tags, list) else str(tags or "").split(",")
-        texts += [_words(str(t)) for t in (row["title"], *tags, docs.tldr(body)) if t]
+        texts += [_words(str(t)) for t in (row["title"], *tags, page_outline.tldr(body)) if t]
     return texts
 
 

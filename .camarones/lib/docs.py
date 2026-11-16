@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .core import yamlio
 from .core.clock import now
-from .domain.docs import frontmatter, logical_paths, trust_levels
+from .domain.docs import directives, frontmatter, logical_paths, page_outline, trust_levels
 from .core.paths import cli_cmd
 from .ports import Log
 from .common import (KIT, ROOT, DOCS, WS_FILE, CACHE, WORKSPACE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run,
@@ -423,7 +423,7 @@ def llms() -> int:
     for r in ok:
         if r["type"] == "interview" or r["path"].startswith("interview/"):
             continue
-        body = flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8", errors="replace"))[1]).strip()
+        body = directives.flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8", errors="replace"))[1]).strip()
         desc = f" · {r['description']}" if r["description"] else ""
         full += [f"<!-- {r['path']} · {r['trust']}{desc} -->", "", body, ""]
     (DOCS / "llms-full.txt").write_text("\n".join(full).rstrip() + "\n", encoding="utf-8", newline="\n")
@@ -460,79 +460,6 @@ def check(strict: bool = False, secrets_only: bool = False) -> tuple[list[str], 
 
 
 # ---------- search (portal + MCP): BM25 over body tokens, prefix-matched (pedido → pedidos) ----------
-COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
-TLDR_RE = re.compile(r"^>\s*\*\*TL;DR:?\*\*", re.I)
-
-
-def heading_text(md: str) -> str:
-    """What a reader sees of a Markdown heading (the portal slugs its textContent)."""
-    md = re.sub(r"<!--.*?-->", "", md)
-    md = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", md)
-    return re.sub(r"[`*]|(?<!\w)_|_(?!\w)", "", md).strip()
-
-
-def slug(heading: str) -> str:
-    """Mirror of the portal's slugify (portal/app/src/content/doc.js): lower case, letters/digits/space/_/- kept, spaces → -."""
-    return re.sub(r"\s+", "-", re.sub(r"[^\w\s-]", "", heading_text(heading).lower().strip()))
-
-
-def headings(body: str) -> list[dict]:
-    """Every heading outside code: {level, title, slug, line}; a repeated slug gets -1, -2… like the portal."""
-    out, seen, fence = [], {}, None
-    for i, line in enumerate(body.splitlines()):
-        if re.match(r"^\s*(```|~~~)", line):
-            fence = None if fence else True
-            continue
-        m = None if fence else HEADING_RE.match(line)
-        if not m:
-            continue
-        s = slug(m.group(2)) or "section"
-        if s in seen:
-            seen[s] += 1
-            s = f"{s}-{seen[s]}"
-        else:
-            seen[s] = 0
-        out.append({"level": len(m.group(1)), "title": heading_text(m.group(2)), "slug": s, "line": i})
-    return out
-
-
-def sections(body: str) -> list[dict]:
-    """The page's H2 sections: {title, slug, start, end} as line ranges (a section runs to the next H1/H2)."""
-    hs = headings(body)
-    n = len(body.splitlines())
-    h2 = [h for h in hs if h["level"] == 2]
-    out = []
-    for h in h2:
-        end = next((x["line"] for x in hs if x["line"] > h["line"] and x["level"] <= 2), n)
-        out.append({"title": h["title"], "slug": h["slug"], "start": h["line"], "end": end})
-    return out
-
-
-def section_of(body: str, line: int, secs: list[dict] | None = None) -> str | None:
-    return next((s["slug"] for s in (secs if secs is not None else sections(body)) if s["start"] <= line < s["end"]), None)
-
-
-def tldr(body: str) -> str:
-    lines = body.splitlines()
-    i = next((i for i, l in enumerate(lines) if TLDR_RE.match(l.strip())), None)
-    if i is None:
-        return ""
-    out = []
-    for l in lines[i:]:
-        if not l.strip().startswith(">"):
-            break
-        out.append(l)
-    return "\n".join(out)
-
-
-def section_text(body: str, key: str) -> tuple[dict, str] | None:
-    """The section whose slug or title is `key`, with its text (heading included)."""
-    k = key.strip().lstrip("#").lower()
-    s = next((s for s in sections(body) if s["slug"] == k or s["title"].lower() == k or s["slug"] == slug(key)), None)
-    if not s:
-        return None
-    return s, "\n".join(body.splitlines()[s["start"]:s["end"]]).strip()
 
 
 STOPWORDS = set("how are is was the an what which who does do did of to in on at for and or with by from it this that "
@@ -542,70 +469,6 @@ STOPWORDS = set("how are is was the an what which who does do did of to in on at
 TERMS_FILE = Path(__file__).with_name("search_terms.yaml")
 IMPLIED = 0.6                  # a word the question implies (search_terms.yaml) weighs less than one it says
 KIT_WORDS = {"camaron", "camarón", "camarones", "kit", "wizard", "tutorial"}
-
-
-DIRECTIVES = ("tabs", "cards", "steps", "details", "tech", "business", "rule")
-RULE_META = re.compile(r"^(enforced|test):\s*(.+)$")
-
-
-def _rule(arg: str, body: list[str]) -> dict:
-    rid, _, title = arg.partition(" ")
-    meta, text = {"enforced": [], "test": []}, []
-    for line in body:
-        m = RULE_META.match(line.strip())
-        if m:
-            meta[m.group(1)] += [r.strip() for r in m.group(2).split(",") if r.strip()]
-        else:
-            text.append(line)
-    return {"id": rid, "title": title.strip(), "text": "\n".join(text).strip(), **meta}
-
-
-def rules(md: str) -> list[dict]:
-    """The `:::rule ID [title]` blocks of a page (X8): `enforced:` / `test:` lines hold `repo:path#Symbol` anchors."""
-    out, fence, lines = [], None, md.split("\n")
-    for i, line in enumerate(lines):
-        f = re.match(r"^\s*(```|~~~)", line)
-        if f:
-            fence = None if fence and line.strip().startswith(fence) else (fence or f.group(1))
-        m = None if fence else re.match(r"^:::\s*rule\s+(.+)$", line, re.I)
-        end = next((j for j in range(i + 1, len(lines)) if re.match(r"^:::\s*$", lines[j])), None) if m else None
-        if m and end is not None:
-            out.append(_rule(m.group(1).strip(), lines[i + 1:end]))
-    return out
-
-
-def flatten_directives(md: str) -> str:
-    """`:::` blocks (portal/app/src/content/directives.js) as plain Markdown for agents and exports: a tab or details
-    summary becomes a bold line, the rest keeps its content. Code fences and unknown kinds are left alone."""
-    lines, out, i, fence = md.split("\n"), [], 0, None
-    while i < len(lines):
-        line = lines[i]
-        f = re.match(r"^\s*(```|~~~)", line)
-        if f:
-            fence = None if fence and line.strip().startswith(fence) else (fence or f.group(1))
-        m = None if fence else re.match(r"^:::\s*(\w+)\s*(.*)$", line)
-        end = next((j for j in range(i + 1, len(lines)) if re.match(r"^:::\s*$", lines[j])), None) if m else None
-        if m and m.group(1).lower() in DIRECTIVES and end is not None:
-            kind, arg, body = m.group(1).lower(), m.group(2).strip(), lines[i + 1:end]
-            if kind == "tabs":
-                for b in body:
-                    t = re.match(r"^::tab\s+(.+)$", b)
-                    out += ["", f"**{t.group(1).strip()}**", ""] if t else [b]
-            elif kind == "details":
-                out += [f"**{arg or 'Details'}**", "", *body]
-            elif kind == "rule":
-                r = _rule(arg, body)
-                out += [f"**Rule {r['id']}" + (f" — {r['title']}" if r["title"] else "") + "**", "", r["text"]]
-                out += [f"{label}: " + ", ".join(f"`{x}`" for x in r[key])
-                        for key, label in (("enforced", "Enforced by"), ("test", "Tested by")) if r[key]]
-            else:
-                out += body
-            i = end + 1
-            continue
-        out.append(line)
-        i += 1
-    text = re.sub(r"\n{3,}", "\n\n", "\n".join(out))
-    return text.lstrip("\n") if not md.startswith("\n") else text
 
 
 def search_terms() -> dict[str, list[str]]:
@@ -644,7 +507,7 @@ def search(query: str, limit: int = 20) -> list[dict]:
     for logical, f in iter_docs():
         fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))
         trust = trust_levels.trust_of(fm, frontmatter.body_sha(body))
-        body = COMMENT_RE.sub(lambda m: "\n" * m.group().count("\n"), body)     # markers are not content
+        body = page_outline.COMMENT_RE.sub(lambda m: "\n" * m.group().count("\n"), body)     # markers are not content
         toks = Counter(re.findall(r"\w+", body.lower()))
         tf = {t: sum(c for w, c in toks.items() if w.startswith(t)) for t in terms}
         title = fm.get("title") or frontmatter.first_heading(body) or f.stem
@@ -661,8 +524,8 @@ def search(query: str, limit: int = 20) -> list[dict]:
         if score:
             lines = body.splitlines()
             at = [i for i, l in enumerate(lines) if any(t in l.lower() for t in terms)]
-            secs = sections(body)
-            per = Counter(s for i in at if (s := section_of(body, i, secs)))
+            secs = page_outline.sections(body)
+            per = Counter(s for i in at if (s := page_outline.section_of(body, i, secs)))
             hits.append({"path": logical, "title": title, "trust": trust, "score": round(score, 2),
                          "section": per.most_common(1)[0][0] if per else None,
                          "lines": [lines[i].strip()[:240] for i in at[:3]]})

@@ -83,3 +83,84 @@ def test_link_target_prefers_a_known_page():
     assert p.link_target("docs/domain/glossary.md", known) == "domain/glossary.md"
     assert p.link_target("repos/api/setup.md", known) == "wikis/api/setup.md"     # a pre-4.81 wiki path
     assert p.link_target("nowhere.md", known) == "nowhere.md"
+
+
+# ---------- page_outline ----------
+PAGE = """# Title
+
+> **TL;DR:** short.
+> more.
+
+## Data flow
+text
+```
+## not a heading
+```
+## Data flow
+### Detail [link](x.md)
+## `Last` *one*
+end
+"""
+
+
+def test_heading_text_is_what_a_reader_sees():
+    o = mod("page_outline")
+    assert o.heading_text("The [API](a.md) `v2` *now* <!-- x -->") == "The API v2 now"
+    assert o.slug("Qué es `esto`? (v2)") == "qué-es-esto-v2"
+
+
+def test_headings_skip_code_and_number_repeated_slugs():
+    hs = mod("page_outline").headings(PAGE)
+    assert [(h["level"], h["slug"]) for h in hs] == [(1, "title"), (2, "data-flow"), (2, "data-flow-1"),
+                                                      (3, "detail-link"), (2, "last-one")]
+
+
+def test_sections_run_to_the_next_h2_and_name_a_line():
+    o = mod("page_outline")
+    secs = o.sections(PAGE)
+    assert [(s["slug"], s["start"], s["end"]) for s in secs] == [("data-flow", 5, 10), ("data-flow-1", 10, 12),
+                                                                 ("last-one", 12, 14)]
+    assert o.section_of(PAGE, 11) == "data-flow-1" and o.section_of(PAGE, 0) is None
+
+
+def test_tldr_and_section_text():
+    o = mod("page_outline")
+    assert o.tldr(PAGE) == "> **TL;DR:** short.\n> more."
+    sec, text = o.section_text(PAGE, "last one")
+    assert sec["slug"] == "last-one" and text == "## `Last` *one*\nend"
+    assert o.section_text(PAGE, "#data-flow-1")[1].startswith("## Data flow\n### Detail")
+    assert o.section_text(PAGE, "missing") is None
+
+
+def test_comment_re_spans_lines():
+    assert mod("page_outline").COMMENT_RE.sub("", "a<!-- one\ntwo -->b") == "ab"
+
+
+# ---------- directives ----------
+RULED = """intro
+:::rule R1 Totals add up
+The sum is the total.
+enforced: api:Order.java#total, web:cart.ts
+test: api:OrderTest.java#sums
+:::
+```
+:::rule R2 inside code
+:::
+```
+"""
+
+
+def test_rules_read_rule_blocks_outside_code():
+    assert mod("directives").rules(RULED) == [{"id": "R1", "title": "Totals add up", "text": "The sum is the total.",
+                                               "enforced": ["api:Order.java#total", "web:cart.ts"],
+                                               "test": ["api:OrderTest.java#sums"]}]
+
+
+def test_flatten_directives_turns_blocks_into_plain_markdown():
+    d = mod("directives")
+    md = ":::tabs\n::tab Java\njava code\n::tab Go\ngo code\n:::\n:::details Why\nbecause\n:::\n:::unknown x\nkept\n:::"
+    assert d.flatten_directives(md) == ("**Java**\n\njava code\n\n**Go**\n\ngo code\n**Why**\n\nbecause\n"
+                                        ":::unknown x\nkept\n:::")
+    flat = d.flatten_directives(RULED)
+    assert "**Rule R1 — Totals add up**" in flat and "Enforced by: `api:Order.java#total`, `web:cart.ts`" in flat
+    assert ":::rule R2 inside code" in flat                  # a fence keeps its content as written

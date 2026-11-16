@@ -8,7 +8,7 @@ import secrets
 
 from .. import docs
 from .ops import BoardError
-from ..domain.docs import frontmatter, logical_paths
+from ..domain.docs import frontmatter, logical_paths, page_outline
 
 PREFIXES = {"flows": "FLOW", "domain": "DOM", "architecture": "ARCH"}
 ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"           # base32 without i, l, o, u
@@ -115,7 +115,7 @@ def _section(body: str, section: str | None) -> tuple[str | None, str]:
     """(canonical slug, text) of the section, or (None, whole body)."""
     if not section:
         return None, body
-    found = docs.section_text(body, section)
+    found = page_outline.section_text(body, section)
     if found is None:
         raise BoardError(f"no section {section!r} in that page")
     return found[0]["slug"], found[1]

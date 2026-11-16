@@ -49,12 +49,12 @@ def mcp(kit):
     ("[Glossary](glossary.md) terms", "glossary-terms"),
 ])
 def test_slugs_match_the_portal(kit, heading, slug):
-    assert kit.docs.slug(heading) == slug
+    assert kit.page_outline.slug(heading) == slug
 
 
 def test_repeated_headings_get_numbered_slugs_like_the_portal(kit):
     body = kit.frontmatter.split_fm(PAGE)[1]
-    assert [s["slug"] for s in kit.docs.sections(body)] == ["summary", "failure-handling", "data-touched", "data-touched-1"]
+    assert [s["slug"] for s in kit.page_outline.sections(body)] == ["summary", "failure-handling", "data-touched", "data-touched-1"]
 
 
 def test_read_doc_with_a_section_returns_the_tldr_and_that_section_only(kit, mcp):

@@ -14,7 +14,7 @@ from lib.core.paths import DOCS, ROOT
 from lib.core.process import out
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
-from lib.domain.docs import frontmatter
+from lib.domain.docs import frontmatter, page_outline
 
 
 def api_ask(question: str) -> dict:
@@ -31,8 +31,8 @@ def api_ask(question: str) -> dict:
         if not f:
             continue
         body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
-        found = docs.section_text(body, h["section"]) if h.get("section") else None
-        tldr = docs.tldr(body)
+        found = page_outline.section_text(body, h["section"]) if h.get("section") else None
+        tldr = page_outline.tldr(body)
         whole = body.replace(tldr, "", 1) if tldr else body              # the portal shows the TL;DR above the text
         out.append({"cite": h["path"] + (f"#{h['section']}" if found else ""), "title": h["title"],
                     "trust": r.get("trust"), "fresh": r.get("fresh"), "notice": notice, "withheld_for_agents": not ok,

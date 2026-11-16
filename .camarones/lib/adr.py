@@ -27,7 +27,7 @@ from .core import yamlio
 from . import adr_doc, docs
 from .common import CACHE, CAM_DIR, DOCS, WORK, retry_busy
 from .harness.locks import FileLock
-from .domain.docs import frontmatter
+from .domain.docs import frontmatter, page_outline
 
 KINDS = ("new", "retro")
 PHASES = ("problem", "evidence", "review", "accepted", "rejected")
@@ -208,7 +208,7 @@ def _decided_on(state: dict | None, status: str, body: str) -> str:
     if date or status not in ("accepted", "rejected"):
         return date
     line = next((l for l in (adr_doc.section(body, "status") or "").splitlines() if l.strip()), "")
-    found = _ISO.search(docs.COMMENT_RE.sub("", line))
+    found = _ISO.search(page_outline.COMMENT_RE.sub("", line))
     return found[0] if found else ""
 
 

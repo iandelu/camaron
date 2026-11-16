@@ -92,7 +92,7 @@ def test_accept_changes_the_status_decision_and_owner_and_nothing_else(adr, kit,
         assert doc.section(body, key) == doc.section(before, key)
     assert doc.section(before, "options") == "TODO(question): which options were considered?"
     assert doc.section(body, "options") == "### P1 · Where?\n\n- **A · Redis** (chosen)\n- **B · Postgres**"
-    assert kit.docs.tldr(body) == kit.docs.tldr(before) and body.startswith(before.split("## Status")[0])
+    assert kit.page_outline.tldr(body) == kit.page_outline.tldr(before) and body.startswith(before.split("## Status")[0])
     assert doc.PLACEHOLDER not in body and "### Decision points" not in body
 
 

@@ -10,12 +10,12 @@ GOLDEN = Path(__file__).parent / "golden" / "directives"
 
 def test_flattening_matches_the_golden_file(kit):
     src = (GOLDEN / "page.md").read_text(encoding="utf-8")
-    assert kit.docs.flatten_directives(src) == (GOLDEN / "page.flat.md").read_text(encoding="utf-8")
+    assert kit.directives.flatten_directives(src) == (GOLDEN / "page.flat.md").read_text(encoding="utf-8")
 
 
 def test_flattening_is_idempotent_and_leaves_plain_pages_alone(kit):
     flat = (GOLDEN / "page.flat.md").read_text(encoding="utf-8")
-    assert kit.docs.flatten_directives(flat) == flat
+    assert kit.directives.flatten_directives(flat) == flat
 
 
 def test_agents_read_flattened_pages(kit):

@@ -8,7 +8,7 @@ from urllib.parse import unquote
 
 from .common import ROOT, DOCS, CACHE, IS_WIN, run, which, load_json, save_json, rel_file
 from . import binaries, docs
-from .domain.docs import frontmatter, logical_paths
+from .domain.docs import directives, frontmatter, logical_paths, page_outline
 
 Issues = tuple[list[str], list[str]]
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -61,14 +61,14 @@ def resolve(base: str, href: str) -> str:
 # ---------- H1: internal links ----------
 def check_links(rows: list[dict], strict: bool = False) -> Issues:
     """Broken page links are errors; a `#anchor` the target page has no heading for is a WARN (ERROR with --strict).
-    Anchors resolve like the portal: docs.slug() of the heading. Translations are skipped for anchors."""
+    Anchors resolve like the portal: page_outline.slug() of the heading. Translations are skipped for anchors."""
     known = {r["path"]: ROOT / r["file"] for r in rows}
     slugs: dict[str, set[str]] = {}
 
     def anchors(path: str) -> set[str]:
         if path not in slugs:
             body = frontmatter.split_fm(known[path].read_text(encoding="utf-8", errors="replace"))[1]
-            slugs[path] = {h["slug"] for h in docs.headings(body)}
+            slugs[path] = {h["slug"] for h in page_outline.headings(body)}
         return slugs[path]
     errors, warns = [], []
     for logical, f, lang in pages(rows):
@@ -83,7 +83,7 @@ def check_links(rows: list[dict], strict: bool = False) -> Issues:
                 if target and page not in known:
                     errors.append(f"{rel_file(f)}:{n}: broken link → {href}")
                 elif (anchor and anchor != "top" and not lang and page in known
-                      and docs.slug(anchor) not in anchors(page)):
+                      and page_outline.slug(anchor) not in anchors(page)):
                     warns.append(f"{rel_file(f)}:{n}: no heading for #{anchor} in {page}")
     return (errors + warns, []) if strict else (errors, warns)
 
@@ -430,7 +430,7 @@ def check_rules(rows: list[dict], strict: bool = False) -> Issues:
         if r.get("space", "docs") != "docs":
             continue
         f = ROOT / r["file"]
-        for rule in docs.rules(f.read_text(encoding="utf-8", errors="replace")):
+        for rule in directives.rules(f.read_text(encoding="utf-8", errors="replace")):
             rid, where = rule["id"], rel_file(f)
             if rid in seen:
                 errors.append(f"{where}: rule {rid} is already defined in {seen[rid]}")

@@ -31,14 +31,14 @@ def page(kit, rel, text):
 
 
 def test_rules_are_parsed(kit):
-    (r,) = kit.docs.rules(RULE)
+    (r,) = kit.directives.rules(RULE)
     assert r == {"id": "ORD-1", "title": "Non-empty orders", "text": "An order needs at least one line.",
                  "enforced": ["api:src/OrderService.java#OrderService.place"],
                  "test": ["api:src/OrderServiceTest.java#OrderServiceTest.rejectsEmptyCart"]}
 
 
 def test_rules_are_flattened_for_agents(kit):
-    flat = kit.docs.flatten_directives(RULE)
+    flat = kit.directives.flatten_directives(RULE)
     assert ":::" not in flat
     assert "**Rule ORD-1 — Non-empty orders**" in flat and "An order needs at least one line." in flat
     assert "Enforced by: `api:src/OrderService.java#OrderService.place`" in flat

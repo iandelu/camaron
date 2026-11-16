@@ -13,7 +13,6 @@ oversize:
   - wizard
 violations:
   - "adapters.runners -> harness.plugins"
-  - "adr_doc -> docs"
   - "adr_pack -> history"
   - "adr_pack -> inventory"
   - "adr_pack -> kanban.index"

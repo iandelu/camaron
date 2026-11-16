@@ -9,7 +9,7 @@ import itertools, time
 
 from .common import WORK, load_json, save_json
 from . import docs
-from .domain.docs import frontmatter
+from .domain.docs import frontmatter, page_outline
 
 FILE = WORK / "reviews.json"
 DECISIONS = ("approve", "changes")
@@ -30,7 +30,7 @@ def resolve_anchor(path: str, slug: str, snippet: str = "") -> str | None:
     if not f:
         return None
     body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
-    secs = docs.sections(body)
+    secs = page_outline.sections(body)
     if any(s["slug"] == slug for s in secs):
         return slug
     lines = body.splitlines()

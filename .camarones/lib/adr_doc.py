@@ -13,9 +13,8 @@ import unicodedata
 from pathlib import PurePath
 from typing import Iterable
 
-from . import docs
 from .common import CAM_DIR
-from .domain.docs import frontmatter
+from .domain.docs import frontmatter, page_outline
 
 KEYS = ("status", "context", "drivers", "options", "decision", "consequences", "confirmation", "diagram", "evidence",
         "decided_by")
@@ -91,7 +90,7 @@ def _key_of(title: str) -> str | None:
 def _find(body: str, key: str) -> dict | None:
     if key not in HEADINGS:
         raise KeyError(key)
-    return next((s for s in docs.sections(body) if _key_of(s["title"]) == key), None)
+    return next((s for s in page_outline.sections(body) if _key_of(s["title"]) == key), None)
 
 
 def section(body: str, key: str) -> str | None:
@@ -106,7 +105,7 @@ def unwritten(text: str) -> bool:
     """The text of a section holds nothing a person wrote: once comments are set aside it is empty or only placeholders,
     the `TODO(question)` lines the kit leaves where it knew nothing, its Decision placeholder, and the `<…>` lines of a
     4.x skeleton (`<What was chosen.>`)."""
-    lines = [l.strip() for l in docs.COMMENT_RE.sub("", text or "").splitlines() if l.strip()]
+    lines = [l.strip() for l in page_outline.COMMENT_RE.sub("", text or "").splitlines() if l.strip()]
     return all(l.startswith(TODO) or l == PLACEHOLDER or _SKELETON_RE.fullmatch(l) for l in lines)
 
 
@@ -121,7 +120,7 @@ def _status_line(body: str) -> str:
 def status_of(body: str) -> tuple[str, str | None]:
     """(token, number of the ADR that supersedes this one). Read from the first line of the Status section, else a
     `Status:` line; the number is the one after `by`/`por`, else the first outside a date."""
-    line = _LABEL_RE.sub("", _status_line(docs.COMMENT_RE.sub("", body)))
+    line = _LABEL_RE.sub("", _status_line(page_outline.COMMENT_RE.sub("", body)))
     word = _WORD_RE.match(line)
     token = _STATUS.get(word[1].lower(), "unknown") if word else "unknown"
     rest = _DATE_RE.sub(" ", line[word.end():]) if word and token == "superseded" else ""
@@ -165,13 +164,13 @@ def replace_section(text: str, key: str, new_body: str) -> str:
     if found:
         _fill(lines, found, new)
     elif new:
-        _insert(lines, key, new, docs.sections(body))
+        _insert(lines, key, new, page_outline.sections(body))
     return head + "".join(lines)
 
 
 def _blank_comments(body: str) -> str:
     """`body` with each HTML comment turned into spaces, line breaks kept: the same lines and offsets, minus what a reader skips."""
-    return docs.COMMENT_RE.sub(lambda m: "".join(c if len(f"a{c}b".splitlines()) > 1 else " " for c in m[0]), body)
+    return page_outline.COMMENT_RE.sub(lambda m: "".join(c if len(f"a{c}b".splitlines()) > 1 else " " for c in m[0]), body)
 
 
 def _line_end(text: str, at: int) -> int:
@@ -181,7 +180,7 @@ def _line_end(text: str, at: int) -> int:
 
 def _put(body: str, lo: int, hi: int, new: str) -> str:
     """`body` with `new` in place of `lo:hi`, and of the rest of a comment that starts there and ends on a later line."""
-    for c in docs.COMMENT_RE.finditer(body):
+    for c in page_outline.COMMENT_RE.finditer(body):
         if lo <= c.start() < hi < c.end():
             hi = _line_end(body, c.end())
     return body[:lo] + new + body[hi:]
@@ -282,7 +281,7 @@ def render_options(points: list[dict], existing: str = "") -> str:
     """What the points weighed, for Considered options: one `### P1 · question` block per point with a line per option,
     its pros (+) and cons (−), the chosen one marked. An option that `existing` already names in a heading or a list
     item (case aside) is left out, and so is a point with no option left."""
-    items = [_words(m[1]) for m in _ITEM_RE.finditer(docs.COMMENT_RE.sub("", existing))]
+    items = [_words(m[1]) for m in _ITEM_RE.finditer(page_outline.COMMENT_RE.sub("", existing))]
     blocks = []
     for n, point in enumerate(points, 1):
         options = [_option_line(i, o, o.get("id") == point.get("chosen")) for i, o in enumerate(point.get("options") or [])
