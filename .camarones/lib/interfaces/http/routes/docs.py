@@ -1,20 +1,24 @@
 """The docs area of the API: the index, a page (read, write, create, confirm, comment), search, Ask and its AI answer,
-the checks and the review requests."""
+the checks and the review requests. A save names the version of the page it was made from (`sha`) and a confirm the
+body the person read (`body_sha`): a page that changed since is a 409 carrying the version it has now, and so is a write
+that waited too long for another writer of that page (`app/doc_edit.py`, `app/doc_review.py`)."""
 from __future__ import annotations
 
-import re
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from lib import plan, sourcelinks, usage
 from lib.app import portal_views
 from lib.app.portal_views import doc_file, read, status, tree
-from lib.core.paths import DOCS, ROOT
+from lib.core.locks import LockBusy
+from lib.core.paths import ROOT
 from lib.core.process import out
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
 from lib.domain.docs import frontmatter, page_outline
+from lib.domain.docs.page_versions import PageConflict
 from lib.app import services
 
 
@@ -102,24 +106,35 @@ def api_search(q: dict) -> list[dict]:
     return hits
 
 
-def write(path: str, raw: str, lang: str = "") -> dict:
-    f = doc_file(path, lang)
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(raw if raw.endswith("\n") else raw + "\n", encoding="utf-8")
+BUSY = "another change to this page is being saved: try again"
+
+
+def write(path: str, raw: str, lang: str = "", sha: str | None = None) -> dict:
+    services.current().doc_edit.save(doc_file(path, lang), raw, sha)
     return read(path, lang)
 
 
 def create(path: str, title: str) -> dict:
-    path = path.strip().lstrip("/").removeprefix("docs/")
-    if not re.fullmatch(r"[\w./-]+\.md", path) or ".." in path:
-        raise ValueError("path must look like section/page.md")
-    f = DOCS / path
-    if f.exists():
-        raise ValueError(f"{path} already exists")
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(frontmatter.join_fm({"title": title, "description": "", "type": "guide", "x-owner": "human"},
-                              f"\n# {title}\n\n"), encoding="utf-8")
-    return read(path)
+    return read(services.current().doc_edit.create(path, title))
+
+
+def _version(b: dict, key: str) -> str | None:
+    """The version a write names, or None when the client named none (then nothing is compared)."""
+    v = b.get(key)
+    if v is not None and not isinstance(v, str):
+        raise ValueError(f"{key} must be text")
+    return v or None
+
+
+def _written(answer: Callable[[], dict]) -> Response:
+    """A page write's answer: the page as it is now, or 409 when it changed underneath (with the version it has, so the
+    portal can reload or save over it) or another writer of the page held it too long."""
+    try:
+        return json_response(answer())
+    except PageConflict as e:
+        return json_response({"error": str(e), e.field: e.now}, 409)
+    except LockBusy:
+        return json_response({"error": BUSY}, 409)
 
 
 @route("GET", "/api/tree")
@@ -135,19 +150,22 @@ def get_doc(req: Request) -> Response:
 @route("POST", "/api/doc")
 def post_doc(req: Request) -> Response:
     b = req.body
-    return json_response(write(b["path"], b["raw"], b.get("lang", "")))
+    return _written(lambda: write(b["path"], b["raw"], b.get("lang", ""), _version(b, "sha")))
 
 
 @route("POST", "/api/new")
 def post_new(req: Request) -> Response:
-    return json_response(create(req.body["path"], req.body["title"]))
+    return _written(lambda: create(req.body["path"], req.body["title"]))
 
 
 @route("POST", "/api/confirm")
 def post_confirm(req: Request) -> Response:
     b = req.body
-    req.services.doc_review.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by)
-    return json_response(read(b["path"], b.get("lang", "")))
+
+    def confirm() -> dict:
+        req.services.doc_review.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by, _version(b, "body_sha"))
+        return read(b["path"], b.get("lang", ""))
+    return _written(confirm)
 
 
 @route("POST", "/api/feedback")

@@ -6,18 +6,27 @@ import re
 
 from lib.app import doc_status, services
 from lib.core.clock import now
+from lib.core.paths import rel_file
 from lib.domain.docs import frontmatter
+from lib.domain.docs.page_versions import PageConflict
 
 
-def confirm(files: list[str], by: str) -> list[str]:
+def confirm(files: list[str], by: str, body_sha: str | None = None) -> list[str]:
+    """Each page is read, checked and written holding its lock. `body_sha` is the body the person read (the portal's
+    one page): what a confirmation vouches for, so a page whose body changed since is a PageConflict and is not
+    confirmed."""
     done = []
     for p in files:
         f = services.current().docs.resolve(p)
-        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
-        if not fm:
-            raise RuntimeError(f"{p}: no frontmatter, refusing to confirm")
-        fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": frontmatter.body_sha(body)}
-        f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
+        with services.current().docs.page_lock(f):
+            fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
+            if not fm:
+                raise RuntimeError(f"{p}: no frontmatter, refusing to confirm")
+            sha = frontmatter.body_sha(body)
+            if body_sha is not None and sha != body_sha:
+                raise PageConflict(rel_file(f), "body_sha", sha)
+            fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": sha}
+            f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
         done.append(p)
         logical = next((lp for lp, df in services.current().docs.iter_docs() if df.resolve() == f.resolve()), None)
         if logical:

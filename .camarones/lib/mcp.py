@@ -226,15 +226,16 @@ def propose_edit(path: str, text: str, section: str | None = None, reason: str =
         return f"No page at {path}."
     text = frontmatter.split_fm(text)[1] if text.lstrip().startswith("---") else text  # frontmatter is never taken
     r = _rows().get(logical, {})
-    raw = f.read_text(encoding="utf-8")
-    fm, body = frontmatter.split_fm(raw)
-    if r.get("trust") == "draft" and r.get("owner") != "human" and r.get("space", "docs") == "docs":
-        new = _replace_section(body, section, text) if section else text.strip() + "\n"
-        if new is None:
-            return f"No section '{section}' in {path}. Sections: {', '.join(s['slug'] for s in page_outline.sections(body))}."
-        f.write_text(frontmatter.join_fm(fm, new), encoding="utf-8", newline="\n")
-        usage.record("mcp:propose_edit", channel="agent", page=logical)
-        return f"applied to {path} ({'section ' + section if section else 'whole page'}); it stays an AI draft."
+    with services.current().docs.page_lock(f):     # one writer per page; trust and owner as the file is under the lock
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
+        r = {**r, "trust": trust_levels.trust_of(fm, frontmatter.body_sha(body)), "owner": fm.get("x-owner", "ai")}
+        if r["trust"] == "draft" and r["owner"] != "human" and r.get("space", "docs") == "docs":
+            new = _replace_section(body, section, text) if section else text.strip() + "\n"
+            if new is None:
+                return f"No section '{section}' in {path}. Sections: {', '.join(s['slug'] for s in page_outline.sections(body))}."
+            f.write_text(frontmatter.join_fm(fm, new), encoding="utf-8", newline="\n")
+            usage.record("mcp:propose_edit", channel="agent", page=logical)
+            return f"applied to {path} ({'section ' + section if section else 'whole page'}); it stays an AI draft."
     PROPOSALS.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     out = PROPOSALS / f"{stamp}-{re.sub(r'[^a-z0-9]+', '-', logical.lower()).strip('-')}.md"

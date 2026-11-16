@@ -1,14 +1,22 @@
 """The project's pages on disk: every canonical page (docs/ and each repo's OpenWiki under wikis/), a page's file by any
-path that names it, where a translation and a repo's wiki live, and the human review feedback file. Behind
-lib/ports/doc_store.py."""
+path that names it, where a translation and a repo's wiki live, the lock a writer holds for a page's read-check-write,
+and the human review feedback file. Behind lib/ports/doc_store.py."""
 from __future__ import annotations
 
+import hashlib
+import os
+import re
 from pathlib import Path
 
 from lib.adapters.stores import workspace
 from lib.common import CAM_LAYOUT, DOCS, ROOT, repo_dir
 from lib.core.clock import now
+from lib.core.locks import FileLock
+from lib.core.paths import CACHE
 from lib.domain.docs import logical_paths
+
+PAGE_LOCKS = CACHE / "locks" / "pages"
+PAGE_LOCK_WAIT = 10.0          # seconds a writer waits for another writer of the same page before giving up (LockBusy)
 
 
 def iter_docs():
@@ -60,16 +68,33 @@ def resolve(p: str) -> Path:
     return (Path.cwd() / f).resolve() if (Path.cwd() / f).exists() else (ROOT / f).resolve()
 
 
+def page_lock(f: Path) -> FileLock:
+    """The lock a writer holds for a page's whole read-check-write: the portal, the MCP and the kit's own writers take it,
+    so two of them never interleave on one page. One per file (a translation is its own page), named after the file's
+    folder and name, resolved and case-folded, so every path to the same file meets at the same lock. Agent sessions
+    writing the file directly do not take it: the portal's version check (`domain.docs.page_versions`) catches them."""
+    f = Path(f)
+    key = os.path.normcase(str(f.parent.resolve() / f.name))
+    slug = re.sub(r"[^a-z0-9]+", "-", f"{f.parent.name}-{f.stem}".lower()).strip("-")[:48]
+    PAGE_LOCKS.mkdir(parents=True, exist_ok=True)     # FileLock names a lock by its resolved folder: make it first
+    return FileLock(PAGE_LOCKS / f"{slug}-{hashlib.sha1(key.encode('utf-8')).hexdigest()[:12]}.lock",
+                    wait=PAGE_LOCK_WAIT, info={"page": f.name})
+
+
 FEEDBACK = DOCS / ".work" / "review-feedback.md"
+FEEDBACK_LOCK = CACHE / "locks" / "review-feedback.lock"
 
 
 def add_feedback(doc_file: str, text: str, by: str) -> None:
-    FEEDBACK.parent.mkdir(parents=True, exist_ok=True)
-    if not FEEDBACK.exists():
-        FEEDBACK.write_text("# Review feedback\n\nHuman review comments. Agents apply them in the `review-fixes` unit and tick them.\n\n",
-                            encoding="utf-8")
-    with FEEDBACK.open("a", encoding="utf-8") as fh:
-        fh.write(f"- [ ] `{doc_file}` — {text.strip()} _( {by}, {now()[:10]} )_\n")
+    """One line per comment; the portal, the MCP and the CLI can add one at the same moment, so it holds a lock (two
+    first writers would each create the file with its header and drop the other's line)."""
+    with FileLock(FEEDBACK_LOCK):
+        FEEDBACK.parent.mkdir(parents=True, exist_ok=True)
+        if not FEEDBACK.exists():
+            FEEDBACK.write_text("# Review feedback\n\nHuman review comments. Agents apply them in the `review-fixes` unit and tick them.\n\n",
+                                encoding="utf-8", newline="\n")
+        with FEEDBACK.open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"- [ ] `{doc_file}` — {text.strip()} _( {by}, {now()[:10]} )_\n")
 
 
 def pending_feedback() -> list[str]:

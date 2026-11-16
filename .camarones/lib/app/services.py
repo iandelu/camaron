@@ -53,6 +53,7 @@ class Services:
     doc_status: ModuleType
     llms: ModuleType
     doc_review: ModuleType
+    doc_edit: ModuleType
     translations: ModuleType
     search: ModuleType
 
