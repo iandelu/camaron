@@ -12,6 +12,7 @@ from functools import lru_cache
 
 from .common import ROOT, CACHE, WORK, WS_FILE, run, out, load_json, save_json
 from .domain.docs import trust_levels
+from .app import services
 
 DIR = WORK / "usage"
 SETTING = CACHE / "usage.json"
@@ -139,7 +140,7 @@ def _health() -> tuple[dict, list[str]]:
     s = trust_levels.summary(rows)
     done, total = plan.progress() if plan.PLAN.exists() else (0, 0)
     try:
-        stale = sum(1 for c in docs.changes().values() if c.get("status") in ("changed", "history-rewritten"))
+        stale = sum(1 for c in services.current().doc_state.changes().values() if c.get("status") in ("changed", "history-rewritten"))
     except Exception:  # noqa: BLE001 — a repo that cannot be read does not hide the rest of the report
         stale = 0
     return {"pages": s["total"], "confirmed": s["confirmed"], "draft": s["draft"],

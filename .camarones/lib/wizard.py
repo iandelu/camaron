@@ -1926,7 +1926,7 @@ class W:
             s = trust_levels.summary(rows)
             errors, _ = docs.check()
             fb = docs.pending_feedback()
-            ch = {k: v for k, v in docs.changes().items() if v.get("status") in ("changed", "history-rewritten")}
+            ch = {k: v for k, v in services.current().doc_state.changes().items() if v.get("status") in ("changed", "history-rewritten")}
             tbl = Table.grid(padding=(0, 2))
             tbl.add_row("✅", str(s["confirmed"]), "✨", str(s["draft"]), "⚠️", str(s["needs-reconfirm"]),
                         "🧩", f"{s['orphans']} {'huérfanas' if self.lang == 'es' else 'orphans'}",

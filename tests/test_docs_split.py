@@ -58,7 +58,8 @@ FROM_ONBOARD = {"WS_HEADER": "adapters.stores.workspace", "write_workspace": "ad
 # MOVED: the homes whose names have moved; each task adds its own
 MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.docs.trust_levels", "domain.docs.page_outline",
                    "domain.docs.logical_paths", "domain.docs.directives", "domain.docs.synonyms",
-                   "adapters.stores.workspace", "adapters.git.repos"}
+                   "adapters.stores.workspace", "adapters.git.repos",
+                   "adapters.stores.doc_state"}
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it

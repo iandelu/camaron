@@ -163,7 +163,7 @@ def doc_status() -> str:
              f"orphans {s['orphans']}, untranslated {s['untranslated']}"]
     lines += [f"- re-confirm: {r['path']}" for r in rows if r["trust"] == "needs-reconfirm"]
     lines += [f"- orphan sources in {r['path']}: {r['orphan_sources']}" for r in rows if r["orphan_sources"]]
-    for repo, c in docs.changes().items():
+    for repo, c in services.current().doc_state.changes().items():
         if c["status"] != "up-to-date":
             lines.append(f"- repo {repo}: {c['status']}" + (f" ({len(c.get('files', []))} files)" if c.get("files") else ""))
     return "\n".join(lines)

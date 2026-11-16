@@ -14,7 +14,7 @@ from lib.interfaces.cli.registry import CliContext, Command, command
 class Changes(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import docs
-        print(json.dumps(docs.changes(), indent=2))
+        print(json.dumps(cli.services.doc_state.changes(), indent=2))
         return 0
 
 
@@ -173,7 +173,7 @@ class MarkDocumented(Command):
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import docs
-        print("marked documented:", ", ".join(docs.mark_documented(args.repos)))
+        print("marked documented:", ", ".join(cli.services.doc_state.mark_documented(args.repos)))
         return 0
 
 

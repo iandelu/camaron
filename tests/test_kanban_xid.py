@@ -280,12 +280,11 @@ def test_scalar_reference_fields_are_one_entry(board, wired):
 
 def snapshot_files(wired):
     import subprocess
-    from lib import docs
     from lib.harness import freshness
     status = subprocess.run(["git", "status", "--porcelain", "--ignored"], cwd=wired.root, capture_output=True,
                             text=True, encoding="utf-8").stdout
     one = lambda p: p.read_bytes() if p.exists() else None   # noqa: E731
-    return status, one(docs.STATUS_FILE), one(freshness.FILE)
+    return status, one(wired.services.doc_state.STATUS_FILE), one(freshness.FILE)
 
 
 def test_reads_do_not_write_tracked_files(board, wired):

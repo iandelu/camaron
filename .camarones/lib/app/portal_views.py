@@ -97,7 +97,7 @@ def _source_info(path: str, refs: list, state: dict | None) -> list[dict]:
 def status(check: bool = True) -> dict:
     """`check=False` skips the full quality check (seconds on a big project): the page shows the rest at once."""
     return {"queue": [{k: r[k] for k in ("path", "title", "trust", "type")} for r in docs.review_queue()],
-            "feedback": docs.pending_feedback(), "changes": docs.changes(),
+            "feedback": docs.pending_feedback(), "changes": services.current().doc_state.changes(),
             "check": dict(zip(("errors", "warnings"), docs.check())) if check else None,
             "plan": dict(zip(("done", "total"), plan.progress()))}
 

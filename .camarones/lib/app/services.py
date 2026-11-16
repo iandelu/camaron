@@ -19,6 +19,7 @@ from lib.ports.vcs import Vcs
 from lib.ports.wiki_engine import WikiEngine
 from lib.ports.workspace_store import WorkspaceStore
 from lib.ports.repo_sync import RepoSync
+from lib.ports.doc_state import DocState
 
 
 class Services:
@@ -36,6 +37,7 @@ class Services:
     vcs: Vcs
     workspace: WorkspaceStore
     repos: RepoSync
+    doc_state: DocState
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

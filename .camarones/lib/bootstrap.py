@@ -105,6 +105,11 @@ def _repos() -> object:
     return repos
 
 
+def _doc_state() -> object:
+    from lib.adapters.stores import doc_state
+    return doc_state
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -125,6 +130,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "export_site": _export_site,
     "workspace": _workspace,
     "repos": _repos,
+    "doc_state": _doc_state,
 }
 
 

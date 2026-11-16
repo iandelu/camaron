@@ -106,7 +106,7 @@ def stop(payload: dict) -> str:
     marker = CACHE / "hooks" / f"stop-{sid or 'anon'}"
     if marker.exists():
         return ""
-    moved = {r: c["status"] for r, c in docs.changes().items() if c.get("status") != "up-to-date"}
+    moved = {r: c["status"] for r, c in services.current().doc_state.changes().items() if c.get("status") != "up-to-date"}
     if not moved:
         return ""
     marker.parent.mkdir(parents=True, exist_ok=True)
