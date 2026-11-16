@@ -57,7 +57,7 @@ HOME: dict[str, str] = {name: home for home, names in _MAP.items() for name in n
 FROM_ONBOARD = {"WS_HEADER": "adapters.stores.workspace", "write_workspace": "adapters.stores.workspace"}
 # MOVED: the homes whose names have moved; each task adds its own
 MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.docs.trust_levels", "domain.docs.page_outline",
-                   "domain.docs.logical_paths", "domain.docs.directives"}
+                   "domain.docs.logical_paths", "domain.docs.directives", "domain.docs.synonyms"}
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it

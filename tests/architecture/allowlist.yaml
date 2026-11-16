@@ -3,7 +3,6 @@ largest_cycle: 43
 cycle_modules: 47
 oversize:
   - adr
-  - docs
   - kanban.ops
   - pages
   - plan

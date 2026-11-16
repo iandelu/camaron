@@ -1,4 +1,4 @@
-# What a word in a question also means, for docs search and Ask (lib/docs.py `expand`). A key found in the question
+# What a word in a question also means, for docs search and Ask (lib/domain/docs/synonyms.py `expand`). A key found in the question
 # adds its words with a lower weight; keys may be phrases, values are single words. Expansions are followed once, so
 # "base de datos" → database → postgresql… Generic → concrete only: "postgres" must not find MySQL pages.
 database: [databases, db, postgresql, postgres, mysql, mariadb, oracle, sqlserver, mssql, mongodb, mongo, firestore,

@@ -164,3 +164,27 @@ def test_flatten_directives_turns_blocks_into_plain_markdown():
     flat = d.flatten_directives(RULED)
     assert "**Rule R1 — Totals add up**" in flat and "Enforced by: `api:Order.java#total`, `web:cart.ts`" in flat
     assert ":::rule R2 inside code" in flat                  # a fence keeps its content as written
+
+
+# ---------- synonyms ----------
+def test_search_terms_file_is_the_shipped_one():
+    """The data file stays in lib/ (spec §2): the moved constant must still name it (plan Q4)."""
+    kit = importlib.import_module("lib.core.ctx").KIT
+    terms = mod("synonyms").TERMS_FILE
+    assert terms == kit / "lib" / "search_terms.yaml" and terms.is_file()
+
+
+def test_expand_weighs_said_words_over_implied_ones():
+    w = mod("synonyms").expand("Where is the cache configured?")
+    assert w["cache"] == 1.0 and w["configured"] == 1.0 and "where" not in w and "the" not in w
+    assert w["redis"] == mod("synonyms").IMPLIED
+
+
+def test_a_phrase_key_stands_for_its_words_and_is_followed_once():
+    w = mod("synonyms").expand("base de datos")
+    assert "base" not in w and "datos" not in w
+    assert w["database"] == w["postgresql"] == 0.6
+
+
+def test_only_stopwords_keep_their_words():
+    assert mod("synonyms").expand("the of") == {"the": 1.0, "of": 1.0}
