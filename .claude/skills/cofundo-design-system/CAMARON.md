@@ -40,3 +40,7 @@ for the portal.
   inline SVG, aria-hidden, in currentColor, next to its «Escaneo terminado». It is also the one animation that moves
   more than `transform` and `opacity`: its check draws itself with `stroke-dashoffset` (it rests drawn, and stands
   still under `prefers-reduced-motion`).
+  A fifth approved exception (asked by the user on 2026-11-16, "ver las skills con su icono"): the desktop Team ›
+  Skills card (`SkillsList` in `desktop/renderer/src/sections/Team.jsx`) shows each skill's and each optional pack's
+  icon, an emoji from `lib/skills_catalog.yaml` (🧩 when it has none), aria-hidden, in `.dk-skill-icon`, always next
+  to the skill's name. Emoji only there; they never stand in for a word.
