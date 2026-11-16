@@ -8,11 +8,10 @@ from __future__ import annotations
 import datetime as dt
 import re
 
-from .common import CTX, DOCS, which
+from .common import CTX, which
 from .harness.locks import FileLock
 from .harness.symbols import _strip
 
-ARCH = DOCS / "architecture"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "c4-model.lock"
 STR = r"'(?:[^'\\\n]|\\.)*'|\"(?:[^\"\\\n]|\\.)*\""
 NAME = r"[A-Za-z_][\w-]*"
@@ -51,9 +50,16 @@ def validate() -> tuple[bool, str]:
 
 
 # ---------- reading ----------
+def _arch():
+    """The model's folder: docs/architecture, or the service repo folder workspace.yaml names (adapters/likec4.py)."""
+    from .app import services
+    return services.current().diagrams.arch_dir()
+
+
 def _load() -> dict[str, str]:
-    return {f.relative_to(ARCH).as_posix(): f.read_text(encoding="utf-8")
-            for f in sorted(ARCH.rglob("*.c4"))} if ARCH.is_dir() else {}
+    arch = _arch()
+    return {f.relative_to(arch).as_posix(): f.read_text(encoding="utf-8")
+            for f in sorted(arch.rglob("*.c4"))} if arch.is_dir() else {}
 
 
 def _depths(lines: list[str]) -> list[int]:
@@ -356,13 +362,14 @@ def _write(change) -> dict:
         texts = dict(before)
         result = change(texts)
         changed = {rel: t for rel, t in texts.items() if t != before.get(rel)}
+        arch = _arch()
         for rel, t in changed.items():
-            (ARCH / rel).write_text(t, encoding="utf-8", newline="\n")
+            (arch / rel).write_text(t, encoding="utf-8", newline="\n")
         if changed:
             ok, msg = validate()
             if not ok:
                 for rel in changed:
-                    (ARCH / rel).write_text(before[rel], encoding="utf-8", newline="\n")
+                    (arch / rel).write_text(before[rel], encoding="utf-8", newline="\n")
                 raise C4Error(f"LikeC4 rejected the change, nothing was saved: {msg}")
         return result
 

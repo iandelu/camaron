@@ -93,4 +93,19 @@ def check(strict: bool = False, secrets_only: bool = False) -> tuple[list[str], 
     for n in services.current().wiki.old_wikis():
         warns.append(f"wikis/{n}: written with an older, narrower scope — regenerate it for a complete wiki: "
                      f"{cli_cmd()} wiki {n}")
-    return errors, warns
+    return errors, warns + architecture_warnings()
+
+
+def architecture_warnings() -> list[str]:
+    """workspace.yaml `project.architecture` (where the C4 model lives): a value the kit cannot use, so the model stays
+    in docs/architecture, or a repo folder that is not there yet."""
+    from lib.domain import architecture
+    ws = services.current().workspace
+    try:
+        ref = architecture.parse(ws.workspace()["project"].get(architecture.KEY), ws.repo_names())
+    except ValueError as e:
+        return [f"{e}; the C4 model stays in docs/architecture"]
+    if ref and not services.current().diagrams.arch_dir().is_dir():
+        return [f"project.architecture: {ref[0]}/{ref[1]} does not exist yet — clone {ref[0]} ({cli_cmd()} sync) "
+                f"or fix the path in workspace.yaml"]
+    return []

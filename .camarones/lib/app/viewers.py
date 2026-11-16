@@ -42,7 +42,9 @@ VIEWERS = CACHE / "viewers"
 def build_c4(dest: Path | None = None, log: Log = print) -> bool:
     dest = dest or VIEWERS / "architecture"
     if not (services.current().diagrams.arch_dir() / "likec4.config.json").exists():
-        log("⚠ no C4 model yet (docs/architecture/likec4.config.json) — unit arch-system writes it")
+        where = services.current().diagrams.arch_where()
+        log(f"⚠ no C4 model yet ({where}/likec4.config.json) — "
+            + ("add its LikeC4 config there" if services.current().diagrams.arch_source() else "unit arch-system writes it"))
         return False
     log("building the interactive C4 explorer (LikeC4)…")
     shutil.rmtree(dest, ignore_errors=True)

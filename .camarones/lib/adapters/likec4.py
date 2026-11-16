@@ -1,20 +1,45 @@
-"""The DiagramEngine port (lib/ports/diagram_engine.py) on LikeC4: the model under docs/architecture, checked with
-`likec4 validate`, edited live with `likec4 start`, and its views read with a regex so the portal needs no LikeC4."""
+"""The DiagramEngine port (lib/ports/diagram_engine.py) on LikeC4: the model under docs/architecture, or in a service
+repo's folder when workspace.yaml says so (lib/domain/architecture.py), checked with `likec4 validate`, edited live
+with `likec4 start`, and its views read with a regex so the portal needs no LikeC4."""
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
-from lib.common import DOCS, run
+from lib.adapters.stores import workspace
+from lib.common import DOCS, repo_dir, run
+from lib.domain import architecture
+
+
+def _ref() -> tuple[str, str] | None:
+    """(repo, path) of a model kept in a service repo; None for cam-docs, and for a value `check` reports as unusable."""
+    try:
+        return architecture.parse(workspace.workspace()["project"].get(architecture.KEY), workspace.repo_names())
+    except ValueError:
+        return None
+
+
+def arch_source() -> str | None:
+    """`<repo>:<path>` when the model lives in a service repo (workspace.yaml `project.architecture`), else None."""
+    ref = _ref()
+    return f"{ref[0]}:{ref[1]}" if ref else None
+
+
+def arch_where() -> str:
+    """The model's folder as a person reads it in a message: `docs/architecture` or `<repo>:<path>`."""
+    return arch_source() or "docs/architecture"
 
 
 def arch_dir() -> Path:
-    return DOCS / "architecture"
+    """The model's folder. A configured repo that is not cloned yet still answers its folder: falling back to cam-docs
+    would let arch-draft write the second model the key is there to avoid."""
+    ref = _ref()
+    return repo_dir(ref[0]).joinpath(*PurePosixPath(ref[1]).parts) if ref else DOCS / "architecture"
 
 
 def arch_validate() -> tuple[bool, str]:
     if not (arch_dir() / "likec4.config.json").exists():
-        return False, "no docs/architecture/likec4.config.json yet"
+        return False, f"no {arch_where()}/likec4.config.json yet"
     r = run(["likec4", "validate", "."], cwd=arch_dir(), check=False, capture=True)
     text = re.sub(r"\x1b\[[0-9;]*m", "", (r.stdout or "") + (r.stderr or ""))
     keep = [l for l in text.splitlines() if re.search(r"ERROR|Line \d+|Invalid|Valid|WARN .*layout", l)]

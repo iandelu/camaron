@@ -184,7 +184,9 @@ class ArchDraft(Command):
         from lib import pages, quickarch
         m = quickarch.draft()
         print((m["dir"] / "model.c4").read_text(encoding="utf-8"))
-        if args.save:                                                   # the new layout has no first-look.md
+        if args.save and (src := cli.services.diagrams.arch_source()):    # the repo's own model is the one
+            print(f"not saved: the C4 model lives in {src} (workspace.yaml project.architecture)")
+        elif args.save:                                                 # the new layout has no first-look.md
             print("\n".join(quickarch.save(m, overwrite=args.overwrite, page=pages.layout() == "old")))
         return 0
 

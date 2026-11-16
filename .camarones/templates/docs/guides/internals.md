@@ -39,7 +39,7 @@ x-owner: human
 | Portal | React app that reads and edits the docs | `/` of the server, or a static export |
 | Desktop app | Electron windows on the project servers, plus the start screen | `camaron app`; Electron pinned in `~/.camarones/desktop` |
 | Harness | The plan as data, parallel runs in worktrees, agent routing, run logs, KPIs | `lib/harness/`, `lib/pipelines/` |
-| MCP servers | `camarones` (the docs, the plan, the board) and `likec4` (the architecture model) for agents | `.mcp.json`, `.codex/` |
+| MCP servers | `camarones` (the docs, the plan, the board) and `likec4` (the architecture model, in `docs/architecture/` or the repo folder `project.architecture` names) for agents | `.mcp.json`, `.codex/` |
 
 ## Where things live
 
@@ -355,7 +355,7 @@ A fresh install already documents a lot from static analysis, with sources on ev
 | `camaron inventory [--cves] [--latest]` | `docs/overview/libraries.md`: direct dependencies by category, versions that differ, known vulnerabilities, each library's latest stable version from its public registry (`--latest`, never the workspace's own libraries); a Maven module takes its versions from its parent pom and the BOMs of the same repo |
 | `camaron schemas` | Tables and collections from migrations, entities, Mongo and Firestore |
 | `camaron history` | `docs/overview/history.md`: hotspots, who works where, files that change together |
-| `camaron arch-draft` | A first C4 model to verify |
+| `camaron arch-draft` | A first C4 model to verify (with `--save` it writes nothing when `project.architecture` keeps the model in a repo) |
 | `camaron llms` | `llms.txt` and `llms-full.txt` for agents |
 
 These are **generated blocks** (`<!-- generated:… sha=… -->`) that `pages`, `blocks` and `sync` keep current. A person

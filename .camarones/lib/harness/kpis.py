@@ -115,7 +115,7 @@ def coverage(run_check: bool = True) -> dict:
     from ..common import DOCS
     repos = services.current().workspace.repo_names()
     flows = [f for f in (DOCS / "flows").glob("*.md") if f.stem != "index"] if (DOCS / "flows").is_dir() else []
-    arch = DOCS / "architecture"
+    arch = services.current().diagrams.arch_dir()
     errors = warnings = None
     if run_check:
         e, w = services.current().doc_status.check()

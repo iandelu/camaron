@@ -169,7 +169,10 @@ descripción y relaciones, primero los borradores de IA. Puedes **Editar** un el
 eliminar) y **Confirmar** uno o **la vista entera** (`#ai-draft` pasa a `#confirmed`, con quién y cuándo). Cada cambio
 toca solo esas líneas del fichero `.c4` y se comprueba con LikeC4; si rompe el modelo, no se guarda. El diagrama se
 vuelve a dibujar cuando se reconstruye el explorador C4 desde la app de escritorio. **Leer el flujo** abre la página de
-un flujo; el explorador completo se abre desde el menú lateral.
+un flujo; el explorador completo se abre desde el menú lateral. El modelo vive en `docs/architecture/`, o en una
+carpeta de un repo de servicio cuando `project.architecture: <repo>:<ruta>` en `workspace.yaml` apunta allí (un repo que
+ya tiene su propio modelo LikeC4): entonces cada vista enseña `<repo>:<ruta>/<fichero>` y los cambios van a los
+ficheros de ese repo, que commiteas en ese repo.
 
 **Grafo de código** (`#/code`): el grafo de graphify convertido en un mapa legible —los módulos de cada repo y sus
 dependencias, los ficheros más usados, los paquetes y, por fichero, qué usa y quién lo usa— con buscador. El grafo en

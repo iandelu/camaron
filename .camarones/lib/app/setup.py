@@ -9,7 +9,7 @@ from pathlib import Path
 
 from lib import binaries
 from lib.app import components, services, templates, viewers
-from lib.common import (CAM_DIR, CAM_LAYOUT, DOCS, HOME, ROOT, VERSIONS, WORKSPACE, WS_FILE, cli_cmd, ensure_path,
+from lib.common import (CAM_DIR, CAM_LAYOUT, HOME, ROOT, VERSIONS, WORKSPACE, WS_FILE, cli_cmd, ensure_path,
                         load_json, out, repo_dir, run, save_json, sdkman_dir, uv, which)
 from lib.ports import Log
 
@@ -264,7 +264,7 @@ def setup_steps(comps: list[str] | None = None) -> int:
     n += 1                                                   # umbrella
     n += 1 if "graphify" in comps else 0
     n += 1 if "agents" in comps and CAM_LAYOUT else 0
-    n += 1 if "likec4" in comps and (DOCS / "architecture" / "likec4.config.json").exists() else 0
+    n += 1 if "likec4" in comps and (services.current().diagrams.arch_dir() / "likec4.config.json").exists() else 0
     return n
 
 
@@ -289,7 +289,7 @@ def setup(ci: bool = False, log: Log = print, comps: list[str] | None = None) ->
     if "graphify" in comps:
         log("merging the cross-repo code graph…")
         viewers.graph(rebuild=False, log=log)
-    if "likec4" in comps and (DOCS / "architecture" / "likec4.config.json").exists():
+    if "likec4" in comps and (services.current().diagrams.arch_dir() / "likec4.config.json").exists():
         ok, _ = services.current().diagrams.arch_validate()
         log("✔ C4 model valid" if ok else "⚠ C4 model has errors: run arch-validate")
     return True
