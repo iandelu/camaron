@@ -27,3 +27,9 @@ export function pager(order, path) {
 }
 
 export const newPagePath = (title) => 'guides/' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.md'
+
+// A save (`sha`) or a confirm (`body_sha`) the server refused because the page changed since it was read (409 with the
+// version the file has now): that version, so the person can save over it. null for any other failure (a busy page,
+// a bad input, no server).
+export const pageConflict = (e, field = 'sha') =>
+  e?.status === 409 && typeof e.data?.[field] === 'string' ? e.data[field] : null

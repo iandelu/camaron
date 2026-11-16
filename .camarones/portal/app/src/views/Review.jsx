@@ -4,6 +4,7 @@ import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { t as tr } from '../i18n.js'
 import { changedRepos, FILTERS, filterQueue, queueCounts } from './review.js'
+import { pageConflict } from './docpage.js'
 import { core } from '../core.js'
 
 const STATE = { draft: 'warn', 'needs-reconfirm': 'info', confirmed: 'ok' }
@@ -45,13 +46,21 @@ export default function Review() {
   const confirmPicked = async () => {
     setBusy(true)
     setError('')
+    const lang = core.lang()
     try {
-      for (const path of picked) await postJSON('confirm', { path, lang: core.lang(), by })
+      for (const path of picked) {
+        // the queue's body is the English page's: a confirmation in another language is its translation's, unchecked
+        const body_sha = lang ? undefined : s.queue.find((r) => r.path === path)?.body_sha
+        await postJSON('confirm', { path, lang, by, body_sha })
+      }
       core.toast(t('confirmedToast'))
       setPicked(new Set())
       await core.reload()
       load()
-    } catch (e) { setError(e.message) } finally { setBusy(false) }
+    } catch (e) {
+      setError(pageConflict(e, 'body_sha') ? t('confirmConflict') : e.status === 409 ? t('pageBusy') : e.message)
+      load()                                            // what was confirmed before the refusal shows as confirmed
+    } finally { setBusy(false) }
   }
 
   if (error && !s) return <div className="page"><Aviso tone="error" title={tr('review.loadFailed')} detail={error} /></div>

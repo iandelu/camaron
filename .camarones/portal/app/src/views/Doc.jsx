@@ -3,7 +3,7 @@ import { Aviso, Button, Chip, Skeleton } from '@camaron/ui'
 import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { t as tr } from '../i18n.js'
-import { pageBanners, pageLede, pager } from './docpage.js'
+import { pageBanners, pageConflict, pageLede, pager } from './docpage.js'
 import Editor from './Editor.jsx'
 import Sources, { FreshIcon } from './Sources.jsx'
 import { pageFresh } from './sources.js'
@@ -122,7 +122,8 @@ function ConfirmPanel({ d, t, onDone, onCancel }) {
   const [by, setBy] = useState(core.tree().reviewer || '')
   const [error, setError] = useState('')
   const go = async () => {
-    try { await postJSON('confirm', { path: d.path, lang: core.lang(), by }); onDone() } catch (e) { setError(e.message) }
+    try { await postJSON('confirm', { path: d.path, lang: core.lang(), by, body_sha: d.body_sha }); onDone() }
+    catch (e) { setError(pageConflict(e, 'body_sha') ? t('confirmConflict') : e.status === 409 ? t('pageBusy') : e.message) }
   }
   return (
     <div className="box doc-panel">

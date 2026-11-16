@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button } from '@camaron/ui'
 import { postJSON } from '../api.js'
-import { newPagePath } from './docpage.js'
+import { newPagePath, pageConflict } from './docpage.js'
 import { drawMermaid, render } from '../content/doc.js'
 import { core } from '../core.js'
 
 
-// Edit a page in its Markdown with a live preview; saving can commit it (cam-docs is a git repo).
+// Edit a page in its Markdown with a live preview; saving can commit it (cam-docs is a git repo). The save names the
+// version the editor opened (`d.sha`): if the page changed meanwhile (another tab, an agent), the server refuses it
+// and the text stays here, to save over the change or to copy and cancel.
 export default function Editor({ d, onDone }) {
   const t = core.t
   const lang = core.lang()
@@ -15,6 +17,7 @@ export default function Editor({ d, onDone }) {
   const [commit, setCommit] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [conflict, setConflict] = useState(null)        // the version the page has now, when a save was refused
   const preview = useRef(null)
 
   useEffect(() => {                                     // the preview follows the text after a short pause
@@ -26,11 +29,18 @@ export default function Editor({ d, onDone }) {
     return () => clearTimeout(h)
   }, [src])
 
-  const save = async () => {
+  const save = async (sha = d.sha) => {
     setBusy(true)
     setError('')
+    setConflict(null)
     try {
-      await postJSON('doc', { path: d.path, lang, raw: src })
+      try {
+        await postJSON('doc', { path: d.path, lang, raw: src, sha })
+      } catch (e) {
+        const now = pageConflict(e)
+        if (now) { setConflict(now); setBusy(false); return }
+        throw e.status === 409 ? new Error(t('pageBusy')) : e
+      }
       if (commit) {
         const c = await postJSON('commit', { message: msg || `edit ${d.path}` })
         core.toast(c.committed ? `${t('savedCommitted')}: ${c.head}` : t('nothingToCommit'))
@@ -46,6 +56,8 @@ export default function Editor({ d, onDone }) {
       <div className="meta"><code>{d.file}</code>{lang && <span className="small muted"> · {t('translation')} {lang}</span>}</div>
       {d.trust === 'confirmed' && <Aviso tone="warn" title={t('confirmedWarn')} />}
       {error && <Aviso tone="error" title={t('error')} detail={error} />}
+      {conflict && <Aviso tone="warn" title={t('editConflict')}
+        action={<Button disabled={busy} onClick={() => save(conflict)}>{t('saveOver')}</Button>}>{t('editConflictHelp')}</Aviso>}
       <div className="editor">
         <textarea value={src} onChange={(e) => setSrc(e.target.value)} spellCheck="true" aria-label={t('editing')} />
         <div className="preview" ref={preview}></div>
@@ -54,7 +66,7 @@ export default function Editor({ d, onDone }) {
         <input className="cu-input" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={t('commitMsg')}
           aria-label={t('commitMsg')} style={{ flex: 1, minWidth: '14rem' }} />
         <label><input type="checkbox" checked={commit} onChange={(e) => setCommit(e.target.checked)} /> {t('commitBox')}</label>
-        <Button variant="primary" disabled={busy} onClick={save}>{t('save')}</Button>
+        <Button variant="primary" disabled={busy} onClick={() => save()}>{t('save')}</Button>
         <Button variant="ghost" onClick={onDone}>{t('cancel')}</Button>
       </div>
     </div>
