@@ -24,7 +24,7 @@ def api_ask(question: str) -> dict:
     from lib.harness import freshness
     hits = docs.search(question, 20) if question.strip() else []
     usage.record("portal:ask", channel="human", hit=bool(hits), query=question)
-    rows, out = {r["path"]: r for r in docs.collect()}, []
+    rows, out = {r["path"]: r for r in services.current().doc_status.collect()}, []
     for h in hits:
         r = rows.get(h["path"], {})
         ok, notice = freshness.gate(h["path"], r.get("trust", "draft"), r.get("freshness"))
@@ -166,7 +166,7 @@ def get_search(req: Request) -> Response:
 
 @route("GET", "/api/check")
 def get_check(req: Request) -> Response:
-    return json_response(dict(zip(("errors", "warnings"), docs.check())))
+    return json_response(dict(zip(("errors", "warnings"), req.services.doc_status.check())))
 
 
 @route("GET", "/api/status")

@@ -205,7 +205,7 @@ def test_an_unstamped_wiki_is_old_warned_and_expanded_on_update(wired, engine, m
     (wiki / "index.md").write_text("# api\n", encoding="utf-8")          # written by a kit before scope stamps
     assert wk.wiki_scope("api") == 1
     assert {w["repo"]: w for w in wk.wikis()}["api"]["old"]
-    assert any("wikis/api" in w and "older" in w for w in wired.docs.check()[1])
+    assert any("wikis/api" in w and "older" in w for w in wired.services.doc_status.check()[1])
     assert "Expand" in wk.wiki_prompt("api", "update")
     prompts = []
     real = wk.stream
@@ -213,7 +213,7 @@ def test_an_unstamped_wiki_is_old_warned_and_expanded_on_update(wired, engine, m
     assert wk.openwiki_generate("api", log=lambda _: None) is True
     assert "Expand" in prompts[0]
     assert not {w["repo"]: w for w in wk.wikis()}["api"]["old"]
-    assert not any("wikis/api" in w and "older" in w for w in wired.docs.check()[1])
+    assert not any("wikis/api" in w and "older" in w for w in wired.services.doc_status.check()[1])
 
 
 def test_openwiki_own_engine_counts_as_complete_only_with_a_coverage_brief(wired, engine, monkeypatch):

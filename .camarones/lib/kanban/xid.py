@@ -6,7 +6,6 @@ from __future__ import annotations
 import re
 import secrets
 
-from .. import docs
 from .ops import BoardError
 from ..domain.docs import frontmatter, logical_paths, page_outline
 from ..app import services
@@ -158,13 +157,13 @@ def _fresh() -> dict[str, dict] | None:
 
 def page_rows(paths=None) -> dict[str, dict]:
     """Trust, title and freshness of the given pages (default all), by logical path (what link_state reads). Read-only:
-    unlike docs.collect() it writes no status file and stamps nothing; `fresh` is None when it cannot be read that way."""
+    unlike doc_status.collect() it writes no status file and stamps nothing; `fresh` is None when it cannot be read that way."""
     pages = _pages()
     fresh = _fresh()
     rows = {}
     for p in (pages if paths is None else paths):
         if p in pages:
-            r = docs.doc_status(p, pages[p], [])
+            r = services.current().doc_status.doc_status(p, pages[p], [])
             r["fresh"] = None if fresh is None else (fresh.get(p) or {}).get("state")
             rows[p] = r
     return rows

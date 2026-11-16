@@ -51,7 +51,7 @@ def test_the_page_reads_well_and_passes_the_structure_check(kit):
     for s in ("## Hotspots", "## Who to ask", "## Changed together", "## Commit conventions", "Ana", "ORD-12"):
         assert s in text, s
     assert "x@example.com" not in text                                              # names only
-    _, warns = kit.quality.check_structure(kit.docs.collect())
+    _, warns = kit.quality.check_structure(kit.services.doc_status.collect())
     assert not [w for w in warns if "history.md" in w], warns
 
 
@@ -77,7 +77,7 @@ def test_spanish_twin_and_folders(kit):
     history.write(12)
     es = (kit.root / "docs" / "i18n" / "es" / "overview" / "history.md").read_text(encoding="utf-8")
     assert "## A quién preguntar" in es
-    row = next(r for r in kit.docs.collect() if r["path"] == "overview/history.md")
+    row = next(r for r in kit.services.doc_status.collect() if r["path"] == "overview/history.md")
     assert row["i18n"] == {"es": "current"}
 
 

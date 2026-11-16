@@ -444,9 +444,8 @@ class Status(Command):
         parser.add_argument("--json", action="store_true")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
         from lib.domain.docs import trust_levels
-        rows = docs.collect()
+        rows = cli.services.doc_status.collect()
         if args.json:
             print(json.dumps(rows, indent=2, ensure_ascii=False))
         else:
@@ -468,8 +467,7 @@ class Check(Command):
         parser.add_argument("--secrets", action="store_true", help="only the secret scan (CI gate before committing)")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs
-        errors, warns = docs.check(args.strict, secrets_only=args.secrets)
+        errors, warns = cli.services.doc_status.check(args.strict, secrets_only=args.secrets)
         for w in warns:
             print("WARN ", w)
         for e in errors:

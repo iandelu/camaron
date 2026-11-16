@@ -8,7 +8,6 @@ import json, sys
 from pathlib import Path
 
 from .common import CACHE, DOCS, KIT, ROOT, uv
-from . import docs
 from .app import services
 
 CAP = 1800                                        # characters the session start adds to the agent's context
@@ -84,7 +83,7 @@ def post_edit(payload: dict) -> tuple[int, str]:
         rel = Path(path).resolve().relative_to(DOCS.resolve()).as_posix()
     except ValueError:
         return 0, ""
-    rows = [r for r in docs.collect() if r["path"] == rel]
+    rows = [r for r in services.current().doc_status.collect() if r["path"] == rel]
     if not rows:
         return 0, ""
     problems = []

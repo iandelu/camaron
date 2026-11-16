@@ -148,7 +148,7 @@ def test_people_see_the_state_in_the_portal_rows(kit, fresh):
     page(kit, "flows/a.md", [f"api:{API}#L3-L5"])
     fresh.stamp_all()
     code(kit, ORIGINAL.replace("Api {", "Api implements Runnable {"))
-    row = next(r for r in kit.docs.collect() if r["path"] == "flows/a.md")
+    row = next(r for r in kit.services.doc_status.collect() if r["path"] == "flows/a.md")
     assert row["fresh"] == "suspect"
 
 
@@ -156,7 +156,7 @@ def test_check_warns_about_out_of_date_pages(kit, fresh):
     page(kit, "flows/a.md", [f"api:{API}#L3-L5"])
     fresh.stamp_all()
     code(kit, ORIGINAL.replace("Api {", "Api implements Runnable {"))
-    _, warns = kit.docs.check()
+    _, warns = kit.services.doc_status.check()
     assert any("flows/a.md" in w and "changed since" in w for w in warns)
 
 

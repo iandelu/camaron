@@ -48,11 +48,11 @@ def test_rules_are_flattened_for_agents(kit):
 def test_check_finds_each_symbol_again(kit):
     code(kit)
     page(kit, "domain/rules.md", RULE)
-    errors, warns = kit.quality.check_rules(kit.docs.collect())
+    errors, warns = kit.quality.check_rules(kit.services.doc_status.collect())
     assert errors == [] and warns == []
     (kit.ws / "api" / "src" / "OrderService.java").write_text("public class OrderService {\n  void submit() {}\n}\n",
                                                               encoding="utf-8")
-    errors, _ = kit.quality.check_rules(kit.docs.collect())
+    errors, _ = kit.quality.check_rules(kit.services.doc_status.collect())
     assert any("ORD-1" in e and "OrderService.place" in e for e in errors), errors
 
 
@@ -62,7 +62,7 @@ def test_check_flags_duplicates_and_loose_rules(kit):
     page(kit, "flows/checkout.md", "# Checkout\n\n:::rule ORD-1\nenforced: api:src/OrderService.java#OrderService.place\n"
                                    "Same id.\n:::\n\n:::rule ORD-2\nNobody enforces this.\n:::\n\n"
                                    ":::rule ORD-3\nenforced: OrderService.place\nNo file.\n:::\n")
-    errors, warns = kit.quality.check_rules(kit.docs.collect())
+    errors, warns = kit.quality.check_rules(kit.services.doc_status.collect())
     assert any("ORD-1" in e and "domain/rules.md" in e for e in errors)                  # duplicate id
     assert any("ORD-2" in w and "enforced" in w for w in warns)
     assert any("ORD-3" in w and "#" in w for w in warns)                                # repo:path#Symbol expected

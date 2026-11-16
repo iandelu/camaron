@@ -8,7 +8,6 @@ import datetime as dt
 import itertools, time
 
 from .common import WORK, load_json, save_json
-from . import docs
 from .domain.docs import frontmatter, page_outline
 from .app import services
 
@@ -45,7 +44,7 @@ def resolve_anchor(path: str, slug: str, snippet: str = "") -> str | None:
 def comment(path: str, text: str, by: str, slug: str = "", snippet: str = "") -> str:
     """A review comment, anchored to a section when slug/snippet are given."""
     logical = path.removeprefix("docs/")
-    row = next((r for r in docs.collect() if r["path"] == logical), None)
+    row = next((r for r in services.current().doc_status.collect() if r["path"] == logical), None)
     if not row:
         raise KeyError(path)
     where = f" § {slug}" + (f' ("{" ".join(snippet.split())[:80]}")' if snippet else "") if slug else ""

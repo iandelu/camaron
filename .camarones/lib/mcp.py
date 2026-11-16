@@ -83,7 +83,7 @@ TOOLS = [
 
 
 def _rows() -> dict[str, dict]:
-    return {r["path"]: r for r in docs.collect()}
+    return {r["path"]: r for r in services.current().doc_status.collect()}
 
 
 def _file(path: str):
@@ -150,14 +150,14 @@ def read_doc(path: str, section: str | None = None) -> str:
 
 def list_docs() -> str:
     usage.record("mcp:list_docs")
-    rows = docs.collect()
+    rows = services.current().doc_status.collect()
     return "\n".join(f"- {r['path']} [{r['trust']}{'' if freshness.gate(r['path'], r['trust'], r.get('freshness'))[0] else ', withheld'}] "
                      f"{r['title']}" + (f" — {r['description']}" if r["description"] else "") for r in rows) or "No docs yet."
 
 
 def doc_status() -> str:
     usage.record("mcp:doc_status")
-    rows = docs.collect()
+    rows = services.current().doc_status.collect()
     s = trust_levels.summary(rows)
     lines = [f"{s['total']} pages: confirmed {s['confirmed']}, draft {s['draft']}, needs-reconfirm {s['needs-reconfirm']}, "
              f"orphans {s['orphans']}, untranslated {s['untranslated']}"]

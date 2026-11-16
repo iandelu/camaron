@@ -9,7 +9,6 @@ import shutil
 from pathlib import Path
 
 from .common import KIT, ROOT, VERSIONS, WS_FILE, out
-from . import docs
 from .ports import Log
 from .app import services
 
@@ -307,7 +306,7 @@ def status(forge: str | None = None) -> dict:
     installed = {k: {"path": rel(p) if p.is_file() else None,
                      "outdated": p.is_file() and p.read_text(encoding="utf-8", errors="replace") != text}
                  for k, (p, text) in wanted.items()}
-    errors, warnings = docs.check()
+    errors, warnings = services.current().doc_status.check()
     states = freshness.states()
     return {"forge": forge, "target": cfg["target"], "kitRef": cfg["kit_ref"], "installed": installed,
             "remote": out(["git", "remote", "get-url", "origin"], cwd=ROOT) or None,

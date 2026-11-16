@@ -132,7 +132,7 @@ def test_page_is_a_valid_draft_with_resolvable_sources(radar):
     assert fm["type"] == "overview" and fm["x-owner"] == "ai" and "x-confirmed" not in fm
     assert "api:catalog-info.yaml" in fm["x-sources"]
     assert "team-pets" in body and "https://sonar.acme.test/dashboard?id=acme_api" in body
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert not [e for e in errors if "tooling.md" in e]
 
 
@@ -140,10 +140,10 @@ def test_removed_tool_shows_as_orphan_until_rescanned(radar):
     add_files(radar, TOOLING)
     radar.radar.run()
     (radar.ws / "api" / "sonar-project.properties").unlink()
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert any("tooling.md" in e and "sonar-project.properties" in e for e in errors)
     radar.radar.run()
-    errors, _ = radar.docs.check()
+    errors, _ = radar.services.doc_status.check()
     assert not [e for e in errors if "tooling.md" in e]
 
 
@@ -152,10 +152,10 @@ def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
     page = radar.docs.DOCS / "overview" / "tooling.md"
     radar.docs.confirm([str(page)], by="ana")
     radar.radar.run()                                                            # same repos → still confirmed
-    assert radar.docs.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
+    assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
     add_files(radar, TOOLING)
     radar.radar.run()                                                            # new tools → the human re-checks
-    assert radar.docs.doc_status("overview/tooling.md", page, [])["trust"] == "needs-reconfirm"
+    assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "needs-reconfirm"
     fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
     page.write_text(radar.frontmatter.join_fm({**fm, "x-owner": "human"}, body + "\nHand notes.\n"), encoding="utf-8")
     radar.radar.run()

@@ -120,6 +120,11 @@ def _vendor() -> object:
     return npm_vendor
 
 
+def _doc_status() -> object:
+    from lib.app import doc_status
+    return doc_status
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -143,6 +148,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "doc_state": _doc_state,
     "docs": _docs,
     "vendor": _vendor,
+    "doc_status": _doc_status,
 }
 
 

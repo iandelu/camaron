@@ -29,13 +29,13 @@ def test_broken_frontmatter_never_leaks_into_the_body(kit):
 def test_collect_survives_a_broken_translation(kit):
     write(kit, "domain/glossary.md", "---\ntitle: Glossary\n---\n# Glossary\n")
     write(kit, "i18n/es/domain/glossary.md", "---\ntitle: [unclosed\n  - : :\n---\n# Glosario\n")
-    rows = {r["path"]: r for r in kit.docs.collect()}
+    rows = {r["path"]: r for r in kit.services.doc_status.collect()}
     assert rows["domain/glossary.md"]["i18n"]["es"] == "outdated"
 
 
 def test_check_reports_unreadable_frontmatter(kit):
     write(kit, "broken.md", "---\ntitle: [unclosed\n  - : :\n---\n# Broken\n")
-    errors, _ = kit.docs.check()
+    errors, _ = kit.services.doc_status.check()
     assert any("broken.md" in e and "invalid frontmatter" in e for e in errors)
 
 

@@ -41,7 +41,7 @@ def doc_file(path: str, lang: str = "") -> Path:
 
 
 def tree() -> dict:
-    rows = docs.collect()
+    rows = services.current().doc_status.collect()
     ws = services.current().workspace.workspace()
     return {"project": ws["project"]["name"], "langs": ws["project"].get("translations", []), "reviewer": reviewer(),
             "summary": trust_levels.summary(rows), "feedback": len(services.current().docs.pending_feedback()), "kit": VERSIONS["kit"],
@@ -77,7 +77,7 @@ def read(path: str, lang: str = "") -> dict:
     f = doc_file(path, lang)
     raw = f.read_text(encoding="utf-8") if f.exists() else ""
     fm, body = frontmatter.split_fm(raw)
-    row = next((r for r in docs.collect() if r["path"] == path), {})
+    row = next((r for r in services.current().doc_status.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
             "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem, "trust": row.get("trust"),
             "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
@@ -98,7 +98,7 @@ def status(check: bool = True) -> dict:
     """`check=False` skips the full quality check (seconds on a big project): the page shows the rest at once."""
     return {"queue": [{k: r[k] for k in ("path", "title", "trust", "type")} for r in docs.review_queue()],
             "feedback": services.current().docs.pending_feedback(), "changes": services.current().doc_state.changes(),
-            "check": dict(zip(("errors", "warnings"), docs.check())) if check else None,
+            "check": dict(zip(("errors", "warnings"), services.current().doc_status.check())) if check else None,
             "plan": dict(zip(("done", "total"), plan.progress()))}
 
 

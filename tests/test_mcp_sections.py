@@ -95,11 +95,11 @@ def test_check_flags_anchors_that_do_not_exist(kit, mcp):
     g.write_text("---\ntitle: Links\n---\n# Links\n\n## Here\n\n[ok](../flows/checkout.md#failure-handling) "
                  "[dup](../flows/checkout.md#data-touched-1) [self](#here) [bad](../flows/checkout.md#retries) "
                  "[badself](#nowhere)\n", encoding="utf-8")
-    errors, warns = kit.quality.check_links(kit.docs.collect())
+    errors, warns = kit.quality.check_links(kit.services.doc_status.collect())
     flagged = [w for w in warns if "links.md" in w]
     assert errors == [] and len(flagged) == 2
     assert any("#retries" in w for w in flagged) and any("#nowhere" in w for w in flagged)
-    errors, _ = kit.quality.check_links(kit.docs.collect(), strict=True)
+    errors, _ = kit.quality.check_links(kit.services.doc_status.collect(), strict=True)
     assert len([e for e in errors if "links.md" in e]) == 2
 
 

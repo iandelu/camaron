@@ -32,7 +32,7 @@ def test_a_draft_section_is_edited_in_place_and_stays_a_draft(kit, mcp):
     assert "applied" in out
     text = read(kit, "flows/draft.md")
     assert "retry twice on timeout" in text and "The `orders` table." in text and "## Steps" in text
-    assert next(r for r in kit.docs.collect() if r["path"] == "flows/draft.md")["trust"] == "draft"
+    assert next(r for r in kit.services.doc_status.collect() if r["path"] == "flows/draft.md")["trust"] == "draft"
 
 
 @pytest.mark.parametrize("rel", ["flows/confirmed.md", "flows/mine.md"])

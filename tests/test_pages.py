@@ -253,7 +253,7 @@ def test_the_generated_pages_pass_check(pg, monkeypatch):
     for rel, text in pages:
         write_doc(pg, rel, text)
     assert "(architecture/messaging.md)" in pages[0][1] and "(overview/tooling.md)" in pages[0][1]
-    errors, _warns = pg.kit.docs.check()
+    errors, _warns = pg.kit.services.doc_status.check()
     assert [e for e in errors if "index.md" in e or "messaging.md" in e] == []
 
 

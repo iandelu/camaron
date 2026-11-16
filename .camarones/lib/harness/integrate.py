@@ -24,7 +24,7 @@ EXCLUDED = (*DERIVED, "docs/.work", "backlog", ".gitattributes")   # plan state 
 UNION = ("docs/interview/open-questions.md",)               # append-only lists: keep every unit's additions
 
 GATE_SCRIPT = {
-    "check": "from lib import docs\nprint(json.dumps(docs.check()[0]))",
+    "check": "from lib.app import services\nprint(json.dumps(services.current().doc_status.check()[0]))",
     "arch-validate": "from lib.app import services\nok, msg = services.current().diagrams.arch_validate()\nprint(json.dumps([] if ok else [msg or 'C4 model invalid']))",
 }
 
@@ -187,7 +187,7 @@ def integrate(uid: str, ctx: Ctx, gates=GATES, policy: str = "on-conflict", emit
                    f"Unit {uid} merges cleanly but adds errors: {detail}. Its work is in {rel} (branch {w.branch}): fix "
                    "them there, commit, then mark this unit done; the kit merges it again." if policy == "on-conflict" else None)
             return Result(uid, "gate-failed", detail)
-        _kit(tree, "from lib import docs\ndocs.collect()\ndocs.llms()")
+        _kit(tree, "from lib import docs\nfrom lib.app import services\nservices.current().doc_status.collect()\ndocs.llms()")
         _git(w.path, "add", "-A", "--", *DERIVED)
         if _git(w.path, "diff", "--cached", "--quiet").returncode:
             _git(w.path, *_ident(w.path), "commit", "-q", "--no-verify", "-m", f"docs(camarones): {uid} derived files",

@@ -175,7 +175,7 @@ def debt_items(repos: list[str]) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {**{r: [] for r in repos}, "_project": []}
     pages = [(p, docs.DOCS / p) for p in DEBT_PAGES]
     pages = [(p, f) for p, f in pages if f.is_file()]
-    trust = {r["path"]: r["trust"] for r in docs.collect()} if pages else {}
+    trust = {r["path"]: r["trust"] for r in services.current().doc_status.collect()} if pages else {}
     for page, f in pages:
         _, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         table = _first_table(body, "Items" if page.endswith("tech-debt.md") else None)

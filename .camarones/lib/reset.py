@@ -205,7 +205,7 @@ def _regenerate(log) -> None:
         genblocks.refresh()
     except Exception as e:  # noqa: BLE001 — the reset is done; the pages from the code can be written later
         log(f"⚠ the pages from the code were not written ({e}): run `pages`")
-    docs.collect()
+    services.current().doc_status.collect()
     docs.llms()
 
 

@@ -564,7 +564,7 @@ def test_a_gone_enum_leaves_the_page_unless_confirmed(dg):
     dg.mod.write_pages()
     text = f.read_text(encoding="utf-8")
     assert keys(text) == [("endpoints-map", "api", None), ("states", "api", "PetState")] and kept in text
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert any("diagrams.md" in i for i in issues)
 
 
@@ -818,7 +818,7 @@ def test_a_repo_missing_from_this_machine_leaves_the_system_map_alone(dg):
     assert sm.read_bytes() == before
     assert sum("system-map.md" in line for line in logs) == 1
     assert dg.mod.render("context", SYSTEM, None) is None and dg.mod.render("messaging", SYSTEM, "visit-booked") is None
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert not [i for i in issues if "system-map.md" in i]
 
 
@@ -845,7 +845,7 @@ def test_a_confirmed_block_of_a_repo_not_on_this_machine_is_not_reported(dg):
     got = {m["id"]: s for m, s, _ in dg.gb.states(text, dg.gb.Scanner())}
     assert got == {None: "unknown", "OrderStatus": "confirmed"}
     for strict in (False, True):
-        issues, warns = dg.gb.check(dg.kit.docs.collect(), strict=strict)
+        issues, warns = dg.gb.check(dg.kit.services.doc_status.collect(), strict=strict)
         assert not [i for i in issues + warns if "diagrams.md" in i]
     dg.gb.refresh()
     assert kept in f.read_text(encoding="utf-8")
@@ -879,7 +879,7 @@ def test_one_refresh_scans_the_architecture_once(dg, monkeypatch):
     dg.gb.refresh()
     assert len(calls) == 1
     calls.clear()
-    dg.gb.check(dg.kit.docs.collect())
+    dg.gb.check(dg.kit.services.doc_status.collect())
     assert len(calls) == 1
 
 
@@ -897,7 +897,7 @@ def test_status_enums_are_read_once_per_pass(dg, monkeypatch):
     dg.mod.write_pages()
     calls, real = [], dg.mod.status_enums
     monkeypatch.setattr(dg.mod, "status_enums", lambda *a: calls.append(a) or real(*a))
-    dg.gb.check(dg.kit.docs.collect())
+    dg.gb.check(dg.kit.services.doc_status.collect())
     assert len(calls) == 1
 
 
@@ -920,7 +920,7 @@ def test_a_diagram_whose_source_is_gone_is_reported(dg):
     text = f.read_text(encoding="utf-8")
     assert text.count(edited) == 1
     assert {m["id"]: s for m, s, _ in dg.gb.states(text, dg.gb.Scanner())}["OrderStatus"] == "gone"
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert [i for i in issues if "the code no longer has this diagram's source" in i and "diagrams.md" in i
             and "states api OrderStatus" in i]
 
@@ -937,7 +937,7 @@ def test_a_moved_block_of_a_gone_topic_is_reported(dg):
     dg.mod.write_pages()
     dg.gb.refresh()
     assert flow.read_bytes() == before
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert [i for i in issues if "no longer has this diagram's source" in i and "booking.md" in i]
 
 
@@ -971,7 +971,7 @@ def test_a_render_bug_never_aborts_refresh_or_check(dg, monkeypatch):
     text = (dg.kit.root / "docs" / "repos" / "api" / "diagrams.md").read_text(encoding="utf-8")
     assert {s for _, s, _ in dg.gb.states(text, dg.gb.Scanner())} == {"unknown"}
     assert dg.gb.refresh()["updated"] == []
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     assert not [i for i in issues if "diagrams.md" in i or "system-map.md" in i]
 
 
@@ -981,7 +981,7 @@ def test_the_confirmed_stale_warning_says_how_to_take_the_code(dg):
     f = dg.kit.root / "docs" / "repos" / "api" / "diagrams.md"
     confirm(dg, f, "OrderStatus")
     dg.put("api", "src/main/java/demo/OrderStatus.java", ORDER.replace("SHIPPED", "SHIPPED, LOST"))
-    _, issues = dg.gb.check(dg.kit.docs.collect())
+    _, issues = dg.gb.check(dg.kit.services.doc_status.collect())
     msg = next(i for i in issues if "was confirmed" in i)
     assert "remove `confirmed=` and `by=`" in msg and "diagrams" in msg and "confirm it again" in msg
 

@@ -19,7 +19,7 @@ import yaml
 
 from .core import yamlio
 from .common import DOCS, ROOT, cli_cmd, repo_dir, rel_file
-from . import diagrams, docs, quickarch
+from . import diagrams, quickarch
 from .domain.docs import frontmatter
 from .app import services
 
@@ -376,7 +376,7 @@ def states(text: str, scan: Scanner):
 
 
 def _pages():
-    return [(r, ROOT / r["file"]) for r in docs.collect() if r.get("space", "docs") == "docs"]
+    return [(r, ROOT / r["file"]) for r in services.current().doc_status.collect() if r.get("space", "docs") == "docs"]
 
 
 def refresh(force: bool = False) -> dict:

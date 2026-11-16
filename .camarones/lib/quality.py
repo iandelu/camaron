@@ -1,5 +1,5 @@
 """Quality gate beyond frontmatter/trust: internal links, Mermaid diagrams (mermaid-cli), secrets (gitleaks) and
-glossary terms. Checks take docs.collect() rows and return (errors, warns); a missing optional tool is one WARN."""
+glossary terms. Checks take doc_status.collect() rows and return (errors, warns); a missing optional tool is one WARN."""
 from __future__ import annotations
 
 import hashlib, os, re, sys, tempfile

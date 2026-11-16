@@ -36,4 +36,4 @@ def test_add_note_refuses_unknown_skills_sources_and_empty_text(kit):
 def test_notes_never_become_pages(kit):
     s = importlib.import_module("lib.skills")
     s.add_note("cam-docs-update", "x", "retro", "ana")
-    assert not [r for r in kit.docs.collect() if "skill-notes" in r["path"]]
+    assert not [r for r in kit.services.doc_status.collect() if "skill-notes" in r["path"]]

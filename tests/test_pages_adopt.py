@@ -102,7 +102,7 @@ def make_human(fx, rel):
 
 def run_check(fx):
     """The issue strings of the project's quality check (its errors: what makes `camaron check` fail)."""
-    return fx.kit.docs.check()[0]
+    return fx.kit.services.doc_status.check()[0]
 
 
 def pages(fx):
@@ -575,7 +575,7 @@ def test_adopt_never_edits_a_generated_block(old_project):
 
 
 def test_relink_lists_a_page_that_is_not_utf8_and_has_such_a_link(old_project):
-    """`docs.collect` cannot read such a page, so `adopt` never gets here with one: `_relink` is called as it is."""
+    """`collect` (app/doc_status.py) cannot read such a page, so `adopt` never gets here with one: `_relink` is called as it is."""
     page, other = doc(old_project, "guides/latin.md"), doc(old_project, "guides/latin2.md")
     page.parent.mkdir(parents=True, exist_ok=True)
     head = b"---\ntitle: x\nx-owner: ai\n---\n# x\n\n"

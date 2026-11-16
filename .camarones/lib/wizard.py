@@ -943,7 +943,7 @@ class W:
         ws = services.current().workspace.workspace()
         data = plan.load()
         d, t = plan.progress(data)
-        rows = docs.collect() if (ROOT / "docs").exists() else []
+        rows = services.current().doc_status.collect() if (ROOT / "docs").exists() else []
         s = trust_levels.summary(rows)
         tbl = Table.grid(padding=(0, 2))
         tbl.add_row("[bold]Proyecto[/]" if self.lang == "es" else "[bold]Project[/]", ws["project"]["name"])
@@ -1922,9 +1922,9 @@ class W:
     def do_status(self) -> None:
         while True:
             self.banner()
-            rows = docs.collect()
+            rows = services.current().doc_status.collect()
             s = trust_levels.summary(rows)
-            errors, _ = docs.check()
+            errors, _ = services.current().doc_status.check()
             fb = services.current().docs.pending_feedback()
             ch = {k: v for k, v in services.current().doc_state.changes().items() if v.get("status") in ("changed", "history-rewritten")}
             tbl = Table.grid(padding=(0, 2))

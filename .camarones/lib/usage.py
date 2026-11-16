@@ -135,8 +135,8 @@ def _doc_commits(keys: list[str]) -> dict[str, tuple[int, set]]:
 
 
 def _health() -> tuple[dict, list[str]]:
-    from . import docs, plan
-    rows = docs.collect() if (ROOT / "docs").exists() else []
+    from . import plan
+    rows = services.current().doc_status.collect() if (ROOT / "docs").exists() else []
     s = trust_levels.summary(rows)
     done, total = plan.progress() if plan.PLAN.exists() else (0, 0)
     try:

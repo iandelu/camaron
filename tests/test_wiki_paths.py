@@ -28,12 +28,12 @@ def setup_wiki(kit):
 
 
 def rows_by_file(kit):
-    return {r["file"]: r for r in kit.docs.collect()}
+    return {r["file"]: r for r in kit.services.doc_status.collect()}
 
 
 def test_a_wiki_index_and_the_repo_page_have_different_paths(kit):
     setup_wiki(kit)
-    rows = kit.docs.collect()
+    rows = kit.services.doc_status.collect()
     paths = [r["path"] for r in rows]
     assert len(paths) == len(set(paths))
     by_file = {r["file"]: r for r in rows}
@@ -44,7 +44,7 @@ def test_a_wiki_index_and_the_repo_page_have_different_paths(kit):
 
 
 def broken(kit):
-    errors, _ = kit.quality.check_links(kit.docs.collect())
+    errors, _ = kit.quality.check_links(kit.services.doc_status.collect())
     return [e for e in errors if "broken link" in e]
 
 

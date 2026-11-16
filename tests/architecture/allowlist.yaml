@@ -82,7 +82,6 @@ violations:
   - "kanban.ops -> kanban.index"
   - "kanban.repair -> kanban"
   - "kanban.xid -> app.services"
-  - "kanban.xid -> docs"
   - "kanban.xid -> harness.freshness"
   - "kanban.xid -> kanban.ops"
   - "machine -> agents"
