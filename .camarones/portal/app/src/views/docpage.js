@@ -33,3 +33,12 @@ export const newPagePath = (title) => 'guides/' + title.toLowerCase().replace(/[
 // a bad input, no server).
 export const pageConflict = (e, field = 'sha') =>
   e?.status === 409 && typeof e.data?.[field] === 'string' ? e.data[field] : null
+
+// A refused save's body says the confirmation the page carries now. One the editor did not open with (a person
+// confirmed it meanwhile) is lost by saving over it: who signed it ('' when unnamed), else null.
+export function confirmedMeanwhile(d, data) {
+  const now = data?.confirmed
+  if (!now) return null
+  const was = d?.confirmed
+  return was && was.at === now.at && was.body_sha === now.body_sha ? null : (now.by || '')
+}

@@ -126,15 +126,24 @@ def _version(b: dict, key: str) -> str | None:
     return v or None
 
 
-def _written(answer: Callable[[], dict]) -> Response:
+def _written(answer: Callable[[], dict], now: Callable[[], dict] | None = None) -> Response:
     """A page write's answer: the page as it is now, or 409 when it changed underneath (with the version it has, so the
-    portal can reload or save over it) or another writer of the page held it too long."""
+    portal can reload or save over it, plus what `now` says of the page) or another writer of the page held it too
+    long."""
     try:
         return json_response(answer())
     except PageConflict as e:
-        return json_response({"error": str(e), e.field: e.now}, 409)
+        return json_response({"error": str(e), e.field: e.now, **(now() if now else {})}, 409)
     except LockBusy:
         return json_response({"error": BUSY}, 409)
+
+
+def _confirmation_now(path: str, lang: str) -> dict:
+    """A refused save also says whether the page carries a confirmation now: saving over it would drop it, and the
+    editor says so."""
+    f = doc_file(path, lang)
+    fm = frontmatter.split_fm(f.read_text(encoding="utf-8"))[0] if f.exists() else {}
+    return {"confirmed": fm.get("x-confirmed") or None}
 
 
 @route("GET", "/api/tree")
@@ -150,7 +159,8 @@ def get_doc(req: Request) -> Response:
 @route("POST", "/api/doc")
 def post_doc(req: Request) -> Response:
     b = req.body
-    return _written(lambda: write(b["path"], b["raw"], b.get("lang", ""), _version(b, "sha")))
+    return _written(lambda: write(b["path"], b["raw"], b.get("lang", ""), _version(b, "sha")),
+                    lambda: _confirmation_now(b["path"], b.get("lang", "")))
 
 
 @route("POST", "/api/new")

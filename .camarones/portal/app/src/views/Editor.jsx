@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button } from '@camaron/ui'
 import { postJSON } from '../api.js'
-import { newPagePath, pageConflict } from './docpage.js'
+import { confirmedMeanwhile, newPagePath, pageConflict } from './docpage.js'
 import { drawMermaid, render } from '../content/doc.js'
 import { core } from '../core.js'
 
 
 // Edit a page in its Markdown with a live preview; saving can commit it (cam-docs is a git repo). The save names the
 // version the editor opened (`d.sha`): if the page changed meanwhile (another tab, an agent), the server refuses it
-// and the text stays here, to save over the change or to copy and cancel.
+// and the text stays here, to save over the change or to copy and cancel. A confirmation that landed meanwhile is
+// named, since saving over it drops it.
 export default function Editor({ d, onDone }) {
   const t = core.t
   const lang = core.lang()
@@ -17,7 +18,7 @@ export default function Editor({ d, onDone }) {
   const [commit, setCommit] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [conflict, setConflict] = useState(null)        // the version the page has now, when a save was refused
+  const [conflict, setConflict] = useState(null)        // when a save was refused: { sha the page has now, confirmedBy }
   const preview = useRef(null)
 
   useEffect(() => {                                     // the preview follows the text after a short pause
@@ -38,7 +39,7 @@ export default function Editor({ d, onDone }) {
         await postJSON('doc', { path: d.path, lang, raw: src, sha })
       } catch (e) {
         const now = pageConflict(e)
-        if (now) { setConflict(now); setBusy(false); return }
+        if (now) { setConflict({ sha: now, confirmedBy: confirmedMeanwhile(d, e.data) }); setBusy(false); return }
         throw e.status === 409 ? new Error(t('pageBusy')) : e
       }
       if (commit) {
@@ -57,7 +58,10 @@ export default function Editor({ d, onDone }) {
       {d.trust === 'confirmed' && <Aviso tone="warn" title={t('confirmedWarn')} />}
       {error && <Aviso tone="error" title={t('error')} detail={error} />}
       {conflict && <Aviso tone="warn" title={t('editConflict')}
-        action={<Button disabled={busy} onClick={() => save(conflict)}>{t('saveOver')}</Button>}>{t('editConflictHelp')}</Aviso>}
+        action={<Button disabled={busy} onClick={() => save(conflict.sha)}>{t('saveOver')}</Button>}>
+        {t('editConflictHelp')}
+        {conflict.confirmedBy !== null && <> {t('editConflictConfirmed', { by: conflict.confirmedBy || '?' })}</>}
+      </Aviso>}
       <div className="editor">
         <textarea value={src} onChange={(e) => setSrc(e.target.value)} spellCheck="true" aria-label={t('editing')} />
         <div className="preview" ref={preview}></div>

@@ -101,8 +101,17 @@ def test_the_version_covers_the_front_matter(kit, portal):
     f = page(kit)
     _, loaded = call(portal, "GET", "/api/doc?path=flows/pay.md")
     kit.services.doc_review.confirm([str(f)], "ana")
-    code, _ = call(portal, "POST", "/api/doc", {"path": "flows/pay.md", "raw": PAGE + "More.\n", "sha": loaded["sha"]})
+    code, d = call(portal, "POST", "/api/doc", {"path": "flows/pay.md", "raw": PAGE + "More.\n", "sha": loaded["sha"]})
     assert code == 409 and "x-confirmed" in f.read_text(encoding="utf-8")
+    assert loaded["confirmed"] is None and d["confirmed"]["by"] == "ana"   # so the editor can say saving over it drops it
+
+
+def test_a_refused_save_of_a_page_nobody_confirmed_says_so(kit, portal):
+    f = page(kit)
+    _, loaded = call(portal, "GET", "/api/doc?path=flows/pay.md")
+    f.write_text(PAGE + "Agent.\n", encoding="utf-8", newline="\n")
+    code, d = call(portal, "POST", "/api/doc", {"path": "flows/pay.md", "raw": "# Mine\n", "sha": loaded["sha"]})
+    assert code == 409 and d["confirmed"] is None
 
 
 def test_a_save_to_a_translation_checks_the_translation(kit, portal):
