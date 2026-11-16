@@ -46,7 +46,7 @@ def test_llms_txt_gives_a_token_estimate_per_page(kit):
     page = kit.root / "docs" / "flows" / "checkout.md"
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text("---\ntitle: Checkout\n---\n# Checkout\n\n" + "word " * 400, encoding="utf-8")
-    kit.docs.confirm([str(page)], by="ana")
+    kit.services.doc_review.confirm([str(page)], by="ana")
     kit.services.llms.llms()
     lines = [l for l in (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8").splitlines() if l.startswith("- [")]
     assert lines and all("tokens)" in l for l in lines)

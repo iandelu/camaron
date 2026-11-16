@@ -70,7 +70,7 @@ def test_sections_order_matches_llms(serve_mod):
     t = serve_mod.serve.tree()
     assert t["sections"] == serve_mod.services.llms.SECTIONS
     d = serve_mod.root / "docs"                         # pages without sources reach agents once confirmed (H27)
-    serve_mod.docs.confirm([str(d / "flows/checkout.md"), str(d / "repos/api/brief.md")], by="ana")
+    serve_mod.services.doc_review.confirm([str(d / "flows/checkout.md"), str(d / "repos/api/brief.md")], by="ana")
     serve_mod.services.llms.llms()
     text = (serve_mod.root / "docs" / "llms.txt").read_text(encoding="utf-8")
     assert text.index("## flows") < text.index("## repos/api")

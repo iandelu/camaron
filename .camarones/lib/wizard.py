@@ -1016,7 +1016,7 @@ class W:
             self.dashboard()
             data = plan.load()
             doing = [u for u in data["units"] if u["status"] == "doing" and u["runner"] == "agent"]
-            n_rev = len(docs.review_queue()) if (ROOT / "docs").exists() else 0
+            n_rev = len(services.current().doc_review.review_queue()) if (ROOT / "docs").exists() else 0
             sections = self.menu_sections()
             choices = [Choice(self.t("m_resume", u=doing[0]["id"]), "resume")] if doing else []
             choices += [
@@ -1957,7 +1957,7 @@ class W:
             else:
                 self.say(self.t("st_ok"), "green")
             console.print()
-            n_rev = len(docs.review_queue())
+            n_rev = len(services.current().doc_review.review_queue())
             opts = []
             if errors or s["orphans"] or s["untranslated"] or s["needs-reconfirm"]:
                 opts.append(Choice(self.t("st_fix"), "fix"))
@@ -2033,7 +2033,7 @@ class W:
         return Panel(Group(*parts), title=r["title"], title_align="left", border_style=ORANGE)
 
     def do_review(self) -> bool:
-        queue = docs.review_queue()
+        queue = services.current().doc_review.review_queue()
         if not queue:
             self.say(self.t("rv_none"), "green")
             self.pause()
@@ -2075,7 +2075,7 @@ class W:
                     plan.ensure("review-fixes", "review-fixes")
                     stats["f"] += 1
                 elif c == "ok":
-                    docs.confirm([r["file"]], by)
+                    services.current().doc_review.confirm([r["file"]], by)
                     stats["c"] += 1
                 elif c == "skip":
                     stats["s"] += 1

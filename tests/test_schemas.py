@@ -199,7 +199,7 @@ def test_an_existing_page_is_never_overwritten(kit, repos):
     page = kit.root / "docs" / "data" / "api.md"
     page.parent.mkdir(parents=True)
     page.write_text("---\ntitle: Our data\n---\n# Our data\n\nWritten by the team.\n", encoding="utf-8")
-    kit.docs.confirm([str(page)], by="ana")
+    kit.services.doc_review.confirm([str(page)], by="ana")
     before = page.read_text(encoding="utf-8")
     assert repos.write_pages(log=lambda _: None) == ["docs/data/web.md"]
     assert page.read_text(encoding="utf-8") == before

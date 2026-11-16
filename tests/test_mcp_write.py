@@ -19,7 +19,7 @@ def mcp(kit):
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(FLOW.replace("title: Checkout", "title: Checkout\nx-owner: human") if "mine" in rel else FLOW,
                      encoding="utf-8")
-    kit.docs.confirm([str(kit.root / "docs" / "flows" / "confirmed.md")], by="ana")
+    kit.services.doc_review.confirm([str(kit.root / "docs" / "flows" / "confirmed.md")], by="ana")
     return importlib.import_module("lib.mcp")
 
 

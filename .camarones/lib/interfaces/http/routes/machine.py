@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from lib import docs, plan
+from lib import plan
 from lib.core.paths import DOCS
 from lib.interfaces.http.jobs import start_job
 from lib.interfaces.http.messages import Request, Response, json_response
@@ -88,7 +88,7 @@ def app_summary(lang: str = "") -> dict:
     waiting for a person and what the last doctor check found (None: never checked). Reads only: plan.sync() writes,
     and a page that just looks must not."""
     from lib import doctor
-    review = len(docs.review_queue()) if DOCS.exists() else 0
+    review = len(services.current().doc_review.review_queue()) if DOCS.exists() else 0
     data = plan.load()
     done, total = plan.progress(data)
     last = doctor.checked()

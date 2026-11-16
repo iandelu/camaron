@@ -37,12 +37,12 @@ def test_confirming_after_a_ten_percent_edit_records_about_point_one(kit, drafts
     f = page(kit, "flows/checkout.md", WORDS)
     kit.plan.set_status("discovery:api", "done")
     f.write_text(f.read_text(encoding="utf-8").replace("word3 word4", "changed3 changed4"), encoding="utf-8")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     c = json.loads(drafts.FILE.read_text(encoding="utf-8"))["pages"]["flows/checkout.md"]["confirmations"][-1]
     assert c["by"] == "ana" and c["edit"] == pytest.approx(0.1, abs=0.01)
     entry = json.loads(drafts.FILE.read_text(encoding="utf-8"))["pages"]["flows/checkout.md"]
     assert entry["body"] == ""                                   # no page copies kept once confirmed
-    kit.docs.confirm([str(f)], by="ana")                          # confirming again measures nothing new
+    kit.services.doc_review.confirm([str(f)], by="ana")                          # confirming again measures nothing new
     assert len(json.loads(drafts.FILE.read_text(encoding="utf-8"))["pages"]["flows/checkout.md"]["confirmations"]) == 1
 
 
@@ -50,7 +50,7 @@ def test_confirming_untouched_draft_records_zero_and_unknown_pages_nothing(kit, 
     f = page(kit, "flows/checkout.md", WORDS)
     kit.plan.set_status("discovery:api", "done")
     g = page(kit, "flows/manual.md", "never seen by the kit")
-    kit.docs.confirm([str(f), str(g)], by="ana")
+    kit.services.doc_review.confirm([str(f), str(g)], by="ana")
     pages = json.loads(drafts.FILE.read_text(encoding="utf-8"))["pages"]
     assert pages["flows/checkout.md"]["confirmations"][-1]["edit"] == 0.0 and "flows/manual.md" not in pages
 
@@ -69,7 +69,7 @@ def test_kpis_report_the_average_edit(kit, drafts):
     g = page(kit, "flows/refund.md", WORDS)
     kit.plan.set_status("discovery:api", "done")
     f.write_text(f.read_text(encoding="utf-8").replace("word3 word4", "changed3 changed4"), encoding="utf-8")
-    kit.docs.confirm([str(f), str(g)], by="ana")
+    kit.services.doc_review.confirm([str(f), str(g)], by="ana")
     from lib.harness import kpis
     t = kpis.report(run_check=False)["trust"]
     assert t["ai_pages_confirmed"] == 2 and t["ai_edit_avg"] == pytest.approx(0.05, abs=0.01)

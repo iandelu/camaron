@@ -60,7 +60,8 @@ MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.doc
                    "domain.docs.logical_paths", "domain.docs.directives", "domain.docs.synonyms",
                    "adapters.stores.workspace", "adapters.git.repos",
                    "adapters.stores.doc_state", "adapters.stores.doc_store",
-                   "adapters.npm_vendor", "app.doc_status", "app.llms"}
+                   "adapters.npm_vendor", "app.doc_status", "app.llms", "app.doc_review",
+                   "app.translations"}
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it

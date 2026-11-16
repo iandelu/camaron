@@ -37,7 +37,7 @@ def mcp(kit):
     f = kit.root / "docs" / "flows" / "checkout.md"
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(PAGE, encoding="utf-8")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     return importlib.import_module("lib.mcp")
 
 
@@ -118,5 +118,5 @@ def test_html_comments_neither_rank_nor_show_in_snippets(kit, mcp):
 def test_a_confirmed_page_with_comments_keeps_its_trust_in_hits(kit, mcp):
     f = kit.root / "docs" / "flows" / "noted.md"
     f.write_text("---\ntitle: Noted\n---\n# Noted\n\n<!-- a note -->\nThe ledger closes nightly.\n", encoding="utf-8")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     assert kit.docs.search("ledger")[0]["trust"] == "confirmed"

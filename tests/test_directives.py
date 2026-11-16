@@ -22,7 +22,7 @@ def test_agents_read_flattened_pages(kit):
     f = kit.root / "docs" / "guides" / "build.md"
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text("---\ntitle: Build\n---\n# Build\n\n## Commands\n:::tabs\n::tab Maven\n`./mvnw test`\n:::\n", encoding="utf-8")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     mcp = importlib.import_module("lib.mcp")
     for text in (mcp.read_doc("guides/build.md"), mcp.read_doc("guides/build.md", section="commands")):
         assert "**Maven**" in text and ":::" not in text and "::tab" not in text

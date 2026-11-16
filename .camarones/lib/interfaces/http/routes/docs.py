@@ -146,7 +146,7 @@ def post_new(req: Request) -> Response:
 @route("POST", "/api/confirm")
 def post_confirm(req: Request) -> Response:
     b = req.body
-    docs.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by)
+    req.services.doc_review.confirm([str(doc_file(b["path"], b.get("lang", "")))], req.by)
     return json_response(read(b["path"], b.get("lang", "")))
 
 

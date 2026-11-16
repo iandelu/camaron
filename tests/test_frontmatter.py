@@ -52,7 +52,7 @@ def windows_newlines(monkeypatch):
 def test_confirming_a_page_writes_unix_line_endings_on_every_os(kit, monkeypatch):
     f = write(kit, "domain/glossary.md", GLOSSARY)
     windows_newlines(monkeypatch)
-    kit.docs.confirm([str(f)], "Test")
+    kit.services.doc_review.confirm([str(f)], "Test")
     raw = f.read_bytes()
     assert b"\r\n" not in raw and b"x-confirmed:" in raw
 
@@ -61,6 +61,6 @@ def test_marking_a_translation_writes_unix_line_endings_on_every_os(kit, monkeyp
     write(kit, "domain/glossary.md", GLOSSARY)
     f = write(kit, "i18n/es/domain/glossary.md", "---\ntitle: Glosario\n---\n# Glosario\n")
     windows_newlines(monkeypatch)
-    kit.docs.translated([str(f)])
+    kit.services.translations.translated([str(f)])
     raw = f.read_bytes()
     assert b"\r\n" not in raw and b"x-translation-of:" in raw

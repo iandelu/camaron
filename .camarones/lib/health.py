@@ -271,7 +271,7 @@ def _context() -> dict:
 
 def _review() -> int:
     from . import docs
-    return len(docs.review_queue())
+    return len(services.current().doc_review.review_queue())
 
 
 def _docs(now: str, names: list[str]) -> dict:

@@ -21,47 +21,6 @@ from .common import KIT, ROOT, DOCS, CAM_DIR, repo_dir, rel_file, save_json
 # ---------- docs model ----------
 
 
-def confirm(files: list[str], by: str) -> list[str]:
-    done = []
-    for p in files:
-        f = services.current().docs.resolve(p)
-        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
-        if not fm:
-            raise RuntimeError(f"{p}: no frontmatter, refusing to confirm")
-        fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": frontmatter.body_sha(body)}
-        f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
-        done.append(p)
-        logical = next((lp for lp, df in services.current().docs.iter_docs() if df.resolve() == f.resolve()), None)
-        if logical:
-            from .harness import drafts, freshness
-            try:
-                drafts.record_confirmation(logical, body, by)
-            except Exception:  # noqa: BLE001 — a measurement must never fail a confirmation
-                pass
-            freshness.ack([logical], by)          # a person checked it against today's code
-    return done
-
-
-def translated(files: list[str]) -> list[str]:
-    canon = dict(services.current().docs.iter_docs())
-    done = []
-    for p in files:
-        f = services.current().docs.resolve(p)
-        rel = f.relative_to(DOCS / "i18n")
-        lang, logical = rel.parts[0], Path(*rel.parts[1:]).as_posix()
-        if logical not in canon and (alias := logical_paths.old_wiki_path(logical)) in canon \
-                and services.current().docs.translation_file(alias, lang).resolve() == f.resolve():
-            logical = alias                       # a wiki page's translation kept at its pre-4.81 path
-        if logical not in canon:
-            raise RuntimeError(f"{p}: no canonical doc at {logical}")
-        _, cbody = frontmatter.split_fm(canon[logical].read_text(encoding="utf-8"))
-        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
-        fm["x-translation-of"] = {"path": logical, "lang": lang, "body_sha": frontmatter.body_sha(cbody)}
-        f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
-        done.append(f"{p} <- {logical}")
-    return done
-
-
 # ---------- search (portal + MCP): BM25 over body tokens, prefix-matched (pedido → pedidos) ----------
 
 
@@ -110,19 +69,5 @@ def search(query: str, limit: int = 20) -> list[dict]:
 
 
 # ---------- human review ----------
-REVIEW_ORDER = ["domain", "glossary", "business-flow", "architecture", "data-model", "deployment", "decision", "quality",
-                "overview", "guide"]
-
-
-def review_queue() -> list[dict]:
-    """Pages waiting for a human: re-confirmations first, then by how much the doc type matters to agents."""
-    rows = [r for r in services.current().doc_status.collect() if r["trust"] != "confirmed" and r["type"] != "interview" and r["owner"] != "human"
-            and r["has_frontmatter"] and r["path"] != "status.md"]
-    waiting = {m.group(1) for l in services.current().docs.pending_feedback() if (m := re.match(r"- \[ \] `([^`]+)`", l))}
-    rows = [r for r in rows if r["file"] not in waiting]      # changes requested: back in the queue once the AI fixed them
-    def key(r):
-        t = r["type"] if r["type"] in REVIEW_ORDER else "zzz"
-        return (0 if r["trust"] == "needs-reconfirm" else 1, REVIEW_ORDER.index(t) if t in REVIEW_ORDER else 99, r["path"])
-    return sorted(rows, key=key)
 
 

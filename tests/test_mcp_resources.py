@@ -28,7 +28,7 @@ def write(kit, rel, text, confirm=True):
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(text, encoding="utf-8")
     if confirm:
-        kit.docs.confirm([str(f)], by="ana")
+        kit.services.doc_review.confirm([str(f)], by="ana")
     return f
 
 

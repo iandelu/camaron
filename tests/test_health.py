@@ -193,7 +193,7 @@ def test_no_quality_pages_means_no_debt(kit):
 def test_debt_trust_follows_the_page(kit):
     from lib import health
     f = quality_page(kit, "tech-debt.md", "# Debt\n\n## Items\n\n| Item | Impact | Evidence |\n|---|---|---|\n| A | high | `api:x` |\n")
-    kit.docs.confirm([str(f)], by="ana")
+    kit.services.doc_review.confirm([str(f)], by="ana")
     assert health.debt_items(["api"])["api"][0]["trust"] == "confirmed"
 
 

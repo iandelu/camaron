@@ -24,7 +24,7 @@ from pathlib import Path
 import yaml
 
 from .core import yamlio
-from . import adr_doc, docs
+from . import adr_doc
 from .common import CACHE, CAM_DIR, DOCS, WORK, retry_busy
 from .harness.locks import FileLock
 from .domain.docs import frontmatter, page_outline
@@ -679,7 +679,7 @@ def _owned(raw: str, name: str, id: str, state: dict, status: str) -> str:
 
 def _seal(path: Path, text: str, who: str) -> None:
     _write(path, text)
-    docs.confirm([str(path)], who)
+    services.current().doc_review.confirm([str(path)], who)
 
 
 def _closed(state: dict, phase: str, date: str, who: str, **more) -> dict:
@@ -707,7 +707,7 @@ def accept(id: str, by: str, attendees: list[str] | None, base_sha: str) -> dict
             old_path, old_text = old
             _write(old_path, old_text)
             if frontmatter.split_fm(old_text)[0]:           # a file with no frontmatter cannot be confirmed, and gets none
-                docs.confirm([str(old_path)], who)
+                services.current().doc_review.confirm([str(old_path)], who)
         save_state(_closed(state, "accepted", date, who, attendees=names))
     return get(id)
 

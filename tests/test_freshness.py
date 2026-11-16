@@ -18,7 +18,7 @@ def page(kit, rel, sources=None, confirmed=False, body="# Page\n\nThe api calls 
         fm += "x-sources:\n" + "".join(f"  - {s}\n" for s in sources)
     f.write_text(fm + "---\n" + body, encoding="utf-8")
     if confirmed:
-        kit.docs.confirm([str(f)], by="ana")
+        kit.services.doc_review.confirm([str(f)], by="ana")
     return f
 
 

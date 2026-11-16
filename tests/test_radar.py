@@ -150,7 +150,7 @@ def test_removed_tool_shows_as_orphan_until_rescanned(radar):
 def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
     radar.radar.run()
     page = radar.docs.DOCS / "overview" / "tooling.md"
-    radar.docs.confirm([str(page)], by="ana")
+    radar.services.doc_review.confirm([str(page)], by="ana")
     radar.radar.run()                                                            # same repos → still confirmed
     assert radar.services.doc_status.doc_status("overview/tooling.md", page, [])["trust"] == "confirmed"
     add_files(radar, TOOLING)

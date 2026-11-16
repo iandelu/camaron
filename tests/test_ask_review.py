@@ -14,7 +14,7 @@ def portal(kit):
     page.parent.mkdir(parents=True, exist_ok=True)
     page.write_text("---\ntitle: Checkout\n---\n# Checkout\n\n> **TL;DR:** Pay.\n\n## Failure handling\n"
                     "Payments are retried once by the PaymentRetryJob.\n", encoding="utf-8")
-    kit.docs.confirm([str(page)], by="ana")
+    kit.services.doc_review.confirm([str(page)], by="ana")
     srv = ThreadingHTTPServer(("127.0.0.1", 0), kit.serve.Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{srv.server_address[1]}"
