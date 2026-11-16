@@ -372,6 +372,12 @@ Code** activa o quita los cinco hooks del kit (`camaron hooks`).
 uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
 máquina.
 
+**Skills.** Cada skill de los agentes del proyecto con su icono, de dónde viene (el kit, una copia del equipo, del
+equipo, un pack) y dos interruptores: **Proyecto** la apaga para todo el equipo (`camaron skills disable`, se guarda en
+`workspace.yaml`) y **Esta máquina** solo para ti, en Claude Code (`--machine`). Una skill que espera tu aprobación lo
+dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno en las skills del equipo
+(`camaron skills add`) y la tarjeta de arriba te pide aprobarlo.
+
 **Todos los comandos** tiene board, checkpoint, ci, export, portal, removed y translated.
 
 ## Calidad
