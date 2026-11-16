@@ -208,9 +208,9 @@ def test_cli_wiki_stops_the_batch_when_the_engine_is_down(kit, engine_down, caps
 
 
 def test_wizard_wikis_stop_the_batch_when_the_engine_is_down(kit, engine_down, fake_wizard, monkeypatch, capsys):
-    kit.docs.set_wiki_repos(["api", "web"])
+    kit.services.workspace.set_wiki_repos(["api", "web"])
     for r in ("api", "web"):                                         # each has its brief: both can be picked
-        brief = kit.docs.wiki_dir(r) / "INSTRUCTIONS.md"
+        brief = kit.services.docs.wiki_dir(r) / "INSTRUCTIONS.md"
         brief.parent.mkdir(parents=True, exist_ok=True)
         brief.write_text("brief", encoding="utf-8")
     monkeypatch.setattr(kit.services.wiki, "wiki_engines", lambda: ["claude"])
