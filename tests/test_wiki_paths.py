@@ -146,3 +146,14 @@ def test_an_ai_draft_copy_under_the_old_wiki_path_is_kept(kit):
     pages = json.loads(drafts.FILE.read_text(encoding="utf-8"))["pages"]
     assert "repos/api/quickstart.md" not in pages and pages["wikis/api/quickstart.md"]["body"] == ai
     assert drafts.record_confirmation("wikis/api/quickstart.md", ai, "ana") == 0.0
+
+
+def test_the_wiki_prompt_and_playbook_name_the_form_that_resolves(kit):
+    """What the agent is told matches what check and the portal resolve and what works on disk: `../../docs/<page>`,
+    never the legacy `../../<page>` (Q12 of camaron-dev's 2026-11-16 history interview)."""
+    from conftest import KIT_DIR
+    prompt = kit.services.wiki.wiki_prompt("api", "init")
+    playbook = (KIT_DIR / "PLAYBOOK.md").read_text(encoding="utf-8")
+    for text in (prompt, playbook):
+        assert "`../../docs/<page>`" in text
+        assert "`../../<page>`" not in text
