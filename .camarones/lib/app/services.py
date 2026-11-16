@@ -54,6 +54,7 @@ class Services:
     llms: ModuleType
     doc_review: ModuleType
     translations: ModuleType
+    search: ModuleType
 
     def __init__(self, providers: Mapping[str, Callable[[], object]]) -> None:
         object.__setattr__(self, "_providers", dict(providers))

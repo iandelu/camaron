@@ -140,6 +140,11 @@ def _translations() -> object:
     return translations
 
 
+def _search() -> object:
+    from lib.app import search
+    return search
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -167,6 +172,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "llms": _llms,
     "doc_review": _doc_review,
     "translations": _translations,
+    "search": _search,
 }
 
 

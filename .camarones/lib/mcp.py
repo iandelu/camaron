@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .common import HOME, ROOT, DOCS, WORK, WS_FILE, VERSIONS, run, which
 from .core.paths import CACHE
 from .harness import freshness
-from . import docs, usage
+from . import usage
 from .app import services
 from .domain.docs import directives, frontmatter, logical_paths, page_outline, trust_levels
 
@@ -98,7 +98,7 @@ def _logical(path: str) -> str:
 def search_docs(query: str, limit: int = 8) -> str:
     if not re.search(r"\w\w", query):
         return "Empty query."
-    hits = docs.search(query, limit)
+    hits = services.current().search.search(query, limit)
     usage.record("mcp:search_docs", channel="agent", hit=bool(hits), query=query)
     if not hits:
         return f"No page mentions: {query}"
@@ -181,7 +181,7 @@ def repo_graph(question: str, repo: str | None = None) -> str:
 
 
 def ask(question: str, limit: int = 3) -> str:
-    hits = docs.search(question, 20) if re.search(r"\w\w", question) else []
+    hits = services.current().search.search(question, 20) if re.search(r"\w\w", question) else []
     usage.record("mcp:ask", channel="agent", hit=bool(hits), query=question)
     rows, parts = _rows(), []
     for h in hits:

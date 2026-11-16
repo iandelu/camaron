@@ -75,7 +75,7 @@ def test_a_whole_page_read_starts_with_its_outline(kit, mcp):
 
 
 def test_search_hits_name_the_section_trust_and_freshness(kit, mcp):
-    hit = kit.docs.search("PaymentRetryJob")[0]
+    hit = kit.services.search.search("PaymentRetryJob")[0]
     assert hit["section"] == "failure-handling"
     text = mcp.search_docs("PaymentRetryJob")
     assert "flows/checkout.md#failure-handling" in text and "confirmed" in text
@@ -86,7 +86,7 @@ def test_description_and_answers_rank_like_the_title(kit, mcp):
     other = kit.root / "docs" / "flows" / "refunds.md"
     other.write_text("---\ntitle: Refunds\nx-answers:\n  - How is a chargeback handled?\n---\n# Refunds\n\nMoney back.\n"
                      "\nfiller " * 30, encoding="utf-8")
-    assert kit.docs.search("chargeback")[0]["path"] == "flows/refunds.md"
+    assert kit.services.search.search("chargeback")[0]["path"] == "flows/refunds.md"
 
 
 def test_check_flags_anchors_that_do_not_exist(kit, mcp):
@@ -112,11 +112,11 @@ def test_html_comments_neither_rank_nor_show_in_snippets(kit, mcp):
     f = kit.root / "docs" / "flows" / "other.md"
     f.write_text("---\ntitle: Other\n---\n# Other\n\n<!-- generated:endpoints repo=api sha=1 -->\nNothing.\n"
                  "<!-- /generated:endpoints -->\n", encoding="utf-8")
-    assert not any(h["path"] == "flows/other.md" for h in kit.docs.search("generated endpoints"))
+    assert not any(h["path"] == "flows/other.md" for h in kit.services.search.search("generated endpoints"))
 
 
 def test_a_confirmed_page_with_comments_keeps_its_trust_in_hits(kit, mcp):
     f = kit.root / "docs" / "flows" / "noted.md"
     f.write_text("---\ntitle: Noted\n---\n# Noted\n\n<!-- a note -->\nThe ledger closes nightly.\n", encoding="utf-8")
     kit.services.doc_review.confirm([str(f)], by="ana")
-    assert kit.docs.search("ledger")[0]["trust"] == "confirmed"
+    assert kit.services.search.search("ledger")[0]["trust"] == "confirmed"

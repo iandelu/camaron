@@ -7,7 +7,7 @@ import threading
 import time
 from pathlib import Path
 
-from lib import docs, plan, sourcelinks, usage
+from lib import plan, sourcelinks, usage
 from lib.app import portal_views
 from lib.app.portal_views import doc_file, read, status, tree
 from lib.core.paths import DOCS, ROOT
@@ -22,7 +22,7 @@ def api_ask(question: str) -> dict:
     """Ask the docs (R34): the sections that best answer a question, each with its citation, trust and freshness.
     No model: the same retrieval as the MCP `ask`, through the same freshness gate."""
     from lib.harness import freshness
-    hits = docs.search(question, 20) if question.strip() else []
+    hits = services.current().search.search(question, 20) if question.strip() else []
     usage.record("portal:ask", channel="human", hit=bool(hits), query=question)
     rows, out = {r["path"]: r for r in services.current().doc_status.collect()}, []
     for h in hits:
@@ -96,7 +96,7 @@ def api_doc(q: dict) -> dict:
 
 def api_search(q: dict) -> list[dict]:
     """Only full searches (`track`) count: the palette searches on every keystroke."""
-    hits = docs.search(q.get("q", ""))
+    hits = services.current().search.search(q.get("q", ""))
     if q.get("track"):
         usage.record("portal:search", channel="human", hit=bool(hits), query=q.get("q", ""))
     return hits
