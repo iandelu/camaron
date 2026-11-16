@@ -32,12 +32,12 @@ _MAP: dict[str, tuple[str, ...]] = {
     "ports": ("Log",),
     "domain.docs.frontmatter": ("FM_RE", "LOOSE_VALUE_RE", "parse_fm", "split_fm", "join_fm", "body_sha",
                                 "first_heading"),
-    "domain.docs.trust": ("trust_of", "summary"),
-    "domain.docs.paths": ("wiki_path", "old_wiki_path", "link_target"),
-    "domain.docs.sections": ("COMMENT_RE", "HEADING_RE", "TLDR_RE", "heading_text", "slug", "headings", "sections",
-                             "section_of", "tldr", "section_text"),
+    "domain.docs.trust_levels": ("trust_of", "summary"),
+    "domain.docs.logical_paths": ("wiki_path", "old_wiki_path", "link_target"),
+    "domain.docs.page_outline": ("COMMENT_RE", "HEADING_RE", "TLDR_RE", "heading_text", "slug", "headings",
+                                 "sections", "section_of", "tldr", "section_text"),
     "domain.docs.directives": ("DIRECTIVES", "RULE_META", "_rule", "rules", "flatten_directives"),
-    "domain.docs.search": ("STOPWORDS", "TERMS_FILE", "IMPLIED", "search_terms", "expand"),
+    "domain.docs.synonyms": ("STOPWORDS", "TERMS_FILE", "IMPLIED", "search_terms", "expand"),
     "adapters.stores.workspace": ("ws_file", "workspace", "save_workspace", "repo_names", "wiki_repos",
                                   "INTERVIEW_MODES", "interview_mode", "interview_mode_chosen", "set_interview_mode",
                                   "set_wiki_repos", "GI_START", "GI_END", "write_gitignore"),
@@ -56,11 +56,13 @@ HOME: dict[str, str] = {name: home for home, names in _MAP.items() for name in n
 # Names that join a store from another module (plan Q5), not docs names: the facade does not re-export them.
 FROM_ONBOARD = {"WS_HEADER": "adapters.stores.workspace", "write_workspace": "adapters.stores.workspace"}
 # MOVED: the homes whose names have moved; each task adds its own
-MOVED: set[str] = {"core.clock", "ports"}
+MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.docs.trust_levels",
+                   "domain.docs.logical_paths"}
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it
-TEST_READS = (re.compile(r"(?<![\w.])(?:kit\.)?(?:(?!services\.)\w+\.)?docs\.([A-Za-z_]\w*)"),
+# any chain before docs (kit.docs.X, pg.kit.docs.X, a bare docs.X), except the services field
+TEST_READS = (re.compile(r"(?<![\w.])(?:\w+\.)*(?<!services\.)docs\.([A-Za-z_]\w*)"),
               re.compile(r"lib\.docs\.([A-Za-z_]\w*)"),
               re.compile(r"setattr\(\s*(?:(?!services\b)\w+\.)*docs\s*,\s*[\"']([A-Za-z_]\w*)[\"']"))
 CODE_STRING_READ = re.compile(r"(?<![\w.])docs\.([A-Za-z_]\w*)")
@@ -175,8 +177,8 @@ def test_the_guard_sees_the_setattr_and_code_string_forms():
     assert seen == {"zz", "x"}
     assert TEST_READS[2].search('monkeypatch.setattr(kit.services.docs, "zz", f)') is None
     assert TEST_READS[0].search("kit.services.docs.iter_docs()") is None
-    assert {m.group(1) for m in TEST_READS[0].finditer("kit.docs.workspace() and docs.split_fm(t)")} \
-        == {"workspace", "split_fm"}
+    assert {m.group(1) for m in TEST_READS[0].finditer("kit.docs.workspace(), docs.split_fm(t), pg.kit.docs.check()")} \
+        == {"workspace", "split_fm", "check"}
     assert {m.group(1) for m in CODE_STRING_READ.finditer("from lib import docs\ndocs.collect()\ndocs.llms()")} \
         == {"collect", "llms"}
     assert CODE_STRING_READ.search("services.current().docs.iter_docs()") is None

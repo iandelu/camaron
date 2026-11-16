@@ -9,6 +9,7 @@ import difflib
 
 from ..common import CTX, WORK, load_json, save_json
 from .locks import FileLock
+from ..domain.docs import frontmatter, logical_paths, trust_levels
 
 FILE = WORK / "ai-drafts.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "ai-drafts.lock"
@@ -38,17 +39,17 @@ def snapshot(unit: str) -> int:
         pages, changed = data["pages"], 0
         canon = dict(docs.iter_docs())
         for old in [k for k in pages if k not in canon]:     # a wiki page's pre-4.81 path: keep the AI's copy
-            new = docs.link_target(old, canon)
+            new = logical_paths.link_target(old, canon)
             if new != old and new not in pages:
                 pages[new] = pages.pop(old)
                 changed += 1
         for logical, f in canon.items():
-            fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+            fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
             if not fm or fm.get("x-owner") == "human":
                 continue
-            sha = docs.body_sha(body)
+            sha = frontmatter.body_sha(body)
             prev = pages.get(logical) or {}
-            if docs.trust_of(fm, sha) == "confirmed" or prev.get("sha") == sha:
+            if trust_levels.trust_of(fm, sha) == "confirmed" or prev.get("sha") == sha:
                 continue
             pages[logical] = {"sha": sha, "body": body, "unit": unit, "at": _now(),
                               "confirmations": prev.get("confirmations", [])}
@@ -66,7 +67,7 @@ def record_confirmation(logical: str, body: str, by: str) -> float | None:
         old = "repos/" + logical[len("wikis/"):]
         if not entry and logical.startswith("wikis/") and old in data["pages"]:
             from .. import docs                           # copied before 4.81 under repos/<repo>/…, unless that is a
-            if docs.link_target(old, dict(docs.iter_docs())) == logical:     # docs page's own path
+            if logical_paths.link_target(old, dict(docs.iter_docs())) == logical:  # docs page's own path
                 entry = data["pages"][old]
         if not entry:
             return None

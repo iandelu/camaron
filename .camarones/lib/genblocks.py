@@ -20,6 +20,7 @@ import yaml
 from .core import yamlio
 from .common import DOCS, ROOT, cli_cmd, repo_dir, rel_file
 from . import diagrams, docs, quickarch
+from .domain.docs import frontmatter
 
 KINDS = ("commands", "env", "endpoints", "topics", "schema")
 DIAGRAM_KINDS = diagrams.KINDS                                              # not in KINDS: they never join a reference page
@@ -399,9 +400,9 @@ def refresh(force: bool = False) -> dict:
             parts += [text[last:m.start()], block(m["kind"], m["repo"], body, id=m["id"])]
             last = m.end()
         new = "".join(parts) + text[last:]
-        fm, body_text = docs.split_fm(new)
+        fm, body_text = frontmatter.split_fm(new)
         if fm.get("x-generated") and sources:
-            new = docs.join_fm({**fm, "x-sources": list(dict.fromkeys(sources))}, body_text)
+            new = frontmatter.join_fm({**fm, "x-sources": list(dict.fromkeys(sources))}, body_text)
         if new != text:
             f.write_text(new, encoding="utf-8", newline="\n")
             out["updated"].append(rel_file(f))
@@ -440,7 +441,7 @@ def reference_page(repo: str, scan: Scanner) -> str:
 
 {blocks['topics']}
 """
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)
 
 
 def write_reference(log=lambda _: None) -> list[str]:

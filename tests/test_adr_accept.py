@@ -39,7 +39,7 @@ def decided(adr, **choice):
 
 
 def read(kit, out):
-    return kit.docs.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
+    return kit.frontmatter.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
 
 
 def accepted_adr(adr, touches, **fields):
@@ -59,9 +59,9 @@ def page(kit, name, sources):
 def test_accept_writes_the_outcome_owns_and_confirms(adr, kit):
     a = decided(adr, chosen="A", rationale="already used by notifications")
     out = adr.accept(a["id"], by="Test", attendees=["LA", "MP"], base_sha=a["sha"])
-    fm, body = kit.docs.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
+    fm, body = kit.frontmatter.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
     assert fm["x-owner"] == "human" and fm["x-confirmed"]["by"] == "Test"
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
     assert out["status"] == "accepted" and out["state"]["phase"] == "accepted"
     assert "**Where?** — Redis. already used by notifications" in out["sections"]["decision"]
     assert "#### P1" not in out["sections"]["decision"] and "LA, MP" in out["sections"]["decided_by"]
@@ -83,7 +83,7 @@ def test_today_is_an_iso_date(adr):
 
 def test_accept_changes_the_status_decision_and_owner_and_nothing_else(adr, kit, doc):
     a = decided(adr, chosen="A", rationale="r")
-    before_fm, before = kit.docs.split_fm(a["raw"])
+    before_fm, before = kit.frontmatter.split_fm(a["raw"])
     out = adr.accept(a["id"], by="Test", attendees=[], base_sha=a["sha"])
     fm, body = read(kit, out)
     assert {k: v for k, v in fm.items() if k not in ("x-owner", "x-confirmed", "description")} == \
@@ -98,12 +98,12 @@ def test_accept_changes_the_status_decision_and_owner_and_nothing_else(adr, kit,
 
 # ---------- the description under the title (the portal's subtitle) ----------
 def own_words(kit, a, text="Our own words."):
-    fm, body = kit.docs.split_fm(a["raw"])
-    (kit.root / "docs" / a["path"]).write_text(kit.docs.join_fm({**fm, "description": text}, body), encoding="utf-8")
+    fm, body = kit.frontmatter.split_fm(a["raw"])
+    (kit.root / "docs" / a["path"]).write_text(kit.frontmatter.join_fm({**fm, "description": text}, body), encoding="utf-8")
 
 
 def test_a_written_adr_keeps_the_description_every_kit_gave_it(adr, kit):
-    fm = kit.docs.split_fm(decided(adr, chosen="A")["raw"])[0]
+    fm = kit.frontmatter.split_fm(decided(adr, chosen="A")["raw"])[0]
     assert fm["description"] == PROPOSED.format(title="Sessions")
 
 
@@ -112,7 +112,7 @@ def test_accepting_rewords_the_description_the_kit_wrote(adr, kit):
     fm, body = read(kit, adr.accept(a["id"], by="Test", attendees=[], base_sha=a["sha"]))
     assert fm["description"] == ("Why the project chose an option for: Sessions. Accepted decision with its options, evidence "
                                  "and who decided.")
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
 
 
 def test_rejecting_rewords_the_description_the_kit_wrote(adr, kit):
@@ -126,7 +126,7 @@ def test_a_description_cut_at_the_limit_is_still_the_kits(adr, kit):
     title = "x" * 200
     a = adr.write_without_ai(adr.new({"title": title, "kind": "new"})["id"])
     a = adr.part(a["id"], "decision", "edit", "Yes.", base_sha=a["sha"])
-    assert "Proposed decision with its" in kit.docs.split_fm(a["raw"])[0]["description"]
+    assert "Proposed decision with its" in kit.frontmatter.split_fm(a["raw"])[0]["description"]
     text = read(kit, adr.accept(a["id"], by="Test", attendees=[], base_sha=a["sha"]))[0]["description"]
     assert "Proposed" not in text and "Accepted decision with its" in text and len(text) <= 300
 
@@ -160,7 +160,7 @@ def test_superseding_rewords_the_description_the_kit_wrote(adr, kit):
     fm, body = read(kit, first)
     assert fm["description"] == ("Why the project once chose an option for: T. Superseded decision, kept as history: a newer ADR "
                                  "replaces it.")
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
 
 
 def test_superseding_rewords_what_an_earlier_kit_left_on_an_accepted_adr(adr, kit):
@@ -379,7 +379,7 @@ def test_accept_can_be_retried_after_a_crash_before_the_state_was_saved(adr, kit
     out = adr.accept(a["id"], by="Test", attendees=["LA"], base_sha=half["sha"])
     assert out["state"]["phase"] == "accepted" and out["sections"]["decision"] == "**Where?** — Redis. r"
     fm, body = read(kit, out)
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed" and body.count("## Decided by") == 1
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed" and body.count("## Decided by") == 1
 
 
 def test_a_legacy_adr_without_frontmatter_is_accepted_in_a_session(adr, kit, monkeypatch):
@@ -390,9 +390,9 @@ def test_a_legacy_adr_without_frontmatter_is_accepted_in_a_session(adr, kit, mon
     got = adr.part("0003", "decision", "edit", "We keep JPA.", base_sha=got["sha"])
     assert f.read_text(encoding="utf-8").startswith(LEGACY)
     out = adr.accept("0003", by="Test", attendees=["LA"], base_sha=got["sha"])
-    fm, body = kit.docs.split_fm(f.read_text(encoding="utf-8"))
+    fm, body = kit.frontmatter.split_fm(f.read_text(encoding="utf-8"))
     assert fm["type"] == "decision" and fm["title"] == "0003 — JPA" and fm["x-owner"] == "human"
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
     assert body.startswith("# 0003 — JPA\n\n## Estado\n\nAccepted (2026-10-27)\n\n## Contexto\n\nwhy\n\n## Notas\n\nkeep\n")
     assert out["chip"] == "accepted" and out["legacy"] is False and out["state"]["phase"] == "accepted"
 
@@ -424,7 +424,7 @@ def test_reject_writes_the_reason_owns_and_confirms(adr, kit, monkeypatch):
     fm, body = read(kit, out)
     assert out["sections"]["status"] == "Rejected (2026-10-27): too costly for now"
     assert fm["x-owner"] == "human" and fm["x-confirmed"]["by"] == "Test"
-    assert kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
     assert (out["status"], out["chip"], out["state"]["phase"], out["decided"]) == ("rejected", "rejected", "rejected", "2026-10-27")
     assert "#### P1" in out["sections"]["decision"]
 
@@ -441,7 +441,7 @@ def test_accepting_a_legacy_adr_replaces_the_status_it_reads_not_a_comment_above
     got = adr.start_review("0003")
     got = adr.part("0003", "decision", "edit", "We keep JPA.", base_sha=got["sha"])
     out = adr.accept("0003", by="Test", attendees=[], base_sha=got["sha"])
-    body = kit.docs.split_fm(f.read_text(encoding="utf-8"))[1]
+    body = kit.frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
     assert body.startswith(f"# 0003 — JPA\n\n## Estado\n\n{comment}\nAccepted (2026-10-27)\n\n## Contexto\n\nwhy\n")
     assert "Propuesto" not in body and out["status"] == "accepted" and adr.list_adrs()[0]["status"] == "accepted"
 
@@ -453,7 +453,7 @@ def test_accepting_a_legacy_adr_with_an_inline_status_leaves_one_status(adr, kit
     got = adr.start_review("0003")
     got = adr.part("0003", "decision", "edit", "We keep JPA.", base_sha=got["sha"])
     adr.accept("0003", by="Test", attendees=[], base_sha=got["sha"])
-    body = kit.docs.split_fm(f.read_text(encoding="utf-8"))[1]
+    body = kit.frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
     assert body.startswith("# 0003 — JPA\n\n* Status: Accepted (2026-10-27)\n* Deciders: LA\n\n## Context\n\nwhy\n")
     assert "proposed" not in body and "## Status" not in body and adr.list_adrs()[0]["status"] == "accepted"
 
@@ -492,11 +492,11 @@ def test_superseding_confirms_an_old_adr_that_has_frontmatter_and_keeps_its_note
     old.write_text("---\ntype: decision\ntitle: 0001 — EhCache\nx-owner: human\n---\n# 0001 — EhCache\n\n"
                    "## Status\n\nAccepted (2026-01-02)\n\nSee the thread.\n\n## Context\n\nx\n", encoding="utf-8")
     accepted_adr(adr, [], supersedes="1")
-    fm, body = kit.docs.split_fm(old.read_text(encoding="utf-8"))
+    fm, body = kit.frontmatter.split_fm(old.read_text(encoding="utf-8"))
     assert body == ("# 0001 — EhCache\n\n## Status\n\nSuperseded by [0002](0002-t.md)\n\nSee the thread.\n\n"
                     "## Context\n\nx\n")
     assert (fm["type"], fm["title"], fm["x-owner"]) == ("decision", "0001 — EhCache", "human")
-    assert fm["x-confirmed"]["by"] == "Test" and kit.docs.trust_of(fm, kit.docs.body_sha(body)) == "confirmed"
+    assert fm["x-confirmed"]["by"] == "Test" and kit.trust_levels.trust_of(fm, kit.frontmatter.body_sha(body)) == "confirmed"
 
 
 def test_superseding_an_adr_that_does_not_exist_changes_nothing(adr, kit):

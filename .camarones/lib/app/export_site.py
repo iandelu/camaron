@@ -12,6 +12,7 @@ from lib import docs
 from lib.app import components, services, viewers, wiki
 from lib.common import CACHE, DOCS, IS_WIN, ROOT, out, ws_rel
 from lib.ports import Log
+from lib.domain.docs import frontmatter
 
 
 def forge_edit_base() -> str:
@@ -60,7 +61,7 @@ def export_site(log: Log = print) -> Path:
             doc["decisions"] = decisions
             dump(f"doc/{lang or '_'}/{d['path']}.json", doc)
             index.append({"path": d["path"], "lang": lang, "title": doc["title"], "trust": d["trust"],
-                          "text": docs.split_fm(doc["raw"])[1][:20000]})
+                          "text": frontmatter.split_fm(doc["raw"])[1][:20000]})
     log(f"✔ {len(t['docs'])} docs" + (f" + translations ({', '.join(t['langs'])})" if t["langs"] else ""))
     images = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
     folders = [(DOCS, tmp / "raw")] + [(docs.wiki_dir(n), tmp / "raw" / "wikis" / n) for n in docs.repo_names()]

@@ -58,7 +58,7 @@ def issues(kit, rel, text):
 
 @pytest.mark.parametrize("skeleton", SKELETONS, ids=lambda p: p.stem)
 def test_every_skeleton_passes_its_own_check(kit, skeleton):
-    fm, _ = kit.docs.split_fm(skeleton.read_text(encoding="utf-8"))
+    fm, _ = kit.frontmatter.split_fm(skeleton.read_text(encoding="utf-8"))
     rel = (fm.get("x-skeleton-for") or f"x/{skeleton.stem}.md").replace("*", "api")
     assert issues(kit, rel, skeleton.read_text(encoding="utf-8")) == []
 

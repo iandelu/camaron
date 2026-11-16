@@ -12,6 +12,7 @@ from .core.paths import CACHE
 from .harness import freshness
 from . import docs, usage
 from .app import services
+from .domain.docs import frontmatter, logical_paths, trust_levels
 
 PROTOCOL = "2025-06-18"
 
@@ -91,7 +92,7 @@ def _file(path: str):
 
 def _logical(path: str) -> str:
     """The logical path of the page `path` names (`docs/…`, or a wiki page's pre-4.81 repos/<repo>/…)."""
-    return docs.link_target(path, dict(docs.iter_docs()))
+    return logical_paths.link_target(path, dict(docs.iter_docs()))
 
 
 def search_docs(query: str, limit: int = 8) -> str:
@@ -131,9 +132,9 @@ def read_doc(path: str, section: str | None = None) -> str:
     if not ok:
         return notice
     text = f.read_text(encoding="utf-8")
-    fm, body = docs.split_fm(text)
+    fm, body = frontmatter.split_fm(text)
     body = docs.flatten_directives(body)                 # agents read plain Markdown, never portal syntax
-    text = docs.join_fm(fm, body) if fm else body
+    text = frontmatter.join_fm(fm, body) if fm else body
     outline = ", ".join(s["slug"] for s in docs.sections(body))
     head = (f"<!-- trust: {r.get('trust', '?')} · freshness: {r.get('fresh', '?')} · file: {r.get('file', '')}"
             + (f" · sections: {outline}" if outline else "") + " -->\n")
@@ -143,7 +144,7 @@ def read_doc(path: str, section: str | None = None) -> str:
     found = docs.section_text(body, section)
     if not found:
         return f"No section '{section}' in {path}. Sections: {outline or 'none'}."
-    title = fm.get("title") or docs.first_heading(body) or path
+    title = fm.get("title") or frontmatter.first_heading(body) or path
     return head + warn + f"# {title}\n\n" + (docs.tldr(body) + "\n\n" if docs.tldr(body) else "") + found[1] + "\n"
 
 
@@ -157,7 +158,7 @@ def list_docs() -> str:
 def doc_status() -> str:
     usage.record("mcp:doc_status")
     rows = docs.collect()
-    s = docs.summary(rows)
+    s = trust_levels.summary(rows)
     lines = [f"{s['total']} pages: confirmed {s['confirmed']}, draft {s['draft']}, needs-reconfirm {s['needs-reconfirm']}, "
              f"orphans {s['orphans']}, untranslated {s['untranslated']}"]
     lines += [f"- re-confirm: {r['path']}" for r in rows if r["trust"] == "needs-reconfirm"]
@@ -189,7 +190,7 @@ def ask(question: str, limit: int = 3) -> str:
         f = _file(h["path"])
         if not ok or not f:
             continue
-        body = docs.flatten_directives(docs.split_fm(f.read_text(encoding="utf-8"))[1])
+        body = docs.flatten_directives(frontmatter.split_fm(f.read_text(encoding="utf-8"))[1])
         found = docs.section_text(body, h["section"]) if h.get("section") else None
         cite = h["path"] + (f"#{h['section']}" if found else "")
         tl = docs.tldr(body)
@@ -223,15 +224,15 @@ def propose_edit(path: str, text: str, section: str | None = None, reason: str =
     f = _file(logical)
     if not f:
         return f"No page at {path}."
-    text = docs.split_fm(text)[1] if text.lstrip().startswith("---") else text   # frontmatter is never taken
+    text = frontmatter.split_fm(text)[1] if text.lstrip().startswith("---") else text  # frontmatter is never taken
     r = _rows().get(logical, {})
     raw = f.read_text(encoding="utf-8")
-    fm, body = docs.split_fm(raw)
+    fm, body = frontmatter.split_fm(raw)
     if r.get("trust") == "draft" and r.get("owner") != "human" and r.get("space", "docs") == "docs":
         new = _replace_section(body, section, text) if section else text.strip() + "\n"
         if new is None:
             return f"No section '{section}' in {path}. Sections: {', '.join(s['slug'] for s in docs.sections(body))}."
-        f.write_text(docs.join_fm(fm, new), encoding="utf-8", newline="\n")
+        f.write_text(frontmatter.join_fm(fm, new), encoding="utf-8", newline="\n")
         usage.record("mcp:propose_edit", channel="agent", page=logical)
         return f"applied to {path} ({'section ' + section if section else 'whole page'}); it stays an AI draft."
     PROPOSALS.mkdir(parents=True, exist_ok=True)

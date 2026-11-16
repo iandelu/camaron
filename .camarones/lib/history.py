@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .common import DOCS, repo_dir, out
 from . import docs
+from .domain.docs import frontmatter
 
 LOGICAL = "overview/history.md"
 PAGE = DOCS / LOGICAL
@@ -153,12 +154,12 @@ def write(months: int = 12) -> Path:
     h = mine(months)
     PAGE.parent.mkdir(parents=True, exist_ok=True)
     body = render(h)
-    PAGE.write_text(docs.join_fm(_fm("en"), body), encoding="utf-8", newline="\n")
-    sha = docs.body_sha(docs.split_fm(PAGE.read_text(encoding="utf-8"))[1])
+    PAGE.write_text(frontmatter.join_fm(_fm("en"), body), encoding="utf-8", newline="\n")
+    sha = frontmatter.body_sha(frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))[1])
     for lang in docs.workspace()["project"].get("translations", []):
         if lang in TEXT and lang != "en":
             tf = DOCS / "i18n" / lang / LOGICAL
             tf.parent.mkdir(parents=True, exist_ok=True)
             fm = {**_fm(lang), "x-translation-of": {"path": LOGICAL, "lang": lang, "body_sha": sha}}
-            tf.write_text(docs.join_fm(fm, render(h, lang)), encoding="utf-8", newline="\n")
+            tf.write_text(frontmatter.join_fm(fm, render(h, lang)), encoding="utf-8", newline="\n")
     return PAGE

@@ -21,6 +21,7 @@ from .kanban.ops import BoardError
 from .kanban.state import id_key
 from .stories import (Proposal, Story, TASK_TITLE_MAX, _clean, _code_groups, _done, _lang, _node, _touches,
                       compose, fingerprint, invest, parse, title_for)
+from .domain.docs import frontmatter
 
 _WIN_BAD = re.compile(r'[<>:"|?*]')
 
@@ -343,7 +344,7 @@ def _doc_sources(refs: Sequence[str]) -> list[str]:
         if f is None:
             continue
         try:
-            fm = docs_mod.parse_fm(f.read_text(encoding="utf-8"))[0]
+            fm = frontmatter.parse_fm(f.read_text(encoding="utf-8"))[0]
         except (OSError, UnicodeDecodeError, ValueError):
             continue
         raw = fm.get("x-sources") or []

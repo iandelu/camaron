@@ -11,6 +11,7 @@ from lib.common import VERSIONS
 from lib.core.ctx import KIT
 from lib.core.paths import DOCS, ROOT, rel_file
 from lib.core.process import out
+from lib.domain.docs import frontmatter, logical_paths, trust_levels
 
 _adr_log = logging.getLogger("camaron.adr_api")
 
@@ -28,7 +29,7 @@ def reviewer() -> str:
 def doc_file(path: str, lang: str = "") -> Path:
     """Only pages the docs model knows about (or their translations) can be read or written through the API."""
     canon = dict(docs.iter_docs())
-    path = docs.link_target(path, canon)                  # a wiki page's pre-4.81 path still names it
+    path = logical_paths.link_target(path, canon)         # a wiki page's pre-4.81 path still names it
     if path not in canon:
         raise KeyError(f"unknown page {path}")
     if not lang:
@@ -43,7 +44,7 @@ def tree() -> dict:
     rows = docs.collect()
     ws = docs.workspace()
     return {"project": ws["project"]["name"], "langs": ws["project"].get("translations", []), "reviewer": reviewer(),
-            "summary": docs.summary(rows), "feedback": len(docs.pending_feedback()), "kit": VERSIONS["kit"],
+            "summary": trust_levels.summary(rows), "feedback": len(docs.pending_feedback()), "kit": VERSIONS["kit"],
             "repos": docs.repo_names(), "codeGraphs": list(services.current().viewers.code_graphs()),
             "engines": services.current().wiki.wiki_engines(), "engineHelp": services.current().wiki.wiki_engine_help(),
             "kitGuides": sorted(docs.kit_guides()),
@@ -61,7 +62,7 @@ def _with_adr_status(rows: list[dict]) -> list[dict]:
         row = {k: r[k] for k in keys}
         if _is_decision(r) and r["path"] in files:
             try:
-                row["adr_status"] = adr_doc.status_of(docs.split_fm(files[r["path"]].read_text(encoding="utf-8"))[1])[0]
+                row["adr_status"] = adr_doc.status_of(frontmatter.split_fm(files[r["path"]].read_text(encoding="utf-8"))[1])[0]
             except OSError:
                 pass
         out.append(row)
@@ -75,10 +76,10 @@ def _is_decision(row: dict) -> bool:
 def read(path: str, lang: str = "") -> dict:
     f = doc_file(path, lang)
     raw = f.read_text(encoding="utf-8") if f.exists() else ""
-    fm, body = docs.split_fm(raw)
+    fm, body = frontmatter.split_fm(raw)
     row = next((r for r in docs.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
-            "title": fm.get("title") or docs.first_heading(body) or Path(path).stem, "trust": row.get("trust"),
+            "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem, "trust": row.get("trust"),
             "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
             "fresh": row.get("fresh"), "freshness": row.get("freshness"),
             "sourceInfo": _source_info(path, fm.get("x-sources") or [], row.get("freshness")),

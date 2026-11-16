@@ -272,7 +272,7 @@ def test_a_new_adr_renders_the_template(adr_doc, kit):
     fields = {"title": "Sessions in Redis", "kind": "new", "problem": "Pods lose sessions.", "drivers": ["No downtime"],
               "options_hint": ["Redis", "Postgres"], "touches": ["api:src/S.java", "cam-docs:docs/orders.md"]}
     text = adr_doc.render_new(fields, "0012")
-    fm, body = kit.docs.split_fm(text)
+    fm, body = kit.frontmatter.split_fm(text)
     assert fm["type"] == "decision" and fm["x-owner"] == "ai" and fm["title"] == "0012 — Sessions in Redis"
     assert fm["x-sources"] == ["api:src/S.java", "docs/orders.md"]
     assert adr_doc.status_of(body) == ("proposed", None)
@@ -286,7 +286,7 @@ def test_a_new_adr_renders_the_template(adr_doc, kit):
 
 def test_more_evidence_rows_follow_the_touches_and_add_no_source(adr_doc, kit):
     fields = {"title": "T", "touches": ["api:a.java"], "evidence": [("Documented in Orders", "`docs/orders.md`")]}
-    fm, body = kit.docs.split_fm(adr_doc.render_new(fields, "0001"))
+    fm, body = kit.frontmatter.split_fm(adr_doc.render_new(fields, "0001"))
     assert adr_doc.section(body, "evidence") == ("| Claim | Evidence |\n|---|---|\n| Named when the decision was framed | `api:a.java` |"
                                                  "\n| Documented in Orders | `docs/orders.md` |")
     assert fm["x-sources"] == ["api:a.java"]
@@ -294,14 +294,14 @@ def test_more_evidence_rows_follow_the_touches_and_add_no_source(adr_doc, kit):
 
 def test_a_new_adr_tags_the_repos_it_touches_once_each(adr_doc, kit):
     fields = {"title": "T", "touches": ["web:a.ts", "api:b.java", "api:c.java", "cam-docs:docs/x.md", "api:b.java"]}
-    fm, _ = kit.docs.split_fm(adr_doc.render_new(fields, "0001"))
+    fm, _ = kit.frontmatter.split_fm(adr_doc.render_new(fields, "0001"))
     assert fm["tags"] == ["api", "web"]
     assert fm["x-sources"] == ["web:a.ts", "api:b.java", "api:c.java", "docs/x.md"]
 
 
 def test_a_new_adr_with_only_a_title_asks_instead_of_inventing(adr_doc, kit):
     text = adr_doc.render_new({"title": "Caching"}, "0001")
-    fm, body = kit.docs.split_fm(text)
+    fm, body = kit.frontmatter.split_fm(text)
     assert fm["tags"] == [] and fm["x-sources"] == []
     assert adr_doc.section(body, "context").startswith("TODO(question):")
     assert adr_doc.section(body, "options") == "TODO(question): which options were considered?"
@@ -312,19 +312,19 @@ def test_a_new_adr_with_only_a_title_asks_instead_of_inventing(adr_doc, kit):
 
 def test_a_new_adr_keeps_the_constraints_the_person_gave(adr_doc, kit):
     fields = {"title": "T", "problem": "Pods lose sessions.", "constraints": ["No new infrastructure", "EU only"]}
-    _, body = kit.docs.split_fm(adr_doc.render_new(fields, "0001"))
+    _, body = kit.frontmatter.split_fm(adr_doc.render_new(fields, "0001"))
     assert adr_doc.section(body, "context") == "Pods lose sessions.\n\n**Constraints**\n\n- No new infrastructure\n- EU only"
 
 
 def test_a_long_title_is_kept_in_the_title_and_cut_in_the_description(adr_doc, kit):
     title = "Move every session to a managed cache " * 12
-    fm, body = kit.docs.split_fm(adr_doc.render_new({"title": title}, "0001"))
+    fm, body = kit.frontmatter.split_fm(adr_doc.render_new({"title": title}, "0001"))
     assert fm["title"] == "0001 — " + title.strip() and len(fm["description"]) == 300
     assert body.startswith("# 0001 — Move every")
 
 
 def test_a_title_on_two_lines_stays_on_one(adr_doc, kit):
-    fm, body = kit.docs.split_fm(adr_doc.render_new({"title": "Two\nlines "}, "0001"))
+    fm, body = kit.frontmatter.split_fm(adr_doc.render_new({"title": "Two\nlines "}, "0001"))
     assert fm["title"] == "0001 — Two lines" and body.startswith("# 0001 — Two lines\n")
 
 
@@ -342,11 +342,11 @@ def test_a_new_adr_is_written_with_unix_line_endings_and_ends_with_one_newline(a
 
 def test_what_render_new_writes_is_read_back_by_the_section_helpers(adr_doc, kit):
     text = adr_doc.render_new({"title": "T", "problem": "P"}, "0001")
-    _, body = kit.docs.split_fm(text)
+    _, body = kit.frontmatter.split_fm(text)
     decided = adr_doc.replace_section(text, "decision", adr_doc.render_decision(POINTS[:1]))
     decided = adr_doc.replace_section(decided, "status", "Accepted (2026-10-27)")
     decided = adr_doc.replace_section(decided, "decided_by", adr_doc.render_decided_by("2026-10-27", ["LA"], "LA", "manual"))
-    _, after = kit.docs.split_fm(decided)
+    _, after = kit.frontmatter.split_fm(decided)
     assert adr_doc.status_of(after) == ("accepted", None)
     assert adr_doc.section(after, "decision") == "**Where do sessions live?** — Redis. already used by notifications"
     assert adr_doc.section(after, "context") == adr_doc.section(body, "context")
@@ -380,7 +380,7 @@ def test_replace_status_keeps_the_frontmatter_and_the_line_endings(adr_doc):
             "## Notas\r\n\r\nk\r\n")
     out = adr_doc.replace_status(text, "Rejected (d): no")
     assert out == text.replace("Propuesto", "Rejected (d): no")
-    assert adr_doc.status_of(adr_doc.docs.split_fm(out)[1])[0] == "rejected"
+    assert adr_doc.status_of(adr_doc.frontmatter.split_fm(out)[1])[0] == "rejected"
 
 
 def test_replace_status_adds_the_status_below_a_section_that_only_has_a_comment(adr_doc):
@@ -419,7 +419,7 @@ def test_replace_status_of_an_inline_line_keeps_the_frontmatter_and_the_line_end
     text = "---\r\nstatus: proposed\r\n---\r\n# T\r\n\r\n* Status: proposed\r\n\r\n## Context\r\n\r\nx\r\n"
     out = adr_doc.replace_status(text, "Superseded by [0009](0009-x.md)")
     assert out == text.replace("* Status: proposed", "* Status: Superseded by [0009](0009-x.md)")
-    assert adr_doc.status_of(adr_doc.docs.split_fm(out)[1]) == ("superseded", "0009")
+    assert adr_doc.status_of(adr_doc.frontmatter.split_fm(out)[1]) == ("superseded", "0009")
 
 
 def test_replace_status_ignores_a_status_heading_inside_a_comment(adr_doc):

@@ -96,8 +96,8 @@ def add_paragraph(fx, rel, text):
 
 
 def make_human(fx, rel):
-    fm, body = fx.kit.docs.split_fm(doc(fx, rel).read_text(encoding="utf-8"))
-    doc(fx, rel).write_text(fx.kit.docs.join_fm({**fm, "x-owner": "human"}, body), encoding="utf-8", newline="\n")
+    fm, body = fx.kit.frontmatter.split_fm(doc(fx, rel).read_text(encoding="utf-8"))
+    doc(fx, rel).write_text(fx.kit.frontmatter.join_fm({**fm, "x-owner": "human"}, body), encoding="utf-8", newline="\n")
 
 
 def run_check(fx):
@@ -232,7 +232,7 @@ def test_adopt_brings_the_blocks_into_an_agents_home(old_project):
     assert "> **TL;DR:** demo sells pets.\n\n:::cards\n<!-- generated:repos repo=_system" in text
     assert "generated:context repo=_system" in text and "The team ships every Friday.\n\n## Domain\n\nPets and owners." in text
     assert "docs/architecture/system-map.md" in out["deleted"] and old_project.mod.layout() == "new"
-    fm = old_project.kit.docs.split_fm(text)[0]
+    fm = old_project.kit.frontmatter.split_fm(text)[0]
     assert fm["x-owner"] == "ai" and fm["x-sources"] and "x-generated" not in fm
     assert old_project.mod.adopt()["moved"] == [] and doc(old_project, "index.md").read_text(encoding="utf-8") == text
 
@@ -356,13 +356,13 @@ def test_a_home_with_no_owner_is_an_agents(old_project):
     text = doc(old_project, "index.md").read_text(encoding="utf-8")
     assert "> **TL;DR:** demo sells pets.\n\n:::cards\n<!-- generated:repos repo=_system" in text
     assert "The team ships every Friday." in text and "docs/architecture/system-map.md" in out["deleted"]
-    assert "x-owner" not in old_project.kit.docs.split_fm(text)[0]
+    assert "x-owner" not in old_project.kit.frontmatter.split_fm(text)[0]
 
 
 def test_adopt_keeps_an_old_page_a_person_confirmed(old_project):
     f = doc(old_project, "repos/api/reference.md")
-    fm, body = old_project.kit.docs.split_fm(f.read_text(encoding="utf-8"))
-    f.write_text(old_project.kit.docs.join_fm({**fm, "x-confirmed": {"by": "ana", "at": "2026-10-01", "body_sha": "x"}}, body),
+    fm, body = old_project.kit.frontmatter.split_fm(f.read_text(encoding="utf-8"))
+    f.write_text(old_project.kit.frontmatter.join_fm({**fm, "x-confirmed": {"by": "ana", "at": "2026-10-01", "body_sha": "x"}}, body),
                  encoding="utf-8", newline="\n")
     before = f.read_bytes()
     out = old_project.mod.adopt()

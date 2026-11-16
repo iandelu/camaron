@@ -43,6 +43,8 @@ def pytest_unconfigure(config) -> None:
 
 
 MODULES = ("common", "docs", "plan", "serve", "projects", "migrate", "quality", "codemap", "install", "quickarch", "creds", "questionnaire", "usage", "onboard", "wizard", "bootstrap")
+# lib/domain/docs (hexagonal refactor F5a), as kit.<name>: pure modules a test calls like any other of the namespace
+DOMAIN_MODULES = ("frontmatter", "trust_levels", "logical_paths")
 
 
 @pytest.hookimpl(tryfirst=True)                 # before xdist's own hook reads the groups
@@ -120,6 +122,8 @@ def load_kit(root: Path, home: Path, ws: Path | None) -> SimpleNamespace:
     ns = SimpleNamespace(root=root, ws=ws or root.parent, home=home, kit_dir=KIT_DIR)
     for m in MODULES:
         setattr(ns, m, importlib.import_module(f"lib.{m}"))
+    for m in DOMAIN_MODULES:
+        setattr(ns, m, importlib.import_module(f"lib.domain.docs.{m}"))
     ns.services = ns.bootstrap.build()          # as a process entry does: kit.services.<field> is the module itself
     return ns
 

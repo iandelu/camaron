@@ -94,7 +94,7 @@ def test_the_first_look_cites_what_it_read_so_agents_may_use_it(kit, monkeypatch
     from lib import quickarch, serve
     monkeypatch.setattr(quickarch, "which", lambda name: None)                     # no LikeC4 build in tests
     quickarch.save(quickarch.draft(log=lambda _: None))
-    fm = kit.docs.split_fm((kit.root / "docs" / "architecture" / "first-look.md").read_text(encoding="utf-8"))[0]
+    fm = kit.frontmatter.split_fm((kit.root / "docs" / "architecture" / "first-look.md").read_text(encoding="utf-8"))[0]
     assert "api:src/main/resources/application.properties" in fm["x-sources"] and "api:pom.xml" in fm["x-sources"]
     assert fm["x-sources"] == sorted(fm["x-sources"])
     hit = serve.api_ask("which database does it use?")["sections"][0]

@@ -53,7 +53,7 @@ def test_slugs_match_the_portal(kit, heading, slug):
 
 
 def test_repeated_headings_get_numbered_slugs_like_the_portal(kit):
-    body = kit.docs.split_fm(PAGE)[1]
+    body = kit.frontmatter.split_fm(PAGE)[1]
     assert [s["slug"] for s in kit.docs.sections(body)] == ["summary", "failure-handling", "data-touched", "data-touched-1"]
 
 

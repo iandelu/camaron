@@ -21,6 +21,7 @@ from .core.locks import pid_alive
 from .core.paths import WIKI_LOCK
 from . import docs, plan
 from .app import services
+from .domain.docs import frontmatter
 
 MODES = ("redo", "wipe")
 KEEP_TYPES = {"setup", "ci", "questionnaire", "answers", *plan.INTERVIEW_TYPES}   # stay done in both modes
@@ -52,7 +53,7 @@ def persons(f: Path) -> bool:
     """A page a person owns: `x-owner: human` or any `x-confirmed` (as `pages` reads it)."""
     from .pages import _persons
     try:
-        return bool(_persons(docs.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0]))
+        return bool(_persons(frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0]))
     except OSError:
         return True
 

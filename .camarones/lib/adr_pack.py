@@ -19,6 +19,7 @@ from pathlib import Path, PurePosixPath
 from . import adr, adr_doc, c4edit, docs, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
+from .domain.docs import frontmatter, trust_levels
 
 NEIGHBOURS, PAGES, ADRS, COMMITS, MONTHS, QUESTIONS, C4, LIBRARIES = 30, 15, 10, 40, 12, 10, 20, 30
 LIMIT = 20000
@@ -56,7 +57,7 @@ def read_page(logical: str, f: Path) -> tuple[dict, str] | None:
     """(frontmatter, body) of a doc page; None when it cannot be read or is a decision (`adr_doc.is_decision`): a
     decision has its own status and is never evidence about or affected by another."""
     try:
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError):
         return None
     return None if adr_doc.is_decision(logical, fm.get("type")) else (fm, body)
@@ -96,8 +97,8 @@ def _pages(cited: list[tuple[str, Path]]) -> list[dict]:
         if read is None:
             continue
         fm, body = read
-        found.append({"page": logical, "title": _text(fm.get("title") or docs.first_heading(body) or logical),
-                      "description": _text(fm.get("description")), "trust": docs.trust_of(fm, docs.body_sha(body))})
+        found.append({"page": logical, "title": _text(fm.get("title") or frontmatter.first_heading(body) or logical),
+                      "description": _text(fm.get("description")), "trust": trust_levels.trust_of(fm, frontmatter.body_sha(body))})
         if len(found) == PAGES:
             break
     return found
@@ -285,7 +286,7 @@ def _covered() -> list[str]:
         fm, body = {}, ""
         try:
             if row["path"]:
-                fm, body = docs.split_fm((DOCS / row["path"]).read_text(encoding="utf-8"))
+                fm, body = frontmatter.split_fm((DOCS / row["path"]).read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError):
             pass
         tags = fm.get("tags")

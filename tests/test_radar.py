@@ -128,7 +128,7 @@ def test_page_is_a_valid_draft_with_resolvable_sources(radar):
     written = radar.radar.run()
     page = radar.docs.DOCS / "overview" / "tooling.md"
     assert written == page and page.exists()
-    fm, body = radar.docs.split_fm(page.read_text(encoding="utf-8"))
+    fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
     assert fm["type"] == "overview" and fm["x-owner"] == "ai" and "x-confirmed" not in fm
     assert "api:catalog-info.yaml" in fm["x-sources"]
     assert "team-pets" in body and "https://sonar.acme.test/dashboard?id=acme_api" in body
@@ -156,8 +156,8 @@ def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
     add_files(radar, TOOLING)
     radar.radar.run()                                                            # new tools → the human re-checks
     assert radar.docs.doc_status("overview/tooling.md", page, [])["trust"] == "needs-reconfirm"
-    fm, body = radar.docs.split_fm(page.read_text(encoding="utf-8"))
-    page.write_text(radar.docs.join_fm({**fm, "x-owner": "human"}, body + "\nHand notes.\n"), encoding="utf-8")
+    fm, body = radar.frontmatter.split_fm(page.read_text(encoding="utf-8"))
+    page.write_text(radar.frontmatter.join_fm({**fm, "x-owner": "human"}, body + "\nHand notes.\n"), encoding="utf-8")
     radar.radar.run()
     assert "Hand notes." in page.read_text(encoding="utf-8")
 

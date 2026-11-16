@@ -16,6 +16,7 @@ from pathlib import Path
 
 from ..common import CAM_DIR, CTX, ROOT, WORK, load_json, repo_dir, save_json
 from .locks import FileLock
+from ..domain.docs import frontmatter, logical_paths
 
 FILE = WORK / "fresh.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "fresh.lock"
@@ -155,15 +156,15 @@ def _pages() -> dict:
     from .. import docs
     out = {}
     for logical, f in docs.iter_docs():
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
-        out[logical] = (fm or {}, docs.body_sha(body))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
+        out[logical] = (fm or {}, frontmatter.body_sha(body))
     return out
 
 
 def docs_alias(logical: str, known) -> str:
     """The page's logical path today for one written as `docs/…` or a wiki page's pre-4.81 repos/<repo>/…."""
     from .. import docs
-    return docs.link_target(logical, known)
+    return logical_paths.link_target(logical, known)
 
 
 def _sources(fm: dict) -> list[str]:

@@ -16,6 +16,7 @@ import yaml
 from .core import yamlio
 from .common import CACHE, DOCS, repo_dir, save_json
 from . import docs, quickarch
+from .domain.docs import frontmatter
 
 MAX_ENTRIES, MAX_BYTES, MAX_EVIDENCE = 20_000, 300_000, 5
 PAGE = DOCS / "overview" / "tooling.md"
@@ -260,21 +261,21 @@ def render(result: dict) -> str:
         lines.append("")
     lines += [pages.HOW, "Read from each repo's files with no AI. Fix a wrong stack with `camaron stack <repo> \"<stack>\"`, "
               "then `camaron radar` to refresh this page.", ":::", ""]
-    return docs.join_fm(fm, "\n".join(lines))
+    return frontmatter.join_fm(fm, "\n".join(lines))
 
 
 def run(log=print) -> Path:
     """Scan every repo, write docs/overview/tooling.md and the cache the wizard reads. Returns the page."""
     result = scan()
     save_json(CACHE_FILE, result)
-    old = docs.split_fm(PAGE.read_text(encoding="utf-8"))[0] if PAGE.exists() else {}
+    old = frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))[0] if PAGE.exists() else {}
     if old.get("x-owner") == "human":           # a human took the page over: never rewrite it
         log(f"· {PAGE.name} is owned by a human: not rewritten")
         return PAGE
     text = render(result)
     if old.get("x-confirmed"):                  # keep the confirmation: a changed body then reads as needs-reconfirm
-        fm, body = docs.split_fm(text)
-        text = docs.join_fm({**fm, "x-confirmed": old["x-confirmed"]}, body)
+        fm, body = frontmatter.split_fm(text)
+        text = frontmatter.join_fm({**fm, "x-confirmed": old["x-confirmed"]}, body)
     PAGE.parent.mkdir(parents=True, exist_ok=True)
     PAGE.write_text(text, encoding="utf-8", newline="\n")
     log(f"✔ {sum(len(r['tools']) for r in result.values())} tools found in {len(result)} repos")

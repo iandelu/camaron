@@ -239,13 +239,13 @@ def test_the_same_library_at_two_versions_is_flagged(kit, repos):
 
 def test_the_page_is_a_draft_citing_the_manifests(kit, repos):
     page = repos.run(log=lambda _: None)
-    fm, body = kit.docs.split_fm(page.read_text(encoding="utf-8"))
+    fm, body = kit.frontmatter.split_fm(page.read_text(encoding="utf-8"))
     assert fm["type"] == "overview" and "api:pom.xml" in fm["x-sources"] and "web:package.json" in fm["x-sources"]
     assert "spring-boot-starter-security" in body and "## api" in body and "| security |" in body
     data = json.loads((kit.root / "docs" / ".work" / "inventory.json").read_text(encoding="utf-8"))
     assert data["libraries"] and data["vulns"] is None                          # no CVE scan asked for
     fm["x-owner"] = "human"
-    page.write_text(kit.docs.join_fm(fm, "# Mine\n"), encoding="utf-8")
+    page.write_text(kit.frontmatter.join_fm(fm, "# Mine\n"), encoding="utf-8")
     repos.run(log=lambda _: None)
     assert "# Mine" in page.read_text(encoding="utf-8")                         # a human's page is never rewritten
 

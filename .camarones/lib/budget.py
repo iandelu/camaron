@@ -7,6 +7,7 @@ import json
 
 from .common import ROOT
 from . import docs, skills
+from .domain.docs import frontmatter
 
 BUDGET = 6000           # standing tokens; `context: {budget: N}` in workspace.yaml changes it
 
@@ -18,7 +19,7 @@ def tokens(text: str) -> int:
 def _skills() -> list[dict]:
     out = []
     for f in sorted((ROOT / ".claude" / "skills").glob("*/SKILL.md")):
-        fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         head = f"{fm.get('name', f.parent.name)}: {fm.get('description', '')}"
         out.append({"kind": "skill", "path": f.relative_to(ROOT).as_posix(), "tokens": tokens(head),
                     "on_use": tokens(body), "kit": skills.origin(f.parent.name) == "kit"})

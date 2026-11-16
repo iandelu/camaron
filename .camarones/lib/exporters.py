@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .common import CACHE, IS_MAC, IS_WIN, ROOT, run, which
 from . import docs
+from .domain.docs import frontmatter
 
 OUT = CACHE / "export"
 
@@ -108,7 +109,7 @@ def pages() -> list[tuple[dict, str]]:
     for r in docs.readable():
         if r["type"] == "interview" or r["path"].startswith("interview/") or r.get("space", "docs") != "docs":
             continue
-        out.append((r, docs.flatten_directives(docs.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1])))
+        out.append((r, docs.flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1])))
     return out
 
 
@@ -162,7 +163,7 @@ def tour(path: str) -> dict:
     f = docs.find_page(logical)
     if not f:
         raise ExportError(f"no page at {path}")
-    fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+    fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
     found = docs.section_text(body, "steps")
     table = next((b for b in blocks(found[1]) if b["type"] == "table"), None) if found else None
     if not table or len(table["rows"]) < 2:

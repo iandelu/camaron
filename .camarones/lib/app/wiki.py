@@ -20,6 +20,7 @@ from lib.core.paths import WIKI_STAMP
 from lib.core.process import stream
 from lib.harness.ports import RunRequest
 from lib.ports import Log
+from lib.domain.docs import frontmatter, logical_paths
 
 
 # ---------- OpenWiki ----------
@@ -103,14 +104,14 @@ def wiki_nav(repo: str) -> dict:
     order = list(dict.fromkeys(order + sorted(files)))
     pages = []
     for rel in order:
-        fm, body = docs.split_fm(files[rel].read_text(encoding="utf-8", errors="replace"))
-        pages.append({"path": docs.wiki_path(repo, rel), "title": fm.get("title") or docs.first_heading(body) or Path(rel).stem})
+        fm, body = frontmatter.split_fm(files[rel].read_text(encoding="utf-8", errors="replace"))
+        pages.append({"path": logical_paths.wiki_path(repo, rel), "title": fm.get("title") or frontmatter.first_heading(body) or Path(rel).stem})
     backlinks: dict[str, set] = {}
     for rel in files:
         for target in links(rel):
             if target != rel:
-                backlinks.setdefault(docs.wiki_path(repo, target), set()).add(docs.wiki_path(repo, rel))
-    home = next((docs.wiki_path(repo, p) for p in ("quickstart.md", "index.md", "README.md") if p in files), pages[0]["path"])
+                backlinks.setdefault(logical_paths.wiki_path(repo, target), set()).add(logical_paths.wiki_path(repo, rel))
+    home = next((logical_paths.wiki_path(repo, p) for p in ("quickstart.md", "index.md", "README.md") if p in files), pages[0]["path"])
     return {"home": home, "pages": pages, "backlinks": {k: sorted(v) for k, v in sorted(backlinks.items())}}
 
 
@@ -226,7 +227,7 @@ def wikis() -> list[dict]:
                      "unit": units.get(f"repo-wiki:{n}"),
                      "cloned": repo_dir(n).is_dir(), "chosen": n in chosen, "ready": bool(pages) or wiki_brief_ready(n),
                      "brief": wiki_brief_kind(n), "canGenerate": can_run and repo_dir(n).is_dir(),
-                     "index": next((docs.wiki_path(n, p) for p in ("quickstart.md", "index.md", "README.md")
+                     "index": next((logical_paths.wiki_path(n, p) for p in ("quickstart.md", "index.md", "README.md")
                                     if (docs.wiki_dir(n) / p).exists()), None)})
     return rows
 

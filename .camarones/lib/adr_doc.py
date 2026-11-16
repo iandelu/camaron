@@ -15,6 +15,7 @@ from typing import Iterable
 
 from . import docs
 from .common import CAM_DIR
+from .domain.docs import frontmatter
 
 KEYS = ("status", "context", "drivers", "options", "decision", "consequences", "confirmation", "diagram", "evidence",
         "decided_by")
@@ -158,7 +159,7 @@ def _insert(lines: list[str], key: str, new: str, secs: list[dict]) -> None:
 def replace_section(text: str, key: str, new_body: str) -> str:
     """Whole file in, whole file out: only the text of section `key` changes, frontmatter and every other byte stay.
     A missing section is added before the first existing one that comes later in `ORDER`, else at the end."""
-    _, body, _ = docs.parse_fm(text)
+    _, body, _ = frontmatter.parse_fm(text)
     head, lines = text[:len(text) - len(body)], body.splitlines(keepends=True)
     found, new = _find(body, key), new_body.strip("\n")
     if found:
@@ -202,7 +203,7 @@ def replace_status(text: str, new: str) -> str:
     section once comments are set aside, else the value of an inline `Status:` line) and of what else is on its line,
     comments there included. A comment on a line of its own or before the status, and every note below, stay. A section
     with only a comment gets `new` below it; a file with neither gets a Status section."""
-    _, body, _ = docs.parse_fm(text)
+    _, body, _ = frontmatter.parse_fm(text)
     seen = _blank_comments(body)
     found = _find(seen, "status")
     head = text[:len(text) - len(body)]
@@ -352,4 +353,4 @@ def render_new(fields: dict, number: str) -> str:
     tldr = f"Decision record for {title}: problem, options, outcome and evidence. Check the status first."
     body = f"# {number} — {title}\n\n> **TL;DR:** {tldr}\n\n" + "\n\n".join(
         f"## {HEADINGS[key]}\n\n{text}" for key, text in parts) + "\n"
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)

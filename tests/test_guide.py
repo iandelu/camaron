@@ -103,13 +103,14 @@ def test_portal_markers_are_portal_routes():
 
 def test_guide_links_point_at_headings(kit):
     from lib import docs
+    from lib.domain.docs import frontmatter
     for lang, f in shipped():
-        body = docs.split_fm(f.read_text(encoding="utf-8"))[1]
+        body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
         for file, anchor in LINK.findall(body):
             target = f.parent / Path(file).name if file else f
             assert target.is_file(), f"{f.name} ({lang}): {file}"
             if anchor:
-                slugs = {h["slug"] for h in docs.headings(docs.split_fm(target.read_text(encoding="utf-8"))[1])}
+                slugs = {h["slug"] for h in docs.headings(frontmatter.split_fm(target.read_text(encoding="utf-8"))[1])}
                 assert anchor in slugs, f"{f.name} ({lang}): {file}#{anchor}"
 
 
@@ -127,17 +128,18 @@ def test_projects_get_the_guides_without_overwriting(kit):
 
 def test_spanish_twins_mirror_the_english_guides(kit):
     from lib import docs, guide
+    from lib.domain.docs import frontmatter
     for name in guide.ORDER:
         en = GUIDES / "guides" / f"{name}.md"
         es = GUIDES / "i18n" / "es" / "guides" / f"{name}.md"
         assert es.is_file(), name
         if name == "tutorial":
             continue                                   # the command guide's twins predate this check
-        shape = lambda f: [h["level"] for h in docs.headings(docs.split_fm(f.read_text(encoding="utf-8"))[1]) if h["level"] in (2, 3)]
+        shape = lambda f: [h["level"] for h in docs.headings(frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]) if h["level"] in (2, 3)]
         marks = lambda f: MARKER.findall(f.read_text(encoding="utf-8"))
         assert shape(es) == shape(en), name
         assert marks(es) == marks(en), name
-        assert docs.split_fm(es.read_text(encoding="utf-8"))[0]["title"] != docs.split_fm(en.read_text(encoding="utf-8"))[0]["title"], name
+        assert frontmatter.split_fm(es.read_text(encoding="utf-8"))[0]["title"] != frontmatter.split_fm(en.read_text(encoding="utf-8"))[0]["title"], name
 
 
 def test_projects_get_the_spanish_guides_too(kit):

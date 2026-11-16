@@ -1,14 +1,13 @@
 """Docs model: workspace, repo sync, incremental state, trust (draft/confirmed), translations, llms.txt, search."""
 from __future__ import annotations
 
-import hashlib, json, math, os, re, shutil, subprocess, tarfile, tempfile
+import math, os, re, shutil, subprocess, tarfile, tempfile
 from collections import Counter
 from pathlib import Path
 
-import yaml
-
 from .core import yamlio
 from .core.clock import now
+from .domain.docs import frontmatter, logical_paths, trust_levels
 from .core.paths import cli_cmd
 from .ports import Log
 from .common import (KIT, ROOT, DOCS, WS_FILE, CACHE, WORKSPACE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run,
@@ -16,7 +15,6 @@ from .common import (KIT, ROOT, DOCS, WS_FILE, CACHE, WORKSPACE, CAM_DIR, CAM_LA
 
 STATE_FILE = DOCS / ".state.json"
 STATUS_FILE = DOCS / ".status.json"
-FM_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.S)
 GI_START, GI_END = "# >>> camarones repos >>>", "# <<< camarones repos <<<"
 
 
@@ -210,38 +208,6 @@ def mark_documented(names: list[str] | None = None) -> list[str]:
 
 
 # ---------- docs model ----------
-# agents often write `description: Foo: bar` unquoted; quote such top-level scalars instead of failing
-LOOSE_VALUE_RE = re.compile(r"^([\w-]+):[ \t]+(?![\"'\[{|>&*!%@`])(.*?:\s.*?)[ \t]*$", re.M)
-
-
-def parse_fm(text: str) -> tuple[dict, str, bool]:
-    """(frontmatter, body, valid). Unreadable frontmatter yields {} but is still kept out of the body."""
-    m = FM_RE.match(text)
-    if not m:
-        return {}, text, True
-    raw, body = m.group(1), text[m.end():]
-    for candidate in (raw, LOOSE_VALUE_RE.sub(lambda v: f"{v[1]}: {json.dumps(v[2], ensure_ascii=False)}", raw)):
-        try:
-            fm = yamlio.safe_load(candidate) or {}
-        except yaml.YAMLError:
-            continue
-        if isinstance(fm, dict):
-            return fm, body, True
-    return {}, body, False
-
-
-def split_fm(text: str) -> tuple[dict, str]:
-    fm, body, _ = parse_fm(text)
-    return fm, body
-
-
-def join_fm(fm: dict, body: str) -> str:
-    return "---\n" + yaml.safe_dump(fm, sort_keys=False, allow_unicode=True, width=120) + "---\n" + body
-
-
-def body_sha(body: str) -> str:
-    norm = "\n".join(line.rstrip() for line in body.strip().splitlines())
-    return hashlib.sha256(norm.encode()).hexdigest()[:16]
 
 
 def iter_docs():
@@ -259,39 +225,13 @@ def iter_docs():
                 rel = f.relative_to(ow)
                 if any(p.startswith(".") for p in rel.parts) or rel.name in ("INSTRUCTIONS.md", "log.md"):
                     continue
-                yield wiki_path(n, rel.as_posix()), f
-
-
-# A wiki page's logical path is where it sits in cam-docs, wikis/<repo>/<page>: it can never be a docs page's
-# (docs/repos/<repo>/index.md vs OpenWiki's own index.md). Kits up to 4.80.1 called it repos/<repo>/<page>; that path
-# still names the wiki page wherever no docs page has it (links, read_doc, freshness stamps, translations).
-def wiki_path(repo: str, rel: str) -> str:
-    return f"wikis/{repo}/{rel}"
-
-
-def old_wiki_path(path: str) -> str | None:
-    """repos/<repo>/<page> → wikis/<repo>/<page>: what a pre-4.81 wiki path is now (None for any other path)."""
-    parts = path.split("/", 2)
-    return wiki_path(parts[1], parts[2]) if len(parts) == 3 and parts[0] == "repos" and parts[2] else None
-
-
-def link_target(path: str, known) -> str:
-    """The page a resolved link, or a path someone wrote, names. `docs/<page>` is the docs page <page> (how a wiki page
-    links one, as its file sits on disk); a wiki page's old repos/<repo>/<page> is wikis/<repo>/<page> when no docs
-    page has that path. Anything else, known or not, stays as written. Mirrored by the portal's linkTarget()."""
-    if path in known:
-        return path
-    bare = path.removeprefix("docs/")
-    if bare in known:
-        return bare
-    alias = old_wiki_path(bare)
-    return alias if alias and alias in known else path
+                yield logical_paths.wiki_path(n, rel.as_posix()), f
 
 
 def find_page(path: str, canon: dict | None = None) -> Path | None:
     """The file of a page by any path that names it (logical, `docs/…`, or a wiki page's old repos/<repo>/… path)."""
     canon = dict(iter_docs()) if canon is None else canon
-    return canon.get(link_target(path, canon))
+    return canon.get(logical_paths.link_target(path, canon))
 
 
 def translation_file(logical: str, lang: str) -> Path:
@@ -326,11 +266,6 @@ def repo_file_exists(ref: str) -> bool:
     return (base / path).exists()
 
 
-def first_heading(body: str) -> str | None:
-    m = re.search(r"^#\s+(.+)$", body, re.M)
-    return m.group(1).strip() if m else None
-
-
 SECTIONS = ["index.md", "overview", "architecture", "domain", "flows", "data", "deployment", "decisions", "quality",
             "guides", "repos"]
 
@@ -342,15 +277,10 @@ def space_of(logical: str, f: Path, fm: dict) -> str:
     return "notes" if fm.get("type") == "interview" or logical.startswith("interview/") else "docs"
 
 
-def trust_of(fm: dict, sha: str) -> str:
-    conf = fm.get("x-confirmed") or {}
-    return "confirmed" if conf.get("body_sha") == sha else ("needs-reconfirm" if conf else "draft")
-
-
 def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
-    fm, body, fm_valid = parse_fm(f.read_text(encoding="utf-8"))
-    sha = body_sha(body)
-    trust = trust_of(fm, sha)
+    fm, body, fm_valid = frontmatter.parse_fm(f.read_text(encoding="utf-8"))
+    sha = frontmatter.body_sha(body)
+    trust = trust_levels.trust_of(fm, sha)
     missing = [s for s in (fm.get("x-sources") or []) if not repo_file_exists(str(s))]
     i18n = {}
     for lang in ([] if fm.get("type") == "interview" else langs):   # working notes are not translated
@@ -358,11 +288,11 @@ def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
         if not tf.exists():
             i18n[lang] = "missing"
         else:
-            tfm, _ = split_fm(tf.read_text(encoding="utf-8"))
+            tfm, _ = frontmatter.split_fm(tf.read_text(encoding="utf-8"))
             of = tfm.get("x-translation-of")                      # a hand-written one may be just the page's path
             i18n[lang] = "current" if isinstance(of, dict) and of.get("body_sha") == sha else "outdated"
     return {"path": logical, "file": rel_file(f),
-            "title": fm.get("title") or first_heading(body) or f.stem, "description": fm.get("description", ""),
+            "title": fm.get("title") or frontmatter.first_heading(body) or f.stem, "description": fm.get("description", ""),
             "type": fm.get("type", ""), "trust": trust, "owner": fm.get("x-owner", "ai"), "orphan_sources": missing,
             "space": space_of(logical, f, fm), "i18n": i18n, "body_sha": sha,
             "has_frontmatter": bool(fm) or not fm_valid, "frontmatter_valid": fm_valid}
@@ -383,14 +313,6 @@ def collect() -> list[dict]:
     return rows
 
 
-def summary(rows: list[dict]) -> dict:
-    c = {k: sum(1 for r in rows if r["trust"] == k) for k in ("confirmed", "needs-reconfirm", "draft")}
-    c["total"] = len(rows)
-    c["orphans"] = sum(1 for r in rows if r["orphan_sources"])
-    c["untranslated"] = sum(1 for r in rows if any(v != "current" for v in r["i18n"].values()))
-    return c
-
-
 def resolve(p: str) -> Path:
     f = Path(p)
     if f.is_absolute():
@@ -402,11 +324,11 @@ def confirm(files: list[str], by: str) -> list[str]:
     done = []
     for p in files:
         f = resolve(p)
-        fm, body = split_fm(f.read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         if not fm:
             raise RuntimeError(f"{p}: no frontmatter, refusing to confirm")
-        fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": body_sha(body)}
-        f.write_text(join_fm(fm, body), encoding="utf-8", newline="\n")
+        fm["x-confirmed"] = {"by": by, "at": now(), "body_sha": frontmatter.body_sha(body)}
+        f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
         done.append(p)
         logical = next((lp for lp, df in iter_docs() if df.resolve() == f.resolve()), None)
         if logical:
@@ -426,15 +348,15 @@ def translated(files: list[str]) -> list[str]:
         f = resolve(p)
         rel = f.relative_to(DOCS / "i18n")
         lang, logical = rel.parts[0], Path(*rel.parts[1:]).as_posix()
-        if logical not in canon and (alias := old_wiki_path(logical)) in canon \
+        if logical not in canon and (alias := logical_paths.old_wiki_path(logical)) in canon \
                 and translation_file(alias, lang).resolve() == f.resolve():
             logical = alias                       # a wiki page's translation kept at its pre-4.81 path
         if logical not in canon:
             raise RuntimeError(f"{p}: no canonical doc at {logical}")
-        _, cbody = split_fm(canon[logical].read_text(encoding="utf-8"))
-        fm, body = split_fm(f.read_text(encoding="utf-8"))
-        fm["x-translation-of"] = {"path": logical, "lang": lang, "body_sha": body_sha(cbody)}
-        f.write_text(join_fm(fm, body), encoding="utf-8", newline="\n")
+        _, cbody = frontmatter.split_fm(canon[logical].read_text(encoding="utf-8"))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
+        fm["x-translation-of"] = {"path": logical, "lang": lang, "body_sha": frontmatter.body_sha(cbody)}
+        f.write_text(frontmatter.join_fm(fm, body), encoding="utf-8", newline="\n")
         done.append(f"{p} <- {logical}")
     return done
 
@@ -477,7 +399,7 @@ def llms() -> int:
             section = head
         link = os.path.relpath(ROOT / r["file"], DOCS).replace("\\", "/")
         desc = f": {r['description']}" if r["description"] else ""
-        size = (len(split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1]) + 3) // 4
+        size = (len(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8"))[1]) + 3) // 4
         lines.append(f"- [{r['title']}]({link}) [{r['trust']}] (~{size} tokens){desc}")
     held = sorted((r for r in rows if r["path"] not in served), key=_llms_key)
     if section == "Optional":                        # llmstxt.org: Optional comes last
@@ -501,7 +423,7 @@ def llms() -> int:
     for r in ok:
         if r["type"] == "interview" or r["path"].startswith("interview/"):
             continue
-        body = flatten_directives(split_fm((ROOT / r["file"]).read_text(encoding="utf-8", errors="replace"))[1]).strip()
+        body = flatten_directives(frontmatter.split_fm((ROOT / r["file"]).read_text(encoding="utf-8", errors="replace"))[1]).strip()
         desc = f" · {r['description']}" if r["description"] else ""
         full += [f"<!-- {r['path']} · {r['trust']}{desc} -->", "", body, ""]
     (DOCS / "llms-full.txt").write_text("\n".join(full).rstrip() + "\n", encoding="utf-8", newline="\n")
@@ -720,12 +642,12 @@ def search(query: str, limit: int = 20) -> list[dict]:
         return []
     pages = []
     for logical, f in iter_docs():
-        fm, body = split_fm(f.read_text(encoding="utf-8", errors="replace"))
-        trust = trust_of(fm, body_sha(body))
+        fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))
+        trust = trust_levels.trust_of(fm, frontmatter.body_sha(body))
         body = COMMENT_RE.sub(lambda m: "\n" * m.group().count("\n"), body)     # markers are not content
         toks = Counter(re.findall(r"\w+", body.lower()))
         tf = {t: sum(c for w, c in toks.items() if w.startswith(t)) for t in terms}
-        title = fm.get("title") or first_heading(body) or f.stem
+        title = fm.get("title") or frontmatter.first_heading(body) or f.stem
         meta = " ".join([str(title), str(fm.get("description") or ""), *map(str, fm.get("x-answers") or [])]).lower()
         pages.append((logical, trust, body, sum(toks.values()), tf, str(title), meta))
     if not pages:

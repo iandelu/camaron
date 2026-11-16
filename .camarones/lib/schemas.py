@@ -16,6 +16,7 @@ import yaml
 from .core import yamlio
 from .common import DOCS, repo_dir
 from . import docs, quickarch, radar
+from .domain.docs import frontmatter
 
 EXTS = {".sql", ".xml", ".yaml", ".yml", ".prisma", ".rules", ".java", ".kt", ".ts", ".js", ".mjs", ".py", ".dart"}
 TEST_DIRS = {"test", "tests", "__tests__", "e2e", "spec", "testFixtures", "androidTest"}
@@ -582,7 +583,7 @@ def page(result: dict) -> str:
         "## Migrations", "",
         ("How the schema is created: " + ", ".join(result["tools"]) + "." if result["tools"] else "No migration tool found."),
         ""])
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)
 
 
 def write_pages(log=print) -> list[str]:

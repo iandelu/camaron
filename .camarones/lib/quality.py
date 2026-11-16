@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 from .common import ROOT, DOCS, CACHE, IS_WIN, run, which, load_json, save_json, rel_file
 from . import binaries, docs
+from .domain.docs import frontmatter, logical_paths
 
 Issues = tuple[list[str], list[str]]
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -66,7 +67,7 @@ def check_links(rows: list[dict], strict: bool = False) -> Issues:
 
     def anchors(path: str) -> set[str]:
         if path not in slugs:
-            body = docs.split_fm(known[path].read_text(encoding="utf-8", errors="replace"))[1]
+            body = frontmatter.split_fm(known[path].read_text(encoding="utf-8", errors="replace"))[1]
             slugs[path] = {h["slug"] for h in docs.headings(body)}
         return slugs[path]
     errors, warns = [], []
@@ -78,7 +79,7 @@ def check_links(rows: list[dict], strict: bool = False) -> Issues:
                 target, _, anchor = unquote(href.split("?", 1)[0]).partition("#")
                 if target and not target.endswith(".md"):
                     continue
-                page = docs.link_target(resolve(logical, target), known) if target else logical
+                page = logical_paths.link_target(resolve(logical, target), known) if target else logical
                 if target and page not in known:
                     errors.append(f"{rel_file(f)}:{n}: broken link → {href}")
                 elif (anchor and anchor != "top" and not lang and page in known
@@ -327,7 +328,7 @@ def skeletons() -> list[dict]:
             if f.name in seen or f.name == "README.md":
                 continue
             seen.add(f.name)
-            fm, body = docs.split_fm(f.read_text(encoding="utf-8"))
+            fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
             required = [_norm_heading(m.group(2)) for line in body.splitlines()
                         if (m := HEADING.match(line)) and len(m.group(1)) == 2 and not m.group(3)]
             out.append({"name": f.stem, "type": fm.get("type"), "for": fm.get("x-skeleton-for"), "required": required})
@@ -341,7 +342,7 @@ def skeleton_for(path: str, page_type: str, known: list[dict]) -> dict | None:
 
 
 def structure_issues(path: str, text: str, known: list[dict]) -> list[str]:
-    fm, body = docs.split_fm(text)
+    fm, body = frontmatter.split_fm(text)
     kind, out = fm.get("type"), []
     if kind not in TYPES:
         out.append(f"type '{kind}' is not one of {', '.join(TYPES)}" if kind else "no type in the frontmatter")

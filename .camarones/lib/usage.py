@@ -11,6 +11,7 @@ from datetime import date, datetime
 from functools import lru_cache
 
 from .common import ROOT, CACHE, WORK, WS_FILE, run, out, load_json, save_json
+from .domain.docs import trust_levels
 
 DIR = WORK / "usage"
 SETTING = CACHE / "usage.json"
@@ -135,7 +136,7 @@ def _doc_commits(keys: list[str]) -> dict[str, tuple[int, set]]:
 def _health() -> tuple[dict, list[str]]:
     from . import docs, plan
     rows = docs.collect() if (ROOT / "docs").exists() else []
-    s = docs.summary(rows)
+    s = trust_levels.summary(rows)
     done, total = plan.progress() if plan.PLAN.exists() else (0, 0)
     try:
         stale = sum(1 for c in docs.changes().values() if c.get("status") in ("changed", "history-rewritten"))

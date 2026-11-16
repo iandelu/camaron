@@ -35,6 +35,7 @@ from . import ARCHIVE, BOARD, TASKS
 from .deps import Node, norm_touch
 from .items import load_dir
 from .state import id_key
+from ..domain.docs import frontmatter
 
 log = logging.getLogger("camaron.board.index")
 
@@ -204,11 +205,11 @@ def _build(conn: sqlite3.Connection, snap: str) -> None:
     cites, pages = [], []
     for logical, f in docs.iter_docs():
         try:
-            fm, body, _ = docs.parse_fm(f.read_text(encoding="utf-8"))
+            fm, body, _ = frontmatter.parse_fm(f.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError):
             continue
         page = _page_touch(logical, f)
-        pages.append((page, str(fm.get("title") or docs.first_heading(body) or logical)))
+        pages.append((page, str(fm.get("title") or frontmatter.first_heading(body) or logical)))
         for rp in sorted({s for s in map(_source, _strings(fm.get("x-sources"))) if s}):
             cites.append((page, rp[0], rp[1], groups.of(*rp)))
 

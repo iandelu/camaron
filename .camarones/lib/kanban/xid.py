@@ -8,6 +8,7 @@ import secrets
 
 from .. import docs
 from .ops import BoardError
+from ..domain.docs import frontmatter, logical_paths
 
 PREFIXES = {"flows": "FLOW", "domain": "DOM", "architecture": "ARCH"}
 ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"           # base32 without i, l, o, u
@@ -35,7 +36,7 @@ def index() -> dict[str, str]:
     found: dict[str, str] = {}
     named: dict[str, str] = {}
     for logical, f in docs.iter_docs():
-        fm = docs.parse_fm(_read(f)[1])[0]
+        fm = frontmatter.parse_fm(_read(f)[1])[0]
         if fm.get("x-id"):
             found.setdefault(str(fm["x-id"]), logical)
         dec = _decision(logical)
@@ -69,18 +70,18 @@ def _new_id(logical: str, taken: dict[str, str]) -> str:
 def ensure_xid(logical: str) -> str:
     """The page's x-id; written as the last frontmatter line if it has none (a page without frontmatter gets one)."""
     pages = _pages()
-    logical = docs.link_target(logical, pages)          # a wiki page's pre-4.81 repos/<repo>/… path still names it
+    logical = logical_paths.link_target(logical, pages)  # a wiki page's pre-4.81 repos/<repo>/… path still names it
     f = pages.get(logical)
     if f is None:
         raise BoardError(f"no page {logical} in the docs")
     bom, text = _read(f)
-    fm, _, valid = docs.parse_fm(text)
+    fm, _, valid = frontmatter.parse_fm(text)
     if not valid:
         raise BoardError(f"{logical}: its frontmatter is unreadable, fix it before linking")
     if fm.get("x-id"):
         return str(fm["x-id"])
     new = _new_id(logical, index())
-    m = docs.FM_RE.match(text)
+    m = frontmatter.FM_RE.match(text)
     if m:
         at = m.end(1) - (1 if m.group(1).endswith("\r") else 0)
         eol = "\r\n" if m.group(1).endswith("\r") else "\n"
@@ -107,7 +108,7 @@ def _body(logical: str) -> str:
     f = docs.find_page(logical, _pages())
     if f is None:
         raise BoardError(f"no page {logical} in the docs")
-    return docs.parse_fm(_read(f)[1])[1]
+    return frontmatter.parse_fm(_read(f)[1])[1]
 
 
 def _section(body: str, section: str | None) -> tuple[str | None, str]:
@@ -121,7 +122,7 @@ def _section(body: str, section: str | None) -> tuple[str | None, str]:
 
 
 def section_hash(logical: str, section: str | None) -> str:
-    return docs.body_sha(_section(_body(logical), section)[1])[:8]
+    return frontmatter.body_sha(_section(_body(logical), section)[1])[:8]
 
 
 def resolve_ref(ref: str) -> str:
@@ -134,7 +135,7 @@ def resolve_ref(ref: str) -> str:
     if logical is None:
         raise BoardError(f"unknown page {p['xid']} (use an x-id or a path like flows/payments.md)")
     slug, text = _section(_body(logical), p["section"])
-    return format_link(ensure_xid(logical), slug, docs.body_sha(text)[:8])
+    return format_link(ensure_xid(logical), slug, frontmatter.body_sha(text)[:8])
 
 
 def _fresh() -> dict[str, dict] | None:

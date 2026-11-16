@@ -15,14 +15,14 @@ def write(kit, rel: str, text: str):
 
 
 def test_unquoted_colon_in_a_value_is_read(kit):
-    fm, body = kit.docs.split_fm(GLOSSARY)
+    fm, body = kit.frontmatter.split_fm(GLOSSARY)
     assert fm["description"] == "Lenguaje ubicuo de chub: término, definición, nombre en el código."
     assert fm["tags"] == ["domain", "glossary"] and fm["x-sources"] == ["api:pom.xml"]
     assert body == "# Glosario\n"
 
 
 def test_broken_frontmatter_never_leaks_into_the_body(kit):
-    fm, body = kit.docs.split_fm("---\ntitle: [unclosed\n  - : :\n---\n# Doc\n")
+    fm, body = kit.frontmatter.split_fm("---\ntitle: [unclosed\n  - : :\n---\n# Doc\n")
     assert fm == {} and body == "# Doc\n"
 
 

@@ -19,6 +19,7 @@ from urllib.parse import unquote
 
 from .common import DOCS, rel_file, repo_dir
 from . import diagrams, docs, genblocks, inventory, quality, quickarch, schemas
+from .domain.docs import frontmatter
 
 SYSTEM = "_system"                                                          # reserved repo name: the whole system
 HOME = "index.md"
@@ -114,7 +115,7 @@ def old_pages() -> list[Path]:
     names = set(docs.repo_names())
     found = [*DOCS.glob("repos/*/reference.md"), *DOCS.glob("repos/*/diagrams.md")]
     found += [f for f in DOCS.glob("data/*.md") if f.stem in names
-              and docs.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0].get("x-generated") is True]
+              and frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0].get("x-generated") is True]
     found += [f for f in (DOCS / "architecture" / "first-look.md", DOCS / "architecture" / "system-map.md") if f.is_file()]
     return sorted(found)
 
@@ -204,7 +205,7 @@ def _page(title: str, description: str, tags: list[str], draw: _Draw, tldr: str,
     fm = {"type": "overview", "title": title, "description": description, **({"tags": tags} if tags else {}),
           "x-sources": list(dict.fromkeys(draw.sources)), "x-owner": "ai", "x-generated": True}
     details = f"{HOW}\n{DETAILS.format(tutorial=tutorial)}\n:::"
-    return docs.join_fm(fm, f"# {title}\n\n> **TL;DR:** {tldr}\n\n{body}\n\n{details}\n")
+    return frontmatter.join_fm(fm, f"# {title}\n\n> **TL;DR:** {tldr}\n\n{body}\n\n{details}\n")
 
 
 def home_page(memo: dict, skip: set[Key] = frozenset()) -> str | None:
@@ -295,8 +296,8 @@ def kit_only(text: str, kit_text: str) -> bool:
     `kit_text`'s own frontmatter and blocks (a person's copy of a table row is theirs), a heading (`#… `), the TL;DR
     line under the H1, a bare `:::`, or a list item that is only a relative link to a `MORE` page. Any other `>`, `:::`
     or list line is someone's."""
-    kit = {line.strip() for line in _outside_blocks(docs.split_fm(kit_text)[1]).splitlines()}
-    lines = [line.strip() for line in _outside_blocks(docs.split_fm(text)[1]).splitlines()]
+    kit = {line.strip() for line in _outside_blocks(frontmatter.split_fm(kit_text)[1]).splitlines()}
+    lines = [line.strip() for line in _outside_blocks(frontmatter.split_fm(text)[1]).splitlines()]
     tldr = _tldr(lines)
     return all(not line or line in kit or HEADING_LINE.match(line) or i == tldr or line == ":::" or _more_link(line)
                for i, line in enumerate(lines))
@@ -362,21 +363,21 @@ def _rewrite(rel: str, repo: str, old: str, fresh: str, scan: genblocks.Scanner)
     so are the blocks the page does not own (another repo's, or a kind another page holds: moved here, so the page they
     left skips them). The frontmatter is the fresh one with the old `KEPT_FM` keys and any key the fresh one lacks;
     `x-sources` is always the fresh one."""
-    old_fm, old_body = docs.split_fm(old)
-    fm, body = docs.split_fm(fresh)
+    old_fm, old_body = frontmatter.split_fm(old)
+    fm, body = frontmatter.split_fm(fresh)
     for m, state, _body in genblocks.states(old_body, scan):
         owned = m["repo"] == repo and TARGET.get(m["kind"], (None,))[0] == _template(rel)
         if m["confirmed"] or state in ("edited", "unknown") or not owned:
             body = place(body, m[0], diagrams._key(m))
     fm.update({k: old_fm[k] for k in KEPT_FM if k in old_fm})
     fm.update({k: v for k, v in old_fm.items() if k not in fm})
-    return docs.join_fm(fm, body)
+    return frontmatter.join_fm(fm, body)
 
 
 def _blocks_only(rel: str, repo: str, old: str, fresh: str | None, scan: genblocks.Scanner) -> str:
     """Rule 5: only the page's blocks brought up to date (`diagrams._edit_page` with the page's `TARGET` pairs, the
     missing ones put by `place`, the folds and sections a drop emptied removed); its TL;DR and every other line stay."""
-    fm, body, _valid = docs.parse_fm(old)
+    fm, body, _valid = frontmatter.parse_fm(old)
     managed = [(h, kind) for kind, (page, h, _s) in TARGET.items() if page == _template(rel)]
     kinds = {kind for _h, kind in managed}
     wanted = [diagrams._key(m) for m in genblocks.BLOCK_RE.finditer(fresh or "")]
@@ -386,7 +387,7 @@ def _blocks_only(rel: str, repo: str, old: str, fresh: str | None, scan: genbloc
     if new_body == body:
         return old
     if sources and fm.get("x-generated"):
-        return docs.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
+        return frontmatter.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
     return old[:len(old) - len(body)] + new_body
 
 
@@ -436,7 +437,7 @@ def _write_new(log=lambda _: None, exclude: frozenset[Path] = frozenset(),
         if old is None:
             new = fresh
         else:
-            fm, body, _valid = docs.parse_fm(old)
+            fm, body, _valid = frontmatter.parse_fm(old)
             if fm.get("x-owner") == "human":
                 continue
             if fm.get("x-generated") is not True and not genblocks.BLOCK_RE.search(body):
@@ -508,7 +509,7 @@ def _status(f: Path) -> str:
     never written), `kit` (`x-generated: true` or holding a block: `_write_new` writes it) or `draft` (an agent's page
     with no block, `x-owner: ai` or no `x-owner` at all, the kit's default as in `doc_status` and the 4.x skeletons:
     `adopt` adds the blocks, nothing else)."""
-    fm, body, _valid = docs.parse_fm(f.read_text(encoding="utf-8"))
+    fm, body, _valid = frontmatter.parse_fm(f.read_text(encoding="utf-8"))
     if _persons(fm):
         return "closed"
     return "kit" if fm.get("x-generated") is True or genblocks.BLOCK_RE.search(body) else "draft"
@@ -516,7 +517,7 @@ def _status(f: Path) -> str:
 
 def _persons_page(f: Path, what: str) -> str:
     """Why `adopt` cannot put `what` in the person's page `f`, with the key that makes it theirs and how to go on."""
-    why = _persons(docs.split_fm(f.read_text(encoding="utf-8"))[0])
+    why = _persons(frontmatter.split_fm(f.read_text(encoding="utf-8"))[0])
     return (f"{rel_file(f)} is a person's page ({', '.join(k for k, _u in why)}): add {what} by hand, or "
             f"{_join([u for _k, u in why])} and run --adopt again")
 
@@ -555,7 +556,7 @@ def _judge(rel: str, text: str, scan: genblocks.Scanner) -> tuple[str | None, li
     or unknown, whatever their state, as (text, key); the keys that must have a home once it is gone: all but the
     others the code no longer has, `gone` diagrams and tables with nothing found, which the new pages drop as 2a drops
     them). The others are drawn fresh."""
-    fm, body, _valid = docs.parse_fm(text)
+    fm, body, _valid = frontmatter.parse_fm(text)
     if fm.get("x-owner") == "human":
         return "owned by a person", [], set()
     if fm.get("x-confirmed"):
@@ -693,8 +694,8 @@ def _relink_page(f: Path, rel: str, gone: set[str]) -> bool | None:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         text = raw.decode("utf-8", errors="replace")
-        return False if any(_removed_target(h, rel, gone) for _a, _b, h in _link_spans(docs.parse_fm(text)[1])) else None
-    _fm, body, _valid = docs.parse_fm(text)
+        return False if any(_removed_target(h, rel, gone) for _a, _b, h in _link_spans(frontmatter.parse_fm(text)[1])) else None
+    _fm, body, _valid = frontmatter.parse_fm(text)
     start = len(text) - len(body)
     blocks = [(m.start(), m.end()) for m in genblocks.BLOCK_RE.finditer(body)]
     hits = [(a, b, t) for a, b, href in _link_spans(body) if (t := _removed_target(href, rel, gone))
@@ -774,12 +775,12 @@ def adopt(log=lambda _: None) -> dict:
     for rel, blocks in puts.items():                                         # every page first, then any deletion
         f = DOCS / rel
         text = f.read_text(encoding="utf-8")
-        fm, body, _valid = docs.parse_fm(text)
+        fm, body, _valid = frontmatter.parse_fm(text)
         new_body = functools.reduce(lambda b, item: _put(b, *item), blocks, body)
         if new_body == body:
             continue
         sources = drafts.get(rel, ((), ()))[1]
-        new = (docs.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
+        new = (frontmatter.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
                if sources else text[:len(text) - len(body)] + new_body)
         f.write_text(new, encoding="utf-8", newline="\n")
         log(f"✔ {rel_file(f)}")

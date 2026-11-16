@@ -16,6 +16,7 @@ import yaml
 from .core import yamlio
 from .common import DOCS, WORK, repo_dir, load_json, save_json
 from . import docs, radar
+from .domain.docs import frontmatter
 
 PAGE = DOCS / "overview" / "libraries.md"
 DATA = WORK / "inventory.json"
@@ -540,7 +541,7 @@ def render(result: dict) -> str:
     lines += [pages.HOW, "Read from each repo's manifests and lockfiles with no AI. `camaron inventory --cves` adds the known "
               "vulnerabilities (OSV) and `--latest` each library's latest stable version (public registries); the portal's "
               "Libraries tab filters this list.", ":::", ""]
-    return docs.join_fm(fm, "\n".join(lines))
+    return frontmatter.join_fm(fm, "\n".join(lines))
 
 
 def run(log=print, cves: bool = False, latest: bool = False) -> Path:
@@ -568,14 +569,14 @@ def run(log=print, cves: bool = False, latest: bool = False) -> Path:
     else:
         result["latest"] = last.get("latest")
     save_json(DATA, result)
-    old = docs.split_fm(PAGE.read_text(encoding="utf-8"))[0] if PAGE.exists() else {}
+    old = frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))[0] if PAGE.exists() else {}
     if old.get("x-owner") == "human":
         log(f"· {PAGE.name} is owned by a human: not rewritten")
         return PAGE
     text = render(result)
     if old.get("x-confirmed"):
-        fm, body = docs.split_fm(text)
-        text = docs.join_fm({**fm, "x-confirmed": old["x-confirmed"]}, body)
+        fm, body = frontmatter.split_fm(text)
+        text = frontmatter.join_fm({**fm, "x-confirmed": old["x-confirmed"]}, body)
     PAGE.parent.mkdir(parents=True, exist_ok=True)
     PAGE.write_text(text, encoding="utf-8", newline="\n")
     log(f"✔ {len(result['libraries'])} libraries in {len({r['repo'] for r in result['libraries']})} repos")

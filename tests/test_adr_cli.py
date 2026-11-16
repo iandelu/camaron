@@ -80,7 +80,7 @@ def test_accept_decides_as_the_git_user_and_takes_the_attendees_given(kit, adr):
     out = json.loads(r.stdout)
     assert out["status"] == "accepted" and out["state"]["decided"]["by"] == "Test"
     assert "LA, MP" in out["sections"]["decided_by"]
-    fm, _ = kit.docs.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
+    fm, _ = kit.frontmatter.split_fm((kit.root / "docs" / out["path"]).read_text(encoding="utf-8"))
     assert fm["x-owner"] == "human" and fm["x-confirmed"]["by"] == "Test"
     assert "0001  accepted  Sessions in Redis" in cli(kit, "list").stdout
 

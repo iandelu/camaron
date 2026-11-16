@@ -445,6 +445,7 @@ class Status(Command):
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import docs
+        from lib.domain.docs import trust_levels
         rows = docs.collect()
         if args.json:
             print(json.dumps(rows, indent=2, ensure_ascii=False))
@@ -454,7 +455,7 @@ class Status(Command):
                 extra = ([f"ORPHAN({len(r['orphan_sources'])})"] if r["orphan_sources"] else []) + \
                         [f"{k}:{v}" for k, v in r["i18n"].items() if v != "current"]
                 print(f"{icon[r['trust']]} {r['path']:<60} {' '.join(extra)}")
-            s = docs.summary(rows)
+            s = trust_levels.summary(rows)
             print(f"\n{s['total']} docs — confirmed {s['confirmed']}, needs-reconfirm {s['needs-reconfirm']}, "
                   f"draft {s['draft']}, orphans {s['orphans']}, untranslated {s['untranslated']}")
         return 0

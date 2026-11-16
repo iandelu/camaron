@@ -118,7 +118,7 @@ def test_write_creates_a_reference_page_per_repo(kit, gb):
     assert "docs/repos/api/reference.md" in written
     text = (kit.root / "docs" / "repos" / "api" / "reference.md").read_text(encoding="utf-8")
     assert "<!-- generated:env repo=api sha=" in text and "`DB_HOST`" in text and "`./mvnw test`" in text
-    fm, _ = kit.docs.split_fm(text)
+    fm, _ = kit.frontmatter.split_fm(text)
     assert "api:src/main/resources/openapi.yml" in fm["x-sources"] and fm["x-generated"] is True
     _, warns = kit.quality.check_structure(kit.docs.collect())
     assert not [w for w in warns if "reference.md" in w]

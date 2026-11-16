@@ -71,7 +71,7 @@ def test_links_written_for_the_old_wiki_paths_keep_resolving(kit):
 
 def test_link_target_maps_a_resolved_link_to_a_page(kit):
     known = {"repos/api/index.md", "flows/orders.md", "wikis/api/index.md", "wikis/api/quickstart.md"}
-    t = kit.docs.link_target
+    t = kit.logical_paths.link_target
     assert t("docs/flows/orders.md", known) == "flows/orders.md"
     assert t("flows/orders.md", known) == "flows/orders.md"
     assert t("repos/api/quickstart.md", known) == "wikis/api/quickstart.md"   # old wiki path, no docs page there
@@ -106,7 +106,7 @@ def test_freshness_stamps_under_the_old_wiki_path_carry_over(kit):
     from lib.harness import freshness
     work = freshness.FILE
     work.parent.mkdir(parents=True, exist_ok=True)
-    sha = kit.docs.body_sha(kit.docs.split_fm(text)[1])                     # unchanged since its stamp
+    sha = kit.frontmatter.body_sha(kit.frontmatter.split_fm(text)[1])                     # unchanged since its stamp
     old = {"body_sha": sha, "at": "2026-01-01T00:00:00Z", "sources": {"api:pom.xml": freshness.fingerprint("api:pom.xml")},
            "flag": {"reason": "wrong port", "by": "agent", "at": "2026-01-02T00:00:00Z"}}
     work.write_text(json.dumps({"v": 1, "pages": {"repos/api/quickstart.md": old}}), encoding="utf-8")
@@ -138,7 +138,7 @@ def test_an_ai_draft_copy_under_the_old_wiki_path_is_kept(kit):
     drafts.FILE.parent.mkdir(parents=True, exist_ok=True)
     ai = "# Quickstart\n\nThe AI's words.\n"
     text = (root / "wikis" / "api" / "quickstart.md").read_text(encoding="utf-8")
-    now = kit.docs.body_sha(kit.docs.split_fm(text)[1])                      # the page has not changed since
+    now = kit.frontmatter.body_sha(kit.frontmatter.split_fm(text)[1])                      # the page has not changed since
     drafts.FILE.write_text(json.dumps({"pages": {"repos/api/quickstart.md": {
         "sha": now, "body": ai, "unit": "repo-wiki:api", "at": "2026-01-01T00:00:00Z", "confirmations": []}}}),
         encoding="utf-8")

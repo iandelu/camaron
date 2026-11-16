@@ -34,6 +34,7 @@ from . import agents as agent_sessions                      # noqa: E402
 FIRSTRUN = CACHE / "firstrun.json"     # first-run wizard position (so closing the window never loses it)
 from . import onboard                                                                 # noqa: E402
 from .onboard import STEPS, LEGACY_STEPS, JOIN_STEPS, first_run_mode                 # noqa: E402,F401 — the first-run state lives in onboard
+from .domain.docs import frontmatter, trust_levels
 ORANGE = "#ff7a2f"
 MENU_LABELS = {"arch": "a_menu", "stack": "sk_menu", "creds": "k_menu"}   # menu actions whose label is not m_<action>
 MENU_DEFAULT = {"resume": "resume", "next": "next", "review": "review", "done": "portal"}   # plan.next_step → the cursor
@@ -943,7 +944,7 @@ class W:
         data = plan.load()
         d, t = plan.progress(data)
         rows = docs.collect() if (ROOT / "docs").exists() else []
-        s = docs.summary(rows)
+        s = trust_levels.summary(rows)
         tbl = Table.grid(padding=(0, 2))
         tbl.add_row("[bold]Proyecto[/]" if self.lang == "es" else "[bold]Project[/]", ws["project"]["name"])
         tbl.add_row("Repos", ", ".join(docs.repo_names()) or "—")
@@ -1922,7 +1923,7 @@ class W:
         while True:
             self.banner()
             rows = docs.collect()
-            s = docs.summary(rows)
+            s = trust_levels.summary(rows)
             errors, _ = docs.check()
             fb = docs.pending_feedback()
             ch = {k: v for k, v in docs.changes().items() if v.get("status") in ("changed", "history-rewritten")}
@@ -2012,7 +2013,7 @@ class W:
         f = (ROOT / r["file"]).resolve()
         es_file = docs.translation_file(r["path"], "es")
         use_es = show_es and es_file.exists()
-        _, body = docs.split_fm((es_file if use_es else f).read_text(encoding="utf-8"))
+        _, body = frontmatter.split_fm((es_file if use_es else f).read_text(encoding="utf-8"))
         lines = body.strip().splitlines()
         limit = max(console.size.height - 22, 10)
         more = len(lines) - limit

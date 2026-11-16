@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .common import DOCS, rel_file, repo_dir
 from . import quickarch
+from .domain.docs import frontmatter
 
 KINDS = ("states", "endpoints-map", "context", "messaging")
 NODE_LIMIT = 25                                                             # a bigger diagram is a wall, not a picture
@@ -540,7 +541,7 @@ def _new_page(repo: str, sections: list[tuple[str, list[Key]]], draw) -> str:
                 "person confirms.")
     fm = {"type": "overview", "title": title, "description": description, **({"tags": tags} if tags else {}),
           "x-sources": list(dict.fromkeys(sources)), "x-owner": "ai", "x-generated": True}
-    return docs.join_fm(fm, f"# {h1}\n\n> **TL;DR:** {tldr}\n{body}")
+    return frontmatter.join_fm(fm, f"# {h1}\n\n> **TL;DR:** {tldr}\n{body}")
 
 
 def write_pages(log=lambda _: None) -> list[str]:
@@ -576,7 +577,7 @@ def write_pages(log=lambda _: None) -> list[str]:
         wanted = [k for _h, keys in per_section for k in keys]
         if f.exists():
             text = f.read_text(encoding="utf-8")
-            fm, body, _valid = docs.parse_fm(text)
+            fm, body, _valid = frontmatter.parse_fm(text)
             if fm.get("x-owner") == "human":
                 continue
             if fm.get("x-generated") is not True and not _page_blocks(body):
@@ -587,7 +588,7 @@ def write_pages(log=lambda _: None) -> list[str]:
                 continue
             new = text[:len(text) - len(body)] + new_body
             if sources and fm.get("x-generated"):
-                new = docs.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
+                new = frontmatter.join_fm({**fm, "x-sources": list(dict.fromkeys([*(fm.get("x-sources") or []), *sources]))}, new_body)
         elif wanted:
             new = _new_page(repo, [(h, keys) for h, keys in per_section if keys], draw)
         else:

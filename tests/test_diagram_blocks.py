@@ -467,7 +467,7 @@ def test_write_pages_creates_the_system_map_and_repo_pages(dg):
     written = dg.mod.write_pages()
     assert sorted(written) == ["docs/architecture/system-map.md", "docs/repos/api/diagrams.md"]
     for rel, h1 in (("architecture/system-map.md", "# System map"), ("repos/api/diagrams.md", "# api diagrams")):
-        fm, body = dg.kit.docs.split_fm(page_text(dg, rel))
+        fm, body = dg.kit.frontmatter.split_fm(page_text(dg, rel))
         assert fm["x-generated"] is True and fm["x-owner"] == "ai" and fm["type"] == "overview" and fm["x-sources"]
         assert h1 in body and "> **TL;DR:**" in body and "no AI" in body and "camaron diagrams" in body
     system = page_text(dg, "architecture/system-map.md")

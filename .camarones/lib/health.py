@@ -23,6 +23,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from .common import CACHE, load_json, save_json
+from .domain.docs import frontmatter
 
 MAX_REPORT_BYTES = 5_000_000
 REPORT_GLOBS = (("jacoco", "target/site/jacoco/jacoco.xml"), ("jacoco", "build/reports/jacoco/**/*.xml"),
@@ -175,7 +176,7 @@ def debt_items(repos: list[str]) -> dict[str, list[dict]]:
     pages = [(p, f) for p, f in pages if f.is_file()]
     trust = {r["path"]: r["trust"] for r in docs.collect()} if pages else {}
     for page, f in pages:
-        _, body = docs.split_fm(f.read_text(encoding="utf-8"))
+        _, body = frontmatter.split_fm(f.read_text(encoding="utf-8"))
         table = _first_table(body, "Items" if page.endswith("tech-debt.md") else None)
         if len(table) < 2:
             continue

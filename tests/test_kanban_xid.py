@@ -35,6 +35,7 @@ def test_xid_prefix_by_folder(wired):
 
 def test_confirmed_page_stays_confirmed(wired):
     from lib import docs
+    from lib.domain.docs import frontmatter, trust_levels
     from lib.kanban import xid
     f = page(wired, "flows/payments.md", PAYMENTS)
     docs.confirm(["docs/flows/payments.md"], "ana")
@@ -45,12 +46,12 @@ def test_confirmed_page_stays_confirmed(wired):
     before = raw(f)
     assert "# human note" in before
     new = xid.ensure_xid("flows/payments.md")
-    fm, body, _ = docs.parse_fm(raw(f))
-    assert docs.trust_of(fm, docs.body_sha(body)) == "confirmed"
+    fm, body, _ = frontmatter.parse_fm(raw(f))
+    assert trust_levels.trust_of(fm, frontmatter.body_sha(body)) == "confirmed"
     assert fm["x-id"] == new
     kept = [l for l in before.split("---\n")[1].splitlines()]
     assert [l for l in raw(f).split("---\n")[1].splitlines() if l != f"x-id: {new}"] == kept
-    assert docs.parse_fm(before)[1] == body
+    assert frontmatter.parse_fm(before)[1] == body
 
 
 def test_page_without_frontmatter_gets_one(wired):

@@ -14,6 +14,7 @@ from lib.core.paths import DOCS, ROOT
 from lib.core.process import out
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
+from lib.domain.docs import frontmatter
 
 
 def api_ask(question: str) -> dict:
@@ -29,7 +30,7 @@ def api_ask(question: str) -> dict:
         f = docs.find_page(h["path"])
         if not f:
             continue
-        body = docs.split_fm(f.read_text(encoding="utf-8"))[1]
+        body = frontmatter.split_fm(f.read_text(encoding="utf-8"))[1]
         found = docs.section_text(body, h["section"]) if h.get("section") else None
         tldr = docs.tldr(body)
         whole = body.replace(tldr, "", 1) if tldr else body              # the portal shows the TL;DR above the text
@@ -115,7 +116,7 @@ def create(path: str, title: str) -> dict:
     if f.exists():
         raise ValueError(f"{path} already exists")
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(docs.join_fm({"title": title, "description": "", "type": "guide", "x-owner": "human"},
+    f.write_text(frontmatter.join_fm({"title": title, "description": "", "type": "guide", "x-owner": "human"},
                               f"\n# {title}\n\n"), encoding="utf-8")
     return read(path)
 
