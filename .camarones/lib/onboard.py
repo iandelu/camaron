@@ -22,7 +22,6 @@ STEPS = ("name", "repos", "tools", "setup", "stack", "arch", "intro")   # first-
 LEGACY_STEPS = ("name", "repos", "tools", "setup", "arch", "intro")     # firstrun.json before 3.3 kept only the index
 JOIN_STEPS = ("tools", "setup", "intro")   # joining a team's cam-docs: the rest is shared and already decided
 GREENFIELD_STEPS = ("name", "repos", "tools", "setup", "intro")   # nothing to read yet: no stack scan, no C4 draft
-WS_HEADER = "# Camarón workspace: which repos form this project. Edit freely, then run sync.\n"
 
 # a file that says "there is code here"; *.csproj is matched by suffix (its name is the project's)
 MANIFESTS = ("pom.xml", "build.gradle", "build.gradle.kts", "package.json", "pyproject.toml", "go.mod", "Cargo.toml",
@@ -163,12 +162,6 @@ def inspect(folder: Path) -> dict:
 
 
 # ---------- first-run state: one implementation for the CLI wizard and the app ----------
-def write_workspace(ws_file: Path, ws: dict) -> None:
-    ws_file.parent.mkdir(parents=True, exist_ok=True)   # global install: .camarones/ may not exist yet
-    ws_file.write_text(WS_HEADER + yaml.safe_dump(ws, sort_keys=False, allow_unicode=True), encoding="utf-8",
-                       newline="\n")
-
-
 def name_project(ws: dict, name: str, fallback: str) -> dict:
     """The name step's whole effect on `ws`: name, id (a slug of it), canonical language and translations defaults."""
     p = ws.setdefault("project", {})
@@ -233,7 +226,7 @@ def state() -> dict:
     from .common import ROOT
     saved = load_json(firstrun_file(ROOT), {})
     m = mode(saved)
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     kind = kind_of(ws)
     ids = [s for s in steps("new" if m == "done" else m, kind) if s != "name"]
     step = resume_id(saved)
@@ -275,7 +268,7 @@ def start(folder: Path, name: str | None = None) -> Path:
     root = projects.adopt(Path(info["workspace"]), label)        # registers it too
     ws = name_project({"project": {}, "repos": info["repos"]}, label, info["name"])
     ws["project"]["kind"] = info["kind"]
-    write_workspace(Ctx.for_root(root).ws_file, ws)             # this process's module globals point at another project
+    services.current().workspace.write_workspace(Ctx.for_root(root).ws_file, ws)  # this process's module globals point at another project
     save_position(root, "repos", "new")
     return root
 
@@ -368,7 +361,7 @@ def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
     cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done."""
     if cancelled and cancelled():
         return False
-    services.current().templates.init_templates(docs.workspace()["project"]["name"], log=lambda _: None)   # `log` counts setup's own steps
+    services.current().templates.init_templates(services.current().workspace.workspace()["project"]["name"], log=lambda _: None)  # `log` counts setup's own steps
     try:
         ok = services.current().setup.setup(log=log)
     finally:
@@ -383,7 +376,7 @@ def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
 
 def missing_repos() -> list[str]:
     """Repos the workspace lists with a URL and no clone on this machine yet."""
-    return [r["name"] for r in docs.workspace()["repos"] if r.get("url") and not (repo_dir(r["name"]) / ".git").exists()]
+    return [r["name"] for r in services.current().workspace.workspace()["repos"] if r.get("url") and not (repo_dir(r["name"]) / ".git").exists()]
 
 
 # ---------- architecture (C4) ----------
@@ -448,7 +441,7 @@ def set_repos(rows: list) -> dict:
     least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate`."""
     if not isinstance(rows, list):
         raise ValueError("repos")
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     old = {r["name"]: r for r in ws["repos"]}
     out, seen = [], set()
     for r in rows:
@@ -468,7 +461,7 @@ def set_repos(rows: list) -> dict:
     if not out and kind_of(ws) == "legacy":
         raise ValueError("repos")
     ws["repos"] = out
-    docs.save_workspace(ws)
+    services.current().workspace.save_workspace(ws)
     return state()
 
 
@@ -552,5 +545,5 @@ def done() -> dict:
     """Close the first run and checkpoint what it wrote."""
     from .common import ROOT
     m = mode(load_json(firstrun_file(ROOT), {}))
-    finish(ROOT, len(steps("new" if m == "done" else m, kind_of(docs.workspace()))))
+    finish(ROOT, len(steps("new" if m == "done" else m, kind_of(services.current().workspace.workspace()))))
     return {"committed": bool(services.current().share.checkpoint_commit("first setup"))}

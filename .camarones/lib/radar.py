@@ -15,8 +15,9 @@ import yaml
 
 from .core import yamlio
 from .common import CACHE, DOCS, repo_dir, save_json
-from . import docs, quickarch
+from . import quickarch
 from .domain.docs import frontmatter
+from .adapters.stores import workspace
 
 MAX_ENTRIES, MAX_BYTES, MAX_EVIDENCE = 20_000, 300_000, 5
 PAGE = DOCS / "overview" / "tooling.md"
@@ -194,7 +195,7 @@ def scan_repo(name: str, repo: Path) -> list[dict]:
 def scan() -> dict:
     """{repo: {stack, detected_stack, kind, tools: [{id, label, category, evidence: ["repo:path"], info}]}}."""
     out = {}
-    for r in docs.workspace()["repos"]:
+    for r in workspace.workspace()["repos"]:
         repo = repo_dir(r["name"])
         if not repo.is_dir():
             continue
@@ -206,7 +207,7 @@ def scan() -> dict:
 
 def set_stack(repo: str, text: str | None) -> None:
     """Fix a repo's stack in workspace.yaml (None or empty → back to the detected one)."""
-    ws = docs.workspace()
+    ws = workspace.workspace()
     row = next((r for r in ws["repos"] if r["name"] == repo), None)
     if row is None:
         raise ValueError(f"Unknown repo: {repo}")
@@ -214,7 +215,7 @@ def set_stack(repo: str, text: str | None) -> None:
         row["stack"] = text.strip()
     else:
         row.pop("stack", None)
-    docs.save_workspace(ws)
+    workspace.save_workspace(ws)
 
 
 def describe(t: dict) -> str:

@@ -8,9 +8,10 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from .common import KIT, ROOT, VERSIONS, out
+from .common import KIT, ROOT, VERSIONS, WS_FILE, out
 from . import docs
 from .ports import Log
+from .app import services
 
 KIT_REPO = "https://github.com/iandelu/camarones-documenter.git"
 
@@ -51,7 +52,7 @@ PR_FRESH = {
 
 
 def config() -> dict:
-    ci = (docs.workspace().get("ci") or {}) if docs.WS_FILE.exists() else {}
+    ci = (services.current().workspace.workspace().get("ci") or {}) if WS_FILE.exists() else {}
     return {"target": ci.get("target", "local"), "runner_labels": list(ci.get("runner_labels") or ["self-hosted"]),
             "runner_tags": list(ci.get("runner_tags") or []), "kit_repo": ci.get("kit_repo", KIT_REPO),
             "kit_ref": ci.get("kit_ref", f"v{VERSIONS['kit']}"), "propose_label": ci.get("propose_label", "docs:update")}
@@ -318,7 +319,7 @@ def status(forge: str | None = None) -> dict:
 
 # ---------- install ----------
 def detect_forge() -> str:
-    urls = " ".join(r.get("url", "") for r in docs.workspace()["repos"])
+    urls = " ".join(r.get("url", "") for r in services.current().workspace.workspace()["repos"])
     urls += " " + out(["git", "-C", str(ROOT), "remote", "get-url", "origin"])
     if "github" in urls:
         return "github"

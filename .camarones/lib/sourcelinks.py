@@ -8,10 +8,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from . import docs
 from .common import CAM_DIR, ROOT, out
 from .harness import freshness
 from .history import TICKET
+from .app import services
 
 PULL = re.compile(r"Merge pull request #(\d+)"            # GitHub merge commit
                   r"|\(pull request #(\d+)\)"              # Bitbucket merge commit
@@ -83,7 +83,7 @@ def _repo(name: str | None) -> tuple[Path, str, str]:
     if name in UMBRELLA:
         where, entry = ROOT, {}
     else:
-        entry = next((r for r in docs.workspace().get("repos", []) if r.get("name") == name), {})
+        entry = next((r for r in services.current().workspace.workspace().get("repos", []) if r.get("name") == name), {})
         where = freshness._file(name, "")
     here = where.is_dir()
     url = entry.get("url") or (out(["git", "remote", "get-url", "origin"], cwd=where) if here else "")

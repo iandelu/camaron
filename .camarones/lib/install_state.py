@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .common import CAM_LAYOUT, HOME, ROOT, WORKSPACE, VERSIONS, repo_dir, load_json, save_json
 from .core.process import run, which
+from .app import services
 
 STORE_DIR = HOME / ".camarones" / "install"
 AGENT_DIRS = (".claude", ".codex", ".agents")
@@ -97,8 +98,6 @@ def drift() -> list[dict]:
     """Kit files edited or gone, and links that should point into cam-docs but do not."""
     if not CAM_LAYOUT:
         return []
-    from . import docs
-    from .app import services
     out = []
     expected = {rel: hashlib.sha256(text.encode("utf-8")).hexdigest() for rel, text in services.current().templates.skill_files().items()}
     for rel, want in expected.items():
@@ -120,12 +119,12 @@ def drift() -> list[dict]:
         if why := services.current().links.workspace_off(n):  # "yours": a file of the person's is there, never replaced
             out.append({"path": f"{WORKSPACE.name}/{n}", "state": "not linked", "what": "workspace link", "why": why})
     if "openwiki" in services.current().components.components():
-        for r in docs.repo_names():
+        for r in services.current().workspace.repo_names():
             d = repo_dir(r)
             if d.is_dir() and os.path.realpath(d / "openwiki") != os.path.realpath(ROOT / "wikis" / r):
                 out.append({"path": f"{r}/openwiki", "state": "not linked", "what": "repo wiki link"})
     if "agents" in services.current().components.components() and which("claude"):
-        out += [{"path": r, "state": "not registered", "what": "repo MCP (Claude Code)"} for r in docs.repo_names()
+        out += [{"path": r, "state": "not registered", "what": "repo MCP (Claude Code)"} for r in services.current().workspace.repo_names()
                 if repo_dir(r).is_dir() and not services.current().agent_config.repo_mcp_registered(r)]
     return out
 
@@ -133,18 +132,16 @@ def drift() -> list[dict]:
 def repair(log=print) -> list[dict]:
     """Put back what the kit owns: its skills and agent config, the agent tools' skills, the links. Never touches the
     team's pages or files the kit did not write. Returns what is still off (links held back by trust, say)."""
-    from . import docs
-    from .app import services
     comps = services.current().components.components()
     services.current().setup.wire_umbrella(log, comps)
     if "openwiki" in comps and "agents" in comps:
         learn(services.current().wiki_engine.OPENWIKI_INSTALL, restore=True)
     if "openwiki" in comps:
-        for r in docs.repo_names():
+        for r in services.current().workspace.repo_names():
             if repo_dir(r).is_dir():
                 services.current().links.link_repo_wiki(r, log)
     if "agents" in comps:
-        for r in docs.repo_names():
+        for r in services.current().workspace.repo_names():
             services.current().agent_config.wire_repo_mcp(r, log)
     from . import kanban
     if kanban.enabled():                                  # a joined clone gets the board's merge driver here

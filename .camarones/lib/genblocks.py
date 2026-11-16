@@ -21,6 +21,7 @@ from .core import yamlio
 from .common import DOCS, ROOT, cli_cmd, repo_dir, rel_file
 from . import diagrams, docs, quickarch
 from .domain.docs import frontmatter
+from .app import services
 
 KINDS = ("commands", "env", "endpoints", "topics", "schema")
 DIAGRAM_KINDS = diagrams.KINDS                                              # not in KINDS: they never join a reference page
@@ -321,7 +322,7 @@ class Scanner:
     the diagrams share (the architecture scan, status enums, endpoint maps, topics): it lives as long as the Scanner."""
 
     def __init__(self):
-        self.repos = set(docs.repo_names())
+        self.repos = set(services.current().workspace.repo_names())
         self.cache: dict[tuple, tuple[str, list[str]] | None] = {}
         self.failed: set[tuple] = set()                                    # diagrams whose drawing raised: no judgement
         self.memo: dict = {}

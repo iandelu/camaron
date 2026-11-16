@@ -52,9 +52,9 @@ def test_the_job_needs_no_ai_and_never_blocks(ci, forge):
 
 
 def test_the_project_config_is_read(kit, ci):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["ci"] = {"target": "self-hosted", "runner_labels": ["self-hosted", "docs"], "runner_tags": ["docs-ai"]}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert ci.config()["runner_tags"] == ["docs-ai"]
     assert "runs-on: [self-hosted, docs]" in ci.render("github")
 

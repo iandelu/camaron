@@ -9,6 +9,7 @@ from urllib.parse import unquote
 from .common import ROOT, DOCS, CACHE, IS_WIN, run, which, load_json, save_json, rel_file
 from . import binaries, docs
 from .domain.docs import directives, frontmatter, logical_paths, page_outline
+from .app import services
 
 Issues = tuple[list[str], list[str]]
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -25,7 +26,7 @@ def pages(rows: list[dict]) -> list[tuple[str, Path, str]]:
     """(logical path, file, lang) for every published page: canonical docs + wikis, and each translation, which the
     portal shows under the canonical logical path (so its relative links resolve against that path too)."""
     out = [(r["path"], ROOT / r["file"], "") for r in rows]
-    for lang in docs.workspace()["project"].get("translations", []):
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
         out += [(r["path"], f, lang) for r in rows if (f := docs.translation_file(r["path"], lang)).is_file()]
     return out
 
@@ -152,7 +153,7 @@ def _gitleaks(args: list[str], cwd: Path | None = None) -> list[dict] | None:
 
 def scan_targets() -> list[Path]:
     """What gets committed and published: docs/ (incl. translations and working notes) and every repo wiki."""
-    return [d for d in [DOCS, *(docs.wiki_dir(n) for n in docs.repo_names())] if d.is_dir()]
+    return [d for d in [DOCS, *(docs.wiki_dir(n) for n in services.current().workspace.repo_names())] if d.is_dir()]
 
 
 def scan_dirs() -> list[dict] | None:
@@ -231,7 +232,7 @@ def glossary(f: Path) -> list[tuple[list[str], list[str]]]:
 
 def check_terms(rows: list[dict], strict: bool = False) -> Issues:
     by_lang = {"": glossary(DOCS / "domain" / "glossary.md")}
-    for lang in docs.workspace()["project"].get("translations", []):
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
         by_lang[lang] = glossary(DOCS / "i18n" / lang / "domain" / "glossary.md")
     if not any(by_lang.values()):
         return [], []

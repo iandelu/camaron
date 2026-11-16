@@ -33,7 +33,7 @@ def test_the_kit_wiring_stays_under_its_budget(wired):
 
 
 def test_doctor_context_json_and_over_budget(wired):
-    ws = wired.docs.workspace(); ws["context"] = {"budget": 10}; wired.docs.save_workspace(ws)
+    ws = wired.services.workspace.workspace(); ws["context"] = {"budget": 10}; wired.services.workspace.save_workspace(ws)
     r = _doctor(wired, "--json")
     assert r.returncode == 0, r.stderr
     data = json.loads(r.stdout)

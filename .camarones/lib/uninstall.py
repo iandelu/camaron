@@ -18,7 +18,7 @@ from .common import KIT, ROOT, HOME, CACHE, CAM_DIR, CAM_LAYOUT, WORKSPACE, WS_F
 from .core.locks import pid_alive
 from .core.paths import WIKI_LOCK
 from .ports import Log
-from . import creds, docs, install_state, migrate, projects, trust
+from . import creds, install_state, migrate, projects, trust
 from .app import services
 
 BACKUP_DIR = Path(tempfile.gettempdir()) / "camarones-backups"
@@ -75,7 +75,7 @@ def forget_repo_mcp(name: str) -> bool:
 def repo_names() -> list[str]:
     """workspace.yaml's repos plus any other git repo in the workspace folder (one dropped from the list may still
     carry an openwiki link)."""
-    names = list(docs.repo_names())
+    names = list(services.current().workspace.repo_names())
     names += sorted(p.name for p in WORKSPACE.iterdir() if p.is_dir() and (p / ".git").exists()
                     and p.name != CAM_DIR and p.name not in names and not p.name.startswith("."))
     return [n for n in names if (WORKSPACE / n / ".git").exists()]
@@ -309,7 +309,7 @@ def main(include_global: bool = False, dry_run: bool = False, yes: bool = False,
     if backup_dir:
         global BACKUP_DIR
         BACKUP_DIR = backup_dir
-    name = docs.workspace()["project"]["name"]
+    name = services.current().workspace.workspace()["project"]["name"]
     print(f"🧹 Uninstall {name} — remove its documentation and every trace of the kit\n")
     for s in steps(include_global, backup, True if yes and keep_board is None else keep_board):
         print(f"  • {s.label}")

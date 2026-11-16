@@ -123,9 +123,9 @@ def test_fresh_pages_are_served_as_before(kit, fresh, mcp):
 
 
 def test_the_warn_policy_serves_with_a_notice(kit, fresh, mcp):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["freshness"] = {"ai_policy": "warn"}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     page(kit, "flows/a.md", [f"api:{API}#L3-L5"], body="# A\n\nThe api calls worker over HTTP.\n")
     fresh.stamp_all()
     code(kit, ORIGINAL.replace("Api {", "Api implements Runnable {"))

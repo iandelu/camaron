@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import datetime as dt
 
-from lib import docs, usage
+from lib import usage
 from lib.app.portal_views import reviewer
 from lib.core.paths import DOCS
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import route
+from lib.app import services
 
 
 def kpis_miss(b: dict) -> dict:
@@ -42,9 +43,9 @@ def api_interview(who: str = "") -> dict:
     try:
         data = questionnaire.load()
     except ValueError as e:
-        return {"available": False, "reason": str(e), "mode": docs.interview_mode(), "chosen": docs.interview_mode_chosen()}
+        return {"available": False, "reason": str(e), "mode": services.current().workspace.interview_mode(), "chosen": services.current().workspace.interview_mode_chosen()}
     mine = next((r for n, r in questionnaire.responses().items() if who and n.strip().lower() == who.strip().lower()), None)
-    return {"available": True, "mode": docs.interview_mode(), "chosen": docs.interview_mode_chosen(), "id": data["id"], "title": data.get("title") or "",
+    return {"available": True, "mode": services.current().workspace.interview_mode(), "chosen": services.current().workspace.interview_mode_chosen(), "id": data["id"], "title": data.get("title") or "",
             "intro": data.get("intro") or "", "questions": data["questions"], "labels": questionnaire.LABELS,
             "status": questionnaire.status(), "user": reviewer(), "mine": mine}
 

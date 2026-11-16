@@ -6,14 +6,14 @@ STACK = "Python 3.10+ · React 19 + Vite 8"
 
 
 def seed(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"][0].update(stack=STACK, wiki=False)
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     return ws["repos"][0]["name"]
 
 
 def row(kit, name):
-    return next(r for r in kit.docs.workspace()["repos"] if r["name"] == name)
+    return next(r for r in kit.services.workspace.workspace()["repos"] if r["name"] == name)
 
 
 def test_cli_setup_keeps_a_repos_stack(kit, monkeypatch):
@@ -37,6 +37,17 @@ def test_wizard_repos_pick_keeps_a_repos_own_keys(kit, fake_wizard):
     assert name in found
     w = fake_wizard(["pick", found, "go"])
     w.banner = lambda *a, **kw: None
-    w.fr_repos(kit.docs.workspace())
+    w.fr_repos(kit.services.workspace.workspace())
     r = row(kit, name)
     assert r["stack"] == STACK and r["wiki"] is False
+
+
+def test_write_workspace_writes_the_path_it_is_given(kit, tmp_path):
+    """onboard writes another project's workspace.yaml through the store (plan Q5): the store writes where it is told,
+    not this process's own WS_FILE, and creates the folder a global install may not have yet."""
+    store = kit.services.workspace
+    target = tmp_path / "other" / ".camarones" / "workspace.yaml"
+    store.write_workspace(target, {"project": {"name": "other"}, "repos": []})
+    text = target.read_text(encoding="utf-8")
+    assert text.startswith(store.WS_HEADER) and "name: other" in text
+    assert not (kit.root / ".camarones" / "workspace.yaml").read_text(encoding="utf-8").count("name: other")

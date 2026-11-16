@@ -18,7 +18,7 @@ TAG = '" hook '
 
 
 def enabled() -> bool:
-    return bool((docs.workspace().get("hooks") or {}).get("method"))
+    return bool((services.current().workspace.workspace().get("hooks") or {}).get("method"))
 
 
 def command(name: str) -> str:
@@ -48,9 +48,9 @@ def apply(st: dict) -> dict:
 
 
 def set_enabled(on: bool) -> None:
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     ws["hooks"] = {**(ws.get("hooks") or {}), "method": bool(on)}
-    docs.save_workspace(ws)
+    services.current().workspace.save_workspace(ws)
     services.current().setup.write_agent_config(services.current().components.components())
 
 

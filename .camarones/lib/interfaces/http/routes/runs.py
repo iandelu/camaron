@@ -6,7 +6,7 @@ import json
 import time
 from typing import BinaryIO
 
-from lib import docs, plan
+from lib import plan
 from lib.app.portal_views import reviewer
 from lib.core.paths import CTX
 from lib.interfaces.http.jobs import start_job
@@ -14,6 +14,7 @@ from lib.interfaces.http.messages import Request, Response, event_stream, json_r
 from lib.interfaces.http.router import Access, route
 from lib.interfaces.http.routes.machine import ui_lang
 from lib.interfaces.http.routes.terminals import unit_terminals
+from lib.app import services
 
 
 STOPPED_AFTER = 5.0                          # seconds of quiet before a run's stream asks whether its run was stopped
@@ -107,7 +108,7 @@ def api_pipeline(lang: str = "") -> dict:
     run = {**runs.summary(latest[0]), **runs.slots(latest[0])} if latest else None
     if run and not run["finished"] and run_stopped(run["run"], locked):
         run.update(finished=True, interrupted=True, running=[], waiting={})
-    return {"units": units, "run": run, "interviews": docs.interview_mode() if docs.interview_mode_chosen() else None}
+    return {"units": units, "run": run, "interviews": services.current().workspace.interview_mode() if services.current().workspace.interview_mode_chosen() else None}
 
 
 def stream_events(run_id: str, offset: int) -> Response:

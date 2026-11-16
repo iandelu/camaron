@@ -46,9 +46,9 @@ def test_drafting_units_do_not_wait_for_the_interviews(discovered):
 
 
 def test_team_interviews_still_wait_for_the_answers_but_drafts_do_not(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["interviews"] = "team"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     kit.plan.sync()
     finish(kit.plan, "setup", "discovery:api", "discovery:web", "discovery:worker", "discovery-cross")
     ready = ready_ids(kit.plan)
@@ -169,9 +169,9 @@ def test_cli_done_on_an_interview_lists_the_units_to_refine(discovered):
 
 
 def test_quick_profile_is_unchanged(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["project"]["profile"] = "quick"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     data = kit.plan.sync()
     assert all(not u.get("soft") for u in data["units"])
 

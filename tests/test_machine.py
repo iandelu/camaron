@@ -121,7 +121,7 @@ def test_the_machine_panel_data(kit, app):
     code, m = call(app + "/api/app/machine")
     assert code == 200
     assert m["settings"]["lang"] == "es" and m["setup_steps"] > 0 and m["kit"]["version"]
-    assert {r["name"] for r in m["repos"]} == set(kit.docs.repo_names())
+    assert {r["name"] for r in m["repos"]} == set(kit.services.workspace.repo_names())
     assert all({"name", "url", "stack", "cloned"} <= set(r) for r in m["repos"])
     assert m["profile"] in ("quick", "full", None)
     assert m["sessions"] == ["canvas", "window"] and isinstance(m["terminals"], bool)
@@ -184,7 +184,7 @@ def test_a_retry_in_the_first_run_is_recorded_only_when_it_worked(kit, fake_wiza
     monkeypatch.setattr(kit.services.setup, "setup", lambda ci=False, log=print, comps=None: worked)
     monkeypatch.setattr(kit.wizard.W, "repo_pointer", lambda self: None)
     monkeypatch.setattr(kit.wizard.W, "ask_usage", lambda self: None)
-    fake_wizard(answers).fr_setup(kit.docs.workspace())
+    fake_wizard(answers).fr_setup(kit.services.workspace.workspace())
     assert (install_state.last_setup() is not None) is recorded
 
 

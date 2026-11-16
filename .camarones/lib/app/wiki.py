@@ -136,7 +136,7 @@ def wiki_old(repo: str) -> bool:
 
 
 def old_wikis() -> list[str]:
-    return [n for n in docs.repo_names() if wiki_old(n)]
+    return [n for n in services.current().workspace.repo_names() if wiki_old(n)]
 
 
 STARTER_MARK = "<!-- camarones:starter-brief -->"
@@ -153,7 +153,7 @@ def starter_brief(repo: str) -> bool:
         return False
     from lib import quickarch, radar
     path = repo_dir(repo)
-    cfg = next((r for r in docs.workspace()["repos"] if r["name"] == repo), {})
+    cfg = next((r for r in services.current().workspace.workspace()["repos"] if r["name"] == repo), {})
     stack = cfg.get("stack") or quickarch.stack(path, quickarch.repo_blob(path)) or "an undetected stack"
     tools = radar.scan_repo(repo, path)
     cats = {t["category"] for t in tools}
@@ -169,7 +169,7 @@ def starter_brief(repo: str) -> bool:
     if "ui" in cats:
         coverage.append("Screens and navigation")
     coverage += COVERAGE[2:]
-    project = docs.workspace()["project"]["name"]
+    project = services.current().workspace.workspace()["project"]["name"]
     text = "\n".join([
         STARTER_MARK,
         f"# {repo} — wiki brief",
@@ -216,10 +216,10 @@ def wiki_brief_ready(repo: str) -> bool:
 def wikis() -> list[dict]:
     from lib import plan
     units = {u["id"]: u["status"] for u in plan.load()["units"]}
-    chosen = docs.wiki_repos()
+    chosen = services.current().workspace.wiki_repos()
     can_run = bool(wiki_engines())
     rows = []
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         pages, nav = wiki_pages(n), wiki_nav(n)
         at, graph_at = viewers.newest(pages), viewers.newest([viewers.VIEWERS / "wiki-graph" / n / "index.html"])
         rows.append({"repo": n, "pages": len(nav["pages"]), "nav": nav, "at": at, "stale": bool(pages) and viewers.repo_changed_at(n) > at,

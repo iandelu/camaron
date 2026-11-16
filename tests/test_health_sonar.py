@@ -238,11 +238,11 @@ def test_a_repo_without_a_project_key_or_not_using_sonar_is_not_read(lib, monkey
 
 
 def test_the_workspace_reader_accepts_the_optional_sonar_key(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     assert "sonar" not in ws                                                  # an old project: nothing to add
     ws["sonar"] = {"host": "https://sonar.example.com"}
-    kit.docs.save_workspace(ws)
-    again = kit.docs.workspace()
+    kit.services.workspace.save_workspace(ws)
+    again = kit.services.workspace.workspace()
     assert again["sonar"] == {"host": "https://sonar.example.com"} and [r["name"] for r in again["repos"]]
 
 

@@ -42,10 +42,10 @@ def doc_file(path: str, lang: str = "") -> Path:
 
 def tree() -> dict:
     rows = docs.collect()
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     return {"project": ws["project"]["name"], "langs": ws["project"].get("translations", []), "reviewer": reviewer(),
             "summary": trust_levels.summary(rows), "feedback": len(docs.pending_feedback()), "kit": VERSIONS["kit"],
-            "repos": docs.repo_names(), "codeGraphs": list(services.current().viewers.code_graphs()),
+            "repos": services.current().workspace.repo_names(), "codeGraphs": list(services.current().viewers.code_graphs()),
             "engines": services.current().wiki.wiki_engines(), "engineHelp": services.current().wiki.wiki_engine_help(),
             "kitGuides": sorted(docs.kit_guides()),
             "sections": docs.SECTIONS, "views": services.current().diagrams.c4_views(), "codeMaps": codemap.available(), "editBase": "",
@@ -112,4 +112,4 @@ def covering(logical: str) -> list[dict]:
 
 def code_map(repo: str) -> dict | None:
     """A repo's code map (the portal's Code map tab); None when the repo is not one of the project's or has none."""
-    return codemap.load(repo) if repo in docs.repo_names() else None
+    return codemap.load(repo) if repo in services.current().workspace.repo_names() else None

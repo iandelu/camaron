@@ -9,7 +9,7 @@ import json, os, re, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 from .common import CTX, KIT, ROOT, WORKSPACE, out, repo_dir, run, uv, which
-from . import docs
+from .app import services
 
 MARKER = "<!-- camaron:docs-propose -->"
 GH = re.compile(r"https?://(?P<host>[^/]+)/(?P<slug>[^/]+/(?P<repo>[^/]+))/pull/(?P<n>\d+)")
@@ -71,7 +71,7 @@ def plan_for(url: str, ref: str | None = None, base: str | None = None, runner: 
     from .harness.ports import RunRequest
     info = parse_url(url)
     repo = os.environ.get("DOCS_REPO_NAME") or info["repo"]
-    if repo not in docs.repo_names():
+    if repo not in services.current().workspace.repo_names():
         raise ProposeError(f"repo '{repo}' is not in workspace.yaml (set DOCS_REPO_NAME if it has another name)")
     local_ref = ref or f"refs/camaron/pr/{info['number']}"
     base = base or _default_base(repo)

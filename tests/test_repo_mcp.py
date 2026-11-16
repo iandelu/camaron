@@ -57,14 +57,14 @@ def test_each_repo_gets_the_docs_mcp_in_claude_codes_local_scope(kit, claude):
     cfg, calls = claude
     from fixtures.builder import snapshot
     before = snapshot(kit.ws / "api")
-    for r in kit.docs.repo_names():
+    for r in kit.services.workspace.repo_names():
         assert kit.services.agent_config.wire_repo_mcp(r, log=lambda _: None) is True
     data = json.loads(cfg.read_text(encoding="utf-8"))
     entry = data["projects"][str((kit.ws / "api").resolve())]["mcpServers"]["camarones"]
     assert entry["env"]["CAMARONES_ROOT"] == str(kit.root) and entry["args"][-1] == "mcp"
     assert all("--scope" in c and c[c.index("--scope") + 1] == "local" for c, _ in calls)
     assert snapshot(kit.ws / "api") == before                                      # nothing written into the repo
-    assert all(kit.services.agent_config.repo_mcp_registered(r) for r in kit.docs.repo_names())
+    assert all(kit.services.agent_config.repo_mcp_registered(r) for r in kit.services.workspace.repo_names())
     calls.clear()
     assert kit.services.agent_config.wire_repo_mcp("api", log=lambda _: None) is False and not calls  # idempotent
 
@@ -86,7 +86,7 @@ def test_doctor_reports_and_repair_restores_a_repo_without_it(kit, claude, monke
 
 def test_uninstall_removes_it(kit, claude):
     cfg, calls = claude
-    for r in kit.docs.repo_names():
+    for r in kit.services.workspace.repo_names():
         kit.services.agent_config.wire_repo_mcp(r, log=lambda _: None)
     from lib import uninstall
     assert any("camarones MCP" in s.label for s in uninstall.steps(backup=False))

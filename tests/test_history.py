@@ -71,7 +71,7 @@ def test_no_history_says_so(kit):
 
 def test_spanish_twin_and_folders(kit):
     history_repos(kit)
-    ws = kit.docs.workspace(); ws["project"]["translations"] = ["es"]; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["project"]["translations"] = ["es"]; kit.services.workspace.save_workspace(ws)
     from lib import history
     assert history.mine(12)["repos"]["api"]["areas"]["Ana"] == "src"
     history.write(12)

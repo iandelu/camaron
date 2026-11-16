@@ -10,6 +10,7 @@ from pathlib import Path
 from .common import CACHE, IS_MAC, IS_WIN, ROOT, run, which
 from . import docs
 from .domain.docs import directives, frontmatter, page_outline
+from .app import services
 
 OUT = CACHE / "export"
 
@@ -124,7 +125,7 @@ text-align:left;vertical-align:top}blockquote{margin:0;padding:.2rem 1rem;border
 
 
 def export_print() -> Path:
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     arts = [f'<article id="{page_outline.slug(r["path"])}"><p class="meta">{htmllib.escape(r["path"])} · {r["trust"]}</p>'
             f"{to_html(body)}</article>" for r, body in pages()]
     OUT.mkdir(parents=True, exist_ok=True)
@@ -223,7 +224,6 @@ def _evidence(ref: str, repo: str) -> tuple[str, int] | None:
 def export_codetour(path: str) -> Path:
     """The flow as a VS Code CodeTour (X10): .tours/<flow>.tour in cam-docs, linked at the workspace root."""
     from .common import WORKSPACE
-    from .app import services
     t = tour(path)
     steps = [{"title": t["title"], "description": t["summary"] or t["title"]}]
     for n, s in enumerate(t["steps"], 1):

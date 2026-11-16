@@ -20,6 +20,7 @@ from urllib.parse import unquote
 from .common import DOCS, rel_file, repo_dir
 from . import diagrams, docs, genblocks, inventory, quality, quickarch, schemas
 from .domain.docs import frontmatter
+from .app import services
 
 SYSTEM = "_system"                                                          # reserved repo name: the whole system
 HOME = "index.md"
@@ -76,13 +77,13 @@ def _repo_facts(name: str, model: dict, names: list[str], memo: dict | None) -> 
 
 def _build_facts(memo: dict | None) -> dict:
     model = diagrams._scan(memo)
-    names = [n for n in docs.repo_names() if repo_dir(n).is_dir() and n in model["repos"]]
+    names = [n for n in services.current().workspace.repo_names() if repo_dir(n).is_dir() and n in model["repos"]]
     repos, sources = {}, set(model["sources"])
     for n in names:
         repos[n], read = _repo_facts(n, model, names, memo)
         sources.update(read)
     inv = inventory.load() or (inventory.scan() if names else {})
-    return {"project": docs.workspace()["project"]["name"], "repos": repos,
+    return {"project": services.current().workspace.workspace()["project"]["name"], "repos": repos,
             "dependencies": len(inv.get("libraries") or []), "sources": sorted(sources)}
 
 
@@ -97,7 +98,7 @@ def facts(memo: dict | None = None) -> dict:
 def repos_block(memo: dict | None = None) -> tuple[str, list[str]] | None:
     """The `repos` block: one line per repo with its stack and what the code states. None when there is no repo or some
     repo is not on this machine (a list of part of the repos would be wrong)."""
-    if not docs.repo_names() or not diagrams._complete():
+    if not services.current().workspace.repo_names() or not diagrams._complete():
         return None
     got = facts(memo)
     lines = []
@@ -112,7 +113,7 @@ def repos_block(memo: dict | None = None) -> tuple[str, list[str]] | None:
 def old_pages() -> list[Path]:
     """The old-layout pages that exist: per-repo `reference.md` and `diagrams.md`, the generated `data/<repo>.md` of a
     workspace repo (a hand-written one is not ours), `architecture/first-look.md` and `architecture/system-map.md`."""
-    names = set(docs.repo_names())
+    names = set(services.current().workspace.repo_names())
     found = [*DOCS.glob("repos/*/reference.md"), *DOCS.glob("repos/*/diagrams.md")]
     found += [f for f in DOCS.glob("data/*.md") if f.stem in names
               and frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))[0].get("x-generated") is True]
@@ -405,7 +406,7 @@ def _specs(memo: dict) -> list[tuple[str, str, object]]:
     """The new layout's pages in writing order, as (docs-relative page, repo, make(memo, skip)): the messaging page
     (with topics), each repo's page on this machine, the home last."""
     specs = [(MESSAGING, SYSTEM, messaging_page)] * bool(diagrams.ids("messaging", SYSTEM, memo))
-    specs += [(REPO_PAGE.format(repo=n), n, functools.partial(repo_page, n)) for n in docs.repo_names()
+    specs += [(REPO_PAGE.format(repo=n), n, functools.partial(repo_page, n)) for n in services.current().workspace.repo_names()
               if repo_dir(n).is_dir()]
     return [*specs, (HOME, SYSTEM, home_page)]
 
@@ -545,7 +546,7 @@ def _no_place(key: Key, text: str | None, memo: dict) -> str | None:
         if key not in held:
             return _persons_page(f, "its blocks")
         return f"{rel_file(f)} is a person's page and holds a different copy of {' '.join(filter(None, key))}"
-    here = {REPO_PAGE.format(repo=n) for n in docs.repo_names() if repo_dir(n).is_dir()}
+    here = {REPO_PAGE.format(repo=n) for n in services.current().workspace.repo_names() if repo_dir(n).is_dir()}
     if rel in here or rel == HOME or rel == MESSAGING and diagrams.ids("messaging", SYSTEM, memo):
         return None
     return "has a block the new pages have no place for"

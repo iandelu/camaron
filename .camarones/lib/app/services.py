@@ -17,6 +17,7 @@ from lib.ports.launcher import Launcher
 from lib.ports.toolchain import Toolchain
 from lib.ports.vcs import Vcs
 from lib.ports.wiki_engine import WikiEngine
+from lib.ports.workspace_store import WorkspaceStore
 
 
 class Services:
@@ -32,6 +33,7 @@ class Services:
     wiki_engine: WikiEngine
     containers: ContainerRuntime
     vcs: Vcs
+    workspace: WorkspaceStore
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

@@ -11,7 +11,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 
-from .. import docs, plan, sessions
+from .. import plan, sessions
 from ..app import services
 from ..common import CAM_DIR, CTX, cli_cmd
 from . import awake, kpis, ledger, routing
@@ -173,7 +173,7 @@ def _loop(jobs, lang, max_parallel, per_runner, max_units, poll_seconds, include
         if text not in noted:
             noted.add(text)
             log(text)
-    skip = set() if include_interviews or docs.interview_mode() == "team" else plan.INTERVIEW_TYPES
+    skip = set() if include_interviews or services.current().workspace.interview_mode() == "team" else plan.INTERVIEW_TYPES
     limited: dict[str, dt.datetime] = {}
     held: dict[str, int] = {}                # runner → server rate limits in a row (a short rest, not the quota's pause)
     retried: set[str] = set()                # one more try per unit after a transient failure

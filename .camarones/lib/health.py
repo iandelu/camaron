@@ -24,6 +24,7 @@ from pathlib import Path
 
 from .common import CACHE, load_json, save_json
 from .domain.docs import frontmatter
+from .app import services
 
 MAX_REPORT_BYTES = 5_000_000
 REPORT_GLOBS = (("jacoco", "target/site/jacoco/jacoco.xml"), ("jacoco", "build/reports/jacoco/**/*.xml"),
@@ -349,8 +350,8 @@ def build(log=print) -> dict:
     from . import docs, sonar
     log("reading the machine…")
     machine = _guard(_machine, log)
-    ws = _guard(docs.workspace)
-    names = _guard(lambda: [r["name"] for r in docs.workspace()["repos"]])
+    ws = _guard(services.current().workspace.workspace)
+    names = _guard(lambda: [r["name"] for r in services.current().workspace.workspace()["repos"]])
     servers = sonar.Session(log)                # hosts that did not answer, so a dead server costs one timeout
     last = load() or {}                         # the last Sonar figures, kept for a repo whose read fails now
     last = last.get("repos") if isinstance(last.get("repos"), dict) else {}

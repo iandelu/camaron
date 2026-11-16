@@ -6,7 +6,6 @@ import re
 import shutil
 from pathlib import Path
 
-from lib import docs
 from lib.app import components, services
 from lib.common import CACHE, GRAPHS, out, repo_dir, run, ws_rel
 from lib.ports import Log
@@ -14,7 +13,7 @@ from lib.ports import Log
 
 def graph(rebuild: bool = True, log: Log = print) -> Path | None:
     graphs = []
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         if not repo_dir(n).is_dir():
             continue
         if rebuild or not services.current().code.repo_graph(n).exists():
@@ -47,7 +46,7 @@ def build_c4(dest: Path | None = None, log: Log = print) -> bool:
         return False
     log("building the interactive C4 explorer (LikeC4)…")
     shutil.rmtree(dest, ignore_errors=True)
-    r = run(["likec4", "build", ".", "-o", str(dest), "--base", "/architecture/", "--title", docs.workspace()["project"]["name"]],
+    r = run(["likec4", "build", ".", "-o", str(dest), "--base", "/architecture/", "--title", services.current().workspace.workspace()["project"]["name"]],
             cwd=services.current().diagrams.arch_dir(), check=False, quiet=True)
     ok = r.returncode == 0 and (dest / "index.html").exists()
     log("✔ C4 explorer" if ok else "⚠ C4 explorer skipped: the model has errors (run arch-validate)")
@@ -56,7 +55,7 @@ def build_c4(dest: Path | None = None, log: Log = print) -> bool:
 
 def code_graphs() -> dict[str, Path]:
     """Viewer HTML per repo, plus 'all' for the merged graph."""
-    found = {n: GRAPHS / n / "graph.html" for n in docs.repo_names() if (GRAPHS / n / "graph.html").is_file()}
+    found = {n: GRAPHS / n / "graph.html" for n in services.current().workspace.repo_names() if (GRAPHS / n / "graph.html").is_file()}
     if (CACHE / "graph" / "graph.html").is_file():
         found = {"all": CACHE / "graph" / "graph.html", **found}
     return found
@@ -66,7 +65,7 @@ def build_graphs(log: Log = print) -> bool:
     if "graphify" not in components.components():
         log("⚠ graphify is not installed (setup)")
         return False
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         if repo_dir(n).is_dir():
             log(f"{n}: code graph…")
             if not services.current().code.graph_repo(n):

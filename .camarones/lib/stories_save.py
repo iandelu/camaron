@@ -12,7 +12,6 @@ from __future__ import annotations
 import re
 from typing import Sequence
 
-from . import docs as docs_mod
 from .common import IS_WIN, ROOT, repo_dir
 from .harness.locks import FileLock
 from .kanban import LOCK, PRIORITIES, deps, index, ops
@@ -22,6 +21,7 @@ from .kanban.state import id_key
 from .stories import (Proposal, Story, TASK_TITLE_MAX, _clean, _code_groups, _done, _lang, _node, _touches,
                       compose, fingerprint, invest, parse, title_for)
 from .domain.docs import frontmatter
+from .app import services
 
 _WIN_BAD = re.compile(r'[<>:"|?*]')
 
@@ -41,7 +41,7 @@ class StoryConflict(BoardError):
 def _check_touches(refs: Sequence[str], conn, what: str) -> list[str]:
     """Every entry must be a file of a known repo (or doc page) that exists, or one the task will create: then its folder
     exists. A folder, a path outside its repo and a code-map group label (`repo:<group>`) are refused."""
-    known = set(docs_mod.repo_names()) | {index.DOCS_REPO}
+    known = set(services.current().workspace.repo_names()) | {index.DOCS_REPO}
     out: set[str] = set()
     for ref in refs or ():
         try:
@@ -333,7 +333,7 @@ def _doc_sources(refs: Sequence[str]) -> list[str]:
     if not refs:
         return []
     ids, pages = xid.index(), xid._pages()
-    known = set(docs_mod.repo_names()) | {index.DOCS_REPO}
+    known = set(services.current().workspace.repo_names()) | {index.DOCS_REPO}
     out: set[str] = set()
     for ref in refs:
         try:

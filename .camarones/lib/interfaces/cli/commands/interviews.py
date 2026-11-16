@@ -10,12 +10,13 @@ from lib.interfaces.cli.registry import CliContext, Command, command
 
 
 def cmd_interview(a) -> int:
-    from lib import docs, plan, questionnaire
+    from lib import plan, questionnaire
+    from lib.app import services
     try:
         if a.action == "mode":
             if a.args:
                 plan.set_interview_mode(a.args[0])
-            print(docs.interview_mode())
+            print(services.current().workspace.interview_mode())
         elif a.action == "export":
             for f in questionnaire.export(a.lang):
                 print(f)

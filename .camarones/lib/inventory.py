@@ -15,8 +15,9 @@ import yaml
 
 from .core import yamlio
 from .common import DOCS, WORK, repo_dir, load_json, save_json
-from . import docs, radar
+from . import radar
 from .domain.docs import frontmatter
+from .adapters.stores import workspace
 
 PAGE = DOCS / "overview" / "libraries.md"
 DATA = WORK / "inventory.json"
@@ -403,7 +404,7 @@ def from_registry(ecosystem: str, declared: str | None) -> bool:
 def scan() -> dict:
     cats = categories()
     rows = []
-    for r in docs.workspace()["repos"]:
+    for r in workspace.workspace()["repos"]:
         repo = repo_dir(r["name"])
         if repo.is_dir():
             rows += scan_repo(r["name"], repo)
@@ -471,7 +472,7 @@ def owned() -> dict[str, set[str]]:
     packages (PackageId, AssemblyName or the project's file name) and its Python (PEP 621, Poetry, setup.cfg, setup.py),
     Rust, PHP and Dart packages."""
     out: dict[str, set[str]] = {}
-    for r in docs.workspace()["repos"]:
+    for r in workspace.workspace()["repos"]:
         repo = repo_dir(r["name"])
         if not repo.is_dir():
             continue
@@ -515,7 +516,7 @@ def render(result: dict) -> str:
     vulns = result.get("vulns") is not None
     looked = result.get("latest") is not None
     newest = (result.get("latest") or {}).get("versions") or {}
-    repos = {*docs.repo_names(), *(r["repo"] for r in rows)}                  # the workspace's, manifests or not
+    repos = {*workspace.repo_names(), *(r["repo"] for r in rows)}             # the workspace's, manifests or not
     drift = {r["name"] for r in rows if r["drift"]}
     vulnerable = {r["name"] for r in rows if r.get("vulns")}
     behind = {(r["ecosystem"], r["name"]) for r in rows if registries.newer(r["version"], newest.get(f"{r['ecosystem']}|{r['name']}"))}

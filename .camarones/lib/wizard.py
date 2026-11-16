@@ -940,14 +940,14 @@ class W:
             return None
 
     def dashboard(self) -> None:
-        ws = docs.workspace()
+        ws = services.current().workspace.workspace()
         data = plan.load()
         d, t = plan.progress(data)
         rows = docs.collect() if (ROOT / "docs").exists() else []
         s = trust_levels.summary(rows)
         tbl = Table.grid(padding=(0, 2))
         tbl.add_row("[bold]Proyecto[/]" if self.lang == "es" else "[bold]Project[/]", ws["project"]["name"])
-        tbl.add_row("Repos", ", ".join(docs.repo_names()) or "—")
+        tbl.add_row("Repos", ", ".join(services.current().workspace.repo_names()) or "—")
         bar = Progress(TextColumn("{task.description}"), BarColumn(bar_width=28, complete_style=ORANGE),
                        TextColumn("{task.completed}/{task.total}"))
         bar.add_task("Plan", total=max(t, 1), completed=d)
@@ -1082,7 +1082,7 @@ class W:
     # ---------- first run: a step machine, Esc / ↩ goes one step back ----------
     def first_run(self, start: int = 0, mode: str = "new") -> bool:
         """`start`: index in STEPS. mode "join" (a team's cam-docs cloned here) runs only the machine steps."""
-        ws = docs.workspace()
+        ws = services.current().workspace.workspace()
         every = dict(zip(STEPS, [("Workspace", self.fr_name), ("Repos", self.fr_repos), (self.t("t_title"), self.fr_tools),
                                  ("Setup", self.fr_setup), ("Stack", self.fr_stack), ("C4", self.fr_arch), ("🦐", self.fr_intro)]))
         ids = onboard.steps(mode, onboard.kind_of(ws))
@@ -1127,7 +1127,7 @@ class W:
             return BACK
         onboard.name_project(ws, name, WORKSPACE.name)
         ws["project"].setdefault("kind", onboard.inspect(WORKSPACE)["kind"])    # greenfield may start with no repos
-        docs.save_workspace(ws)
+        services.current().workspace.save_workspace(ws)
 
     def show_repos(self, ws: dict) -> None:
         tbl = Table(title=self.t("repos_title"), title_justify="left", border_style="grey42", show_header=False)
@@ -1139,7 +1139,7 @@ class W:
         found = docs.detect_repos()
         if not ws["repos"] and found:          # first visit: preselect what is already in the folder, shown explicitly
             ws["repos"] = list(found)
-            docs.save_workspace(ws)
+            services.current().workspace.save_workspace(ws)
         while True:
             self.show_repos(ws)
             choices = [Choice(self.t("r_continue"), "go", disabled=None if ws["repos"] or onboard.kind_of(ws) != "legacy" else self.t("r_need"))]
@@ -1153,7 +1153,7 @@ class W:
             if c is None:
                 return BACK
             if c == "go":
-                docs.save_workspace(ws)
+                services.current().workspace.save_workspace(ws)
                 return None
             if c == "pick":
                 current = {r["name"] for r in ws["repos"]}
@@ -1173,7 +1173,7 @@ class W:
                 gone = self.chk(self.t("pick_remove"), [Choice(r["name"], r["name"]) for r in ws["repos"]])
                 if gone:
                     ws["repos"] = [r for r in ws["repos"] if r["name"] not in gone]
-            docs.save_workspace(ws)
+            services.current().workspace.save_workspace(ws)
             self.banner()
 
     def add_url(self, ws: dict) -> bool:
@@ -1188,7 +1188,7 @@ class W:
         if branch is None:
             return False
         ws["repos"].append({"name": name or default, "url": url, "branch": branch or "main", "kind": "service"})
-        docs.save_workspace(ws)
+        services.current().workspace.save_workspace(ws)
         return True
 
     # ---------- tools: everything in one table, install all (recommended) or pick ----------
@@ -1269,7 +1269,7 @@ class W:
             if c == "go":
                 return None
             if c == "token":
-                host = creds.host_of(next(r["url"] for r in docs.workspace()["repos"] if r["name"] == missing[0]))
+                host = creds.host_of(next(r["url"] for r in services.current().workspace.workspace()["repos"] if r["name"] == missing[0]))
                 self.banner()
                 self.add_token(host)
             self.banner()
@@ -1331,7 +1331,7 @@ class W:
 
     def add_token(self, host: str | None = None) -> str | None:
         """Ask host/kind/token, verify against the API, store in the OS keychain. Returns the host or None."""
-        repo_hosts = [creds.host_of(r.get("url", "")) for r in docs.workspace()["repos"]]
+        repo_hosts = [creds.host_of(r.get("url", "")) for r in services.current().workspace.workspace()["repos"]]
         default = host or next((x for x in repo_hosts if x and not creds.get(x)), None) or "gitlab.com"
         self.say(Panel(self.t("k_scopes") + "\n\n" + self.t("k_privacy", where=creds.backend_name()), border_style="grey50"))
         host = self.txt(self.t("k_host"), default=default)
@@ -1404,11 +1404,11 @@ class W:
                                                     for p in projects if p["name"] not in have])
         for p in picked or []:
             ws["repos"].append({"name": p["name"], "url": p["url"], "branch": p["branch"], "kind": "service"})
-        docs.save_workspace(ws)
+        services.current().workspace.save_workspace(ws)
 
     # ---------- first look: quick architecture diagram ----------
     def show_arch(self, m: dict) -> None:
-        project = docs.workspace()["project"]["name"]
+        project = services.current().workspace.workspace()["project"]["name"]
         tree = Tree(f"[bold {ORANGE}]🏗 {project}[/]  [grey50]{self.t('a_title')}[/]")
         icon = {"service": "📦", "webapp": "🖥", "mobileApp": "📱", "library": "📚", "infra": "⚙"}
         out_edges: dict = {}
@@ -1507,7 +1507,7 @@ class W:
         scan = True
         while True:
             if scan:
-                self.safe(self.busy, scan_repos, total=1 + len(docs.repo_names()))
+                self.safe(self.busy, scan_repos, total=1 + len(services.current().workspace.repo_names()))
                 scan = False
             result = load_json(radar.CACHE_FILE, {})
             self.banner()
@@ -1648,11 +1648,11 @@ class W:
     def team_ready(self) -> bool:
         """Offer the questionnaire while it is in use, or while the interviews are still ahead."""
         units = {u["id"]: u["status"] for u in plan.load()["units"]}
-        return docs.interview_mode() == "team" or units.get("interview-context") not in (None, "done", "dropped")
+        return services.current().workspace.interview_mode() == "team" or units.get("interview-context") not in (None, "done", "dropped")
 
     def do_team(self) -> None:
         """Menu entry: switch the interviews to a team questionnaire, or manage the answers."""
-        if docs.interview_mode() != "team":
+        if services.current().workspace.interview_mode() != "team":
             if not self.yes(self.t("iv_switch"), default=True):
                 return
             data = plan.set_interview_mode("team")
@@ -1694,7 +1694,7 @@ class W:
 
     def run_unit(self, u: dict) -> None:
         if u["type"] in plan.INTERVIEW_TYPES and u["status"] in ("todo", "doing") and \
-                "interviews" not in docs.workspace()["project"] and \
+                "interviews" not in services.current().workspace.workspace()["project"] and \
                 plan.get(plan.load(), "interview-context")["status"] != "done":
             mode = self.sel(self.t("iv_mode_q"), [Choice(self.t("iv_team"), "team"), Choice(self.t("iv_live"), "live")],
                             default="team")
@@ -2203,7 +2203,7 @@ class W:
             if c == "choose":
                 picked = self.chk(self.t("w_choose_q"), [Choice(w["repo"], w["repo"], checked=w["chosen"]) for w in rows])
                 if picked is not None:
-                    docs.set_wiki_repos(picked)
+                    services.current().workspace.set_wiki_repos(picked)
                     plan.sync()
                 self.banner()
                 continue
@@ -2253,7 +2253,7 @@ class W:
         for t in uninstall.untouched():
             rows.append(f"  · {t}\n", style="grey62")
         self.say(Panel(rows, title=self.t("u_preview"), title_align="left", border_style="red"))
-        name = docs.workspace()["project"]["name"]
+        name = services.current().workspace.workspace()["project"]["name"]
         typed = self.txt(self.t("u_confirm", name=name))
         if typed is None or typed.strip().casefold() != name.strip().casefold():
             self.say(self.t("u_cancel"), "yellow")
@@ -2297,7 +2297,7 @@ class W:
             self.say(self.t("s_missing", repos=", ".join(missing)), "yellow")
             if not self.yes(self.t("s_token_retry"), default=True):
                 return
-            host = creds.host_of(next(r["url"] for r in docs.workspace()["repos"] if r["name"] == missing[0]))
+            host = creds.host_of(next(r["url"] for r in services.current().workspace.workspace()["repos"] if r["name"] == missing[0]))
             self.banner()
             self.add_token(host)
             self.banner()
@@ -2305,13 +2305,13 @@ class W:
             missing = onboard.missing_repos()
 
     def do_repos(self) -> None:
-        ws = docs.workspace()
+        ws = services.current().workspace.workspace()
         before = {r["name"] for r in ws["repos"]}
         self.fr_repos(ws)
-        if {r["name"] for r in docs.workspace()["repos"]} != before:
+        if {r["name"] for r in services.current().workspace.workspace()["repos"]} != before:
             self.safe(self.busy, lambda log: docs.sync_repos(log))
             self.retry_missing(onboard.missing_repos())
-            for n in docs.repo_names():
+            for n in services.current().workspace.repo_names():
                 if (repo_dir(n) / ".git").exists() and not services.current().code.repo_graph(n).exists():
                     self.safe(self.busy, services.current().setup.wire_one, n)
             plan.sync()
@@ -2395,11 +2395,11 @@ class W:
 
     def repo_pointer(self) -> None:
         """Asked once, remembered in workspace.yaml: the only thing Camarones may add to a service repo."""
-        ws = docs.workspace()
+        ws = services.current().workspace.workspace()
         if "repo_pointer" in ws["project"] or not CAM_LAYOUT:
             return
         ws["project"]["repo_pointer"] = bool(self.yes(self.t("pointer_ask"), default=False))
-        docs.save_workspace(ws)
+        services.current().workspace.save_workspace(ws)
 
     def do_kitupdate(self) -> None:
         """Menu: bring the central (global) kit up to date and restart on it. A local kit copy only gets directions."""
@@ -2436,7 +2436,7 @@ class W:
         upgrade.relaunch_global()
 
     def do_setup(self) -> bool:
-        ws = docs.workspace()
+        ws = services.current().workspace.workspace()
         if self.fr_tools(ws) == BACK:
             return False
         self.repo_pointer()

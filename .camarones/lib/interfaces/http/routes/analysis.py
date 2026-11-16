@@ -85,7 +85,7 @@ def build(b: dict) -> dict:
         return start_job("c4", "C4 explorer", lambda log: services.current().viewers.build_c4(log=log))
     if what == "graph":
         return start_job("graph", "Code graphs", lambda log: services.current().viewers.build_graphs(log=log))
-    if what == "wiki-graph" and repo in docs.repo_names():
+    if what == "wiki-graph" and repo in services.current().workspace.repo_names():
         # a kind per repo: start_job attaches a second start of the same kind to the running job, whatever the repo
         return start_job(f"wiki-graph:{repo}", f"Wiki graph {repo}",
                          lambda log: services.current().wiki.wiki_graph(repo, log=log))
@@ -99,9 +99,9 @@ def wiki(b: dict) -> dict:
     attaches to its run). The run is claimed before choosing and writing, in the same step as that check, so a second
     repo clicked while the first one is still being prepared is busy too."""
     repo, mode, engine = b.get("repo", ""), b.get("mode", ""), b.get("engine", "")
-    if repo not in docs.repo_names() or mode not in ("", "init", "update"):
+    if repo not in services.current().workspace.repo_names() or mode not in ("", "init", "update"):
         raise ValueError("unknown repo or mode")
-    choose = repo not in docs.wiki_repos() and not services.current().wiki.wiki_pages(repo)
+    choose = repo not in services.current().workspace.wiki_repos() and not services.current().wiki.wiki_pages(repo)
     if choose and not b.get("choose"):
         raise ValueError(f"{repo} is not chosen for a wiki")
     with JOB_LOCK:
@@ -113,7 +113,7 @@ def wiki(b: dict) -> dict:
         job = claim_job("wiki", f"OpenWiki {repo}", repo=repo)
     try:
         if choose:
-            docs.set_wiki_repos([*docs.wiki_repos(), repo])
+            services.current().workspace.set_wiki_repos([*services.current().workspace.wiki_repos(), repo])
             plan.sync()
         if b.get("starter"):
             services.current().wiki.starter_brief(repo)

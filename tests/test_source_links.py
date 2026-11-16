@@ -39,10 +39,10 @@ def backdate(kit, logical):
 
 @pytest.fixture
 def links(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     for r in ws["repos"]:
         r["url"] = f"git@github.com:acme/{r['name']}.git"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     import importlib
     return importlib.import_module("lib.sourcelinks")
 

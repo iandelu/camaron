@@ -16,6 +16,7 @@ from pathlib import Path
 from .common import DOCS, rel_file, repo_dir
 from . import quickarch
 from .domain.docs import frontmatter
+from .adapters.stores import workspace
 
 KINDS = ("states", "endpoints-map", "context", "messaging")
 NODE_LIMIT = 25                                                             # a bigger diagram is a wall, not a picture
@@ -48,8 +49,7 @@ def _repo(repo: str) -> Path | None:
 def _complete() -> bool:
     """Every workspace repo is on this machine. A system-wide diagram drawn from part of the repos would be wrong, so
     without that nothing system-wide is drawn (None: can't tell)."""
-    from . import docs
-    return all(repo_dir(n).is_dir() for n in docs.repo_names())
+    return all(repo_dir(n).is_dir() for n in workspace.repo_names())
 
 
 def _memo(memo: dict | None, key: tuple, fn):
@@ -370,9 +370,9 @@ def _topics(memo: dict | None = None) -> dict[str, dict]:
 
 
 def _build_topics() -> dict[str, dict]:
-    from . import docs, genblocks
+    from . import genblocks
     out: dict[str, dict] = {}
-    for name in docs.repo_names():
+    for name in workspace.repo_names():
         d = repo_dir(name)
         if not d.is_dir():
             continue
@@ -516,7 +516,7 @@ def _edit_page(body: str, repo: str, managed: list[tuple[str, str]], wanted: lis
 
 def _new_page(repo: str, sections: list[tuple[str, list[Key]]], draw) -> str:
     """A whole page for `repo` (SYSTEM for the system map) with a block per key, under its section."""
-    from . import docs, genblocks
+    from . import genblocks
     sources, body = [], ""
     for heading, keys in sections:
         blocks = []
@@ -551,8 +551,8 @@ def write_pages(log=lambda _: None) -> list[str]:
     stays; an unconfirmed one whose id is gone leaves; a page a person owns is never touched; a page that would have no
     block is not created; the system map is left as it is while some repo is not on this machine. Returns the pages
     written."""
-    from . import docs, genblocks
-    names = [n for n in sorted(docs.repo_names()) if repo_dir(n).is_dir()]
+    from . import genblocks
+    names = [n for n in sorted(workspace.repo_names()) if repo_dir(n).is_dir()]
     homes: dict[Key, set[Path]] = {}                                       # where each diagram block lives now
     for _row, f in genblocks._pages():
         for m in _page_blocks(f.read_text(encoding="utf-8")):

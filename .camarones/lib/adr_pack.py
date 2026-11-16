@@ -20,6 +20,7 @@ from . import adr, adr_doc, c4edit, docs, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
 from .domain.docs import frontmatter, page_outline, trust_levels
+from .app import services
 
 NEIGHBOURS, PAGES, ADRS, COMMITS, MONTHS, QUESTIONS, C4, LIBRARIES = 30, 15, 10, 40, 12, 10, 20, 30
 LIMIT = 20000
@@ -115,7 +116,7 @@ def _commits(touches: list[str]) -> list[dict]:
     """Per touched code repo, the commits that changed a touched file (only those files listed), in `git log` order;
     repos take turns so that a busy one does not hide the others. Only the project's repos: a touch is pulled data, and
     its repo could name any folder."""
-    per_repo, known = [], set(docs.repo_names())
+    per_repo, known = [], set(services.current().workspace.repo_names())
     for repo, paths in sorted(index.by_repo(touches).items()):
         if repo == index.DOCS_REPO or repo not in known or not (repo_dir(repo) / ".git").exists():
             continue
@@ -259,7 +260,7 @@ def _deploy_files(root: Path) -> list[tuple[str, str]]:
 
 def _from_deployment() -> list[tuple]:
     found = []
-    for repo in docs.repo_names():
+    for repo in services.current().workspace.repo_names():
         root = repo_dir(repo)
         if root.is_dir():
             found += [("deploy", name, _DEPLOY[name], [repo], [f"{repo}:{rel}"]) for name, rel in _deploy_files(root)]

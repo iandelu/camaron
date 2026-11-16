@@ -134,9 +134,9 @@ def test_update_session(wired, term):
 
 def route(wired, team=None, machine=None, patch=None):
     if team is not None:
-        ws = wired.docs.workspace()
+        ws = wired.services.workspace.workspace()
         ws.setdefault("agents", {})["routing"] = team
-        wired.docs.save_workspace(ws)
+        wired.services.workspace.save_workspace(ws)
     if machine is not None:
         wired.common.save_json(wired.common.PREFS, {**wired.common.load_json(wired.common.PREFS, {}), **machine})
     if patch is not None:

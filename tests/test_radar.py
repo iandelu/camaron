@@ -165,12 +165,12 @@ def test_rescan_keeps_a_human_confirmation_and_a_human_owned_page(radar):
 # ---------- stack override (workspace.yaml repos[i].stack) ----------
 def test_stack_override_wins_and_can_be_reset(radar):
     radar.radar.set_stack("api", "Java 21 · Spring Boot 3")
-    assert radar.docs.workspace()["repos"][0]["stack"] == "Java 21 · Spring Boot 3"
+    assert radar.services.workspace.workspace()["repos"][0]["stack"] == "Java 21 · Spring Boot 3"
     res = radar.radar.scan()
     assert res["api"]["stack"] == "Java 21 · Spring Boot 3" and res["api"]["detected_stack"] == "Java"
     assert radar.quickarch.scan()["repos"]["api"]["tech"] == "Java 21 · Spring Boot 3"   # C4 draft agrees
     radar.radar.set_stack("api", None)
-    assert "stack" not in radar.docs.workspace()["repos"][0]
+    assert "stack" not in radar.services.workspace.workspace()["repos"][0]
     assert radar.radar.scan()["api"]["stack"] == "Java"
 
 
@@ -197,7 +197,7 @@ def test_cli_radar_json_and_stack(radar):
     assert "backstage" in {t["id"] for t in data["api"]["tools"]}
     assert (radar.docs.DOCS / "overview" / "tooling.md").exists()
     r = cli(radar, "stack", "web", "--reset")
-    assert r.returncode == 0 and "stack" not in radar.docs.workspace()["repos"][1]
+    assert r.returncode == 0 and "stack" not in radar.services.workspace.workspace()["repos"][1]
     r = cli(radar, "stack", "nope", "Go")
     assert r.returncode != 0
 

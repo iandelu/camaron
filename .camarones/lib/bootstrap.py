@@ -95,6 +95,11 @@ def _export_site() -> object:
     return export_site
 
 
+def _workspace() -> object:
+    from lib.adapters.stores import workspace
+    return workspace
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -113,6 +118,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "wiki": _wiki,
     "portal": _portal,
     "export_site": _export_site,
+    "workspace": _workspace,
 }
 
 

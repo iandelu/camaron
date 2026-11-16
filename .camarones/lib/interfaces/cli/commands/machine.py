@@ -108,11 +108,11 @@ class Sync(Command):
 class Detect(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import docs
-        ws = docs.workspace()
-        known = set(docs.repo_names())
+        ws = cli.services.workspace.workspace()
+        known = set(cli.services.workspace.repo_names())
         new = [r for r in docs.detect_repos() if r["name"] not in known]
         ws["repos"] += new
-        docs.save_workspace(ws)
+        cli.services.workspace.save_workspace(ws)
         print(f"added {len(new)} repo(s): {', '.join(r['name'] for r in new) or '—'}")
         return 0
 

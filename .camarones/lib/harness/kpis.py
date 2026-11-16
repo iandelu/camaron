@@ -11,6 +11,7 @@ from typing import Callable
 from ..common import CACHE, WORK, load_json, retry_busy
 from . import runs
 from .locks import FileLock
+from ..app import services
 
 DIR = WORK / "kpis"
 LOCK = CACHE / "locks" / "kpis.lock"
@@ -113,7 +114,7 @@ def _team_runs() -> dict[str, dict]:
 def coverage(run_check: bool = True) -> dict:
     from .. import docs
     from ..common import DOCS
-    repos = docs.repo_names()
+    repos = services.current().workspace.repo_names()
     flows = [f for f in (DOCS / "flows").glob("*.md") if f.stem != "index"] if (DOCS / "flows").is_dir() else []
     arch = DOCS / "architecture"
     errors = warnings = None
@@ -163,7 +164,7 @@ def dashboard(months: int = 6, today: date | None = None) -> dict:
     from .. import c4edit, docs, usage
     from . import freshness
     r = report(months=months, today=today, run_check=False)
-    repos = docs.repo_names()
+    repos = services.current().workspace.repo_names()
     by = {n: {"repo": n, "pages": 0, "confirmed": 0, "draft": 0, "needsReconfirm": 0} for n in [*repos, "(project)"]}
     for row in docs.collect():
         owner = next((n for n in repos if row["path"].startswith((f"repos/{n}/", f"wikis/{n}/"))), "(project)")

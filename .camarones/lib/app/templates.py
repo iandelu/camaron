@@ -6,7 +6,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from lib import docs
 from lib.app import services
 from lib.common import (CACHE, CAM_DIR, CAM_LAYOUT, KIT, ROOT, cli_cmd, load_json, own_file, save_json, through_link)
 from lib.ports import Log
@@ -37,7 +36,7 @@ def fill(text: str, name: str) -> str:
 
 def kit_skill_files(project_name: str | None = None) -> dict[str, str]:
     """cam-docs-relative path → text of the kit's own skills, rendered for this machine (Claude Code and Codex alike)."""
-    name = project_name or docs.workspace()["project"]["name"]
+    name = project_name or services.current().workspace.workspace()["project"]["name"]
     return {f"{host}/{src.relative_to(TEMPLATES).as_posix()}": fill(src.read_text(encoding="utf-8"), name)
             for src in sorted((TEMPLATES / "skills").rglob("*")) if src.is_file() for host in (".claude", ".agents")}
 
@@ -45,7 +44,7 @@ def kit_skill_files(project_name: str | None = None) -> dict[str, str]:
 def skill_files(project_name: str | None = None) -> dict[str, str]:
     """Like kit_skill_files, but the effective skills: a team's copy of a skill wins, and a team-only skill is added."""
     from lib import skills
-    name = project_name or docs.workspace()["project"]["name"]
+    name = project_name or services.current().workspace.workspace()["project"]["name"]
     return {f"{host}/skills/{skill}/{rel}": fill(raw, name)
             for skill, files in skills.sources().items() for rel, raw in files.items() for host in (".claude", ".agents")}
 
@@ -114,7 +113,7 @@ def write_kit_skills(project_name: str | None = None) -> None:
 def init_templates(project_name: str | None = None, log: Log = print) -> list[str]:
     """Copy templates that do not exist yet (never overwrites project files), plus the kit's playbook/conventions."""
     created = []
-    name = project_name or docs.workspace()["project"]["name"]
+    name = project_name or services.current().workspace.workspace()["project"]["name"]
     write_kit_skills(name)
     for src in sorted(TEMPLATES.rglob("*")):
         if src.is_dir():
@@ -140,7 +139,7 @@ def init_templates(project_name: str | None = None, log: Log = print) -> list[st
         created.append(".git (docs repo)")
         from lib.kanban import ops
         created += ops.init(log=lambda _: None)             # a new project starts with its board (existing ones opt in)
-    docs.write_gitignore()
+    services.current().workspace.write_gitignore()
     for c in created:
         log(f"  + {c}")
     return created
@@ -206,7 +205,7 @@ def refresh_block(src: Path, dst: Path, project_name: str | None = None) -> bool
     cur, tpl = dst.read_text(encoding="utf-8"), src.read_text(encoding="utf-8")
     if a not in cur or b not in cur or a not in tpl:
         return False
-    block = fill(tpl[tpl.index(a):tpl.index(b) + len(b)], project_name or docs.workspace()["project"]["name"])
+    block = fill(tpl[tpl.index(a):tpl.index(b) + len(b)], project_name or services.current().workspace.workspace()["project"]["name"])
     new = cur[:cur.index(a)] + block + cur[cur.index(b) + len(b):]
     if new != cur:
         dst.write_text(new, encoding="utf-8")

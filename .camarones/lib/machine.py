@@ -11,6 +11,7 @@ from pathlib import Path
 from .core import platform
 from .common import PREFS, VERSIONS, load_json, repo_dir, save_json
 from .agents import CODEX_MODEL_DEFAULT
+from .adapters.stores import workspace
 
 MODELS = ["sonnet", "opus", "haiku"]           # Claude Code's --model aliases
 LANGS = ("es", "en")
@@ -57,9 +58,9 @@ def codex_models() -> list[dict]:
 
 
 def panel() -> dict:
-    from . import agents, docs, install_state, terminals
+    from . import agents, install_state, terminals
     from .app import services
-    ws = docs.workspace()
+    ws = workspace.workspace()
     repos = [{"name": r["name"], "url": r.get("url", ""), "stack": r.get("stack", ""),
               "cloned": repo_dir(r["name"]).is_dir()} for r in ws["repos"]]
     return {"settings": settings(), "models": MODELS, "codex_models": codex_models(), "agents": agents.installed(),

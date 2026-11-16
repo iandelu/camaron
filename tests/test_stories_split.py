@@ -110,9 +110,9 @@ def test_invest_small_counts_and_split_by_group(world):
     kit = world[0]
     s = letters(world, story(touches=[ORDER, REPO, PAY, PAGE]))["S"]
     assert s["ok"] is True and s["data"] == {"groups": 2, "files": 3, "repos": 1}
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["stories"] = {"small": {"groups": 1}}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     s = letters(world, story(touches=[ORDER, REPO, PAY, PAGE]))["S"]
     assert s["ok"] is False
     assert s["data"]["split_by_group"] == [[REPO, ORDER], [PAY]]
@@ -122,9 +122,9 @@ def test_invest_small_counts_and_split_by_group(world):
 @pytest.mark.parametrize("stories_key", ["yes", {"small": [1]}, {"small": {"groups": 0, "files": "2", "repos": True}}])
 def test_invest_small_ignores_bad_thresholds(world, stories_key):
     kit = world[0]
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["stories"] = stories_key
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     s = letters(world, story(touches=[ORDER, REPO, PAY, PAGE]))["S"]
     assert s["ok"] is True and "máximo" not in s["reason"]
 

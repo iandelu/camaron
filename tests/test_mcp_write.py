@@ -80,9 +80,9 @@ def test_running_units_needs_an_opt_in(kit, mcp, monkeypatch):
     started = []
     monkeypatch.setattr(mcp, "_spawn_run", lambda uid: started.append(uid) or "r-1")
     assert "disabled" in mcp.run_node("discovery:api") and started == []
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["mcp"] = {"pipeline_control": True}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert "r-1" in mcp.run_node("discovery:api") and started == ["discovery:api"]
     assert "unknown unit" in mcp.run_node("nope")
 

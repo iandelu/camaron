@@ -61,9 +61,9 @@ def test_config_keeps_keys_people_added(board, kit):
 
 
 def test_config_adds_project_definition_of_done(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["board"] = {"definition_of_done": ["security reviewed"]}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     subprocess.run(["git", "init", "-q", str(kit.root)], check=True)
     from lib.kanban import ops
     ops.init(log=lambda _: None)

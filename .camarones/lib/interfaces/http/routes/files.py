@@ -71,7 +71,7 @@ def firstlook(req: Request) -> Response:
 def raw_wiki(req: Request) -> Response:
     """Images next to a wiki page (wikis/<repo>/<page>)."""
     repo, _, rel = req.params["rest"].partition("/")
-    ok = repo in docs.repo_names() and static_response(docs.wiki_dir(repo), rel)
+    ok = repo in req.services.workspace.repo_names() and static_response(docs.wiki_dir(repo), rel)
     return ok or not_found()
 
 

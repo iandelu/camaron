@@ -41,15 +41,15 @@ def suggester(world, tmp_path, monkeypatch):  # noqa: F811
 
 
 def turn_on(kit, **extra):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["stories"] = {"ai": True, **extra}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
 
 
 def turn_off(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["stories"] = {"ai": False}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
 
 
 def reply(monkeypatch, **obj):
@@ -81,7 +81,7 @@ def test_a_false_switch_turns_it_off_and_never_calls_the_runner(world, suggester
 @pytest.mark.parametrize("value", [True, "false", 0, None, "no"])
 def test_only_a_false_switch_turns_it_off(world, suggester, value):
     from lib import stories_ai
-    ws = world.docs.workspace(); ws["stories"] = {"ai": value}; world.docs.save_workspace(ws)
+    ws = world.services.workspace.workspace(); ws["stories"] = {"ai": value}; world.services.workspace.save_workspace(ws)
     assert stories_ai.enabled() is True
 
 

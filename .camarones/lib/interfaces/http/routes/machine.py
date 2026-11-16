@@ -11,6 +11,7 @@ from lib.core.paths import DOCS
 from lib.interfaces.http.jobs import start_job
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
+from lib.app import services
 
 
 def sessions_setting() -> str:
@@ -93,7 +94,7 @@ def app_summary(lang: str = "") -> dict:
     last = doctor.checked()
     return {"step": plan.next_step(data, review=review, lang=ui_lang(lang)), "plan": {"done": done, "total": total}, "review": review,
             "doctor": doctor.problems(last["result"]) if last else None,
-            "interviews": docs.interview_mode() if docs.interview_mode_chosen() else None}
+            "interviews": services.current().workspace.interview_mode() if services.current().workspace.interview_mode_chosen() else None}
 
 
 @route("GET", "/api/app/summary", access=Access.APP)

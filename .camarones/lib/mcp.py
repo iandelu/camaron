@@ -288,7 +288,7 @@ def _spawn_run(uid: str) -> str:
 
 def run_node(unit: str) -> str:
     from . import plan
-    if not (docs.workspace().get("mcp") or {}).get("pipeline_control"):
+    if not (services.current().workspace.workspace().get("mcp") or {}).get("pipeline_control"):
         return ("Running units from the MCP is disabled: set `mcp: {pipeline_control: true}` in "
                 ".camarones/workspace.yaml to allow it (runs start agents, which costs).")
     if not any(u["id"] == unit for u in plan.load()["units"]):
@@ -385,7 +385,7 @@ def handle(msg: dict) -> dict | None:
     if mid is None:
         return None                                    # notifications need no answer
     if method == "initialize":
-        name = docs.workspace()["project"]["name"] if WS_FILE.exists() else "no project"
+        name = services.current().workspace.workspace()["project"]["name"] if WS_FILE.exists() else "no project"
         result = {"protocolVersion": msg.get("params", {}).get("protocolVersion", PROTOCOL),
                   "capabilities": {"tools": {}, "resources": {}, "prompts": {}},
                   "serverInfo": {"name": "camarones", "version": VERSIONS["kit"]},

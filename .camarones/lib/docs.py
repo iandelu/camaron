@@ -5,81 +5,19 @@ import math, os, re, shutil, subprocess, tarfile, tempfile
 from collections import Counter
 from pathlib import Path
 
-from .core import yamlio
+from .app import services
 from .core.clock import now
 from .domain.docs import directives, frontmatter, logical_paths, page_outline, synonyms, trust_levels
 from .core.paths import cli_cmd
 from .ports import Log
-from .common import (KIT, ROOT, DOCS, WS_FILE, CACHE, WORKSPACE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run,
-                     load_json, save_json, through_link)
+from .common import (KIT, ROOT, DOCS, CACHE, WORKSPACE, CAM_DIR, CAM_LAYOUT, repo_dir, rel_file, run, load_json,
+                     save_json)
 
 STATE_FILE = DOCS / ".state.json"
 STATUS_FILE = DOCS / ".status.json"
-GI_START, GI_END = "# >>> camarones repos >>>", "# <<< camarones repos <<<"
 
 
 # ---------- workspace ----------
-def ws_file() -> Path:
-    legacy = ROOT / "workspace.yaml"
-    if legacy.exists() and not WS_FILE.exists():      # migrate older layout
-        WS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        legacy.replace(WS_FILE)
-    return WS_FILE
-
-
-def workspace() -> dict:
-    ws = (yamlio.safe_load(ws_file().read_text(encoding="utf-8")) if ws_file().exists() else None) or {}
-    ws.setdefault("project", {})
-    ws.setdefault("repos", [])
-    ws["project"].setdefault("name", WORKSPACE.name)
-    ws["project"].setdefault("translations", ["es"])
-    return ws
-
-
-def save_workspace(ws: dict) -> None:
-    from . import onboard                 # lazy: onboard imports docs
-    onboard.write_workspace(ws_file(), ws)
-
-
-def repo_names() -> list[str]:
-    return [r["name"] for r in workspace()["repos"]]
-
-
-def wiki_repos() -> list[str]:
-    """Repos that get an OpenWiki (`wiki: true` in workspace.yaml). None chosen → none: a wiki per repo costs a full
-    agent run, and libraries or CI repos rarely need one."""
-    return [r["name"] for r in workspace()["repos"] if r.get("wiki")]
-
-
-INTERVIEW_MODES = ("live", "team")
-
-
-def interview_mode() -> str:
-    """`live`: the agent interviews the user in a session. `team`: a questionnaire the team answers offline, then agent
-    units consolidate the answers. Projects without the key (every 3.x project so far) keep `live`."""
-    mode = workspace()["project"].get("interviews")
-    return mode if mode in INTERVIEW_MODES else "live"
-
-
-def interview_mode_chosen() -> bool:
-    """Someone picked the mode (wizard, app, `interview mode`): `live` alone is only the fallback, and an interview
-    unit does not start on it."""
-    return workspace()["project"].get("interviews") in INTERVIEW_MODES
-
-
-def set_interview_mode(mode: str) -> None:
-    if mode not in INTERVIEW_MODES:
-        raise ValueError(f"interview mode must be one of {', '.join(INTERVIEW_MODES)}")
-    ws = workspace()
-    ws["project"]["interviews"] = mode
-    save_workspace(ws)
-
-
-def set_wiki_repos(names: list[str]) -> None:
-    ws = workspace()
-    for r in ws["repos"]:
-        r["wiki"] = r["name"] in names
-    save_workspace(ws)
 
 
 def git(repo: Path, *args: str, check=True, env: dict | None = None) -> str:
@@ -119,7 +57,7 @@ def sync_repos(log: Log = print) -> list[str]:
     """Clone missing repos, fast-forward clean ones. Tokens (🔑) are injected per call, never stored in the repos."""
     from . import creds
     failed = []
-    for r in workspace()["repos"]:
+    for r in services.current().workspace.workspace()["repos"]:
         path, branch, url = repo_dir(r["name"]), r.get("branch", "main"), r.get("url", "")
         env = creds.git_env(url)
         if not (path / ".git").exists():
@@ -151,31 +89,14 @@ def sync_repos(log: Log = print) -> list[str]:
                 if re.search(r"not found|repository .* not found", str(e), re.I):
                     hint = " — check the repo still exists at that URL/org, or that you have access"
                 log(f"⚠ {r['name']}: remote unreachable, using local copy as-is{hint}: {e}")
-    write_gitignore()
+    services.current().workspace.write_gitignore()
     return failed
-
-
-def write_gitignore() -> None:
-    gi = ROOT / ".gitignore"
-    if through_link(ROOT, gi):                          # a committed link: never read or written through
-        return
-    text = gi.read_text(encoding="utf-8") if gi.exists() else ""
-    repos = [] if CAM_LAYOUT else [f"/{n}/" for n in repo_names()]      # cam-docs layout: repos live next to it
-    block = "\n".join([GI_START, *repos, "/.camarones/.cache/", "/graph/", "/.claude/settings.local.json",
-                       # anchored: unanchored, they also hid docs/repos/<repo>/ and wikis/<repo>/ of a repo named
-                       # like the kit; the kit is unzipped or cloned at the project root only (lib/upgrade.py)
-                       "/camarones-documenter*/", "/camarones-kit*/", "camarones-documenter*.zip", ".DS_Store", GI_END])
-    if GI_START in text:
-        text = re.sub(re.escape(GI_START) + r".*?" + re.escape(GI_END), lambda _: block, text, flags=re.S)
-    else:
-        text = (text.rstrip() + "\n\n" if text.strip() else "") + block + "\n"
-    gi.write_text(text, encoding="utf-8")
 
 
 # ---------- incremental state ----------
 def changes() -> dict:
     state, out = load_json(STATE_FILE, {"repos": {}}), {}
-    for r in workspace()["repos"]:
+    for r in services.current().workspace.workspace()["repos"]:
         path = repo_dir(r["name"])
         if not (path / ".git").exists():
             out[r["name"]] = {"status": "missing"}
@@ -191,17 +112,17 @@ def changes() -> dict:
                                    capture_output=True).returncode == 0
             files = git(path, "diff", "--name-status", f"{last}..{head}").splitlines() if known else []
             out[r["name"]] = {"status": "changed" if known else "history-rewritten", "from": last, "head": head, "files": files}
-    for name in sorted(set(state["repos"]) - set(repo_names())):
+    for name in sorted(set(state["repos"]) - set(services.current().workspace.repo_names())):
         out[name] = {"status": "removed-from-workspace"}
     return out
 
 
 def mark_documented(names: list[str] | None = None) -> list[str]:
     state = load_json(STATE_FILE, {"repos": {}})
-    names = names or repo_names()
+    names = names or services.current().workspace.repo_names()
     for n in names:
         state["repos"][n] = {"sha": git(repo_dir(n), "rev-parse", "HEAD"), "at": now()}
-    for n in set(state["repos"]) - set(repo_names()):
+    for n in set(state["repos"]) - set(services.current().workspace.repo_names()):
         del state["repos"][n]
     save_json(STATE_FILE, state)
     return names
@@ -218,7 +139,7 @@ def iter_docs():
             if rel.parts[0] == "i18n" or any(p.startswith(".") for p in rel.parts):
                 continue
             yield rel.as_posix(), f
-    for n in repo_names():
+    for n in services.current().workspace.repo_names():
         ow = wiki_dir(n)
         if ow.is_dir():
             for f in sorted(ow.rglob("*.md")):
@@ -299,7 +220,7 @@ def doc_status(logical: str, f: Path, langs: list[str]) -> dict:
 
 
 def collect() -> list[dict]:
-    langs = workspace()["project"].get("translations", [])
+    langs = services.current().workspace.workspace()["project"].get("translations", [])
     rows = [doc_status(l, f, langs) for l, f in iter_docs()]
     try:
         from .harness import freshness
@@ -379,7 +300,7 @@ def _llms_key(r: dict) -> tuple:
 def llms() -> int:
     """docs/llms.txt (index, llmstxt.org) and docs/llms-full.txt (every page agents may read, one file)."""
     from .harness import freshness
-    ws, rows = workspace(), collect()
+    ws, rows = services.current().workspace.workspace(), collect()
     home = next((r for r in rows if r["path"] == "index.md"), None)
     intro = (home or {}).get("description") or f"Living documentation of {ws['project']['name']}."
     lines = [f"# {ws['project']['name']}", "",
@@ -452,7 +373,6 @@ def check(strict: bool = False, secrets_only: bool = False) -> tuple[list[str], 
         e, w = fn(rows, strict)
         errors += e
         warns += w
-    from .app import services
     for n in services.current().wiki.old_wikis():
         warns.append(f"wikis/{n}: written with an older, narrower scope — regenerate it for a complete wiki: "
                      f"{cli_cmd()} wiki {n}")

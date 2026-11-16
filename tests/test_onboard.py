@@ -227,8 +227,8 @@ def test_start_writes_what_the_cli_name_step_writes(kit, fake_wizard, tmp_path):
     ws = umbrella(tmp_path / "u")
     project = ws_yaml(kit.onboard.start(ws, "Mi Proyecto"))["project"]
     project.pop("kind")
-    fake_wizard(["Mi Proyecto"]).fr_name(kit.docs.workspace())
-    cli = kit.docs.workspace()["project"]
+    fake_wizard(["Mi Proyecto"]).fr_name(kit.services.workspace.workspace())
+    cli = kit.services.workspace.workspace()["project"]
     assert project == {k: cli[k] for k in ("name", "id", "canonical_language", "translations")}
 
 
@@ -313,9 +313,9 @@ def test_install_tools_reports_failures(kit, monkeypatch):
 
 
 def test_greenfield_without_repos_sets_up_and_plans(kit, monkeypatch):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"], ws["project"]["kind"] = [], "greenfield"
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     monkeypatch.setattr(kit.services.setup, "setup", lambda ci=False, log=print, comps=None: True)
     assert kit.onboard.run_setup(lambda _: None) is True
     data = kit.plan.load()
@@ -331,9 +331,9 @@ def test_a_failed_setup_is_not_marked_done(kit, monkeypatch):
 
 
 def test_missing_repos_are_those_with_a_url_and_no_clone(kit):
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["repos"].append({"name": "ghost", "url": "https://example.test/ghost.git", "branch": "main", "kind": "service"})
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     assert kit.onboard.missing_repos() == ["ghost"]
 
 

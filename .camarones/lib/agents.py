@@ -19,7 +19,7 @@ import uuid
 from pathlib import Path
 
 from .common import CACHE, PREFS, ROOT, WORK, WORKSPACE, load_json, save_json, which, ws_rel
-from . import docs, plan, sessions, terminals
+from . import plan, sessions, terminals
 from .app import services
 from .adapters import runners
 from .harness import routing, runs
@@ -55,7 +55,7 @@ def model_for(agent: str, prefs: dict, uid: str | None = None) -> str | None:
     if uid:
         s = plan.settings(uid)
         tier = s["tier"]
-        targets = ([s["runner"]] if s.get("runner") else []) + routing.table(docs.workspace(), prefs)[tier]
+        targets = ([s["runner"]] if s.get("runner") else []) + routing.table(services.current().workspace.workspace(), prefs)[tier]
         keep, _ = routing.candidates(tier, {tier: targets}, bool(s.get("allow_local")))
         route = next((r for r in keep if r.runner == agent), None)
         if route and route.model:
@@ -220,7 +220,7 @@ def launch_unit(uid: str, agent: str, lang: str = "es", mode: str = "new", where
     if u["status"] != "doing" and uid not in {x["id"] for x in plan.available(data)}:
         waits = [d for d in u.get("deps") or [] if plan.get(data, d)["status"] not in ("done", "dropped")]
         raise ValueError(f"{uid} is {u['status']}" + (f": it waits for {', '.join(waits)}" if waits else ""))
-    if u["type"] in plan.INTERVIEW_TYPES and "interviews" not in docs.workspace()["project"] and \
+    if u["type"] in plan.INTERVIEW_TYPES and "interviews" not in services.current().workspace.workspace()["project"] and \
             plan.get(data, "interview-context")["status"] != "done":
         raise ValueError("choose first how the interviews run (team questionnaire or live): `camaron interview mode`")
     if agent not in {a["id"] for a in installed()}:

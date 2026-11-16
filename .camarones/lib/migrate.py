@@ -10,6 +10,7 @@ import json, os, re, shutil, subprocess, sys
 from pathlib import Path
 
 from .common import KIT, ROOT, WS_FILE, CAM_DIR, CAM_LAYOUT, GRAPHS, WORKSPACE, run, out, repo_dir, load_json
+from .app import services
 
 ROOT_ITEMS = ("docs", "wikis", ".camarones", ".claude", ".codex", ".agents", ".mcp.json", "AGENTS.md", "CLAUDE.md",
               ".gitignore", ".gitlab-ci.yml", ".gitlab-ci.camarones.yml", ".github", ".git")
@@ -92,7 +93,6 @@ class Cleaner:
         data = load_json(p, None)
         if not isinstance(data, dict):
             return
-        from .app import services
         data = services.current().agent_config.without_graphify_hooks(data)
         self.settle(rel, json.dumps(data, indent=2) + "\n" if data else "")
 
@@ -164,8 +164,7 @@ class Cleaner:
 
 
 def clean_repos(dry: bool) -> dict[str, list[str]]:
-    from . import docs
-    return {n: Cleaner(n, dry).run() for n in docs.repo_names()}
+    return {n: Cleaner(n, dry).run() for n in services.current().workspace.repo_names()}
 
 
 # ---------- phase 1: move ----------
@@ -173,8 +172,7 @@ def plan_moves() -> tuple[list[str], list[str]]:
     dest = ROOT / CAM_DIR
     moves = [n for n in ROOT_ITEMS if (ROOT / n).exists() or (ROOT / n).is_symlink()]
     tracked_top = {Path(p).parts[0] for p in out(["git", "ls-files"], cwd=ROOT).splitlines()} if (ROOT / ".git").exists() else set()
-    from . import docs
-    repos = set(docs.repo_names()) | {CAM_DIR}
+    repos = set(services.current().workspace.repo_names()) | {CAM_DIR}
     moves += sorted(t for t in tracked_top - set(moves) if t not in repos)   # anything else the docs repo versions
     left = sorted(p.name for p in ROOT.iterdir() if p.name not in moves and p.name not in repos and p.name != ".DS_Store"
                   and p != dest)
@@ -222,8 +220,6 @@ def main(yes: bool = False, dry_run: bool = False, finish: bool = False) -> int:
 
 # ---------- phase 2: wire the new layout ----------
 def finish_phase(dry: bool = False, ask: bool = False) -> int:
-    from . import docs
-    from .app import services
     report = clean_repos(dry=True)
     if ask and any(report.values()):
         for repo, acts in report.items():
@@ -235,11 +231,11 @@ def finish_phase(dry: bool = False, ask: bool = False) -> int:
         return 0
     for repo, acts in clean_repos(dry=False).items():
         print(f"✔ {repo}: {len(acts)} change(s)" if acts else f"· {repo}: clean")
-    ws = docs.workspace()
+    ws = services.current().workspace.workspace()
     ws["project"].pop("agent_branch", None)
-    docs.save_workspace(ws)
+    services.current().workspace.save_workspace(ws)
     comps = services.current().components.components()
-    for n in docs.repo_names():
+    for n in services.current().workspace.repo_names():
         if "openwiki" in comps and (repo_dir(n) / "openwiki").exists():
             services.current().links.link_repo_wiki(n)
     services.current().setup.wire_umbrella(print, comps)

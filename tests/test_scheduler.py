@@ -46,6 +46,8 @@ sys.path.insert(0, os.environ["KIT_DIR"])
 if os.environ.get("FAKE_OLD_KIT"):           # an older kit on PATH: it knows nothing of the state root
     os.environ.pop("CAMARONES_STATE_ROOT", None)
     os.environ.pop("CAMARONES_WORKSPACE", None)
+from lib import bootstrap
+bootstrap.build()                           # a process of its own builds its services first
 from lib import plan
 plan.set_status(uid, os.environ.get("FAKE_STATUS", "done"))
 mark("end")

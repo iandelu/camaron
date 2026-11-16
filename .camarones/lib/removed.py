@@ -5,8 +5,8 @@ from __future__ import annotations
 import datetime as dt
 
 from .common import DOCS, rel_file
-from . import docs
 from .domain.docs import frontmatter
+from .app import services
 
 LOGICAL = "overview/removed.md"
 PAGE = DOCS / LOGICAL
@@ -80,7 +80,7 @@ def add(what: str, why: str, decision: str = "", when: str | None = None) -> str
     row = f"| {_cell(what)} | {when} | {_cell(why)} | {link} |\n"
     _write(PAGE, "en", row, {})
     _, body = frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))
-    for lang in docs.workspace()["project"].get("translations", []):
+    for lang in services.current().workspace.workspace()["project"].get("translations", []):
         tf = DOCS / "i18n" / lang / LOGICAL
         if lang not in PAGES or (tf.exists() and not _ours(tf)):
             continue

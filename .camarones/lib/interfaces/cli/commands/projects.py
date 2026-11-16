@@ -31,9 +31,9 @@ class Switch(Command):
          en="Prepare this project (templates and plan)")
 class Init(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
-        from lib import docs, plan
+        from lib import plan
         cli.services.templates.init_templates()
-        docs.save_workspace(docs.workspace())   # persist workspace.yaml even with 0 repos yet — global
+        cli.services.workspace.save_workspace(cli.services.workspace.workspace())  # persist workspace.yaml even with 0 repos yet — global
         plan.sync()                             # install's marker lookup (find_project_marker) needs it on disk
         return 0
 

@@ -36,6 +36,7 @@ from .deps import Node, norm_touch
 from .items import load_dir
 from .state import id_key
 from ..domain.docs import frontmatter
+from ..adapters.stores import workspace
 
 log = logging.getLogger("camaron.board.index")
 
@@ -76,7 +77,7 @@ def _stats() -> Iterator[tuple[str, int, int]]:
     files += [(f"archive/{f.name}", f) for f in ARCHIVE.glob("*.md")]
     for logical, f in docs.iter_docs():
         files.append((f"doc/{logical}", f))
-    for repo in docs.repo_names():
+    for repo in workspace.repo_names():
         files.append((f"graph/{repo}", codemap.graph_file(repo)))
     for name, f in files:
         try:
@@ -214,7 +215,7 @@ def _build(conn: sqlite3.Connection, snap: str) -> None:
             cites.append((page, rp[0], rp[1], groups.of(*rp)))
 
     files, edges = [], []                            # the whole code map of every repo that has a graph
-    for repo in docs.repo_names():
+    for repo in workspace.repo_names():
         if codemap.graph_file(repo).is_file():
             files += [(repo, path, grp) for path, grp in sorted(groups.map(repo).items())]
             edges += [(repo, s, d) for s, d in sorted(codemap.file_edges(repo))]

@@ -9,8 +9,8 @@ from itertools import combinations
 from pathlib import Path
 
 from .common import DOCS, repo_dir, out
-from . import docs
 from .domain.docs import frontmatter
+from .adapters.stores import workspace
 
 LOGICAL = "overview/history.md"
 PAGE = DOCS / LOGICAL
@@ -87,7 +87,7 @@ def _rank(counter: Counter) -> list[tuple]:
 
 def mine(months: int = 12, top: int = 10) -> dict:
     repos, keys = {}, {}
-    for repo in docs.repo_names():
+    for repo in workspace.repo_names():
         if not (repo_dir(repo) / ".git").exists():
             continue
         found = commits(repo, months)
@@ -156,7 +156,7 @@ def write(months: int = 12) -> Path:
     body = render(h)
     PAGE.write_text(frontmatter.join_fm(_fm("en"), body), encoding="utf-8", newline="\n")
     sha = frontmatter.body_sha(frontmatter.split_fm(PAGE.read_text(encoding="utf-8"))[1])
-    for lang in docs.workspace()["project"].get("translations", []):
+    for lang in workspace.workspace()["project"].get("translations", []):
         if lang in TEXT and lang != "en":
             tf = DOCS / "i18n" / lang / LOGICAL
             tf.parent.mkdir(parents=True, exist_ok=True)

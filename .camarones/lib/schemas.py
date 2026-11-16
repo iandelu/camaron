@@ -15,8 +15,9 @@ import yaml
 
 from .core import yamlio
 from .common import DOCS, repo_dir
-from . import docs, quickarch, radar
+from . import quickarch, radar
 from .domain.docs import frontmatter
+from .adapters.stores import workspace
 
 EXTS = {".sql", ".xml", ".yaml", ".yml", ".prisma", ".rules", ".java", ".kt", ".ts", ".js", ".mjs", ".py", ".dart"}
 TEST_DIRS = {"test", "tests", "__tests__", "e2e", "spec", "testFixtures", "androidTest"}
@@ -508,7 +509,7 @@ def _engines(repo: str, kind: str) -> list[str]:
 
 
 def scan() -> dict[str, dict]:
-    return {r: scan_repo(r, repo_dir(r)) for r in docs.repo_names() if repo_dir(r).is_dir()}
+    return {r: scan_repo(r, repo_dir(r)) for r in workspace.repo_names() if repo_dir(r).is_dir()}
 
 
 # ---------- rendering: the generated block and the page ----------

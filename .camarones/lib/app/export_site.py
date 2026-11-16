@@ -64,7 +64,7 @@ def export_site(log: Log = print) -> Path:
                           "text": frontmatter.split_fm(doc["raw"])[1][:20000]})
     log(f"✔ {len(t['docs'])} docs" + (f" + translations ({', '.join(t['langs'])})" if t["langs"] else ""))
     images = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
-    folders = [(DOCS, tmp / "raw")] + [(docs.wiki_dir(n), tmp / "raw" / "wikis" / n) for n in docs.repo_names()]
+    folders = [(DOCS, tmp / "raw")] + [(docs.wiki_dir(n), tmp / "raw" / "wikis" / n) for n in services.current().workspace.repo_names()]
     for src, out_dir in folders:                    # a wiki page's images: raw/wikis/<repo>/… as the server serves them
         for f in (src.rglob("*") if src.is_dir() else ()):
             if f.is_file() and f.suffix.lower() in images:
@@ -115,7 +115,7 @@ portal = export_site
 
 
 def portal_steps() -> int:
-    wikis_n = sum(1 for n in docs.repo_names() if wiki.wiki_pages(n))
+    wikis_n = sum(1 for n in services.current().workspace.repo_names() if wiki.wiki_pages(n))
     c4 = 1 if (services.current().diagrams.arch_dir() / "likec4.config.json").exists() else 0
     return 4 + 2 * c4 + 2 * wikis_n
 

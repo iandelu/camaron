@@ -63,9 +63,9 @@ def test_autopilot_follows_the_agentic_heavy_routing(kit, monkeypatch):
     plan = kit.plan
     plan.sync()
     plan.set_status("setup", "done")
-    ws = kit.docs.workspace()
+    ws = kit.services.workspace.workspace()
     ws["agents"] = {"routing": {"agentic-heavy": ["codex:o5", "claude"]}}
-    kit.docs.save_workspace(ws)
+    kit.services.workspace.save_workspace(ws)
     calls = []
 
     def run_agent(agent, text, lang, uid, echo):

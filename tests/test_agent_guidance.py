@@ -107,7 +107,7 @@ def test_removed_on_purpose_page(kit):
 
 
 def test_removed_keeps_its_spanish_twin_current(kit):
-    ws = kit.docs.workspace(); ws["project"]["translations"] = ["es"]; kit.docs.save_workspace(ws)
+    ws = kit.services.workspace.workspace(); ws["project"]["translations"] = ["es"]; kit.services.workspace.save_workspace(ws)
     env = {**os.environ, "CAMARONES_ROOT": str(kit.root)}
     for what in ("SOAP billing endpoint", "Old admin UI"):
         r = subprocess.run([sys.executable, str(KIT_DIR / "camarones.py"), "removed", "add", what, "--why", "gone"],

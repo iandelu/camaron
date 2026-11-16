@@ -296,11 +296,11 @@ def system_repos(dg):
 
 
 def add_repos(dg, n):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     for i in range(n):
         dg.put(f"svc{i}", "package.json", f'{{"name": "svc{i}"}}\n')
         ws["repos"].append({"name": f"svc{i}", "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
 
 
 def test_context_map_draws_repos_stores_and_calls(dg):
@@ -340,9 +340,9 @@ def test_context_needs_a_repo_and_only_exists_for_the_system(dg):
     system_repos(dg)
     assert dg.mod.ids("context", "api") == [] and dg.mod.render("context", "api", None) is None
     assert dg.mod.render("context", SYSTEM, "x") is None
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"] = []
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     assert dg.mod.ids("context", SYSTEM) == [] and dg.mod.render("context", SYSTEM, None) is None
 
 
@@ -379,19 +379,19 @@ def test_two_brokers_share_the_name_broker(dg):
 
 
 def test_a_hyphenated_repo_gets_an_aliased_participant(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"].append({"name": "pet-api", "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     dg.put("pet-api", "src/Bus.java", 'class Bus { void f() { kafkaTemplate.send("pet-created", m); } }\n')
     code = mermaid(dg.mod.render("messaging", SYSTEM, "pet-created")[0])
     assert "participant pet_api as pet-api" in code and "pet_api->>Broker: publish pet-created" in code
 
 
 def test_sequence_keywords_as_repo_names_get_safe_participants(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     for name in ("loop", "alt"):
         ws["repos"].append({"name": name, "kind": "service", "branch": "main"})
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     dg.put("loop", "src/Bus.java", 'class Bus { void f() { kafkaTemplate.send("pet-created", m); } }\n')
     dg.put("alt", "src/Sub.java", 'class Sub { @KafkaListener(topics = "pet-created") void on(String m) {} }\n')
     code = mermaid(dg.mod.render("messaging", SYSTEM, "pet-created")[0])
@@ -486,9 +486,9 @@ def test_no_page_without_diagrams(dg):
 
 
 def test_nothing_to_draw_writes_nothing(dg):
-    ws = dg.kit.docs.workspace()
+    ws = dg.kit.services.workspace.workspace()
     ws["repos"] = []
-    dg.kit.docs.save_workspace(ws)
+    dg.kit.services.workspace.save_workspace(ws)
     assert dg.mod.write_pages() == []
     assert not (dg.kit.root / "docs" / "architecture" / "system-map.md").exists()
 

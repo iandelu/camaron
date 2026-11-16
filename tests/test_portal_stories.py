@@ -260,8 +260,8 @@ def test_the_list_needs_no_token_and_carries_the_lint_words(world, server):
     from lib import stories
     assert b["lint_words"] == {"es": stories.lint_words("es"), "en": stories.lint_words("en")}
     assert get(server, "/api/stories", token=PORTAL)[1]["writable"] is True
-    from lib import docs
-    assert b["repos"] == sorted(docs.repo_names()) + ["cam-docs"]        # the prefixes Toca accepts for a new file
+    from lib.app import services
+    assert b["repos"] == sorted(services.current().workspace.repo_names()) + ["cam-docs"]        # the prefixes Toca accepts for a new file
 
 
 def test_the_list_without_a_board_is_empty(world, server):

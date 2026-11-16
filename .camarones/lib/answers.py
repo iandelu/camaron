@@ -7,7 +7,7 @@ from __future__ import annotations
 import re, tempfile
 from pathlib import Path
 
-from . import docs
+from .app import services
 
 LIMIT = 9000                   # characters of excerpts: a bounded model's context, with room for the answer
 TIMEOUT = 90                   # seconds a person waits in the portal
@@ -15,7 +15,7 @@ CHEAP = {"claude": "haiku"}    # answering from given excerpts needs no large mo
 
 
 def runner() -> str | None:
-    if (docs.workspace().get("ask") or {}).get("ai") is False:
+    if (services.current().workspace.workspace().get("ask") or {}).get("ai") is False:
         return None
     from . import plan
     found = plan._agents(lambda _: None, "bounded", allow_local=True)
@@ -25,7 +25,7 @@ def runner() -> str | None:
 def model(target: str) -> str | None:
     """The model to ask for: `ask.model`, else the route's own (`claude:opus`), else the runner's cheap one."""
     from .harness import routing
-    chosen = (docs.workspace().get("ask") or {}).get("model")
+    chosen = (services.current().workspace.workspace().get("ask") or {}).get("model")
     if chosen:
         return str(chosen)
     route = routing.parse(target)
