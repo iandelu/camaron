@@ -7,7 +7,7 @@ import re
 import shutil
 from pathlib import Path
 
-from lib import binaries, docs
+from lib import binaries
 from lib.app import components, services, templates, viewers
 from lib.common import (CAM_DIR, CAM_LAYOUT, DOCS, HOME, ROOT, VERSIONS, WORKSPACE, WS_FILE, cli_cmd, ensure_path,
                         load_json, out, repo_dir, run, save_json, sdkman_dir, uv, which)
@@ -275,7 +275,7 @@ def setup(ci: bool = False, log: Log = print, comps: list[str] | None = None) ->
         raise RuntimeError("missing prerequisites: " + ", ".join(missing))
     install_tools(log, comps)
     log("syncing repositories…")
-    failed = docs.sync_repos(lambda m: log(m.strip()))
+    failed = services.current().repos.sync_repos(lambda m: log(m.strip()))
     if failed:
         raise RuntimeError('Repository sync failed: ' + ', '.join(failed))
     log(f"✔ {len(services.current().workspace.repo_names())} repo(s) in sync")

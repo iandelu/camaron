@@ -331,7 +331,7 @@ def test_first_run_of_a_greenfield_project_skips_stack_and_arch(kit, fake_wizard
 @pytest.mark.parametrize("kind, disabled", [("legacy", True), ("greenfield", False)])
 def test_repos_step_needs_a_repo_only_for_legacy(kit, fake_wizard, monkeypatch, kind, disabled):
     ws = {"project": {"kind": kind}, "repos": []}
-    monkeypatch.setattr(kit.docs, "detect_repos", lambda *a: [])
+    monkeypatch.setattr(kit.services.repos, "detect_repos", lambda *a: [])
     monkeypatch.setattr(kit.services.workspace, "save_workspace", lambda ws: None)
     seen = []
     w = fake_wizard([])

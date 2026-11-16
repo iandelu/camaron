@@ -1,6 +1,6 @@
 """Onboarding: what a folder picked in the desktop app is, before any project exists, and the first-run state the CLI
 wizard and the app share (step lists, position in `firstrun.json`, the name step, `start`). `inspect` reads the disk
-(and `git remote`/`rev-parse` through docs.detect_repos) and never writes; it must work on any folder, so it takes
+(and `git remote`/`rev-parse` through adapters/git/repos.py detect_repos) and never writes; it must work on any folder, so it takes
 everything from its argument and none from this process's project globals. Never imports `wizard` at module level."""
 from __future__ import annotations
 
@@ -122,7 +122,7 @@ def _has_repos(f: Path) -> bool:
 
 def inspect(folder: Path) -> dict:
     """What `folder` is, first match wins: project · repo · umbrella · code · empty. Returns `case`, `kind`,
-    `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (docs.detect_repos
+    `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (detect_repos
     rows), `siblings` (repo case: the other repos next to it) and `warning`: `home` when the workspace is the user's home or a
     filesystem root and no project is there yet (wins over the rest), else `no-git` for code without a repository. A picked `cam-docs` folder
     is read as the workspace it belongs to, and a folder inside a git repository as that repository. Code with a manifest
@@ -151,7 +151,7 @@ def inspect(folder: Path) -> dict:
     if case != "project" and is_home_or_root(workspace):     # a project already there keeps opening (AGENTS 2.3)
         warning = "home"
     try:
-        repos = docs.detect_repos(workspace) if workspace.is_dir() else []
+        repos = services.current().repos.detect_repos(workspace) if workspace.is_dir() else []
     except OSError:                         # unreadable folder: no repos to show, not a crash
         repos = []
     if case == "repo" or (case == "code" and workspace != f):        # code at the top: the repo it will be
@@ -231,7 +231,7 @@ def state() -> dict:
     ids = [s for s in steps("new" if m == "done" else m, kind) if s != "name"]
     step = resume_id(saved)
     try:
-        found = docs.detect_repos()
+        found = services.current().repos.detect_repos()
     except OSError:
         found = []
     return {"name": ws["project"].get("name") or "", "mode": m, "kind": kind, "steps": ids,

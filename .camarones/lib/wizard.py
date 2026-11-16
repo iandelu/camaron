@@ -1136,7 +1136,7 @@ class W:
         console.print(tbl if ws["repos"] else f"  {self.t('repos_none')}")
 
     def fr_repos(self, ws: dict):
-        found = docs.detect_repos()
+        found = services.current().repos.detect_repos()
         if not ws["repos"] and found:          # first visit: preselect what is already in the folder, shown explicitly
             ws["repos"] = list(found)
             services.current().workspace.save_workspace(ws)
@@ -2301,7 +2301,7 @@ class W:
             self.banner()
             self.add_token(host)
             self.banner()
-            self.safe(self.busy, lambda log: docs.sync_repos(log))
+            self.safe(self.busy, lambda log: services.current().repos.sync_repos(log))
             missing = onboard.missing_repos()
 
     def do_repos(self) -> None:
@@ -2309,7 +2309,7 @@ class W:
         before = {r["name"] for r in ws["repos"]}
         self.fr_repos(ws)
         if {r["name"] for r in services.current().workspace.workspace()["repos"]} != before:
-            self.safe(self.busy, lambda log: docs.sync_repos(log))
+            self.safe(self.busy, lambda log: services.current().repos.sync_repos(log))
             self.retry_missing(onboard.missing_repos())
             for n in services.current().workspace.repo_names():
                 if (repo_dir(n) / ".git").exists() and not services.current().code.repo_graph(n).exists():

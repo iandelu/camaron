@@ -100,6 +100,11 @@ def _workspace() -> object:
     return workspace
 
 
+def _repos() -> object:
+    from lib.adapters.git import repos
+    return repos
+
+
 PROVIDERS: dict[str, Callable[[], object]] = {
     "launcher": _launcher,
     "diagrams": _diagrams,
@@ -119,6 +124,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "portal": _portal,
     "export_site": _export_site,
     "workspace": _workspace,
+    "repos": _repos,
 }
 
 

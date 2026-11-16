@@ -18,6 +18,7 @@ from lib.ports.toolchain import Toolchain
 from lib.ports.vcs import Vcs
 from lib.ports.wiki_engine import WikiEngine
 from lib.ports.workspace_store import WorkspaceStore
+from lib.ports.repo_sync import RepoSync
 
 
 class Services:
@@ -34,6 +35,7 @@ class Services:
     containers: ContainerRuntime
     vcs: Vcs
     workspace: WorkspaceStore
+    repos: RepoSync
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

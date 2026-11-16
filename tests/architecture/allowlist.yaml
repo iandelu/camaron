@@ -32,7 +32,6 @@ violations:
   - "bump -> inventory"
   - "c4edit -> harness.symbols"
   - "diagrams -> genblocks"
-  - "docs -> creds"
   - "exporters -> harness.symbols"
   - "genblocks -> diagrams"
   - "genblocks -> quickarch"

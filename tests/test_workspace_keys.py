@@ -33,7 +33,7 @@ def test_cli_setup_keeps_a_repos_stack(kit, monkeypatch):
 def test_wizard_repos_pick_keeps_a_repos_own_keys(kit, fake_wizard):
     """Re-picking the repos found in the folder (Repos › pick) used to replace each row with the bare detected one."""
     name = seed(kit)
-    found = [r["name"] for r in kit.docs.detect_repos()]
+    found = [r["name"] for r in kit.services.repos.detect_repos()]
     assert name in found
     w = fake_wizard(["pick", found, "go"])
     w.banner = lambda *a, **kw: None

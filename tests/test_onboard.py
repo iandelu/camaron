@@ -144,8 +144,8 @@ def test_manifests(kit):
 def test_detect_repos_takes_a_workspace(kit, tmp_path):
     other = tmp_path / "other"
     make_repo(other / "solo", {"go.mod": "module solo\n"})
-    assert [r["name"] for r in kit.docs.detect_repos(other)] == ["solo"]
-    assert [r["name"] for r in kit.docs.detect_repos()] == ["api", "web", "worker"]     # no argument: the kit's workspace
+    assert [r["name"] for r in kit.services.repos.detect_repos(other)] == ["solo"]
+    assert [r["name"] for r in kit.services.repos.detect_repos()] == ["api", "web", "worker"]     # no argument: the kit's workspace
 
 
 # ---------- first-run state shared by the CLI and the app: name, start, steps ----------
@@ -249,7 +249,7 @@ def test_inspect_an_unreadable_folder_reads_as_no_repos(kit, tmp_path, monkeypat
     monkeypatch.setattr(kit.projects, "has_repos", denied)
     r = kit.onboard.inspect(tmp_path / "locked")
     assert (r["case"], r["repos"]) == ("empty", [])
-    monkeypatch.setattr(kit.docs, "detect_repos", denied)
+    monkeypatch.setattr(kit.services.repos, "detect_repos", denied)
     assert kit.onboard.inspect(tmp_path / "locked")["repos"] == []
 
 

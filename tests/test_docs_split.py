@@ -58,12 +58,12 @@ FROM_ONBOARD = {"WS_HEADER": "adapters.stores.workspace", "write_workspace": "ad
 # MOVED: the homes whose names have moved; each task adds its own
 MOVED: set[str] = {"core.clock", "ports", "domain.docs.frontmatter", "domain.docs.trust_levels", "domain.docs.page_outline",
                    "domain.docs.logical_paths", "domain.docs.directives", "domain.docs.synonyms",
-                   "adapters.stores.workspace"}
+                   "adapters.stores.workspace", "adapters.git.repos"}
 NEW: set[str] = {home for home in _MAP if home.startswith(("domain.", "adapters.", "app."))}
 
 # `services.docs` is the DocStore field (plan Q7), not lib.docs: the patterns skip it
 # any chain before docs (kit.docs.X, pg.kit.docs.X, a bare docs.X), except the services field
-TEST_READS = (re.compile(r"(?<![\w.])(?:\w+\.)*(?<!services\.)docs\.([A-Za-z_]\w*)"),
+TEST_READS = (re.compile(r"(?<![\w./@:#-])(?:\w+\.)*(?<!services\.)docs\.([A-Za-z_]\w*)"),   # not a URL's docs.git
               re.compile(r"lib\.docs\.([A-Za-z_]\w*)"),
               re.compile(r"setattr\(\s*(?:(?!services\b)\w+\.)*docs\s*,\s*[\"']([A-Za-z_]\w*)[\"']"))
 CODE_STRING_READ = re.compile(r"(?<![\w.])docs\.([A-Za-z_]\w*)")
@@ -178,6 +178,7 @@ def test_the_guard_sees_the_setattr_and_code_string_forms():
     assert seen == {"zz", "x"}
     assert TEST_READS[2].search('monkeypatch.setattr(kit.services.docs, "zz", f)') is None
     assert TEST_READS[0].search("kit.services.docs.iter_docs()") is None
+    assert TEST_READS[0].search('"https://gitlab.example.com/g/docs.git", "team-docs.git", "git@h:a/docs.git"') is None
     assert {m.group(1) for m in TEST_READS[0].finditer("kit.docs.workspace(), docs.split_fm(t), pg.kit.docs.check()")} \
         == {"workspace", "split_fm", "check"}
     assert {m.group(1) for m in CODE_STRING_READ.finditer("from lib import docs\ndocs.collect()\ndocs.llms()")} \
