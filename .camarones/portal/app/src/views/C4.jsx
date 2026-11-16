@@ -4,7 +4,7 @@ import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { c4Box, drawC4, flowViewId, loadViewers } from '../content/doc.js'
 import { core } from '../core.js'
-import { splitElements } from './c4.js'
+import { splitElements, viewFile } from './c4.js'
 
 export const VIEW_GROUPS = ['system', 'element', 'dynamic', 'deployment']
 export const viewGroup = (v) => (v.id === 'index' ? 'system' : v.kind)
@@ -70,7 +70,7 @@ function C4View({ view, t }) {
         <div>
           <h1>{view.title}</h1>
           <div className="meta"><Chip>{t('kind.' + viewGroup(view))}</Chip><code>{view.id}</code>
-            <span className="muted small">architecture/{view.file}</span></div>
+            <span className="muted small">{viewFile(core.tree(), view.file)}</span></div>
         </div>
         <div className="row">
           {flowDoc && <Button size="sm" variant="ghost" href={core.hrefFor(flowDoc.path)}>{t('readFlow')}</Button>}

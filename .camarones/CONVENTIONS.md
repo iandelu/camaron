@@ -19,7 +19,7 @@ Humans: see `docs/guides/tutorial.md`. `CLI` = `camaron` (legacy per-project cop
 | Project context for OpenWiki | `wikis/<repo>/INSTRUCTIONS.md` (user-authored brief OpenWiki reads, never rewrites) | Camarón, then humans |
 | Code graph | `graph/<repo>/` (git-ignored, AST-only, `CLI graph`), merged in `.camarones/.cache/graph/` | graphify |
 | Work plan & session handoff | `docs/.work/plan.yaml`, `handoff.md`, `log.md` | Camarón CLI + agents |
-| C4 model (single source for every architecture diagram) | `docs/architecture/*.c4` | Camarón agent |
+| C4 model (single source for every architecture diagram) | `docs/architecture/*.c4`, or the repo folder `project.architecture` names | Camarón agent |
 | Project overview, domain, flows, data, deployment, ADRs, quality | `docs/<section>/*.md` | Camarón + humans |
 | Security review (opt-in unit) | `docs/security/*.md` | Camarón agent |
 | Translations | `docs/i18n/<lang>/<same logical path>` (repo pages: `docs/i18n/<lang>/repos/<repo>/<page>`) | Camarón agent |
@@ -68,6 +68,11 @@ x-owner: ai                  # ai (agent may rewrite) | human (agent never rewri
 ## 4. Architecture (C4 with LikeC4)
 
 - One model, many views. Kinds/tags live in `docs/architecture/spec.c4`; never invent new kinds without adding them there.
+- **Where the model lives.** `docs/architecture/` by default. A project whose service repo already keeps its own LikeC4
+  model sets `project.architecture: <repo>:<path>` in `.camarones/workspace.yaml` (e.g. `api:docs/architecture`):
+  that folder is then the one model. The portal lists, builds and edits it, `c4:` sources resolve against it, the
+  `likec4` MCP server reads it and `arch-draft` writes no second one. Read `docs/architecture/` in these rules as that
+  folder; the kit adds no files to the repo (section 7), and the portal's C4 editor changes only the repo's own `.c4`.
 - `model.c4`: actors, external systems, the project `system`, one container per repo/datastore/broker/topic.
   Container ids = repo name in camelCase; `metadata { repo '<repo-name>' }` on every repo container.
 - `repos/<repo>.c4`: `extend <system>.<container> { components… }` + `view <repo_snake>_components of <system>.<container> { include * }`.

@@ -12,8 +12,8 @@ from typing import Callable
 import yaml
 
 from .core import yamlio
-from .common import (CAM_DIR, CAM_LAYOUT, DOCS, IS_WIN, VERSIONS, cli_cmd, ensure_path, find_project_marker, load_json,
-                     repo_dir, run, save_json, ws_rel)
+from .common import (CAM_DIR, CAM_LAYOUT, DOCS, IS_WIN, VERSIONS, WORKSPACE, cli_cmd, ensure_path, find_project_marker,
+                     load_json, repo_dir, run, save_json, ws_rel)
 from .harness.ctx import Ctx
 from . import plan, projects
 from .app import services
@@ -384,14 +384,14 @@ def arch_prompt(lang: str) -> str:
     """The agent prompt that refines the static C4 draft; `lang` (es | en) is the language it talks to the user in."""
     cli = cli_cmd()
     talk = "Spanish" if lang == "es" else "English"
-    arch = ws_rel("docs/architecture")
+    arch = Path(os.path.relpath(services.current().diagrams.arch_dir(), WORKSPACE)).as_posix()   # or a repo's folder
     # the agent runs in WORKSPACE: in the cam-docs layout a bare `docs/…` path would make it write a second,
     # unused model next to the repos while the portal keeps showing the unrefined draft
     layout = (f"\nLayout: you run in the workspace folder. Docs live in `{CAM_DIR}/` (its own git repo); the service repos "
               f"are its siblings. Edit only the files under `{arch}/` — never create a `docs/` folder anywhere else.\n"
               if CAM_LAYOUT else "")
     code = ("`graphify query` in the repos, " if "graphify" in services.current().components.components() else "")
-    first_look = (f" Update `{arch}/first-look.md` to match."            # an old-layout project's page
+    first_look = (f" Update `{ws_rel('docs/architecture/first-look.md')}` to match."      # an old-layout project's page
                   if (DOCS / "architecture" / "first-look.md").exists() else "")
     return f"""Camarones session — improve the first-look architecture draft.
 {layout}
@@ -531,11 +531,14 @@ def arch_draft(log) -> dict:
 
 def arch_save(overwrite: bool = False) -> dict:
     """Copy the last draft into docs/architecture. An existing model.c4 is never replaced unless `overwrite`. The new
-    page layout has no first-look.md: only an old-layout project gets one (as the wizard's arch step does)."""
+    page layout has no first-look.md: only an old-layout project gets one (as the wizard's arch step does). A model kept
+    in a service repo (workspace.yaml `project.architecture`) is never written: the answer says where it is."""
     from . import pages, quickarch
     draft = last_draft()
     if not draft:
         raise ValueError("draft")
+    if src := services.current().diagrams.arch_source():
+        return {"exists": True, "external": src}
     if (DOCS / "architecture" / "model.c4").exists() and not overwrite:
         return {"exists": True}
     return {"written": quickarch.save(draft, overwrite=overwrite, page=pages.layout() == "old"), "exists": False}

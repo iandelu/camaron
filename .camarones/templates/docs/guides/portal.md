@@ -161,7 +161,9 @@ technology, description and relations, AI drafts first. You can **Edit** an elem
 **Confirm** one or **the whole view** (`#ai-draft` becomes `#confirmed`, with who and when). Every change touches only
 those lines of the `.c4` file and is checked with LikeC4; if it breaks the model it is not saved. The diagram is
 redrawn when the C4 explorer is rebuilt from the desktop app. **Read the flow** opens a flow's page; the full explorer
-opens from the sidebar.
+opens from the sidebar. The model lives in `docs/architecture/`, or in a service repo's folder when
+`project.architecture: <repo>:<path>` in `workspace.yaml` points there (a repo that keeps its own LikeC4 model): each
+view then shows `<repo>:<path>/<file>` and the edits go to that repo's files, which you commit in that repo.
 
 **Code graph** (`#/code`): the graphify graph as a readable map — each repo's modules and their dependencies, the most
 used files, packages and, per file, what it uses and who uses it — with a search box. The raw graph is a click away.

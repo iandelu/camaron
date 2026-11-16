@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .common import DOCS, CACHE, run, which, repo_dir
 from .adapters.stores import workspace
+from .domain import architecture
 
 SKIP_DIRS = {".git", "node_modules", "target", "build", "dist", ".gradle", ".idea", ".venv", "venv", "__pycache__",
              "graphify-out", "openwiki", ".dart_tool", ".next", "coverage", ".claude", ".codex", ".agents", "vendor"}
@@ -360,9 +361,22 @@ description: Automatic first draft of the system architecture (static scan, no A
 """
 
 
+def external_model() -> str | None:
+    """`<repo>:<path>` when workspace.yaml keeps the C4 model in a service repo (`project.architecture`): then that is
+    the one model and a draft is never saved over it or next to it."""
+    try:
+        ref = architecture.parse(workspace.workspace()["project"].get(architecture.KEY), workspace.repo_names())
+    except ValueError:
+        return None
+    return f"{ref[0]}:{ref[1]}" if ref else None
+
+
 def save(model: dict, overwrite: bool = False, page: bool = True) -> list[str]:
     """Copy the draft into docs/architecture (the C4 source of truth) and, with `page` (the old layout), write
-    `first-look.md` from it; `page=False` writes the C4 files only. Returns the written files."""
+    `first-look.md` from it; `page=False` writes the C4 files only. Returns the written files: none when the model
+    lives in a service repo (external_model)."""
+    if external_model():
+        return []
     dst = DOCS / "architecture"
     dst.mkdir(parents=True, exist_ok=True)
     written = []

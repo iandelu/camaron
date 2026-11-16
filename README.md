@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.83.2-ff875f?style=flat-square" alt="Versión 4.83.2">
+  <img src="https://img.shields.io/badge/version-4.84.0-ff875f?style=flat-square" alt="Versión 4.84.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -459,6 +459,8 @@ commits, quién trabaja dónde, ficheros que cambian juntos, tickets entre repos
 herramientas en `docs/overview/tooling.md` y `stack` corrige uno mal detectado. `schemas` lee tablas y colecciones de
 migraciones (Flyway, Liquibase), entidades (JPA, SQLAlchemy, Django, TypeORM, Prisma), Mongo y Firestore.
 `arch-draft` propone un borrador C4 (entiende proyectos Firebase).
+
+**El C4 en un repo.** Si un repo de servicio ya tiene su propio modelo LikeC4, `cam-docs` no hace otro: `project.architecture: <repo>:<ruta>` en `.camarones/workspace.yaml` (por ejemplo `api:docs/architecture`) lo convierte en el modelo del proyecto. El portal lista sus vistas, el explorador C4 se construye desde él, el editor de Arquitectura cambia sus `.c4` (que commiteas en ese repo), `check` comprueba las fuentes `c4:` contra él, el MCP `likec4` lo lee y `arch-draft` no escribe un borrador aparte. `check` avisa si la clave nombra un repo que no existe o una carpeta que aún no está; sin la clave, todo sigue en `docs/architecture/`.
 
 Son bloques `<!-- generated:… -->` que `pages`, `blocks` y `sync` mantienen al día. Si alguien edita uno a mano, se
 conserva y `check` lo avisa (`blocks --force` toma la versión del código). Una persona confirma uno copiando el `sha=` en

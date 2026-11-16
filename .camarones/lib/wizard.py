@@ -17,7 +17,7 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Table
 from rich.text import Text
 
-from .common import (ROOT, DOCS, HOME, PREFS, WORK, WS_FILE, CACHE, IS_WIN, IS_MAC, CAM_DIR, CAM_LAYOUT, WORKSPACE, which, cli_cmd,
+from .common import (ROOT, HOME, PREFS, WORK, WS_FILE, CACHE, IS_WIN, IS_MAC, CAM_DIR, CAM_LAYOUT, WORKSPACE, which, cli_cmd,
                      load_json, save_json, out, repo_dir)
 from .app import services
 from . import ci, genblocks, install_state, plan, creds, questionnaire, quickarch, radar, sessions, tutorial, upgrade, usage
@@ -269,6 +269,7 @@ T = {
         "a_view": "🌐 Verlo en el portal (pestaña C4)",
         "a_redo": "↻ Rehacerlo (volver a analizar los repos)",
         "a_keep": "✔ Dejarlo como está",
+        "a_external": "El modelo C4 de este proyecto vive en {where} (workspace.yaml, project.architecture): no escribo un borrador aparte.",
         "sk_menu": "🧰 Stack y herramientas de cada repo",
         "sk_intro": "He mirado cada repo sin IA: su stack y las herramientas que ya usáis (Backstage, Sonar, librería de componentes, linters, contratos, CI…). La IA lo leerá primero y lo irá afinando. Si un stack está mal, corrígelo aquí.",
         "sk_repo": "Repo", "sk_stack": "Stack", "sk_tools": "Herramientas detectadas",
@@ -629,6 +630,7 @@ T = {
         "a_view": "🌐 View it in the portal (C4 tab)",
         "a_redo": "↻ Redo it (scan the repos again)",
         "a_keep": "✔ Keep it as it is",
+        "a_external": "This project's C4 model lives in {where} (workspace.yaml, project.architecture): I write no separate draft.",
         "sk_menu": "🧰 Stack & tools of each repo",
         "sk_intro": "I looked at each repo without AI: its stack and the tools you already use (Backstage, Sonar, component library, linters, contracts, CI…). The AI reads this first and refines it. If a stack is wrong, fix it here.",
         "sk_repo": "Repo", "sk_stack": "Stack", "sk_tools": "Tools found",
@@ -1436,11 +1438,18 @@ class W:
 
     def arch_flow(self) -> str:
         """Returns 'saved', 'skipped' or BACK."""
-        page = DOCS / "architecture" / "model.c4"           # written when a draft is saved (both layouts)
+        page = services.current().diagrams.arch_dir() / "model.c4"     # written when a draft is saved (both layouts)
+        external = services.current().diagrams.arch_source()           # the repo's own model: never redrafted
+        if external and not page.exists():
+            self.say(self.t("a_external", where=external), "yellow")
+            return "skipped"
         while page.exists():
             self.banner()
+            if external:
+                self.say(self.t("a_external", where=external))
             when = time.strftime("%Y-%m-%d %H:%M", time.localtime(page.stat().st_mtime))
-            c = self.sel(self.t("a_done", when=when), [Choice(self.t("a_view"), "view"), Choice(self.t("a_redo"), "redo"),
+            redo = [] if external else [Choice(self.t("a_redo"), "redo")]
+            c = self.sel(self.t("a_done", when=when), [Choice(self.t("a_view"), "view"), *redo,
                                                          Choice(self.t("a_keep"), "keep")])
             if c is None:
                 return BACK
@@ -1473,7 +1482,7 @@ class W:
                     break
                 if c == "skip":
                     return "skipped"
-                exists = (DOCS / "architecture" / "model.c4").exists()
+                exists = page.exists()
                 overwrite = False
                 if exists:
                     overwrite = bool(self.yes(self.t("a_overwrite"), default=False))

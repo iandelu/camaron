@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 
-from lib.common import HOME, IS_WIN, KIT, ROOT, cli_cmd, load_json, repo_dir, run, which, ws_rel
+from lib.common import HOME, IS_WIN, KIT, ROOT, WORKSPACE, cli_cmd, load_json, repo_dir, run, which
 from lib.ports import Log
 
 
@@ -21,10 +21,12 @@ def camarones_mcp() -> dict:
 
 
 def likec4_mcp() -> dict:
-    """LikeC4's own MCP server (built into the pinned CLI, offline) over docs/architecture: agents can query the C4
-    model ("who calls X?") while writing it. The path is workspace-relative — agents start in the workspace root.
-    Windows: likec4 is a .cmd shim, which MCP hosts cannot spawn directly."""
-    args = ["mcp", "--stdio", ws_rel("docs/architecture")]
+    """LikeC4's own MCP server (built into the pinned CLI, offline) over the C4 model (docs/architecture, or the repo
+    folder workspace.yaml names): agents can query it ("who calls X?") while writing it. The path is
+    workspace-relative — agents start in the workspace root. Windows: likec4 is a .cmd shim, which MCP hosts cannot
+    spawn directly."""
+    from lib.adapters import likec4
+    args = ["mcp", "--stdio", Path(os.path.relpath(likec4.arch_dir(), WORKSPACE)).as_posix()]
     return {"command": "cmd", "args": ["/c", "likec4", *args]} if IS_WIN else {"command": "likec4", "args": args}
 
 

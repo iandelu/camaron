@@ -55,7 +55,10 @@ def first_look(log) -> bool:
     the C4 explorer when LikeC4 is installed. What the empty Docs and Architecture tabs offer."""
     from lib import diagrams, inventory, pages, quickarch, radar, schemas
     new = pages.layout() == "new"
-    quickarch.save(quickarch.draft(log=log), page=not new)          # the new layout has no first-look.md
+    if src := services.current().diagrams.arch_source():           # the repo's own model is the one: no draft
+        log(f"C4 model: {src} (workspace.yaml project.architecture), no draft written")
+    else:
+        quickarch.save(quickarch.draft(log=log), page=not new)      # the new layout has no first-look.md
     radar.run(log=log)
     inventory.run(log=log)
     if new:

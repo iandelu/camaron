@@ -74,7 +74,8 @@ def kind(ref: str) -> str:
 
 def _c4_lines(element: str) -> list[str] | None:
     from .symbols import locate
-    for f in sorted((ROOT / "docs" / "architecture").rglob("*.c4")) if (ROOT / "docs" / "architecture").is_dir() else []:
+    arch = services.current().diagrams.arch_dir()          # docs/architecture, or the repo folder workspace.yaml names
+    for f in sorted(arch.rglob("*.c4")) if arch.is_dir() else []:
         lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
         found = locate(lines, element, ".c4")
         if found:
