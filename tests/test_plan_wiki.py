@@ -185,6 +185,43 @@ def test_engine_down_aborts_and_restores_the_unit(wired, engine):
     assert wired.services.links._is_link(wired.ws / "api" / "openwiki")             # the repo is put back even on failure
 
 
+@pytest.fixture
+def engine_down(kit, monkeypatch):
+    """An engine that cannot run at all (quota, login): `openwiki_generate` raises WikiAbort; returns the repos asked."""
+    wk, asked = kit.services.wiki, []
+
+    def generate(repo, mode="", log=print, engine="", force=False):
+        asked.append(repo)
+        raise wk.WikiAbort("claude cannot run right now — session limit reached")
+    monkeypatch.setattr(wk, "openwiki_generate", generate)        # where the CLI and the wizard look it up
+    return asked
+
+
+def test_cli_wiki_stops_the_batch_when_the_engine_is_down(kit, engine_down, capsys):
+    from lib.interfaces.cli import main
+    assert main.main(["wiki", "api", "web", "worker"]) == 1
+    assert engine_down == ["api"]                                    # the rest would fail the same way: not started
+    assert capsys.readouterr().err == ("✖ claude cannot run right now — session limit reached\n"
+                                       "  not started: web, worker\n")
+    assert main.main(["wiki", "web"]) == 1                           # the last repo: nothing left to name
+    assert capsys.readouterr().err == "✖ claude cannot run right now — session limit reached\n"
+
+
+def test_wizard_wikis_stop_the_batch_when_the_engine_is_down(kit, engine_down, fake_wizard, monkeypatch, capsys):
+    kit.services.workspace.set_wiki_repos(["api", "web"])
+    for r in ("api", "web"):                                         # each has its brief: both can be picked
+        brief = kit.services.docs.wiki_dir(r) / "INSTRUCTIONS.md"
+        brief.parent.mkdir(parents=True, exist_ok=True)
+        brief.write_text("brief", encoding="utf-8")
+    monkeypatch.setattr(kit.services.wiki, "wiki_engines", lambda: ["claude"])
+    w = fake_wizard(["gen", ["api", "web"], None])                   # generate both, then leave the menu
+    w.do_wikis()
+    assert engine_down == ["api"]
+    out = capsys.readouterr().out
+    assert "claude cannot run right now — session limit reached" in out and w.t("w_skipped", repos="web") in out
+    assert w.t("w_fail", repo="api") not in out                      # an engine that is down is not this repo failing
+
+
 # ---------- wiki scope: complete wikis, and a warning for the ones written under the old, narrow scope ----------
 def test_the_wiki_prompt_asks_for_a_complete_wiki(wired):
     p = wired.services.wiki.wiki_prompt("api", "init")
