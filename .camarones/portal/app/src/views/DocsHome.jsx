@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Card, Chip } from '@camaron/ui'
 import { docsGet } from '../docsApi.js'
+import { pageLede } from './docpage.js'
 import { emptyProject } from './home.js'
 import { drawC4, mountDoc } from '../content/doc.js'
 import { audience } from './DocsTree.jsx'
@@ -54,7 +55,7 @@ export default function DocsHome() {
       <div className="page wide home">
         <header className="hero">
           <h1>{row?.title && row.title !== 'index' ? row.title : index.project}</h1>
-          <p className="lead">{row?.description || t('homeLead')}</p>
+          <p className="lead">{pageLede(home || {}, row || {}) || t('homeLead')}</p>
           <div className="stats">{stats.map((s) => <Chip key={s}>{s}</Chip>)}</div>
           {business && <p className="muted small">{t('businessOn')}</p>}
         </header>
