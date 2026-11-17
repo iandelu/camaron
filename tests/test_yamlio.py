@@ -39,7 +39,7 @@ def test_reads_with_libyaml_when_pyyaml_has_it(yamlio):
 
 
 def test_without_libyaml_it_reads_with_pure_python(yamlio, monkeypatch):
-    monkeypatch.delattr(yaml, "CSafeLoader")
+    monkeypatch.delattr(yaml, "CSafeLoader", raising=False)    # a PyYAML built without libyaml has none at all
     assert importlib.reload(yamlio).Loader is yaml.SafeLoader
     assert yamlio.safe_load("a: 1\n") == {"a": 1}
 
