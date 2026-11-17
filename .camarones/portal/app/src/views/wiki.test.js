@@ -24,3 +24,10 @@ test('a linking page outside the nav is named by its file', () => {
   const odd = [{ repo: 'api', nav: { home: 'h', pages: [], backlinks: { 'wikis/api/a.md': ['wikis/api/deep/b.md'] } } }]
   expect(wikiTarget(odd, 'api', 'a.md').backlinks).toEqual([{ path: 'wikis/api/deep/b.md', title: 'b.md' }])
 })
+
+test('a linking page is named as the reader\'s docs index names it (its translation\'s title), else as the nav does', () => {
+  const titles = { 'wikis/api/wiki/index.md': 'API (es)' }
+  expect(wikiTarget(rows, 'api', 'wiki/auth.md', (p) => titles[p]).backlinks)
+    .toEqual([{ path: 'wikis/api/wiki/index.md', title: 'API (es)' }])
+  expect(wikiTarget(rows, 'api', 'wiki/auth.md', () => undefined).backlinks[0].title).toBe('API')
+})

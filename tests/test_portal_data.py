@@ -206,6 +206,62 @@ def test_static_export_carries_the_decisions_that_cover_each_page(serve_mod, mon
     assert {d["path"]: d.get("adr_status") for d in tree["docs"]}["decisions/0003-jpa.md"] == "accepted"
 
 
+# ---------- a page's lede in the reader's language ----------
+def test_a_translated_page_carries_its_own_description(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", "---\ntitle: Orders\ndescription: How an order is placed.\n---\n# Orders\n")
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\ndescription: Cómo se hace un pedido.\n---\n# Pedidos\n")
+    page(root / "i18n" / "es" / "wikis" / "api", "http-api.md",
+         "---\ndescription: Los recursos HTTP del api.\n---\n# Recursos HTTP\n")
+    assert serve_mod.serve.read("orders.md", "es")["description"] == "Cómo se hace un pedido."
+    assert serve_mod.serve.read("orders.md")["description"] == "How an order is placed."
+    assert serve_mod.serve.read("wikis/api/http-api.md", "es")["description"] == "Los recursos HTTP del api."
+
+
+def test_a_translation_without_a_description_keeps_the_page_s(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", "---\ntitle: Orders\ndescription: How an order is placed.\n---\n# Orders\n")
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\n---\n# Pedidos\n")
+    assert serve_mod.serve.read("orders.md", "es")["description"] == "How an order is placed."
+    assert serve_mod.serve.read("flows/checkout.md", "es")["description"] == ""     # neither has one
+
+
+def test_static_export_carries_the_translation_s_description(serve_mod, monkeypatch):
+    serve_mod.services.components.set_components(["agents"])
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor_file", lambda *_a: None)
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor", lambda _site: (0, []))
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", "---\ntitle: Orders\ndescription: How an order is placed.\n---\n# Orders\n")
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\ndescription: Cómo se hace un pedido.\n---\n# Pedidos\n")
+    site = serve_mod.services.export_site.export_site(log=lambda _: None)
+    read = lambda lang, rel: json.loads((site / "api" / "doc" / lang / f"{rel}.json").read_text(encoding="utf-8"))  # noqa: E731
+    assert read("es", "orders.md")["description"] == "Cómo se hace un pedido."
+    assert read("_", "orders.md")["description"] == "How an order is placed."
+
+
+# ---------- the index's titles in the reader's language (sidebar, breadcrumb, pager, ⌘K) ----------
+def test_a_tree_row_carries_its_translations_titles(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root / "i18n" / "es" / "flows", "checkout.md", "---\ntitle: Pago\n---\n# Pago\n")
+    page(root / "i18n" / "es" / "wikis" / "api", "http-api.md", "# Recursos HTTP\n")      # no front matter: its heading
+    r = rows(serve_mod)
+    assert r["flows/checkout.md"]["title"] == "Checkout" and r["flows/checkout.md"]["i18n_titles"] == {"es": "Pago"}
+    assert r["wikis/api/http-api.md"]["i18n_titles"] == {"es": "Recursos HTTP"}
+    assert r["repos/api/brief.md"]["i18n_titles"] == {}                                  # not translated yet
+    assert r["interview/discovery/api.md"]["i18n_titles"] == {}                          # working notes are not
+
+
+def test_static_export_tree_carries_the_translations_titles(serve_mod, monkeypatch):
+    serve_mod.services.components.set_components(["agents"])
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor_file", lambda *_a: None)
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor", lambda _site: (0, []))
+    page(serve_mod.root / "docs" / "i18n" / "es" / "flows", "checkout.md", "---\ntitle: Pago\n---\n# Pago\n")
+    site = serve_mod.services.export_site.export_site(log=lambda _: None)
+    tree = json.loads((site / "api" / "tree.json").read_text(encoding="utf-8"))
+    row = next(d for d in tree["docs"] if d["path"] == "flows/checkout.md")
+    assert row["title"] == "Checkout" and row["i18n_titles"] == {"es": "Pago"}
+
+
 def test_wiki_graph_export_does_not_pass_flags_openwiki_rejects(serve_mod, monkeypatch):
     calls = []
 

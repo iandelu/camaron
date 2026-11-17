@@ -54,13 +54,14 @@ def tree() -> dict:
 
 
 def _with_adr_status(rows: list[dict]) -> list[dict]:
-    """The docs index rows; a decision page (`adr_doc.is_decision`) also says its ADR's status, read from the file as it
-    stands."""
+    """The docs index rows, each with its translations' titles (`i18n_titles`, what the sidebar, breadcrumb, pager and
+    ⌘K show in the reader's language); a decision page (`adr_doc.is_decision`) also says its ADR's status, read from the
+    file as it stands."""
     keys = ("path", "file", "title", "description", "type", "space", "trust", "owner", "i18n", "orphan_sources")
     files = dict(services.current().docs.iter_docs()) if any(_is_decision(r) for r in rows) else {}
     out = []
     for r in rows:
-        row = {k: r[k] for k in keys}
+        row = {k: r[k] for k in keys} | {"i18n_titles": r.get("i18n_titles", {})}
         if _is_decision(r) and r["path"] in files:
             try:
                 row["adr_status"] = adr_doc.status_of(frontmatter.split_fm(files[r["path"]].read_text(encoding="utf-8"))[1])[0]
@@ -75,12 +76,15 @@ def _is_decision(row: dict) -> bool:
 
 
 def read(path: str, lang: str = "") -> dict:
+    """A page as the reader sees it in `lang`: a translation gives its own title and `description` (the lede), and a
+    translation with no description keeps the page's."""
     f = doc_file(path, lang)
     raw = f.read_text(encoding="utf-8") if f.exists() else ""
     fm, body = frontmatter.split_fm(raw)
     row = next((r for r in services.current().doc_status.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
-            "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem, "trust": row.get("trust"),
+            "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem,
+            "description": fm.get("description") or row.get("description") or "", "trust": row.get("trust"),
             "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
             "fresh": row.get("fresh"), "freshness": row.get("freshness"),
             "sourceInfo": _source_info(path, fm.get("x-sources") or [], row.get("freshness")),

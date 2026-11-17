@@ -38,7 +38,7 @@ export function WikiSide({ repo = '', page = '' }) {
           <div className="group"><a href={`#/wiki/${w.repo}`} className={page === 'graph' ? 'on' : ''}>{t('graph')}</a></div>
           <div className="group"><div className="group-title">{w.repo} · {t('wikiPages')}</div>
             {w.nav.pages.map((p) => <a key={p.path} href={core.hrefFor(p.path)} className={p.path === page ? 'on' : ''}
-              aria-current={p.path === page ? 'page' : undefined}>{p.title}</a>)}</div>
+              aria-current={p.path === page ? 'page' : undefined}>{core.byPath(p.path)?.title || p.title}</a>)}</div>
         </>
       ) : (
         <div className="group">
@@ -126,7 +126,7 @@ export function WikiPage({ arg }) {
   const { rows, error } = useWikis()
   if (error) return <div className="page"><Aviso tone="error" title={t('error')} detail={error} /></div>
   if (!rows) return <div className="page"><Skeleton lines={6} /></div>
-  const { wiki, path, order, backlinks } = wikiTarget(rows, repo, rest.join('/'))
+  const { wiki, path, order, backlinks } = wikiTarget(rows, repo, rest.join('/'), (p) => core.byPath(p)?.title)
   if (!path || !core.byPath(path)) return (
     <div className="page"><h1>{repo}</h1>
       <EmptyState title={t(path ? 'notFound' : 'noWikiPages')} action={<Button href="#/wikis">{t('wikis')}</Button>} /></div>
