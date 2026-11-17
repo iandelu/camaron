@@ -58,6 +58,7 @@ my-project/
 │   ├── .claude/ .codex/ .agents/ .mcp.json AGENTS.md CLAUDE.md     the agents' setup
 ├── .claude → cam-docs/.claude   .mcp.json → …   AGENTS.md → …       links, so agents opened here see it all
 ├── .cw/<n>/                  a unit's own copy of cam-docs while a parallel run lasts
+├── .cw/<id>/                 a coding change's docs worktree, until `camaron change close`
 └── orders-api/  payments-api/  …   the service repos, untouched
 ```
 
@@ -70,7 +71,8 @@ and `repair` list it as yours, not as something to fix.
 `.camarones/.cache/` holds what can be rebuilt: run logs (`runs/<run>/events.jsonl`), the exported site (`site/`), the
 board's index (`board.db`), the health snapshot and backups of replaced kit files; and what the app's sessions leave on
 this machine: each one's prompt (`prompts/`), each unit's session record (`sessions/`) and the canvas's terminals
-(`terminals/`).
+(`terminals/`). Each coding change's record (`changes/<id>.json`: its branches, docs worktree, phase, PRs and the card
+moves the kit made) lives there too, so a change is seen on this machine only.
 
 **On this machine:**
 

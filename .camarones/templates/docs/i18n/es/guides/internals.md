@@ -58,6 +58,7 @@ mi-proyecto/
 │   ├── .claude/ .codex/ .agents/ .mcp.json AGENTS.md CLAUDE.md     la configuración de los agentes
 ├── .claude → cam-docs/.claude   .mcp.json → …   AGENTS.md → …       enlaces: un agente abierto aquí lo ve todo
 ├── .cw/<n>/                  la copia de cam-docs de una unidad mientras dura una ejecución en paralelo
+├── .cw/<id>/                 el worktree de la documentación de un cambio de código, hasta `camaron change close`
 └── orders-api/  payments-api/  …   los repos de servicio, intactos
 ```
 
@@ -70,7 +71,9 @@ configuración de agentes en `trust`, lo quitan. Un fichero tuyo en medio que no
 `.camarones/.cache/` guarda lo que se puede reconstruir: los registros de las ejecuciones (`runs/<run>/events.jsonl`),
 la web exportada (`site/`), el índice del tablero (`board.db`), la foto de la salud y copias de los ficheros del kit
 sustituidos; y lo que dejan en esta máquina las sesiones de la app: el prompt de cada una (`prompts/`), el registro de
-la sesión de cada unidad (`sessions/`) y las terminales del lienzo (`terminals/`).
+la sesión de cada unidad (`sessions/`) y las terminales del lienzo (`terminals/`). También el registro de cada cambio de
+código (`changes/<id>.json`: sus ramas, el worktree de la documentación, la fase, las PR y los movimientos de tarjeta que
+hizo el kit), así que un cambio solo se ve en esta máquina.
 
 **En esta máquina:**
 

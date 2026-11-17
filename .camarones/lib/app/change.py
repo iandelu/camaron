@@ -79,7 +79,7 @@ def row(rec: dict) -> dict:
     return {"id": rec["id"], "title": rec.get("title"), "item": rec.get("item"), "phase": rec.get("phase"),
             "state": rec.get("state"), "repos": {n: r.get("branch") for n, r in (rec.get("repos") or {}).items()},
             "worktree": (rec.get("docs") or {}).get("worktree"), "prs": dict(rec.get("prs") or {}),
-            "next": rules.next_step(rec)}
+            "closed": rec.get("closed"), "next": rules.next_step(rec)}
 
 
 # ---------- the board ----------

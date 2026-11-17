@@ -275,8 +275,23 @@ el kit, se copian con su licencia en `.camarones/skills/`, quedan anotados en `.
 los aprueba en `camaron trust`; `camaron skills remove PACK` los quita. En la app, **Equipo › Skills** muestra cada
 skill con su icono y sus dos interruptores, y los packs que se pueden añadir.
 
-Los proyectos que ya existen reciben las skills en su próximo refresco. Más adelante llegará `camaron change`: el propio
-kit producirá la evidencia, ejecutará los guardarraíles y abrirá las PR.
+`camaron change` lleva las cuentas del cambio, sin IA, con su registro en esta máquina
+(`.camarones/.cache/changes/<id>.json`):
+
+```sh
+camaron change start "Reintentos idempotentes" --item WI-42 [--repo payments] [--files payments:src/pay.py] [--force]
+camaron change phase assess            # docs → assess → plan → code → docs-update → verify → ship → retro, solo hacia delante
+camaron change status                  # los cambios abiertos: fase, ramas, worktree, PR y el siguiente paso
+camaron change link https://github.com/acme/payments/pull/7   # --repo NOMBRE|docs cuando hay varios
+camaron change close wi-42             # fusionado según git: tarjeta a Done; --abandon: a Ready
+```
+
+`start` lo comprueba todo antes (repos presentes y sin trabajo a medias, la puerta de arranque de la tarjeta), crea
+`cam/<id>-<slug>` en cada repo (adopta una rama de trabajo limpia que ya tengas), abre el worktree `.cw/<id>`, mueve la
+tarjeta a *In Progress* y lista la documentación que leer, con su confianza. `close` quita el worktree; las ramas se
+quedan. El ID se omite dentro de la rama del cambio o si solo hay uno abierto. Todos aceptan `--json`. Los proyectos
+que ya existen reciben las skills en su próximo refresco; los guardarraíles y abrir las PR desde el kit llegarán más
+adelante.
 
 ## La app de escritorio
 

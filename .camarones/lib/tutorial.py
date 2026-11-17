@@ -384,7 +384,9 @@ PAGES = {
                  "apaga con `camaron skills disable NOMBRE` (para el equipo) o con `--machine` (solo para ti), y "
                  "`camaron skills add ponytail|impeccable` añade un pack opcional. Lo "
                  "aprendido se apunta con `camaron skills note … --source retro|review|board` (`camaron skills notes` lo "
-                 "lee). Más adelante llegará `camaron change`, donde el propio kit hará de escribano. Tu agente "
+                 "lee). `camaron change` lleva las cuentas: `start` crea las ramas, abre el worktree de la documentación, "
+                 "mueve la tarjeta a In Progress y lista qué leer; `phase` y `status` siguen el cambio; `link` apunta "
+                 "una PR (In Review) y `close` lo cierra al fusionarse (Done) o con `--abandon` (Ready). Tu agente "
                  "programa; Camarón solo le pasa los apuntes y le recuerda recoger antes de irse. 🦐"},
         {"icon": "📋", "title": "El Tablero: el trabajo junto a la documentación",
          "art": r"""
@@ -915,8 +917,10 @@ PAGES = {
                  "version moved on. Any skill turns off with `camaron skills disable NAME` (for the team) or `--machine` (for "
                  "you), and `camaron skills add ponytail|impeccable` adds an optional pack. What you learn goes in "
                  "with `camaron skills note … --source retro|review|board` "
-                 "(`camaron skills notes` reads it back). Later versions bring `camaron change`, where the kit itself "
-                 "does the paperwork. Your agent writes the code; Camarón just hands it the notes and reminds it to close "
+                 "(`camaron skills notes` reads it back). `camaron change` does the paperwork: `start` creates the "
+                 "branches, opens the docs worktree, moves the card In Progress and lists what to read; `phase` and "
+                 "`status` follow the change; `link` records a PR (In Review) and `close` ends it once merged (Done) or "
+                 "with `--abandon` (Ready). Your agent writes the code; Camarón just hands it the notes and reminds it to close "
                  "up shop. 🦐"},
         {"icon": "📋", "title": "The Board: the work next to the docs",
          "art": r"""

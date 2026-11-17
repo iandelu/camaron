@@ -193,8 +193,22 @@ To adapt the workflow to your team:
   licence into `.camarones/skills/`, recorded in `.camarones/skills.lock` and approved once per machine in
   `camaron trust`; `camaron skills remove PACK` takes it out (a folder the team edited stays).
 
-Later versions bring `camaron change`, where the kit itself produces the evidence, runs the guardrails and opens the
-PRs.
+`camaron change` does the change's bookkeeping, without AI, and keeps its record on this machine
+(`.camarones/.cache/changes/<id>.json`):
+
+- `camaron change start "<title>" --item WI-n` checks everything first (the repos are there and have no uncommitted
+  work, the card may start), then creates the branch in each repo (the item's repos, or `--repo`; a clean feature
+  branch you already have checked out is adopted), opens the docs worktree, moves the card **In Progress** and lists
+  the docs to read, with their trust (`--files repo:path` adds the pages that cite those files). A refused start says
+  why; `--force` starts it anyway.
+- `camaron change phase [ID] PHASE` follows the steps (`docs`, `assess`, `plan`, `code`, `docs-update`, `verify`,
+  `ship`, `retro`), forward only; `camaron change status` shows each open change and its next step.
+- `camaron change link [ID] URL [--repo NAME|docs]` records a PR: the card goes **In Review**.
+- `camaron change close ID` checks with git that every branch is merged into its base: the card goes **Done**.
+  `--abandon` puts it back in **Ready**. Both remove the docs worktree; the branches stay.
+
+ID can be left out inside a change's branch, or when only one change is open. The guardrails and opening the PRs
+themselves come in later versions.
 
 ## Costs and KPIs
 

@@ -86,13 +86,14 @@ every command either way.
 | `status` | check |  |  | yes |
 | `translated` | team |  |  |  |
 
-## Cli only (12)
+## Cli only (13)
 
 | Command | Zone | AI | Destructive | --json |
 |---|---|---|---|---|
 | `app` | — |  |  |  |
 | `arch` | — |  |  |  |
 | `catalog` | — |  |  | yes |
+| `change` | — |  |  | yes |
 | `diagrams` | — |  |  | yes |
 | `help` | — |  |  |  |
 | `hook` | — |  |  |  |
