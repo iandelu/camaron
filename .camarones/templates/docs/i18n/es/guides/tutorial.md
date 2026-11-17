@@ -462,11 +462,15 @@ Claude Code para la carpeta de cada repo, así que una sesión abierta en `<repo
 Vive en tu propia configuración de Claude Code (`~/.claude.json`), nunca en el repo; `doctor` avisa si a un repo le
 falta y `uninstall` lo quita.
 
-**Hooks del método (opcionales).** `camaron hooks on` añade tres hooks de Claude Code en `cam-docs/.claude/settings.json`,
+**Hooks del método (opcionales).** `camaron hooks on` añade cinco hooks de Claude Code en `cam-docs/.claude/settings.json`,
 que son del kit (`trust` no pregunta por ellos): al empezar la sesión el agente recibe el estado del plan, el último
-relevo y las revisiones pendientes; justo después de editar una página de la doc, esa página se revisa y los problemas
-vuelven al agente; antes de terminar, si los repos han cambiado desde la doc, se le recuerda una vez actualizarla.
-`camaron hooks off` los quita.
+relevo y las revisiones pendientes; con cada mensaje recibe las secciones de la doc, los elementos C4 y los nodos del
+grafo de código que encajan con él, sin llamar a ningún modelo (de las páginas que el MCP retendría solo ve el aviso);
+antes de su primer cambio en un fichero de un repo de servicio, una sesión que no ha consultado la doc se frena una vez
+y se le dice qué páginas leer (`hooks: {gate: false}` en `workspace.yaml` quita ese freno); justo después de editar una
+página de la doc, esa página se revisa y los problemas vuelven al agente; antes de terminar, si los repos han cambiado
+desde la doc, se le recuerda una vez actualizarla. `camaron hooks report` dice cuántas sesiones que tocaron código
+consultaron la doc antes de su primer cambio. `camaron hooks off` los quita.
 
 **¿Se cumple el método?** `camaron eval comply <unidad>` ejecuta de verdad una unidad lista y puntúa lo que ha escrito
 (estructura, enlaces, fuentes), sin IA. Úsalo en el sandbox para comparar un cambio del playbook o de un prompt antes y

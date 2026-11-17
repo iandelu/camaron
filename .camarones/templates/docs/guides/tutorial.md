@@ -446,10 +446,15 @@ token in `~/.camarones/mcp-token`, and requests from other origins are refused.
 scope for each repo folder, so a session opened in `<repo>/` searches and reads the docs too. It lives in your own
 Claude Code config (`~/.claude.json`), never in the repo; `doctor` says when a repo lacks it and `uninstall` removes it.
 
-**Method hooks (opt-in).** `camaron hooks on` adds three Claude Code hooks to `cam-docs/.claude/settings.json`, which
+**Method hooks (opt-in).** `camaron hooks on` adds five Claude Code hooks to `cam-docs/.claude/settings.json`, which
 the kit owns (`trust` does not ask about them): at session start the agent gets the plan state, the last handoff and
-pending reviews; right after it edits a docs page, that page is checked and the problems go back to the agent; before
-it stops, if the repos moved on since the docs, it is reminded once to update them. `camaron hooks off` removes them.
+pending reviews; with every prompt it gets the docs sections, C4 elements and code-graph nodes that match it, with no
+model call (pages the MCP would withhold show only their notice); before its first edit of a service-repo file, a
+session that consulted no docs is stopped once and told which pages to read (`hooks: {gate: false}` in
+`workspace.yaml` turns that stop off); right after it edits a docs page, that page is checked and the problems go back
+to the agent; before it stops, if the repos moved on since the docs, it is reminded once to update them.
+`camaron hooks report` says how many code-editing sessions consulted the docs before their first edit.
+`camaron hooks off` removes them.
 
 **Does the method hold?** `camaron eval comply <unit>` runs one ready unit for real and scores what it wrote (structure,
 links, sources), without AI. Use it on the sandbox to compare a playbook or prompt change before and after.

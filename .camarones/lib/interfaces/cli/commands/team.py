@@ -64,9 +64,12 @@ class Review(Command):
 @command("hook", "cli")
 class Hook(Command):
     def configure(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("name", choices=["session-start", "post-edit", "stop"])
+        parser.add_argument("name", choices=["session-start", "prompt", "pre-edit", "post-edit", "stop"])
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
+        if args.name in ("prompt", "pre-edit"):
+            from lib.app import retrieval_hooks
+            return retrieval_hooks.run(args.name)
         from lib import hooks
         return hooks.main(args.name)
 
@@ -74,19 +77,31 @@ class Hook(Command):
 @command("hooks", "app", "team", es="Hooks del método para Claude Code", en="Method hooks for Claude Code")
 class Hooks(Command):
     def configure(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("state", nargs="?", choices=["on", "off"])
+        parser.add_argument("state", nargs="?", choices=["on", "off", "report"],
+                            help="on/off; report: what the prompt and edit hooks saw (docs injected, edits stopped, "
+                                 "sessions that consulted docs before their first edit)")
         parser.add_argument("--json", action="store_true")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         from lib import hooks
-        if args.state:
+        from lib.app import retrieval_hooks
+        if args.state in ("on", "off"):
             hooks.set_enabled(args.state == "on")
+        rep = retrieval_hooks.report() if args.state == "report" else None
         if args.json:
-            print(json.dumps({"enabled": hooks.enabled()}))
+            print(json.dumps({"enabled": hooks.enabled()} if rep is None else
+                             {"enabled": hooks.enabled(), "gate": retrieval_hooks.gate_enabled(), "report": rep}))
             return 0
+        gate = retrieval_hooks.gate_enabled()
         print(f"method hooks: {'on' if hooks.enabled() else 'off'}" + (
-            " — SessionStart (plan state), PostToolUse (check the page just edited), Stop (remind once to update docs)"
-            if hooks.enabled() else ""))
+            " — SessionStart (plan state), UserPromptSubmit (docs for the prompt), PreToolUse (docs before the first "
+            "code edit" + ("" if gate else ", off: hooks.gate is false") + "), PostToolUse (check the page just "
+            "edited), Stop (remind once to update docs)" if hooks.enabled() else ""))
+        if rep is not None:
+            share = "—" if rep["share"] is None else f"{rep['share']:.0%}"
+            print(f"prompts: {rep['prompts']} ({rep['prompts_with_docs']} with docs) · sessions that edited code: "
+                  f"{rep['edit_sessions']} · consulted docs before the first edit: {rep['consulted_first']} ({share}) · "
+                  f"edits stopped: {rep['stops']}")
         return 0
 
 

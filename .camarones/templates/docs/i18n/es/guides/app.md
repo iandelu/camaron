@@ -366,7 +366,7 @@ proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de gi
 **Lo que llegó con el repo del equipo.** Los hooks, servidores MCP, ajustes, skills, ficheros y plugins de `cam-docs`
 que no escribió el kit esperan aquí a que los apruebes en esta máquina: **Aprobar (n)** los lista y ejecuta
 `camaron trust --yes`. Las aprobaciones viven en `~/.camarones/trust/`, nunca en el repo. **Hooks del método en Claude
-Code** activa o quita los tres hooks del kit (`camaron hooks`).
+Code** activa o quita los cinco hooks del kit (`camaron hooks`).
 
 **Plugins.** Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
 uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
