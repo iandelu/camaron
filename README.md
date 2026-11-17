@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.85.5-ff875f?style=flat-square" alt="Versión 4.85.5">
+  <img src="https://img.shields.io/badge/version-4.86.0-ff875f?style=flat-square" alt="Versión 4.86.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -263,6 +263,17 @@ máquina aprueba una copia editada una vez en `camaron trust`; `camaron doctor` 
 movió; los checkpoints la guardan junto con su sello (`.camarones/.kit-skills.json`). Lo que se aprende se apunta
 con `camaron skills note … --source retro|review|board` y se lee con `camaron skills notes` (ficheros en
 `docs/.work/skill-notes/`).
+
+Cada skill tiene dos interruptores: `camaron skills disable|enable NOMBRE` la apaga o la enciende para todo el
+proyecto (`skills: {off: [...]}` en `workspace.yaml`; deja de copiarse a `.claude/` y `.agents/`) y, con `--machine`,
+solo para ti (una regla `Skill(NOMBRE)` en el `.claude/settings.local.json` local de Claude Code: el agente deja de
+usarla, aunque escribir `/NOMBRE` aún la llama, y los ficheros del equipo no cambian). El kit trae además **packs
+opcionales** de skills de terceros, apagados hasta que alguien los añade: `camaron skills add ponytail` (el cambio más
+pequeño que resuelve la tarea, más revisión y auditoría; MIT) y `camaron skills add impeccable` (diseño frontend;
+Apache-2.0; su lanzador descarga un binario verificado la primera vez que se usa). Se descargan en el commit que fija
+el kit, se copian con su licencia en `.camarones/skills/`, quedan anotados en `.camarones/skills.lock` y cada máquina
+los aprueba en `camaron trust`; `camaron skills remove PACK` los quita. En la app, **Equipo › Skills** muestra cada
+skill con su icono y sus dos interruptores, y los packs que se pueden añadir.
 
 Los proyectos que ya existen reciben las skills en su próximo refresco. Más adelante llegará `camaron change`: el propio
 kit producirá la evidencia, ejecutará los guardarraíles y abrirá las PR.

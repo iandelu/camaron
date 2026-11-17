@@ -181,6 +181,16 @@ To adapt the workflow to your team:
   moved on.
 - Lessons go in as notes: `camaron skills note SKILL TEXT --source retro|review|board`, read back with
   `camaron skills notes [SKILL]`. They live in `docs/.work/skill-notes/`.
+- Every skill has two switches. `camaron skills disable|enable NAME` turns it off or on for the whole project
+  (`skills: {off: [...]}` in `workspace.yaml`; it is no longer rendered into `.claude/` and `.agents/`); add
+  `--machine` to turn it off for you only (a `Skill(NAME)` deny rule in Claude Code's local
+  `.claude/settings.local.json`: the agent stops using it, typing `/NAME` still runs it, and the team's files do not
+  change).
+- Optional skill packs, off until someone adds them: `camaron skills add ponytail` (the smallest change that solves the
+  task, plus review and audit; MIT) and `camaron skills add impeccable` (frontend design; Apache-2.0; its launcher
+  downloads a checksummed binary the first time it runs). Each is fetched at the commit the kit pins, copied with its
+  licence into `.camarones/skills/`, recorded in `.camarones/skills.lock` and approved once per machine in
+  `camaron trust`; `camaron skills remove PACK` takes it out (a folder the team edited stays).
 
 Later versions bring `camaron change`, where the kit itself produces the evidence, runs the guardrails and opens the
 PRs.

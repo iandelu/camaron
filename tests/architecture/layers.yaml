@@ -89,6 +89,7 @@ questionnaire: app
 removed: app
 reset: app
 skills: app
+skills_packs: app
 review: app
 sessions: app
 sourcelinks: app

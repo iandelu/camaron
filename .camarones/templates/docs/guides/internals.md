@@ -342,6 +342,15 @@ kit's, survives upgrades and counts as team-written, so each machine approves it
 again). `doctor` warns when the kit's version of a forked skill moved on since the copy was made. A checkpoint commits
 the copy with its fork stamp (`.camarones/.kit-skills.json`) and its rendering in `.claude/` and `.agents/`.
 
+Optional skill packs come from `lib/skills_catalog.yaml`: each pinned to a commit, with its licence files and an icon
+(the catalog also holds the kit skills' icons). `camaron skills add <pack>` fetches that commit, copies its skills into
+`cam-docs/.camarones/skills/` as team skills and records the source, the commit and a fingerprint per skill in
+`.camarones/skills.lock`; `remove` drops the folders that still match it. The project's switch is
+`skills: {off: [...]}` in `workspace.yaml`, left out of the render. This machine's is `skills_off` in
+`~/.camarones.json`, written as `Skill(<name>)` deny rules into the local `.claude/settings.local.json` of the workspace
+and of cam-docs; the kit remembers the rules it wrote (`.camarones/.cache/skills-denied.json`) and never removes yours.
+Trust asks nothing about deny rules: they only take access away.
+
 <!-- go:team -->
 
 ## Pages written without AI

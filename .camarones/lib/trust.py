@@ -42,6 +42,15 @@ def _digest(value) -> str:
     return hashlib.sha256(raw.replace(b"\r\n", b"\n")).hexdigest()
 
 
+def _widening(key: str, value):
+    """The part of a risky setting that needs approval. Deny rules only take access away (the kit writes them to turn
+    a skill off on this machine), so `permissions` made of deny rules alone asks for nothing."""
+    if key != "permissions" or not isinstance(value, dict):
+        return value
+    rest = {k: v for k, v in value.items() if k != "deny"}
+    return rest or None
+
+
 def _short(value, n: int = 160) -> str:
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
     text = " ".join(text.split())
@@ -142,7 +151,9 @@ def items(root: Path | None = None) -> dict[str, Item]:
             add(key, "hook", cmds, _short(" ; ".join(cmds)))
         for k in RISKY_SETTINGS:
             if k in (st or {}):
-                add(f"claude {k}{tag}", "setting", st[k], f"{k}: {_short(st[k])}")
+                value = _widening(k, st[k])
+                if value is not None:
+                    add(f"claude {k}{tag}", "setting", value, f"{k}: {_short(value)}")
 
     codex = root / ".codex" / "config.toml"
     if real(".codex/config.toml") and codex.is_file():

@@ -9,7 +9,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from .common import DOCS, KIT, ROOT, VERSIONS, load_json, own_file, save_json, through_link
+from .common import DOCS, KIT, ROOT, VERSIONS, WS_FILE, load_json, own_file, save_json, through_link
+from .core import yamlio
 
 KIT_SKILLS: Path = KIT / "templates" / "skills"
 NAME_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
@@ -145,18 +146,31 @@ def origin(name: str) -> str | None:
     return "kit" if name in kit_names() else None
 
 
+def project_off() -> set[str]:
+    """The skills the project turned off (`skills: {off: [...]}` in workspace.yaml): not rendered for anyone. No key,
+    or a file that cannot be read, turns nothing off."""
+    try:
+        ws = yamlio.safe_load(WS_FILE.read_text(encoding="utf-8")) if WS_FILE.is_file() else None
+    except (OSError, ValueError, yamlio.yaml.YAMLError):
+        return set()
+    off = ((ws or {}).get("skills") or {}).get("off") if isinstance(ws, dict) else None
+    return {n for n in off if isinstance(n, str)} if isinstance(off, list) else set()
+
+
 def sources() -> dict[str, dict[str, str]]:
-    out = {}
-    for name in sorted(set(kit_names()) | set(team_names())):
-        if origin(name) in ("team", "team-only"):
-            out[name] = _tree(team_dir() / name)
-        else:
-            out[name] = kit_files(name)
-    return out
+    """The effective skills, by name: the team's copy or the kit's text, without the ones the project turned off."""
+    return {name: text_of(name) for name in sorted((set(kit_names()) | set(team_names())) - project_off())}
+
+
+def text_of(name: str) -> dict[str, str]:
+    """A skill's text, on or off: the team's copy or the kit's."""
+    if origin(name) in ("team", "team-only"):
+        return _tree(team_dir() / name)
+    return kit_files(name)
 
 
 def description(name: str) -> str:
-    text = sources().get(name, {}).get("SKILL.md", "")
+    text = text_of(name).get("SKILL.md", "")
     front = _FRONT_RE.match(text)
     found = _DESC_RE.search(front.group(1)) if front else None
     return found.group(1).strip("'\"") if found else ""
