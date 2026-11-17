@@ -368,7 +368,7 @@ PAGES = {
      3. prueba primero, y verifica con el build y los tests del repo + check
      4. guardarraíles: rutas prohibidas, gitleaks, páginas desactualizadas
      5. impacto + una pregunta: ¿Abro las PR?
-   cam/<id>-<slug> en cada repo  +  worktree .cw/<id> de cam-docs
+   camaron change start: cam/<id>-<slug> en cada repo  +  worktree .cw/<id>
    PR de código (borrador)  <-->  PR de documentación (borrador)""",
          "text": "Abre Claude Code o Codex en el espacio de trabajo y pide un cambio: el agente sigue la skill `cam-task` "
                  "(con `cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). Lee primero la documentación y la resume con "
@@ -376,7 +376,9 @@ PAGES = {
                  "escribe la prueba antes que el código, verifica con el build, los tests y los linters del repo más "
                  "`camaron check`, pasa los guardarraíles y te hace una sola pregunta: «¿Abro las PR?». Si dices que sí, "
                  "abre una PR de código en borrador por repo y una PR de documentación en borrador, enlazadas entre sí. "
-                 "El kit nunca fusiona; el agente pasa su tarjeta a In Progress al empezar y a In Review al abrir las PR, y Done es tuyo. Con superpowers instalado, sus "
+                 "El kit nunca fusiona; el agente mueve su propia tarjeta con los comandos del cambio: a In Progress con "
+                 "`camaron change start`, a In Review con el primer `camaron change link`, y Done es tuyo (`camaron "
+                 "change close` tras fusionar). Con superpowers instalado, sus "
                  "skills de brainstorming, planes y TDD se usan en esos pasos. Para ajustar el flujo a tu equipo: "
                  "`camaron skills list | fork | diff [--kit] | reset`; la copia del equipo vive en "
                  "`cam-docs/.camarones/skills/<nombre>/`, gana a la del kit, sobrevive a las actualizaciones y cada máquina "
@@ -902,7 +904,7 @@ PAGES = {
      3. test first, then verifies with the repo's build and tests + check
      4. guardrails: forbidden paths, gitleaks, stale pages
      5. impact + one question: Open the PRs?
-   cam/<id>-<slug> in each repo  +  cam-docs worktree .cw/<id>
+   camaron change start: cam/<id>-<slug> in each repo  +  worktree .cw/<id>
    code PR (draft)  <-->  docs PR (draft)""",
          "text": "Open Claude Code or Codex in the workspace and ask for a change: the agent follows the `cam-task` skill "
                  "(with `cam-difficulty`, `cam-verify`, `cam-ship` and `cam-retro`). It reads the docs first and summarises "
@@ -910,7 +912,9 @@ PAGES = {
                  "draft cards), writes the test before the code, verifies with the repo's build, tests and linters plus "
                  "`camaron check`, passes the guardrails and asks you one question: \"Open the PRs?\". If you say yes it "
                  "opens a draft code PR per repo and a draft docs PR that link each other. The kit never merges; the agent "
-                 "moves its card to In Progress when it starts and to In Review when it opens the PRs, and Done is yours. With superpowers installed, its brainstorming, plans and TDD skills are "
+                 "moves its own card by running the change commands: In Progress at `camaron change start`, In Review at "
+                 "the first `camaron change link`, and Done is yours (`camaron change close` after the merge). With "
+                 "superpowers installed, its brainstorming, plans and TDD skills are "
                  "used for those steps. To tune the workflow for your team: `camaron skills list | fork | diff [--kit] | "
                  "reset`; the team copy lives in `cam-docs/.camarones/skills/<name>/`, wins over the kit's, survives "
                  "upgrades and each machine approves it once in `camaron trust`; `camaron doctor` warns when the kit's "

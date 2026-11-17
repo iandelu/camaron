@@ -5,7 +5,8 @@ description: Step of cam-task — notes on where the workflow got in the way.
 
 # Retro: where the workflow got in the way
 
-At the end of every change, after `cam-ship` or when the change stops.
+At the end of every change, after `cam-ship` or when the change stops. A change the person gives up is closed with
+`{{CLI}} change close <id> --abandon` once its notes are written: its card goes back to Ready, its branches stay.
 
 1. Look back at the steps of `cam-task` and its step skills. Write 0–3 notes, only for friction in the workflow: a
    missing step, a wrong gate, noise, a doc that misled you. None is a fine outcome. Code problems (a bug, a hard test)

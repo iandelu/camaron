@@ -165,9 +165,10 @@ Cuando el código se mueve, la documentación lo sigue:
 ## Programar con Camarón
 
 Abre Claude Code o Codex en el espacio de trabajo y pídele un cambio: el agente empieza la skill `cam-task` (y detrás
-`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El cambio va en su propia rama, `cam/<id>-<slug>`, en cada
-repo de servicio, y la documentación en su propio worktree de `cam-docs` (`.cw/<id>`): tu checkout de `cam-docs` y su
-tablero nunca cambian de rama.
+`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`), que empieza con `camaron change start`: el cambio va en su
+propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación en su propio worktree de `cam-docs`
+(`.cw/<id>`); tu checkout de `cam-docs` y su tablero nunca cambian de rama. Cada paso apunta su fase
+(`camaron change phase`).
 
 - **Primero la documentación.** El agente lee `cam-docs` y resume lo que dice, con citas, antes de tocar código.
 - **Dificultad.** Baja (0–2), media (3–5) o alta (6+). A una baja le toca un plan corto, a una media un plan que
@@ -177,8 +178,10 @@ tablero nunca cambian de rama.
 - **Guardarraíles e impacto.** Rutas prohibidas, gitleaks, páginas que el cambio deja desactualizadas
   (`camaron pr fresh`) y reglas de confianza; después, el impacto en la documentación, los contratos y el tablero.
 - **Una sola pregunta.** «¿Abro las PR?» Si dices que sí, abre una PR de código en borrador por repo y una PR de
-  documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al
-  empezar y a In Review al abrir las PR, y Done es tuyo.
+  documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
+  fusiona. El agente mueve su propia tarjeta con los comandos del cambio: a In Progress con `camaron change start`, a
+  In Review con el primer `camaron change link`; Done es tuyo: `camaron change close` la mueve cuando ya fusionaste
+  (`--abandon`: vuelve a Ready).
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.

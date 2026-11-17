@@ -241,9 +241,10 @@ detalle.
 ## Programar con Camarón
 
 Abre Claude Code o Codex en el espacio de trabajo y pídele un cambio de código: el kit le enseña a seguir la skill
-`cam-task` (más `cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El cambio va en su propia rama,
-`cam/<id>-<slug>`, en cada repo de servicio, y la documentación en su propio worktree de `cam-docs` (`.cw/<id>`): tu
-checkout de `cam-docs` y su tablero nunca cambian de rama.
+`cam-task` (más `cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El agente empieza con
+`camaron change start`: el cambio va en su propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación
+en su propio worktree de `cam-docs` (`.cw/<id>`); tu checkout de `cam-docs` y su tablero nunca cambian de rama. Cada
+paso apunta su fase (`camaron change phase`).
 
 1. **La documentación primero**: lee `cam-docs` y resume lo que dice, con citas, antes de tocar código.
 2. **Dificultad**: baja (0–2), media (3–5) o alta (6+). En la alta propone partir el cambio en elementos de tablero
@@ -251,7 +252,10 @@ checkout de `cam-docs` y su tablero nunca cambian de rama.
 3. **Prueba primero**, y el agente verifica con el build, los tests y los linters del propio repo más `camaron check`.
 4. **Guardarraíles**: rutas prohibidas, gitleaks, páginas desactualizadas (`camaron pr fresh`) y reglas de confianza.
 5. **Impacto y una sola pregunta**, «¿Abro las PR?»: si dices que sí, abre una PR de código en borrador por repo y una
-   PR de documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al empezar y a In Review al abrir las PR, y Done es tuyo.
+   PR de documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
+   fusiona. El agente mueve su propia tarjeta con los comandos del cambio: *In Progress* con `camaron change start`,
+   *In Review* con el primer `camaron change link`; *Done* es tuyo: `camaron change close` la mueve cuando ya
+   fusionaste (`--abandon`: vuelve a *Ready*).
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.

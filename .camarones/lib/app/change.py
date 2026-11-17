@@ -21,6 +21,7 @@ from . import services
 
 WORKTREES = ".cw"           # the workspace folder that holds cam-docs worktrees (as lib/harness/worktrees.py)
 TO_READ = 12                # docs listed at start, at most
+DOCS = "docs"               # the docs side of a change: `link --repo docs`, its base in `row`
 
 
 class ChangeError(Exception):
@@ -76,9 +77,13 @@ def _pick(id_: str | None, cwd: Path | None) -> dict:
 
 def row(rec: dict) -> dict:
     """What `status` and the Board show of a change."""
+    repos, docs = rec.get("repos") or {}, rec.get("docs") or {}
+    bases = {n: r.get("base_ref") for n, r in repos.items()}
+    if docs:
+        bases[DOCS] = docs.get("base_ref")
     return {"id": rec["id"], "title": rec.get("title"), "item": rec.get("item"), "phase": rec.get("phase"),
-            "state": rec.get("state"), "repos": {n: r.get("branch") for n, r in (rec.get("repos") or {}).items()},
-            "worktree": (rec.get("docs") or {}).get("worktree"), "prs": dict(rec.get("prs") or {}),
+            "state": rec.get("state"), "repos": {n: r.get("branch") for n, r in repos.items()}, "bases": bases,
+            "worktree": docs.get("worktree"), "docs_branch": docs.get("branch"), "prs": dict(rec.get("prs") or {}),
             "closed": rec.get("closed"), "next": rules.next_step(rec)}
 
 
@@ -300,7 +305,6 @@ def status(id_: str | None = None) -> list[dict]:
 
 
 # ---------- link, close ----------
-DOCS = "docs"               # `link --repo docs`: the change's docs PR
 # what `check` and the usage counters rewrite in a worktree: regenerated, never someone's work
 DERIVED = ("docs/.status.json", "docs/.work/fresh.json", "docs/llms.txt", "docs/llms-full.txt")
 DERIVED_DIRS = ("docs/.work/usage/",)

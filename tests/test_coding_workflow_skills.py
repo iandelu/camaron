@@ -10,24 +10,27 @@ from conftest import KIT_DIR
 SKILLS = KIT_DIR / "templates" / "skills"
 PACK = ("cam-task", "cam-difficulty", "cam-verify", "cam-ship", "cam-retro")
 MUST = {
-    "cam-task": ["cam/<id>-<slug>", "worktree add ../.cw/<id>", "cam-docs-lookup", "cam-difficulty", "cam-docs-update",
-                 "cam-verify", "cam-ship", "cam-retro", "brainstorming", "writing-plans", "test-driven-development",
-                 "systematic-debugging", "finishing-a-development-branch", "never skipped", "Never merge",
-                 '{{CLI}} board move <ITEM> "In Progress"', "without the three worktree variables", "Never `--force`",
-                 "No board item",
-                 "four derived files", "skip its `llms`", '":(exclude)docs/.status.json"', '":(exclude)docs/llms.txt"',
-                 '":(exclude)docs/llms-full.txt"', '":(exclude)docs/.work/fresh.json"'],
+    "cam-task": ["cam/<id>-<slug>", "{{CLI}} change start", "--item <ITEM>", "{{CLI}} change phase <id>",
+                 "never goes back", "only the person decides `--force`", "cam-docs-lookup", "cam-difficulty",
+                 "cam-docs-update", "cam-verify", "cam-ship", "cam-retro", "brainstorming", "writing-plans",
+                 "test-driven-development", "systematic-debugging", "finishing-a-development-branch", "never skipped",
+                 "Never merge", "without the three worktree variables", "Never `--force`", "No board item",
+                 "You move your own card by running the change commands", "`change start` → In Progress",
+                 "`board move` for these steps", "four derived files", "skip its `llms`",
+                 '":(exclude)docs/.status.json"', '":(exclude)docs/llms.txt"', '":(exclude)docs/llms-full.txt"',
+                 '":(exclude)docs/.work/fresh.json"'],
     "cam-difficulty": ["repos", "contract", "migration", "auth", "messaging", "weak-docs", "open-questions", "hotspot",
-                       "big-item", "0–2 low", "3–5 medium", "6+ high", "inferred", "{{CLI}} board add story", "--label draft"],
+                       "big-item", "0–2 low", "3–5 medium", "6+ high", "inferred", "{{CLI}} board add story", "--label draft",
+                       "you never accept one yourself", "its own `change start`"],
     "cam-verify": ["./mvnw", "./gradlew", "go test ./...", "cargo test", "dotnet test", "repos[].verify", "{{CLI}} check",
                    "sdk env", "rev-parse HEAD", "flaky", "not green", "four derived files"],
     "cam-ship": [".env*", "gitleaks", "{{CLI}} pr fresh", "x-confirmed", "Open the PRs?", "gh pr create --draft",
-                 "glab mr create --draft", "{{CLI}} board link", '{{CLI}} board move <ITEM> "In Review"',
-                 "without the three worktree variables", "Done is the person's", "Never merge", "cam-retro",
-                 "four derived files", "worktree remove ../.cw/<id>", "git -C .cw/<id> status --porcelain",
-                 "`docs/.work/fresh.json`", "commit it or ask the person"],
+                 "glab mr create --draft", "{{CLI}} board link", "{{CLI}} change link <id>", "--repo docs",
+                 "without the three worktree variables", "moves your card", "Done is the person's",
+                 "{{CLI}} change close <id>", "--abandon", "Never merge", "cam-retro", "four derived files",
+                 "git -C .cw/<id> status --porcelain", "`docs/.work/fresh.json`", "commit it or ask the person"],
     "cam-retro": ["{{CLI}} skills note", "--source retro", "review|board", "skill-feedback", "{{CLI}} skills notes",
-                  "skills fork"],
+                  "skills fork", "{{CLI}} change close <id> --abandon"],
 }
 
 
@@ -110,3 +113,17 @@ def test_the_start_gate_text_says_the_skill_forbids_force_to_an_agent():
         assert needle in " ".join(path.read_text(encoding="utf-8").split()), path.name
     es = " ".join((KIT_DIR / "TUTORIAL.md").read_text(encoding="utf-8").split())
     assert "nunca usa `--force`" in es
+
+
+def test_the_agent_moves_its_own_card_by_the_change_commands_and_never_forces():
+    """WI-60: an agent following cam-task moves its own card, never with --force, and Done waits for the person's merge.
+    WI-21: it does so by running `change start`, `change link` and `change close`, not `board move`."""
+    task, ship = fm("cam-task")[0], fm("cam-ship")[0]
+    flat = lambda t: " ".join(t.split())                                      # noqa: E731
+    assert '{{CLI}} board move <ITEM> "In Progress"' not in task
+    assert '{{CLI}} board move <ITEM> "In Review"' not in ship
+    assert "`change start` → In Progress, `change link` (`cam-ship`) → In Review, `change close` → Done" in flat(task)
+    assert "stop and give the person the reason" in flat(task) and "the `--force` hint in the refusal is for people" in flat(task)
+    assert "When the start gate refuses the board item." in task
+    assert "The first one moves your card In Review." in flat(ship)
+    assert "Done is the person's: it comes only from `change close`, which succeeds after they merged." in flat(ship)

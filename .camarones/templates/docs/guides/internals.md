@@ -315,7 +315,7 @@ it at `http://127.0.0.1:8765/mcp` (Streamable HTTP) with the token in `~/.camaro
 | `pipeline_status`, `run_events`, `kpis` | The plan, a run's events, the KPIs |
 | `run_node` | Starts a ready unit, only with `mcp: {pipeline_control: true}` in `workspace.yaml` |
 | `repo_graph` | Asks the graphify code graph of one repo or all |
-| `board_next`, `board_waves` | What may start now without collisions; the open work in waves. Read only; an agent moves its own card with `camaron board move` (`cam-task`) |
+| `board_next`, `board_waves` | What may start now without collisions; the open work in waves. Read only; an agent moves its own card through the CLI (`camaron change start\|link\|close` in `cam-task`, else `camaron board move`) |
 
 It also offers every page as a resource (`camdocs://<path>`, plus `camdocs://llms.txt`) and two prompts,
 `implement-feature` and `update-docs`. Everything goes through the same freshness gate.

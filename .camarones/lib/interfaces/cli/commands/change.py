@@ -100,10 +100,11 @@ def _dump(data) -> None:
 def _show(row: dict, t: dict) -> None:
     item = f"  {row['item']}" if row.get("item") else ""
     print(f"{row['id']}  {row['phase']}  {row['state']}{item}  {row.get('title') or ''}".rstrip())
+    bases = row.get("bases") or {}
     for name, branch in row["repos"].items():
-        print(f"  {name}: {branch}")
+        print(f"  {name}: {branch} (from {bases.get(name)})")
     if row.get("worktree") and row["state"] != "closed":
-        print(f"  {t['worktree']}: {row['worktree']}")
+        print(f"  {t['worktree']}: {row['worktree']} ({row.get('docs_branch')}, from {bases.get('docs')})")
     for name, url in row["prs"].items():
         print(f"  {t['pr']} {name}: {url}")
     if row.get("next"):
@@ -119,8 +120,9 @@ def _start(a, change, t: dict) -> int:
     rec = res["change"]
     print((t["again"] if res["again"] else t["started"]).format(id=rec["id"]))
     for name, r in rec["repos"].items():
-        print(f"  {name}: {r['branch']} ({r['base_ref']})")
-    print(f"  {t['worktree']}: {rec['docs']['worktree']} ({rec['docs']['branch']})")
+        print(f"  {name}: {r['branch']} (from {r['base_ref']})")
+    docs = rec["docs"]
+    print(f"  {t['worktree']}: {docs['worktree']} ({docs['branch']}, from {docs['base_ref']})")
     moved = [b for b in rec.get("board") or [] if b.get("to")]
     if moved and not res["again"]:
         print(f"  {t['card']} {rec['item']}: {moved[-1]['to']}")

@@ -60,7 +60,10 @@ change asked for → go back to the step it concerns.
    `<base>` without `origin/`; `<file>` a temporary file outside the repos.
 3. Then the docs PR, from `.cw/<id>`, also a draft, its body linking the code PRs.
 4. Then add the docs PR's link to each code PR body (`gh pr edit <url> --body-file <file>`,
-   `glab mr update <n> --description "<body>"`).
+   `glab mr update <n> --description "<body>"`), and record each PR in the change:
+   `{{CLI}} change link <id> <url> --repo <repo>` for a code PR, `--repo docs` for the docs PR, from the workspace
+   root, without the three worktree variables (the same rule as `cam-task` step 1). The first one moves your card
+   In Review.
 5. Every body has these sections:
 
    ```
@@ -71,20 +74,24 @@ change asked for → go back to the step it concerns.
    ## Verification
    ## Warnings
    ```
-6. No `gh`/`glab`, or not logged in: push, then give the person the URL that opens each PR and the bodies to paste.
+6. No `gh`/`glab`, or not logged in: push, then give the person the URL that opens each PR and the bodies to paste;
+   once they give you the PR URLs, record them with `{{CLI}} change link`. Until then the card stays In Progress: say
+   so.
 7. A step failed halfway: run again from it, looking first for a PR already open for the branch
    (`gh pr list --head cam/<id>-<slug>`, `glab mr list --source-branch cam/<id>-<slug>`); never open a second one.
    The same step fails again → stop and give the person the error; never loop.
 
 ## 5. Hand over
 
-- Give the PR URLs. A board item, once the PRs are open: `{{CLI}} board move <ITEM> "In Review"`, from the workspace root,
-  without the three worktree variables (the same rule as `cam-task` step 1). If you only gave the URLs (no `gh`/`glab`),
-  tell the person to move the item to In Review once they open them. Done is the person's, after the merge.
+- Give the PR URLs. You moved your own card by running the change commands: In Review with the first `change link`
+  (section 4, step 4). Done is the person's: it comes only from `change close`, which succeeds after they merged. Never
+  `board move` for these steps.
 - Never merge, neither the code nor the docs. The person merges the code first and the docs right after, then
   re-confirms the confirmed pages the change edited.
-- Once a person has merged the PRs, the docs worktree goes: `git -C {{CAM}}. worktree remove ../.cw/<id>`. Git refuses
-  while the tree has changes and suggests `--force`: add it only when `git -C .cw/<id> status --porcelain` lists
-  nothing but the four derived files (`docs/.status.json`, `docs/llms.txt`, `docs/llms-full.txt`,
-  `docs/.work/fresh.json`). Anything else → commit it or ask the person; never force past it.
+- Once a person has merged the PRs: `git fetch` in each repo, then `{{CLI}} change close <id>`. It reads from git that
+  every branch, the docs one included, is merged into its base (else it names the ones that are not: fetch, wait for
+  the merge, or ask the person), moves the card Done and removes the docs worktree; the branches stay. It refuses
+  while `git -C .cw/<id> status --porcelain` lists anything but the four derived files (`docs/.status.json`,
+  `docs/llms.txt`, `docs/llms-full.txt`, `docs/.work/fresh.json`): commit it or ask the person. The person gives the
+  change up → `{{CLI}} change close <id> --abandon` (the card goes back to Ready).
 - Then `cam-retro`.

@@ -41,4 +41,5 @@ Build the plan for each repo you changed, run it, and record the evidence. Commi
 7. Report a table: check · command · exit · commit · origin (`base`, or `added: <why>`).
 
 Copy commands and exit codes from real runs, never from memory. A later kit version adds `change verify`, which runs
-this plan and records the evidence itself; it does not exist yet.
+this plan and records the evidence itself; it does not exist yet. A fix after a failed check goes back to the code,
+but the change's phase stays `verify` (`cam-task` step 1: a phase never goes back).

@@ -71,12 +71,12 @@ TOOLS = [
                                            "task touches (a task with no declared files counts as touching its whole "
                                            "repo), one wave at most n long, plus the ones that must wait and why (kind "
                                            "'wave': it would collide with a task handed out now). Read only: an agent moves its own card "
-                                           "with `camaron board move` (cam-task), never with --force.",
+                                           "with `camaron change` (cam-task), never with --force.",
      "inputSchema": {"type": "object", "properties": {"n": {"type": "integer", "default": 3, "minimum": 1, "maximum": 20},
                                                       "story": {"type": "string"}, "epic": {"type": "string"}}}},
     {"name": "board_waves", "description": "The open work of the board in waves: tasks of one wave can run in parallel, "
                                            "each wave starts after the previous one (or the cycle that blocks it). "
-                                           "Read only: an agent moves its own card with `camaron board move` (cam-task), "
+                                           "Read only: an agent moves its own card with `camaron change` (cam-task), "
                                            "never with --force.",
      "inputSchema": {"type": "object", "properties": {"story": {"type": "string"}, "epic": {"type": "string"}}}},
 ]
@@ -312,7 +312,7 @@ def kpis() -> str:
     return json.dumps(k.report(months=1, run_check=False), ensure_ascii=False, default=str)[:20000]
 
 
-# ---------- board (read only here; an agent moves its own card with `camaron board move`) ----------
+# ---------- board (read only here; an agent moves its own card with `camaron change` or `camaron board move`) ----------
 def _board_call(fn, **kw) -> str:
     from .kanban import BOARD, ops
     try:

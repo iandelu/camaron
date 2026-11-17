@@ -49,10 +49,13 @@ def test_a_change_from_start_to_close_in_json(proj):
 def test_start_says_what_to_read_and_the_next_step(proj):
     r = cli(proj, "start", "Retry failed payments", "--item", "WI-1")
     assert r.returncode == 0, r.stderr
-    assert "wi-1" in r.stdout and "cam/wi-1-retry-failed-payments" in r.stdout
+    assert "api: cam/wi-1-retry-failed-payments (from main)" in r.stdout                # the skills read <base> here
+    assert "(cam/wi-1-retry-failed-payments, from main)" in r.stdout                     # and the docs' <base>
     assert "camaron change phase wi-1 assess" in r.stdout
     status = cli(proj, "status").stdout
-    assert "wi-1" in status and "docs" in status and "api: cam/wi-1-retry-failed-payments" in status
+    assert "wi-1" in status and "docs" in status and "api: cam/wi-1-retry-failed-payments (from main)" in status
+    assert json.loads(cli(proj, "status", "wi-1", "--json").stdout)["changes"][0]["bases"] == {"api": "main",
+                                                                                           "docs": "main"}
 
 
 def test_the_change_is_found_from_the_folder(proj):
