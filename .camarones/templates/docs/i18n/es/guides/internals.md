@@ -359,6 +359,16 @@ vez en `camaron trust` (cualquier cambio vuelve a preguntar). `doctor` avisa cua
 bifurcada se movió desde que se hizo la copia. Un checkpoint guarda la copia junto con su sello de bifurcación
 (`.camarones/.kit-skills.json`) y su versión renderizada en `.claude/` y `.agents/`.
 
+Los packs opcionales de skills salen de `lib/skills_catalog.yaml`: cada uno fijado a un commit, con sus ficheros de
+licencia y un icono (el catálogo guarda también los iconos de las skills del kit). `camaron skills add <pack>`
+descarga ese commit, copia sus skills en `cam-docs/.camarones/skills/` como skills del equipo y anota el origen, el
+commit y una huella por skill en `.camarones/skills.lock`; `remove` borra las carpetas que aún coinciden. El
+interruptor del proyecto es `skills: {off: [...]}` en `workspace.yaml`, que se deja fuera al renderizar. El de esta
+máquina es `skills_off` en `~/.camarones.json`, escrito como reglas `Skill(<nombre>)` de denegación en el
+`.claude/settings.local.json` local del workspace y de cam-docs; el kit recuerda las reglas que escribió
+(`.camarones/.cache/skills-denied.json`) y nunca quita las tuyas. Trust no pregunta por las reglas de denegación: solo
+quitan acceso.
+
 <!-- go:team -->
 
 ## Páginas escritas sin IA

@@ -3,18 +3,22 @@ import { Aviso, Button, Card, Skeleton, fetchSay, shareOk, shareSay } from '@cam
 import { useCmd } from '../hooks.js'
 import { Failed, JobOutput, Page } from '../parts.jsx'
 import Commands from './Commands.jsx'
-import { t } from '../i18n.js'
+import { lang, t } from '../i18n.js'
+import { skillsView, switchArgs } from '../skills.js'
 
 // The team by task: the team's cam-docs repo and sharing with it (where it stands, share now), the agent config and
-// hooks that came with it and this machine has not approved, and the plugins. The board and CI are the portal's.
+// hooks that came with it and this machine has not approved, the agents' skills and the plugins. The board and CI are
+// the portal's.
 // A kind or a state the CLI names in English (trust, plugins), in the user's words; an unknown one as it comes.
 const word = (family, v) => { const k = `${family}.${v}`; const w = t(k); return w === k ? v : w }
 
 export default function Team({ srv, jobs }) {
+  const [tick, setTick] = useState(0)          // a pack added below arrives in the Trust card to approve
   return (
     <Page title={t('nav.team')}>
       <Repo srv={srv} jobs={jobs} />
-      <Trust srv={srv} jobs={jobs} />
+      <Trust srv={srv} jobs={jobs} tick={tick} />
+      <Skills srv={srv} jobs={jobs} onChange={() => setTick((n) => n + 1)} />
       <Plugins srv={srv} jobs={jobs} />
       <div className="row">
         <Button size="sm" variant="ghost" href="../#/kanban">{t('tm.board')}</Button>
@@ -97,13 +101,13 @@ export function FetchNote({ fetched, remote }) {
 
 // What came with the team's repo (agent config, plugins) and this machine has not approved: nothing of it loads
 // until it is. Approving runs `trust --yes` after a dialog that lists it. The method hooks, on or off.
-function Trust({ srv, jobs }) {
+function Trust({ srv, jobs, tick = 0 }) {
   const list = useCmd(srv, jobs, { quiet: true })
   const hooks = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   const dialog = useRef(null)
   const load = () => { list.run('trust', { json: true }); hooks.run('hooks', { json: true }) }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [tick])
   const rows = list.job?.result?.pending
   const on = hooks.job?.result?.enabled
   const then = async (p) => { await p; load() }
@@ -134,6 +138,60 @@ function Trust({ srv, jobs }) {
       <JobOutput c={act} />
     </Card>
   )
+}
+
+// The agents' skills (`skills list --json`): each with its icon and two switches — the project's, for the whole team
+// (workspace.yaml), and this machine's, for you only (a Claude Code deny rule in the git-ignored settings.local.json).
+// Below, the kit's optional packs: adding one copies it into the team's skills, so the Trust card asks to approve it.
+function Skills({ srv, jobs, onChange }) {
+  const list = useCmd(srv, jobs, { quiet: true })
+  const act = useCmd(srv, jobs)
+  const load = () => list.run('skills', { action: 'list', json: true })
+  useEffect(() => { load() }, [])
+  const then = async (p) => { await p; load(); onChange?.() }
+  const data = list.job?.result
+  return (
+    <Card className="dk-run" data-tour="team-skills">
+      <span className="eyebrow">{t('tm.skills')}</span>
+      <p className="muted small">{t('tm.skillsLead')}</p>
+      {data?.skills ? <SkillsList data={data} busy={act.running}
+        onSwitch={(row, scope) => then(act.run('skills', switchArgs(row, scope)))}
+        onAdd={(pack) => then(act.run('skills', { action: 'add', args: [pack.name] }))} /> : <JobOutput c={list} />}
+      <JobOutput c={act} />
+    </Card>
+  )
+}
+
+export function SkillsList({ data, busy = false, onSwitch = () => {}, onAdd = () => {} }) {
+  const { rows, packs } = skillsView(data, lang())
+  return (<>
+    <ul className="dk-units">{rows.map((r) => (
+      <li key={r.name} className="dk-unit">
+        <span className="dk-skill-icon" aria-hidden="true">{r.icon}</span>
+        <div className="dk-unit-main"><b>{r.name}</b>
+          <span className="muted small">{t(r.origin, { pack: r.pack })}{r.description ? ` · ${r.description}` : ''}</span></div>
+        <div className="row dk-unit-acts">
+          {r.waiting ? <span className="cu-chip cu-chip--warn">{t('tm.skWaiting')}</span> : null}
+          <label className="dk-check"><input type="checkbox" checked={r.project} disabled={busy}
+            onChange={() => onSwitch(r, 'project')} />{t('tm.skProject')}</label>
+          <label className="dk-check" title={t('tm.skMachineHint')}><input type="checkbox" checked={r.machine} disabled={busy}
+            onChange={() => onSwitch(r, 'machine')} />{t('tm.skMachine')}</label>
+        </div>
+      </li>))}</ul>
+    {packs.length ? (<>
+      <span className="eyebrow">{t('tm.skAvailable')}</span>
+      <ul className="dk-units">{packs.map((p) => (
+        <li key={p.name} className="dk-unit">
+          <span className="dk-skill-icon" aria-hidden="true">{p.icon}</span>
+          <div className="dk-unit-main"><b>{p.title}</b>
+            <span className="muted small">{p.summary} · {p.license} · {p.skills.join(', ')}</span></div>
+          <div className="row dk-unit-acts">
+            {p.runsCode ? <span className="cu-chip cu-chip--warn">{t('tm.runsCode')}</span> : null}
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => onAdd(p)}>{t('tm.skAdd')}</Button>
+          </div>
+        </li>))}</ul>
+    </>) : null}
+  </>)
 }
 
 // The plugins: the kit's own (installed with Camarón, nothing downloaded) and the team's (folders in the team repo's

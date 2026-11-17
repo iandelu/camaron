@@ -203,6 +203,8 @@ def refresh_agent_config() -> None:
     if CAM_LAYOUT and WS_FILE.exists() and "agents" in components.components():
         templates.write_kit_skills()
         write_agent_config(components.components())
+        from lib import skills_packs
+        skills_packs.apply_machine()                  # this machine's skill switch, in the local settings only
 
 
 def wire_repo(name: str, log: Log = print, comps: list[str] | None = None) -> None:

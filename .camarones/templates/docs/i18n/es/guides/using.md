@@ -193,6 +193,16 @@ Para adaptar el flujo a tu equipo:
   versión del kit de una skill bifurcada ya se movió.
 - Las lecciones entran como notas: `camaron skills note SKILL TEXTO --source retro|review|board`, y se leen con
   `camaron skills notes [SKILL]`. Viven en `docs/.work/skill-notes/`.
+- Cada skill tiene dos interruptores. `camaron skills disable|enable NOMBRE` la apaga o la enciende para todo el
+  proyecto (`skills: {off: [...]}` en `workspace.yaml`; deja de copiarse a `.claude/` y `.agents/`); con `--machine`
+  la apagas solo para ti (una regla `Skill(NOMBRE)` en el `.claude/settings.local.json` local de Claude Code: el agente
+  deja de usarla, escribir `/NOMBRE` aún la llama y los ficheros del equipo no cambian).
+- Packs opcionales de skills, apagados hasta que alguien los añade: `camaron skills add ponytail` (el cambio más
+  pequeño que resuelve la tarea, más revisión y auditoría; MIT) y `camaron skills add impeccable` (diseño frontend;
+  Apache-2.0; su lanzador descarga un binario verificado la primera vez que se usa). Cada uno se descarga en el commit
+  que fija el kit, se copia con su licencia en `.camarones/skills/`, queda anotado en `.camarones/skills.lock` y cada
+  máquina lo aprueba una vez en `camaron trust`; `camaron skills remove PACK` lo quita (una carpeta que el equipo
+  editó se queda).
 
 En versiones posteriores llegará `camaron change`, donde el propio kit produce la evidencia, ejecuta los guardarraíles
 y abre las PR.

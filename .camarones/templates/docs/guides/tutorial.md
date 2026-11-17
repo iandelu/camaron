@@ -488,7 +488,7 @@ next action apart.
 `doctor --local` (proposes a free local model for this computer, installs nothing), `doctor --context` (the tokens
 every agent session loads before reading a page, against `context.budget`), `autopilot`, `plugins [--json]`,
 `run`, `runs`, `kpis`, `eval`, `ab`, `pipeline show|validate`, `blocks [--force]`, `pages [--adopt] [--json]`, `diagrams [--json]`, `pr fresh <repo>`,
-`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes` (the kit's skills and the team's copies of them; all take `--json`), `pr propose <url>`, `removed add`, `repair`, `export codetour <flow>`, `adr list|new|show|pack|candidates|write|accept|reject` (the decisions: frame, gather the
+`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes|enable|disable|add|remove` (the kit's skills, the team's copies of them, a switch per skill for the project or, with `--machine`, for you, and the optional packs; all take `--json`), `pr propose <url>`, `removed add`, `repair`, `export codetour <flow>`, `adr list|new|show|pack|candidates|write|accept|reject` (the decisions: frame, gather the
 evidence, write, accept, reject; all take `--json`), `history [--months 12]`
 (hotspots, who to ask per repo, files that change together, read from git without AI into `docs/overview/history.md`),
 `catalog [--json|--check]` (every command with where it lives: portal, desktop app or CLI only, and its arguments),

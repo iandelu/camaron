@@ -284,6 +284,16 @@ Dev dependencies only (`pyproject.toml` `dev` group): they never reach a documen
 |---|---|---|---|---|---|
 | R1 | [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) | pytest plugin that spreads tests over worker processes (`-n auto`) | The suite ran serially (~1400 tests, 20+ min on Windows): most of it waits on git and child processes, so it scales with cores | §2.4: (1) no overlap, nothing in the kit runs tests in parallel; (2) pure Python wheel from PyPI via uv, same on all three OSes, no admin rights; (3) one flag, the `serial` marker keeps the tests that need it on one worker, and `-n0` (or leaving `-n` out) runs the old serial way; (4) local, MIT. Locked in `uv.lock` | 🟢 adopted: CI runs `uv run pytest -n auto` |
 
+## S. Optional skill packs (added 2026-11-16, kit 4.84)
+
+Third-party agent skills a project may add with `camaron skills add <pack>` (catalog: `.camarones/lib/skills_catalog.yaml`).
+Off by default: a fresh install renders exactly what it did before.
+
+| ID | Pack | What it is | What it would improve here | Notes | Signal |
+|---|---|---|---|---|---|
+| S1 | [ponytail](https://github.com/DietrichGebert/ponytail) | Six Markdown skills: the smallest complete change, plus diff review, repo audit and a `shortcut:` ledger | Agents in `cam-task` tend to add code nobody asked for; ponytail pushes back, and its review fits the guardrails step | §2.4: (1) no kit skill covers code size or review; (2) plain Markdown copied by git, same on all three OSes; (3) one catalog entry, vendored at a pinned commit (`96608e0`), optional; (4) runs nothing, MIT (licence copied beside each skill) | 🟢 optional pack |
+| S2 | [impeccable](https://github.com/pbakaus/impeccable) | One frontend-design skill with ~50 references (shape, critique, audit, polish, animate) | The portal and desktop app UI work, and any documented project with a frontend | §2.4: (1) no kit skill covers UI design; (2) Markdown plus a launcher (`sh` and `.cmd`) that downloads a checksummed binary the first time the skill runs; (3) one catalog entry at a pinned commit (`d41d986`), optional, flagged `runs_code` in the panel; (4) the binary runs locally, Apache-2.0 (LICENSE and NOTICE copied) | 🟢 optional pack, runs code |
+
 ## Corrections from the 2026-09-30 report
 
 The external review "Herramientas de IA para desarrollo" (2026-09-30) re-checked several tools against primary

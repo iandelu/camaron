@@ -380,7 +380,9 @@ PAGES = {
                  "skills de brainstorming, planes y TDD se usan en esos pasos. Para ajustar el flujo a tu equipo: "
                  "`camaron skills list | fork | diff [--kit] | reset`; la copia del equipo vive en "
                  "`cam-docs/.camarones/skills/<nombre>/`, gana a la del kit, sobrevive a las actualizaciones y cada máquina "
-                 "la aprueba una vez en `camaron trust`; `camaron doctor` avisa si la versión del kit se movió. Lo "
+                 "la aprueba una vez en `camaron trust`; `camaron doctor` avisa si la versión del kit se movió. Cualquier skill se "
+                 "apaga con `camaron skills disable NOMBRE` (para el equipo) o con `--machine` (solo para ti), y "
+                 "`camaron skills add ponytail|impeccable` añade un pack opcional. Lo "
                  "aprendido se apunta con `camaron skills note … --source retro|review|board` (`camaron skills notes` lo "
                  "lee). Más adelante llegará `camaron change`, donde el propio kit hará de escribano. Tu agente "
                  "programa; Camarón solo le pasa los apuntes y le recuerda recoger antes de irse. 🦐"},
@@ -910,7 +912,9 @@ PAGES = {
                  "used for those steps. To tune the workflow for your team: `camaron skills list | fork | diff [--kit] | "
                  "reset`; the team copy lives in `cam-docs/.camarones/skills/<name>/`, wins over the kit's, survives "
                  "upgrades and each machine approves it once in `camaron trust`; `camaron doctor` warns when the kit's "
-                 "version moved on. What you learn goes in with `camaron skills note … --source retro|review|board` "
+                 "version moved on. Any skill turns off with `camaron skills disable NAME` (for the team) or `--machine` (for "
+                 "you), and `camaron skills add ponytail|impeccable` adds an optional pack. What you learn goes in "
+                 "with `camaron skills note … --source retro|review|board` "
                  "(`camaron skills notes` reads it back). Later versions bring `camaron change`, where the kit itself "
                  "does the paperwork. Your agent writes the code; Camarón just hands it the notes and reminds it to close "
                  "up shop. 🦐"},

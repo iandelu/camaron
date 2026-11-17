@@ -12,7 +12,7 @@ every command either way.
 | `confirm` | — |  |  |  |
 | `feedback` | — |  |  |  |
 
-## Desktop app (47)
+## Desktop app (48)
 
 | Command | Zone | AI | Destructive | --json |
 |---|---|---|---|---|
@@ -54,6 +54,7 @@ every command either way.
 | `schemas` | analyze |  |  | yes |
 | `self-update` | machine |  |  |  |
 | `setup` | machine |  |  |  |
+| `skills` | team |  |  | yes |
 | `stack` | machine |  |  |  |
 | `switch` | projects |  |  |  |
 | `sync` | machine |  |  |  |
@@ -85,7 +86,7 @@ every command either way.
 | `status` | check |  |  | yes |
 | `translated` | team |  |  |  |
 
-## Cli only (13)
+## Cli only (12)
 
 | Command | Zone | AI | Destructive | --json |
 |---|---|---|---|---|
@@ -99,6 +100,5 @@ every command either way.
 | `mcp` | — |  |  |  |
 | `prompt` | — |  |  |  |
 | `review` | — |  |  |  |
-| `skills` | — |  |  | yes |
 | `up` | — |  |  |  |
 | `wizard` | — |  |  |  |
