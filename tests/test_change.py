@@ -192,3 +192,100 @@ def test_the_board_reads_the_phase_of_each_item(proj):
     chg().start("Retry failed payments", item="WI-1")
     chg().phase("wi-1", "code")
     assert {k: v["phase"] for k, v in chg().by_item().items()} == {"WI-1": "code"}
+
+
+# ---------- link ----------
+URL = "https://github.com/acme/api/pull/7"
+
+
+def test_link_records_the_pr_and_moves_the_card_in_review(proj):
+    chg().start("Retry failed payments", item="WI-1")
+    rec = chg().link("wi-1", URL)
+    assert rec["prs"] == {"api": URL} and rec["state"] == "in-review"
+    assert status_of("WI-1") == "In Review"
+    assert [(b["rule"], b["to"]) for b in rec["board"]] == [("start", "In Progress"), ("pr", "In Review")]
+    rec = chg().link("wi-1", "https://github.com/acme/cam-docs/pull/3", repo="docs")
+    assert rec["prs"] == {"api": URL, "docs": "https://github.com/acme/cam-docs/pull/3"}
+    assert [b["rule"] for b in rec["board"]] == ["start", "pr"]              # already In Review: no second move
+    assert record(proj, "wi-1")["prs"] == rec["prs"]
+
+
+def test_link_needs_the_repo_when_the_change_has_several(proj):
+    chg().start("Retry failed payments", item="WI-1", repos=["api", "web"])
+    with pytest.raises(LookupError, match="api, web"):
+        chg().link("wi-1", URL)
+    assert chg().link("wi-1", URL, repo="web")["prs"] == {"web": URL}
+
+
+def test_link_refuses_an_unknown_repo_or_something_that_is_not_a_url(proj):
+    chg().start("Retry failed payments", item="WI-1")
+    with pytest.raises(LookupError, match="worker"):
+        chg().link("wi-1", URL, repo="worker")
+    with pytest.raises(chg().ChangeError, match="URL"):
+        chg().link("wi-1", "pull 7")
+    assert record(proj, "wi-1")["prs"] == {} and status_of("WI-1") == "In Progress"
+
+
+# ---------- close ----------
+def _commit(repo, name, text="x\n"):
+    (repo / name).parent.mkdir(parents=True, exist_ok=True)
+    (repo / name).write_text(text, encoding="utf-8")
+    git(repo, "add", name)
+    git(repo, "commit", "-qm", f"add {name}")
+
+
+def _merge(repo, branch, into="main"):
+    here = git(repo, "rev-parse", "--abbrev-ref", "HEAD")
+    if here != into:
+        git(repo, "switch", "-q", into)
+    git(repo, "merge", "-q", "--no-ff", "-m", f"merge {branch}", branch)
+
+
+def test_close_when_every_branch_is_merged_moves_the_card_done_and_removes_the_worktree(proj):
+    rec = chg().start("Retry failed payments", item="WI-1")["change"]
+    branch, wt = rec["repos"]["api"]["branch"], proj.ws / ".cw" / "wi-1"
+    _commit(proj.ws / "api", "src/Retry.java")
+    _commit(wt, "docs/retries.md", "# Retries\n")
+    chg().link("wi-1", URL)
+    _merge(proj.ws / "api", branch)
+    _merge(proj.root, branch, into=git(proj.root, "rev-parse", "--abbrev-ref", "HEAD"))
+    rec = chg().close("wi-1")
+    assert rec["state"] == "closed" and rec["closed"]["how"] == "merged"
+    assert status_of("WI-1") == "Done" and not wt.exists()
+    assert branch in git(proj.ws / "api", "branch", "--list", branch)               # branches stay
+    assert chg().status() == [] and chg().status("wi-1")[0]["state"] == "closed"
+
+
+def test_close_refuses_while_a_branch_is_not_merged_and_names_it(proj):
+    rec = chg().start("Retry failed payments", item="WI-1")["change"]
+    _commit(proj.ws / "api", "src/Retry.java")
+    with pytest.raises(chg().ChangeError, match=r"api.*--abandon"):
+        chg().close("wi-1")
+    assert record(proj, "wi-1")["state"] == "open" and status_of("WI-1") == "In Progress"
+    assert (proj.ws / ".cw" / "wi-1").exists() and rec["docs"]["branch"]
+
+
+def test_close_abandon_moves_the_card_back_to_ready_and_keeps_the_branches(proj):
+    rec = chg().start("Retry failed payments", item="WI-1")["change"]
+    _commit(proj.ws / "api", "src/Retry.java")
+    rec = chg().close("wi-1", abandon=True)
+    assert rec["state"] == "closed" and rec["closed"]["how"] == "abandoned"
+    assert status_of("WI-1") == "Ready" and not (proj.ws / ".cw" / "wi-1").exists()
+    assert git(proj.ws / "api", "branch", "--list", "cam/wi-1-retry-failed-payments")
+
+
+def test_close_refuses_while_the_docs_worktree_has_uncommitted_work(proj):
+    chg().start("Retry failed payments", item="WI-1")
+    wt = proj.ws / ".cw" / "wi-1"
+    (wt / "docs" / "draft.md").write_text("# Draft\n", encoding="utf-8")
+    with pytest.raises(chg().ChangeError, match="draft.md"):
+        chg().close("wi-1", abandon=True)
+    assert wt.exists() and record(proj, "wi-1")["state"] == "open"
+    (wt / "docs" / "draft.md").unlink()
+    (wt / "docs" / ".status.json").write_text("{}\n", encoding="utf-8")         # derived: regenerated, not work
+    assert chg().close("wi-1", abandon=True)["state"] == "closed"
+
+
+def test_close_of_a_change_without_an_item_moves_no_card(proj):
+    rec = chg().start("Tidy the logs", repos=["worker"])["change"]
+    assert chg().close(rec["id"], abandon=True)["board"] == []

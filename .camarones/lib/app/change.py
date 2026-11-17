@@ -297,3 +297,78 @@ def status(id_: str | None = None) -> list[dict]:
             raise LookupError(f"no change {id_.strip().lower()}")
         return [row(rec)]
     return [row(r) for r in open_records()]
+
+
+# ---------- link, close ----------
+DOCS = "docs"               # `link --repo docs`: the change's docs PR
+# what `check` and the usage counters rewrite in a worktree: regenerated, never someone's work
+DERIVED = ("docs/.status.json", "docs/.work/fresh.json", "docs/llms.txt", "docs/llms-full.txt")
+DERIVED_DIRS = ("docs/.work/usage/",)
+
+
+def link(id_: str | None, url: str, *, repo: str | None = None, cwd: Path | None = None,
+         by: str | None = None) -> dict:
+    """Record the change's PR for `repo` (the only repo when it has one; `docs` for the docs PR): the change is in
+    review and its card goes In Review. LookupError when the repo cannot be told; ChangeError for a bad URL."""
+    url = url.strip()
+    if not url.startswith(("https://", "http://")):
+        raise ChangeError(f"a PR is linked by its URL (https://…), not {url!r}")
+    with _lock():
+        rec = _pick(id_, cwd)
+        names = list(rec.get("repos") or {})
+        if repo is None:
+            if len(names) != 1:
+                raise LookupError(f"which repo is this PR for? --repo one of: {', '.join([*names, DOCS])}")
+            repo = names[0]
+        if repo not in (*names, DOCS):
+            raise LookupError(f"{rec['id']} has no repo {repo} (--repo one of: {', '.join([*names, DOCS])})")
+        rec.setdefault("prs", {})[repo] = url
+        rec["state"] = "in-review"
+        _follow(rec, "pr", by=by or _who())
+        _save(rec)
+    return rec
+
+
+def _merged(repo: Path, branch: str, base_ref: str) -> bool:
+    return run(["git", "merge-base", "--is-ancestor", f"refs/heads/{branch}", base_ref], cwd=repo, check=False,
+               capture=True).returncode == 0
+
+
+def unmerged(rec: dict) -> list[str]:
+    """`repo: branch → base_ref` for each of the change's branches (and its docs branch) not yet merged into its base."""
+    sides = [(n, paths.repo_dir(n), r) for n, r in (rec.get("repos") or {}).items()]
+    if rec.get("docs"):
+        sides.append((DOCS, paths.CTX.state_root, rec["docs"]))
+    return [f"{n}: {r['branch']} → {r['base_ref']}" for n, d, r in sides
+            if not (d.is_dir() and _merged(d, r["branch"], r["base_ref"]))]
+
+
+def _work_in(wt: Path) -> list[str]:
+    """Uncommitted paths in the docs worktree, the derived files aside."""
+    if not wt.is_dir():
+        return []
+    st = run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=wt, check=False, capture=True).stdout or ""
+    found = [ln[3:].strip('"') for ln in st.splitlines() if ln.strip()]
+    return [p for p in found if p not in DERIVED and not p.startswith(DERIVED_DIRS)]
+
+
+def close(id_: str | None, *, abandon: bool = False, cwd: Path | None = None, by: str | None = None) -> dict:
+    """Close the change. Merged (every branch an ancestor of its base, read from git, no forge): card Done.
+    `abandon`: card Ready. Both remove the docs worktree, refused while it holds uncommitted work; branches stay."""
+    by = by or _who()
+    with _lock():
+        rec = _pick(id_, cwd)
+        if not abandon and (left := unmerged(rec)):
+            raise ChangeError(f"{rec['id']} is not merged yet ({'; '.join(left)}): fetch, merge, or close it with "
+                              "--abandon")
+        wt = Path((rec.get("docs") or {}).get("worktree") or "")
+        if wt.parts and (work := _work_in(wt)):
+            raise ChangeError(f"the docs worktree {wt} has uncommitted work ({', '.join(work)}): commit or drop it, "
+                              "then close again")
+        if wt.parts and wt.exists():
+            services.current().worktrees.detach(paths.CTX.state_root, wt)
+        _follow(rec, "abandon" if abandon else "merged", by=by)
+        rec["state"] = "closed"
+        rec["closed"] = {"at": _now(), "how": "abandoned" if abandon else "merged", "by": by}
+        _save(rec)
+    return rec
