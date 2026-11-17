@@ -15,7 +15,7 @@ docs:fresh:
   variables:
     GIT_DEPTH: "0"
     CAMARONES_KIT_REPO: "https://example.test/kit.git"
-    CAMARONES_KIT_REF: "v9.9.9"
+    CAMARONES_KIT_REF: "main"
     DOCS_CLONE_USER: "oauth2"
     DOCS_BASE: "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
   script:

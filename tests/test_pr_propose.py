@@ -99,7 +99,7 @@ def test_nothing_to_do_when_the_pr_touches_no_documented_code(wired, pr):
 
 # ---------- CI: self-hosted only, labelled, never forks ----------
 SELF = {"target": "self-hosted", "runner_labels": ["self-hosted", "docs"], "runner_tags": ["docs-ai"],
-        "kit_repo": "https://example.test/kit.git", "kit_ref": "v9.9.9", "uv": "0.12.18"}
+        "kit_repo": "https://example.test/kit.git", "kit_ref": "main", "uv": "0.12.18"}
 
 
 @pytest.fixture

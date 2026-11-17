@@ -13,7 +13,7 @@ jobs:
     runs-on: [self-hosted, linux, docs]
     env:
       CAMARONES_KIT_REPO: https://example.test/kit.git
-      CAMARONES_KIT_REF: v9.9.9
+      CAMARONES_KIT_REF: main
       DOCS_REPO_URL: ${{ vars.DOCS_REPO_URL }}
       DOCS_LANG: ${{ vars.DOCS_LANG }}
       DOCS_READ_TOKEN: ${{ secrets.DOCS_READ_TOKEN }}

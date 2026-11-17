@@ -13,11 +13,12 @@ from .ports import Log
 from .app import services
 
 KIT_REPO = "https://github.com/iandelu/camarones-documenter.git"
+KIT_REF = "main"
 
 # The job's script after the forge has checked the service repo out: $SRC is that checkout, $NAME its name in
 # workspace.yaml, $DOCS_BASE the PR's base. It builds the workspace layout the kit expects (cam-docs next to the repo).
-# The kit at $CAMARONES_KIT_REF (default v<kit>, the version that wrote the job). The kit repo is not tagged for
-# every version, so a ref it does not have falls back to its default branch, and says so.
+# The kit at $CAMARONES_KIT_REF: main by default, since release tags stopped at v4.26.4; ci.kit_ref pins a branch or
+# tag. A ref the kit repo does not have falls back to its default branch, and says so.
 KIT_FETCH = r'''git clone -q --depth 1 --branch "$CAMARONES_KIT_REF" "$CAMARONES_KIT_REPO" "$W/.kit" 2>/dev/null || {
   echo "camaron: $CAMARONES_KIT_REF is not a branch or tag of $CAMARONES_KIT_REPO: using its default branch." >&2
   rm -rf "$W/.kit"
@@ -54,7 +55,7 @@ def config() -> dict:
     ci = (services.current().workspace.workspace().get("ci") or {}) if WS_FILE.exists() else {}
     return {"target": ci.get("target", "local"), "runner_labels": list(ci.get("runner_labels") or ["self-hosted"]),
             "runner_tags": list(ci.get("runner_tags") or []), "kit_repo": ci.get("kit_repo", KIT_REPO),
-            "kit_ref": ci.get("kit_ref", f"v{VERSIONS['kit']}"), "propose_label": ci.get("propose_label", "docs:update")}
+            "kit_ref": ci.get("kit_ref", KIT_REF), "propose_label": ci.get("propose_label", "docs:update")}
 
 
 def _indent(text: str, n: int) -> str:
