@@ -70,9 +70,10 @@ def test_merge_commit_drops_claude_trailer(repo):
     assert message(repo) == "Merge topic into main"
 
 
-def test_push_refuses_a_commit_that_still_credits_claude(pushed):
+@pytest.mark.parametrize("credit", [TRAILER, GENERATED], ids=["trailer", "generated"])
+def test_push_refuses_a_commit_that_still_credits_claude(pushed, credit):
     repo, remote = pushed
-    commit(repo, f"feat: sneaky\n\n{TRAILER}", "--no-verify")
+    commit(repo, f"feat: sneaky\n\n{credit}", "--no-verify")
     sha = git(repo, "rev-parse", "--short", "HEAD").stdout.strip()
     result = git(repo, "push", "-q", "origin", "main", check=False)
     assert result.returncode != 0

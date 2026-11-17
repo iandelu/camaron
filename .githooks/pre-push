@@ -1,6 +1,7 @@
 #!/bin/sh
 # Refuse to push commits that still credit an AI as co-author: the ones commit-msg could not see (--no-verify,
-# rebase, cherry-pick, an old branch merged in). Only commits the remote lacks are checked.
+# rebase, cherry-pick, an old branch merged in). Only commits the remote lacks are checked. LC_ALL=C matches bytewise:
+# in a UTF-8 locale Git for Windows misses the emoji before "Generated with".
 pattern='^[[:space:]]*co-authored-by:([[:space:]]*claude([^[:alpha:]]|$)|.*@anthropic\.com)|^[^[:alnum:]]*generated with \[?claude code'
 remote="$1"
 zero=$(git hash-object --stdin </dev/null | tr '0-9a-f' '0')
@@ -12,7 +13,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     else
         set -- "$local_sha" --not --remotes="$remote"
     fi
-    bad=$(git log -i -E --grep="$pattern" --format='  %h %s' "$@")
+    bad=$(LC_ALL=C git log -i -E --grep="$pattern" --format='  %h %s' "$@")
     [ -n "$bad" ] && found="$found$bad
 "
 done
