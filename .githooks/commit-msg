@@ -3,6 +3,6 @@
 # agent wrote the message. Keep the pattern in step with .githooks/pre-push.
 pattern='^[[:space:]]*co-authored-by:([[:space:]]*claude([^[:alpha:]]|$)|.*@anthropic\.com)|^[^[:alnum:]]*generated with \[?claude code'
 tmp="$1.no-ai"
-grep -viE "$pattern" "$1" > "$tmp"
+LC_ALL=C grep -viE "$pattern" "$1" > "$tmp"   # bytewise: in a UTF-8 locale Git for Windows' grep skips the emoji
 cat "$tmp" > "$1"
 rm -f "$tmp"
