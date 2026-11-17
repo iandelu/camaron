@@ -13,6 +13,8 @@ MUST = {
     "cam-task": ["cam/<id>-<slug>", "worktree add ../.cw/<id>", "cam-docs-lookup", "cam-difficulty", "cam-docs-update",
                  "cam-verify", "cam-ship", "cam-retro", "brainstorming", "writing-plans", "test-driven-development",
                  "systematic-debugging", "finishing-a-development-branch", "never skipped", "Never merge",
+                 '{{CLI}} board move <ITEM> "In Progress"', "without the three worktree variables", "Never `--force`",
+                 "No board item",
                  "four derived files", "skip its `llms`", '":(exclude)docs/.status.json"', '":(exclude)docs/llms.txt"',
                  '":(exclude)docs/llms-full.txt"', '":(exclude)docs/.work/fresh.json"'],
     "cam-difficulty": ["repos", "contract", "migration", "auth", "messaging", "weak-docs", "open-questions", "hotspot",
@@ -20,7 +22,8 @@ MUST = {
     "cam-verify": ["./mvnw", "./gradlew", "go test ./...", "cargo test", "dotnet test", "repos[].verify", "{{CLI}} check",
                    "sdk env", "rev-parse HEAD", "flaky", "not green", "four derived files"],
     "cam-ship": [".env*", "gitleaks", "{{CLI}} pr fresh", "x-confirmed", "Open the PRs?", "gh pr create --draft",
-                 "glab mr create --draft", "{{CLI}} board link", "never move", "Never merge", "cam-retro",
+                 "glab mr create --draft", "{{CLI}} board link", '{{CLI}} board move <ITEM> "In Review"',
+                 "without the three worktree variables", "Done is the person's", "Never merge", "cam-retro",
                  "four derived files", "worktree remove ../.cw/<id>", "git -C .cw/<id> status --porcelain",
                  "`docs/.work/fresh.json`", "commit it or ask the person"],
     "cam-retro": ["{{CLI}} skills note", "--source retro", "review|board", "skill-feedback", "{{CLI}} skills notes",
@@ -40,6 +43,11 @@ def test_the_pack_says_what_each_step_needs():
         assert n == name
         missing = [p for p in parts if p not in text]
         assert not missing, (name, missing)
+
+
+def test_no_skill_forbids_moving_the_card():
+    for name in PACK:
+        assert "never move board columns" not in fm(name)[0], name
 
 
 def test_descriptions_stay_inside_their_token_caps():

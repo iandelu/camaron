@@ -78,7 +78,8 @@ change asked for → go back to the step it concerns.
 
 ## 5. Hand over
 
-- Give the PR URLs. You never move board columns: tell the person to move the item to review.
+- Give the PR URLs. A board item, once the PRs are open: `{{CLI}} board move <ITEM> "In Review"`, from the workspace root,
+  without the three worktree variables (the same rule as `cam-task` step 1). Done is the person's, after the merge.
 - Never merge, neither the code nor the docs. The person merges the code first and the docs right after, then
   re-confirms the confirmed pages the change edited.
 - Once a person has merged the PRs, the docs worktree goes: `git -C {{CAM}}. worktree remove ../.cw/<id>`. Git refuses

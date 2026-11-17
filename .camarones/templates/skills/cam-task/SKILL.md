@@ -13,6 +13,10 @@ the service repos and `{{CAM}}`) unless a step says otherwise.
    - In each service repo you will change: `git fetch`, note the branch you start from as `<base>` (e.g.
      `origin/main`), then `git switch -c cam/<id>-<slug> <base>`. A dirty tree, or a non-default branch already
      checked out: ask the person first.
+   - A board item: `{{CLI}} board move <ITEM> "In Progress"` from the workspace root, without the three worktree variables
+     (set, the board is written inside `.cw/<id>/backlog/`, not the one in `{{CAM}}backlog/` that people see).
+     Never `--force`: a refusal names unfinished dependencies or a file clash with work in progress → stop and give
+     the person the reason. No board item: skip.
    - The docs, in their own worktree: `git -C {{CAM}}. worktree add ../.cw/<id> -b cam/<id>-<slug>`. The docs' `<base>`
      is the branch `{{CAM}}` had checked out. Edit docs only in `.cw/<id>/docs/`, never in `{{CAM}}docs/`.
    - **On the worktree** means `{{CLI}}` with three variables set; without them it misreads the layout and reports
@@ -56,6 +60,7 @@ go into `.cw/<id>/docs/.work/plans/`, never at the workspace root or in a servic
 - To approve the plan (medium and high) before any code.
 - When the difficulty level goes up.
 - When a step skill says to stop and ask (a flaky check, a failed guardrail).
+- When the start gate refuses the board item.
 - Once, before opening the PRs (`cam-ship`).
 
 Otherwise keep going. Never merge. Never write `x-confirmed`; never edit `<!-- human -->` blocks or pages with
