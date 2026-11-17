@@ -242,6 +242,8 @@ def test_a_stopped_run_ends_its_agent_and_the_log_says_so(kit, tmp_path, sig):
     driver = f"""
 import sys
 sys.path.insert(0, {str(kit.kit_dir)!r})
+from lib import bootstrap
+bootstrap.build()                           # a process of its own builds its services first
 from lib import plan
 from lib.adapters.runners import base
 from lib.adapters.runners.claude import Claude
