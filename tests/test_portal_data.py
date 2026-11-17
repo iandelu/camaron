@@ -239,6 +239,29 @@ def test_static_export_carries_the_translation_s_description(serve_mod, monkeypa
     assert read("_", "orders.md")["description"] == "How an order is placed."
 
 
+# ---------- the index's titles in the reader's language (sidebar, breadcrumb, pager, ⌘K) ----------
+def test_a_tree_row_carries_its_translations_titles(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root / "i18n" / "es" / "flows", "checkout.md", "---\ntitle: Pago\n---\n# Pago\n")
+    page(root / "i18n" / "es" / "wikis" / "api", "http-api.md", "# Recursos HTTP\n")      # no front matter: its heading
+    r = rows(serve_mod)
+    assert r["flows/checkout.md"]["title"] == "Checkout" and r["flows/checkout.md"]["i18n_titles"] == {"es": "Pago"}
+    assert r["wikis/api/http-api.md"]["i18n_titles"] == {"es": "Recursos HTTP"}
+    assert r["repos/api/brief.md"]["i18n_titles"] == {}                                  # not translated yet
+    assert r["interview/discovery/api.md"]["i18n_titles"] == {}                          # working notes are not
+
+
+def test_static_export_tree_carries_the_translations_titles(serve_mod, monkeypatch):
+    serve_mod.services.components.set_components(["agents"])
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor_file", lambda *_a: None)
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor", lambda _site: (0, []))
+    page(serve_mod.root / "docs" / "i18n" / "es" / "flows", "checkout.md", "---\ntitle: Pago\n---\n# Pago\n")
+    site = serve_mod.services.export_site.export_site(log=lambda _: None)
+    tree = json.loads((site / "api" / "tree.json").read_text(encoding="utf-8"))
+    row = next(d for d in tree["docs"] if d["path"] == "flows/checkout.md")
+    assert row["title"] == "Checkout" and row["i18n_titles"] == {"es": "Pago"}
+
+
 def test_wiki_graph_export_does_not_pass_flags_openwiki_rejects(serve_mod, monkeypatch):
     calls = []
 

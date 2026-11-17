@@ -11,6 +11,7 @@ const store = {
 const LANG_NAMES = { en: 'English', es: 'Español', fr: 'Français', de: 'Deutsch', pt: 'Português', it: 'Italiano' }
 
 let T = { docs: [], langs: [], codeGraphs: [], engines: [], repos: [], sections: [], views: [], summary: {} }
+let ROWS = []                                // the index rows as loaded; T.docs and BY_PATH name them in the reader's language
 let BY_PATH = {}
 let lang = store.get('cam-lang')             // '' = English (canonical docs); otherwise a translation code
 let CURRENT = ''                             // page on screen: a hash change that only moves the anchor just scrolls
@@ -55,13 +56,23 @@ function applyTheme() {
   document.querySelectorAll('likec4-view').forEach((v) => v.setAttribute('color-scheme', isDark() ? 'dark' : 'light'))
 }
 
+// A page's title in the reader's language: its translation's (the row's `i18n_titles`), else its own. A row from an
+// older kit's export has no `i18n_titles` and keeps its title.
+export const inLang = (rows, l) => rows.map((d) => ({ ...d, space: d.space || 'docs', title: (l && d.i18n_titles?.[l]) || d.title }))
+
+// The index as the reader sees it, so the tree, breadcrumb, pager and ⌘K all follow the language switch.
+function localize() {
+  BY_PATH = Object.fromEntries(inLang(ROWS, lang).map((d) => [d.path, d]))
+  T.docs = Object.values(BY_PATH)
+}
+
 async function loadTree() {
   T = await docsGet('tree')
   T.sections ||= []
   T.views ||= []
-  BY_PATH = Object.fromEntries(T.docs.map((d) => [d.path, { ...d, space: d.space || 'docs' }]))
-  T.docs = Object.values(BY_PATH)
+  ROWS = T.docs
   if (!T.langs.includes(lang)) lang = ''
+  localize()
   document.title = `${T.project} — Camarón`
 }
 
@@ -72,7 +83,7 @@ export const core = {
     await loadTree()
     if (!store.get('cam-lang')) {
       const nav = (navigator.language || 'en').slice(0, 2)
-      if (T.langs.includes(nav)) lang = nav
+      if (T.langs.includes(nav)) { lang = nav; localize() }
     }
     document.documentElement.lang = lang || 'en'
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -93,7 +104,7 @@ export const core = {
   sectionLabel,
   lang: () => lang,
   langName: (l) => LANG_NAMES[l] || l,
-  setLang(l) { lang = l; store.set('cam-lang', l); document.documentElement.lang = l || 'en'; CURRENT = '' },
+  setLang(l) { lang = l; store.set('cam-lang', l); document.documentElement.lang = l || 'en'; CURRENT = ''; localize() },
   toggleTheme() { store.set('cam-theme', isDark() ? 'light' : 'dark'); applyTheme(); CURRENT = '' },
   isDark,
 }
