@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.85.4-ff875f?style=flat-square" alt="Versión 4.85.4">
+  <img src="https://img.shields.io/badge/version-4.85.5-ff875f?style=flat-square" alt="Versión 4.85.5">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -339,6 +339,11 @@ El menú lateral tiene siete zonas (el exportado, Docs, Arquitectura y Revisión
 | **Plan** | El Pipeline en vivo (aprobar, reintentar), la Entrevista del equipo y Sincronizar |
 | **Calidad** | Salud (de solo lectura), KPIs (con lo que costó el plan y las preguntas que nadie encontró) y CI |
 | **Revisión** | Lo pendiente de revisar, confirmar varias a la vez, las revisiones que espera un agente |
+
+Dos escritores en la misma página no se pisan: el portal y el MCP escriben cada página con su candado
+(`.camarones/.cache/locks/pages/`), y el portal guarda diciendo qué versión abrió. Si la página cambió mientras la
+editabas (otra pestaña, un agente que escribió el fichero), **Guardar** no escribe nada y lo avisa: tu texto sigue ahí
+y **Guardar encima** sustituye su cambio. **Confirmar** pide recargar si el texto cambió desde que lo leíste.
 
 Inicio pregunta primero: **Preguntar** devuelve las secciones que mejor responden, con su cita y sin IA (busca por
 sentido: «base de datos» encuentra PostgreSQL). El interruptor **Todo / Negocio** deja solo las páginas de qué hace el

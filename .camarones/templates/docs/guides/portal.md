@@ -92,8 +92,8 @@ What you can do on it, live:
 
 | Button | What it does |
 |---|---|
-| **Edit** | Markdown on the left, live preview on the right; **Save** writes the file and, with "commit to cam-docs" ticked, makes a local commit. Editing a confirmed page makes it need re-confirmation |
-| **Confirm as correct** | Signs it with your name (your git user by default): agents treat it as the truth from then on |
+| **Edit** | Markdown on the left, live preview on the right; **Save** writes the file and, with "commit to cam-docs" ticked, makes a local commit. Editing a confirmed page makes it need re-confirmation. If the page changed while you edited it (another tab, an agent), **Save** writes nothing and says so: your text stays, and **Save over it** replaces their change (it tells you when a person confirmed the page meanwhile: saving over drops that confirmation) |
+| **Confirm as correct** | Signs it with your name (your git user by default): agents treat it as the truth from then on. If the page changed since you opened it, it asks you to reload and read it again |
 | **Request a change** | For the whole page or one section: a comment for the next AI session (it adds the `review-fixes` unit), or **Create a board item →** with the page linked |
 
 **New page** (`#/new`) creates a page of your own (`x-owner: human`), which agents never rewrite.

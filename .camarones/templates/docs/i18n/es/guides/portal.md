@@ -97,8 +97,8 @@ Lo que puedes hacer en ella, en vivo:
 
 | Botón | Qué hace |
 |---|---|
-| **Editar** | Markdown a la izquierda y la vista previa en vivo a la derecha; **Guardar** escribe el fichero y, con «commit en cam-docs» marcado, hace un commit local. Editar una página confirmada hace que haya que reconfirmarla |
-| **Confirmar como correcta** | La firma con tu nombre (tu usuario de git por defecto): desde ese momento los agentes la tratan como la verdad |
+| **Editar** | Markdown a la izquierda y la vista previa en vivo a la derecha; **Guardar** escribe el fichero y, con «commit en cam-docs» marcado, hace un commit local. Editar una página confirmada hace que haya que reconfirmarla. Si la página cambió mientras la editabas (otra pestaña, un agente), **Guardar** no escribe nada y lo dice: tu texto sigue ahí, y **Guardar encima** sustituye su cambio (te avisa si alguien la confirmó mientras tanto: al guardar encima esa confirmación se pierde) |
+| **Confirmar como correcta** | La firma con tu nombre (tu usuario de git por defecto): desde ese momento los agentes la tratan como la verdad. Si la página cambió desde que la abriste, te pide recargarla y volver a leerla |
 | **Pedir un cambio** | Para toda la página o una sección: un comentario para la siguiente sesión de IA (añade la unidad `review-fixes`), o **Crear un elemento del tablero →** con la página enlazada |
 
 **Nueva página** (`#/new`) crea una página tuya (`x-owner: human`), que los agentes nunca reescriben.

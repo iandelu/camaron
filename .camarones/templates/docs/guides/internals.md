@@ -308,7 +308,7 @@ it at `http://127.0.0.1:8765/mcp` (Streamable HTTP) with the token in `~/.camaro
 | `read_doc` | A page, or with `section` only its TL;DR and that section |
 | `list_docs`, `doc_status` | The index with trust; the documentation's health |
 | `ask` | The best sections for a question, each with its citation `[path#section]`; no model is called |
-| `propose_edit` | Changes an AI draft in place; for a confirmed or human page, saves a proposal for review instead. Never confirms |
+| `propose_edit` | Changes an AI draft in place; for a confirmed or human page, saves a proposal for review instead. Never confirms. Holds the page's lock, as the portal's saves do, and decides on the page as it is then |
 | `add_feedback`, `mark_suspect` | Leave a review comment; hold back a page that no longer matches the code |
 | `pipeline_status`, `run_events`, `kpis` | The plan, a run's events, the KPIs |
 | `run_node` | Starts a ready unit, only with `mcp: {pipeline_control: true}` in `workspace.yaml` |

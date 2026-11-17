@@ -135,6 +135,11 @@ def _doc_review() -> object:
     return doc_review
 
 
+def _doc_edit() -> object:
+    from lib.app import doc_edit
+    return doc_edit
+
+
 def _translations() -> object:
     from lib.app import translations
     return translations
@@ -171,6 +176,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "doc_status": _doc_status,
     "llms": _llms,
     "doc_review": _doc_review,
+    "doc_edit": _doc_edit,
     "translations": _translations,
     "search": _search,
 }

@@ -11,7 +11,7 @@ from lib.common import VERSIONS
 from lib.core.ctx import KIT
 from lib.core.paths import DOCS, ROOT, rel_file
 from lib.core.process import out
-from lib.domain.docs import frontmatter, logical_paths, trust_levels
+from lib.domain.docs import frontmatter, logical_paths, page_versions, trust_levels
 
 _adr_log = logging.getLogger("camaron.adr_api")
 
@@ -83,6 +83,7 @@ def read(path: str, lang: str = "") -> dict:
     fm, body = frontmatter.split_fm(raw)
     row = next((r for r in services.current().doc_status.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
+            "sha": page_versions.text_sha(raw), "body_sha": frontmatter.body_sha(body),     # what a save / confirm names
             "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem,
             "description": fm.get("description") or row.get("description") or "", "trust": row.get("trust"),
             "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
@@ -101,7 +102,8 @@ def _source_info(path: str, refs: list, state: dict | None) -> list[dict]:
 
 def status(check: bool = True) -> dict:
     """`check=False` skips the full quality check (seconds on a big project): the page shows the rest at once."""
-    return {"queue": [{k: r[k] for k in ("path", "title", "trust", "type")} for r in services.current().doc_review.review_queue()],
+    return {"queue": [{k: r[k] for k in ("path", "title", "trust", "type", "body_sha")}      # body_sha: what a confirm names
+                      for r in services.current().doc_review.review_queue()],
             "feedback": services.current().docs.pending_feedback(), "changes": services.current().doc_state.changes(),
             "check": dict(zip(("errors", "warnings"), services.current().doc_status.check())) if check else None,
             "plan": dict(zip(("done", "total"), plan.progress()))}

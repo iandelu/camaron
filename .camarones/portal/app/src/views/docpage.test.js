@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { newPagePath, pageBanners, pageLede, pager } from './docpage.js'
+import { confirmedMeanwhile, newPagePath, pageBanners, pageConflict, pageLede, pager } from './docpage.js'
 
 const d = (over = {}) => ({ exists: true, trust: 'confirmed', fresh: 'fresh', ...over })
 
@@ -57,4 +57,24 @@ test("the lede is the description of the page as read, the translation's in Span
   expect(pageLede({ description: 'Cómo se hace un pedido.' }, row)).toBe('Cómo se hace un pedido.')
   expect(pageLede({}, row)).toBe('How an order is placed.')                // a payload without one keeps the index's
   expect(pageLede({}, {})).toBe('')
+})
+
+test('a save or confirm refused because the page changed gives the version it has now; anything else gives null', () => {
+  const refused = (status, data) => Object.assign(new Error('x'), { status, data })
+  expect(pageConflict(refused(409, { error: 'changed', sha: 'abc' }))).toBe('abc')
+  expect(pageConflict(refused(409, { error: 'changed', body_sha: 'def' }), 'body_sha')).toBe('def')
+  expect(pageConflict(refused(409, { error: 'changed', body_sha: 'def' }))).toBe(null)       // not the field asked for
+  expect(pageConflict(refused(409, { error: 'another change is being saved: try again' }))).toBe(null)   // busy
+  expect(pageConflict(refused(400, { sha: 'abc' }))).toBe(null)
+  expect(pageConflict(new Error('offline'))).toBe(null)
+})
+
+test('a refused save names who confirmed the page meanwhile, so saving over it is not a silent loss', () => {
+  const ana = { by: 'ana', at: '2026-11-16T10:00:00', body_sha: 'b1' }
+  expect(confirmedMeanwhile({ confirmed: null }, { confirmed: ana })).toBe('ana')
+  expect(confirmedMeanwhile({ confirmed: { ...ana, at: '2026-11-01T09:00:00' } }, { confirmed: ana })).toBe('ana')  // re-confirmed
+  expect(confirmedMeanwhile({ confirmed: ana }, { confirmed: { ...ana } })).toBe(null)     // the one the editor opened
+  expect(confirmedMeanwhile({ confirmed: null }, { confirmed: null })).toBe(null)
+  expect(confirmedMeanwhile({ confirmed: ana }, {})).toBe(null)                              // an older server says nothing
+  expect(confirmedMeanwhile({}, { confirmed: { at: 'x' } })).toBe('')                        // no name: still a confirmation
 })

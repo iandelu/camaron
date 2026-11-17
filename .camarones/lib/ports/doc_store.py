@@ -1,9 +1,11 @@
 """DocStore: what the app asks of the project's pages on disk: every canonical page (docs/ and each repo's OpenWiki
 under wikis/) with its logical path, a page's file by any path that names it, where a translation and a repo's wiki
-live, a path someone typed resolved, and the human review feedback file."""
+live, a path someone typed resolved, the lock a writer holds for a page's read-check-write, and the human review
+feedback file."""
 from __future__ import annotations
 
 from collections.abc import Iterator
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Protocol
 
@@ -20,6 +22,8 @@ class DocStore(Protocol):
     def wiki_dir(self, repo: str) -> Path: ...
 
     def resolve(self, p: str) -> Path: ...
+
+    def page_lock(self, f: Path) -> AbstractContextManager: ...
 
     def add_feedback(self, doc_file: str, text: str, by: str) -> None: ...
 
