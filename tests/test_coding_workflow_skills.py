@@ -84,3 +84,15 @@ def test_the_skills_never_commit_or_loop_on_files_check_rewrites():
     for name in ("cam-task", "cam-verify", "cam-ship"):
         text = fm(name)[0]
         assert "prints nothing)" not in text and "add -A`" not in text, name
+
+
+def test_no_shipped_text_says_agents_never_move_cards():
+    root = KIT_DIR / "templates"
+    files = [KIT_DIR / "lib" / "mcp.py", KIT_DIR / "lib" / "tutorial.py", KIT_DIR / "TUTORIAL.md",
+             *(root / "docs" / "guides" / f"{n}.md" for n in ("using", "internals")),
+             *(root / "docs" / "i18n" / "es" / "guides" / f"{n}.md" for n in ("using", "internals")),
+             *(SKILLS / n / "SKILL.md" for n in ("cam-task", "cam-ship", "cam-difficulty"))]
+    old = re.compile(r"never\s+move\w*\s+(?:board\s+)?cards?|cannot\s+move\s+cards|no\s+mueven\s+tarjetas"
+                     r"|nunca\s+mueven\s+tarjetas", re.I)
+    found = {str(f.relative_to(KIT_DIR)): m.group(0) for f in files if (m := old.search(f.read_text(encoding="utf-8")))}
+    assert not found, found

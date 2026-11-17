@@ -326,7 +326,7 @@ solo repo. `camaron doctor` avisa si falta y `camaron repair` lo vuelve a poner.
 | `pipeline_status`, `run_events`, `kpis` | El plan, los eventos de una ejecución, los KPIs |
 | `run_node` | Lanza una unidad lista, solo con `mcp: {pipeline_control: true}` en `workspace.yaml` |
 | `repo_graph` | Pregunta al grafo de código de graphify de un repo o de todos |
-| `board_next`, `board_waves` | Lo que puede empezar ya sin choques; el trabajo abierto en oleadas. Los agentes leen el tablero; nunca mueven tarjetas |
+| `board_next`, `board_waves` | Lo que puede empezar ya sin choques; el trabajo abierto en oleadas. Solo leen; un agente mueve su propia tarjeta con `camaron board move` (`cam-task`) |
 
 También ofrece cada página como recurso (`camdocs://<ruta>`, más `camdocs://llms.txt`) y dos prompts,
 `implement-feature` y `update-docs`. Todo pasa por la misma puerta de frescura.
