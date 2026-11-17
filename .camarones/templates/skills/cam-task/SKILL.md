@@ -9,14 +9,15 @@ Every code change goes through these steps, in this order. Run commands from the
 the service repos and `{{CAM}}`) unless a step says otherwise.
 
 1. **Set up the change.**
-   - `<id>`: the board item in lower case (`WI-12` → `wi-12`), else a short slug. `<slug>`: 2–4 words of the title.
+   - `<ITEM>`: the board item's id as the board shows it (e.g. `WI-12`). `<id>`: the board item in lower case (`WI-12` → `wi-12`), else a short slug. `<slug>`: 2–4 words of the title.
    - In each service repo you will change: `git fetch`, note the branch you start from as `<base>` (e.g.
      `origin/main`), then `git switch -c cam/<id>-<slug> <base>`. A dirty tree, or a non-default branch already
      checked out: ask the person first.
    - A board item: `{{CLI}} board move <ITEM> "In Progress"` from the workspace root, without the three worktree variables
-     (set, the board is written inside `.cw/<id>/backlog/`, not the one in `{{CAM}}backlog/` that people see).
+     defined below in this step (with them the board resolves to the docs worktree's copy, not the one in
+     `{{CAM}}backlog/` that people see).
      Never `--force`: a refusal names unfinished dependencies or a file clash with work in progress → stop and give
-     the person the reason. No board item: skip.
+     the person the reason; the `--force` hint in the refusal is for people. No board item: skip.
    - The docs, in their own worktree: `git -C {{CAM}}. worktree add ../.cw/<id> -b cam/<id>-<slug>`. The docs' `<base>`
      is the branch `{{CAM}}` had checked out. Edit docs only in `.cw/<id>/docs/`, never in `{{CAM}}docs/`.
    - **On the worktree** means `{{CLI}}` with three variables set; without them it misreads the layout and reports
@@ -62,6 +63,9 @@ go into `.cw/<id>/docs/.work/plans/`, never at the workspace root or in a servic
 - When a step skill says to stop and ask (a flaky check, a failed guardrail).
 - When the start gate refuses the board item.
 - Once, before opening the PRs (`cam-ship`).
+
+If the change stops before the PRs (split into other items, or a "no" to "Open the PRs?"), tell the person the card is
+still In Progress.
 
 Otherwise keep going. Never merge. Never write `x-confirmed`; never edit `<!-- human -->` blocks or pages with
 `x-owner: human`.

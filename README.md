@@ -538,7 +538,7 @@ camaron board repair                                  # también corre antes de 
 ```
 
 Mover a *In Progress* comprueba dependencias y choques de ficheros (`x-touches`): una persona puede seguir con
-`--force` o **Mover igualmente**; un agente nunca. Las historias se escriben en la zona **Historias** del portal, en
+`--force` o **Mover igualmente**. Un agente que sigue `cam-task` mueve su propia tarjeta por la CLI y nunca usa `--force` (la skill se lo prohíbe); las herramientas del MCP solo leen y el harness mueve tarjetas con su propia superficie, que no se puede forzar. Las historias se escriben en la zona **Historias** del portal, en
 tres pasos (escribir con lo que toca, revisar el veredicto INVEST, subtareas en oleadas) y no se guarda nada hasta
 aprobarlas. Mientras **✨ Sugerir con IA** piensa, el botón brilla, no se puede volver a pulsar y Escape cancela; lo que
 propone se queda en tu navegador, por historia, hasta que lo aceptas o lo descartas. Ajustes opcionales en

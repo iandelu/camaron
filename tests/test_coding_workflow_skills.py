@@ -96,3 +96,17 @@ def test_no_shipped_text_says_agents_never_move_cards():
                      r"|nunca\s+mueven\s+tarjetas", re.I)
     found = {str(f.relative_to(KIT_DIR)): m.group(0) for f in files if (m := old.search(f.read_text(encoding="utf-8")))}
     assert not found, found
+
+
+def test_the_start_gate_text_says_the_skill_forbids_force_to_an_agent():
+    root = KIT_DIR / "templates" / "docs"
+    wanted = {
+        root / "guides" / "tutorial.md": "never uses `--force` (the skill forbids it)",
+        root / "i18n" / "es" / "guides" / "tutorial.md": "nunca usa `--force` (la skill se lo prohíbe)",
+        KIT_DIR / "TUTORIAL.md": "never uses `--force` (the skill forbids it)",
+        KIT_DIR.parent / "README.md": "nunca usa `--force` (la skill se lo prohíbe)",
+    }
+    for path, needle in wanted.items():
+        assert needle in " ".join(path.read_text(encoding="utf-8").split()), path.name
+    es = " ".join((KIT_DIR / "TUTORIAL.md").read_text(encoding="utf-8").split())
+    assert "nunca usa `--force`" in es

@@ -293,8 +293,9 @@ solo valen con `story`, `--story` y `--n` con `next` y `waves`, y `--force` con 
 
 **La puerta de salida.** Mover una tarjeta a *In Progress* comprueba sus dependencias y su huella contra lo que ya está
 en curso. A una persona (CLI, portal, app) se le dice el motivo y puede seguir con `--force` (el portal y la app
-preguntan **Mover igualmente**); el movimiento forzado se cuenta en las estadísticas de uso. A un agente se le rechaza siempre: las
-herramientas MCP `board_next` y `board_waves` solo leen, y el harness mueve con su propia superficie. Una tarjeta con
+preguntan **Mover igualmente**); el movimiento forzado se cuenta en las estadísticas de uso. Un agente que sigue `cam-task` mueve su propia
+tarjeta por la CLI y nunca usa `--force` (la skill se lo prohíbe); las herramientas MCP `board_next` y `board_waves`
+solo leen, y el harness mueve con su propia superficie, que no se puede forzar. Una tarjeta con
 hijas es un contenedor y nunca bloquea a sus propias tareas. Sin colisión, `board move` funciona como siempre.
 
 Ajustes opcionales en `workspace.yaml`:

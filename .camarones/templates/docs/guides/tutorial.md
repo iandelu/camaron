@@ -282,8 +282,9 @@ as touching everything in its repos. On a dependency cycle, `board waves --json`
 
 **The start gate.** Moving a card into *In Progress* checks its dependencies and its footprint against what is
 already in progress. A person (CLI, portal, app) is told why and can go on with `--force` (the portal and the app ask
-**Move anyway**); a forced move is counted in the usage statistics. An agent is always refused: the MCP tools `board_next` and `board_waves`
-only read, and the harness moves cards with its own surface. A card with children is a container and never blocks its
+**Move anyway**); a forced move is counted in the usage statistics. An agent following `cam-task` moves its own card through the CLI and never uses `--force` (the skill forbids it);
+the MCP tools `board_next` and `board_waves` only read, and the harness moves cards with its own surface, whose refusal
+is final. A card with children is a container and never blocks its
 own tasks. With no collision, `board move` works as it always did.
 
 Optional settings in `workspace.yaml`:
