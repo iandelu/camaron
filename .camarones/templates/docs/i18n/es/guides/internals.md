@@ -321,7 +321,7 @@ solo repo. `camaron doctor` avisa si falta y `camaron repair` lo vuelve a poner.
 | `read_doc` | Una página o, con `section`, solo su TL;DR y esa sección |
 | `list_docs`, `doc_status` | El índice con la confianza; la salud de la documentación |
 | `ask` | Las mejores secciones para una pregunta, cada una con su cita `[ruta#sección]`; no llama a ningún modelo |
-| `propose_edit` | Cambia un borrador de IA en su sitio; en una página confirmada o de una persona, guarda una propuesta para revisar. Nunca confirma |
+| `propose_edit` | Cambia un borrador de IA en su sitio; en una página confirmada o de una persona, guarda una propuesta para revisar. Nunca confirma. Toma el candado de la página, como los guardados del portal, y decide sobre la página tal como está entonces |
 | `add_feedback`, `mark_suspect` | Deja un comentario de revisión; retiene una página que ya no cuadra con el código |
 | `pipeline_status`, `run_events`, `kpis` | El plan, los eventos de una ejecución, los KPIs |
 | `run_node` | Lanza una unidad lista, solo con `mcp: {pipeline_control: true}` en `workspace.yaml` |
