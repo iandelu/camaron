@@ -13,6 +13,8 @@ MUST = {
     "cam-task": ["cam/<id>-<slug>", "worktree add ../.cw/<id>", "cam-docs-lookup", "cam-difficulty", "cam-docs-update",
                  "cam-verify", "cam-ship", "cam-retro", "brainstorming", "writing-plans", "test-driven-development",
                  "systematic-debugging", "finishing-a-development-branch", "never skipped", "Never merge",
+                 '{{CLI}} board move <ITEM> "In Progress"', "without the three worktree variables", "Never `--force`",
+                 "No board item",
                  "four derived files", "skip its `llms`", '":(exclude)docs/.status.json"', '":(exclude)docs/llms.txt"',
                  '":(exclude)docs/llms-full.txt"', '":(exclude)docs/.work/fresh.json"'],
     "cam-difficulty": ["repos", "contract", "migration", "auth", "messaging", "weak-docs", "open-questions", "hotspot",
@@ -20,7 +22,8 @@ MUST = {
     "cam-verify": ["./mvnw", "./gradlew", "go test ./...", "cargo test", "dotnet test", "repos[].verify", "{{CLI}} check",
                    "sdk env", "rev-parse HEAD", "flaky", "not green", "four derived files"],
     "cam-ship": [".env*", "gitleaks", "{{CLI}} pr fresh", "x-confirmed", "Open the PRs?", "gh pr create --draft",
-                 "glab mr create --draft", "{{CLI}} board link", "never move", "Never merge", "cam-retro",
+                 "glab mr create --draft", "{{CLI}} board link", '{{CLI}} board move <ITEM> "In Review"',
+                 "without the three worktree variables", "Done is the person's", "Never merge", "cam-retro",
                  "four derived files", "worktree remove ../.cw/<id>", "git -C .cw/<id> status --porcelain",
                  "`docs/.work/fresh.json`", "commit it or ask the person"],
     "cam-retro": ["{{CLI}} skills note", "--source retro", "review|board", "skill-feedback", "{{CLI}} skills notes",
@@ -40,6 +43,11 @@ def test_the_pack_says_what_each_step_needs():
         assert n == name
         missing = [p for p in parts if p not in text]
         assert not missing, (name, missing)
+
+
+def test_no_skill_forbids_moving_the_card():
+    for name in PACK:
+        assert "never move board columns" not in fm(name)[0], name
 
 
 def test_descriptions_stay_inside_their_token_caps():
@@ -76,3 +84,29 @@ def test_the_skills_never_commit_or_loop_on_files_check_rewrites():
     for name in ("cam-task", "cam-verify", "cam-ship"):
         text = fm(name)[0]
         assert "prints nothing)" not in text and "add -A`" not in text, name
+
+
+def test_no_shipped_text_says_agents_never_move_cards():
+    root = KIT_DIR / "templates"
+    files = [KIT_DIR / "lib" / "mcp.py", KIT_DIR / "lib" / "tutorial.py", KIT_DIR / "TUTORIAL.md",
+             *(root / "docs" / "guides" / f"{n}.md" for n in ("using", "internals")),
+             *(root / "docs" / "i18n" / "es" / "guides" / f"{n}.md" for n in ("using", "internals")),
+             *(SKILLS / n / "SKILL.md" for n in ("cam-task", "cam-ship", "cam-difficulty"))]
+    old = re.compile(r"never\s+move\w*\s+(?:board\s+)?cards?|cannot\s+move\s+cards|no\s+mueven\s+tarjetas"
+                     r"|nunca\s+mueven\s+tarjetas", re.I)
+    found = {str(f.relative_to(KIT_DIR)): m.group(0) for f in files if (m := old.search(f.read_text(encoding="utf-8")))}
+    assert not found, found
+
+
+def test_the_start_gate_text_says_the_skill_forbids_force_to_an_agent():
+    root = KIT_DIR / "templates" / "docs"
+    wanted = {
+        root / "guides" / "tutorial.md": "never uses `--force` (the skill forbids it)",
+        root / "i18n" / "es" / "guides" / "tutorial.md": "nunca usa `--force` (la skill se lo prohíbe)",
+        KIT_DIR / "TUTORIAL.md": "never uses `--force` (the skill forbids it)",
+        KIT_DIR.parent / "README.md": "nunca usa `--force` (la skill se lo prohíbe)",
+    }
+    for path, needle in wanted.items():
+        assert needle in " ".join(path.read_text(encoding="utf-8").split()), path.name
+    es = " ".join((KIT_DIR / "TUTORIAL.md").read_text(encoding="utf-8").split())
+    assert "nunca usa `--force`" in es

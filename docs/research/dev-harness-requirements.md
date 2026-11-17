@@ -41,7 +41,7 @@ designed yet; open questions are at the end.
 | U1 | CLI **`camaron board`** (add / list / move / show…). Free today (the whiteboards have no CLI command). |
 | U2 | Kanban in the **portal and the app**. The portal edits (writes the files; the next sync commits). |
 | U3 | UI names: es **Tablero** (Kanban) / **Pizarras** (Excalidraw); en **Board** / **Whiteboards**. Only the tab labels change, not routes or files. |
-| U4 | Agents **read and propose** through MCP: they read items and criteria and may create items as `draft` that a person accepts; they never move columns. |
+| U4 | Agents **read and propose** through MCP: they read items and criteria and may create items as `draft` that a person accepts; they never move columns. **Changed 2026-11-17 (WI-60):** an agent moves its own card — In Progress when it starts (`cam-task`, through the start gate, never `--force`) and In Review when it opens the PRs; Done stays with the person. |
 | U5 | **On by default in new projects**; existing projects enable it with a command. |
 | U6 | People without git (PM, business) are served later by a **shared team portal** (team-server spike), not in the first delivery. |
 | U7 | Doc findings (drift, stale pages, `TODO(question)`, OSV vulnerabilities) show as **suggestions**; one click turns one into an item. |

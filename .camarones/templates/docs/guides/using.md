@@ -166,7 +166,8 @@ checkout and its board never switch branch.
 - **Guardrails and impact.** Forbidden paths, gitleaks, pages the change leaves stale (`camaron pr fresh`) and the
   trust rules, then the impact on the docs, the contracts and the board.
 - **One question.** "Open the PRs?" If you say yes it opens a draft code PR per repo and a draft docs PR that link each
-  other. The kit never merges, and agents never move board cards.
+  other. The kit never merges; the agent moves its card to In Progress when it starts and to In Review when it opens
+  the PRs, and Done is yours.
 
 With superpowers installed, its brainstorming, plans, TDD and debugging skills are used for those steps, inside the
 change's own branches and worktree.

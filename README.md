@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.86.0-ff875f?style=flat-square" alt="Versión 4.86.0">
+  <img src="https://img.shields.io/badge/version-4.87.0-ff875f?style=flat-square" alt="Versión 4.87.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -251,7 +251,7 @@ checkout de `cam-docs` y su tablero nunca cambian de rama.
 3. **Prueba primero**, y el agente verifica con el build, los tests y los linters del propio repo más `camaron check`.
 4. **Guardarraíles**: rutas prohibidas, gitleaks, páginas desactualizadas (`camaron pr fresh`) y reglas de confianza.
 5. **Impacto y una sola pregunta**, «¿Abro las PR?»: si dices que sí, abre una PR de código en borrador por repo y una
-   PR de documentación en borrador, enlazadas entre sí. El kit nunca fusiona y los agentes no mueven tarjetas del tablero.
+   PR de documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al empezar y a In Review al abrir las PR, y Done es tuyo.
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.
@@ -549,7 +549,7 @@ camaron board repair                                  # también corre antes de 
 ```
 
 Mover a *In Progress* comprueba dependencias y choques de ficheros (`x-touches`): una persona puede seguir con
-`--force` o **Mover igualmente**; un agente nunca. Las historias se escriben en la zona **Historias** del portal, en
+`--force` o **Mover igualmente**. Un agente que sigue `cam-task` mueve su propia tarjeta por la CLI y nunca usa `--force` (la skill se lo prohíbe); las herramientas del MCP solo leen y el harness mueve tarjetas con su propia superficie, que no se puede forzar. Las historias se escriben en la zona **Historias** del portal, en
 tres pasos (escribir con lo que toca, revisar el veredicto INVEST, subtareas en oleadas) y no se guarda nada hasta
 aprobarlas. Mientras **✨ Sugerir con IA** piensa, el botón brilla, no se puede volver a pulsar y Escape cancela; lo que
 propone se queda en tu navegador, por historia, hasta que lo aceptas o lo descartas. Ajustes opcionales en

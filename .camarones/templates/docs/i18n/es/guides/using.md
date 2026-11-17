@@ -177,7 +177,8 @@ tablero nunca cambian de rama.
 - **Guardarraíles e impacto.** Rutas prohibidas, gitleaks, páginas que el cambio deja desactualizadas
   (`camaron pr fresh`) y reglas de confianza; después, el impacto en la documentación, los contratos y el tablero.
 - **Una sola pregunta.** «¿Abro las PR?» Si dices que sí, abre una PR de código en borrador por repo y una PR de
-  documentación en borrador, enlazadas entre sí. El kit nunca fusiona y los agentes nunca mueven tarjetas.
+  documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al
+  empezar y a In Review al abrir las PR, y Done es tuyo.
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.
