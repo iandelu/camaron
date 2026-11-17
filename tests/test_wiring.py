@@ -266,3 +266,19 @@ def test_without_is_junction_only_links_are_links(kit, tmp_path, without_is_junc
     except OSError:
         pytest.skip("no symlink rights (Windows without Developer Mode)")
     assert links._is_link(tmp_path / "s")
+
+
+def test_the_link_check_needs_no_windows_only_stat_constant(kit, tmp_path, monkeypatch):
+    """stat.IO_REPARSE_TAG_MOUNT_POINT exists only in Windows builds of Python. Without it (macOS, Linux), a folder or
+    a file is still no link and nothing raises; on Windows a junction is still one."""
+    import stat
+    monkeypatch.delattr(stat, "IO_REPARSE_TAG_MOUNT_POINT", raising=False)
+    d, f = tmp_path / "d", tmp_path / "f"
+    d.mkdir()
+    f.write_text("x", encoding="utf-8")
+    links = kit.services.links
+    assert not links._is_link(d) and not links._is_link(f)
+    if sys.platform == "win32":
+        j = tmp_path / "j"
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(j), str(d)], check=True, capture_output=True)
+        assert links._is_link(j)
