@@ -28,10 +28,11 @@ def test_off_by_default(wired, hooks):
     assert not any(kit_hooks(wired).values())
 
 
-def test_on_writes_three_hooks_the_kit_owns(wired, hooks):
+def test_on_writes_five_hooks_the_kit_owns(wired, hooks):
     hooks.set_enabled(True)
     found = kit_hooks(wired)
-    assert {k for k, v in found.items() if v} == {"SessionStart", "PostToolUse", "Stop"}
+    assert {k for k, v in found.items() if v} == {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse",
+                                                  "Stop"}
     assert wired.trust.pending() == []
     hooks.set_enabled(False)
     assert not any(kit_hooks(wired).values())
@@ -83,6 +84,91 @@ def test_the_hooks_command(wired, hooks):
                          capture_output=True, text=True, encoding="utf-8")
     assert out.returncode == 0 and wired.services.workspace.workspace()["hooks"]["method"] is True
     assert kit_hooks(wired)["Stop"]
+
+
+
+# ---------- P1: retrieval by default (turning-point spec) ----------
+PROMPT = "change how payments retry with backoff when the charge fails"
+
+
+@pytest.fixture
+def documented(wired, hooks):
+    from test_prompt_context import PAGE
+    page = wired.root / "docs" / "flows" / "payments.md"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_text(PAGE, encoding="utf-8", newline="\n")
+    return wired
+
+
+@pytest.fixture
+def rh(documented):
+    import importlib
+    return importlib.import_module("lib.app.retrieval_hooks")
+
+
+def edit(kit, session, path=None, transcript=None):
+    target = path or kit.ws / "api" / "src" / "main" / "java" / "demo" / "Api.java"
+    return {"session_id": session, "tool_name": "Edit", "tool_input": {"file_path": str(target)},
+            "transcript_path": str(transcript or kit.ws / "no-transcript.jsonl")}
+
+
+def test_the_prompt_hook_prints_the_docs_for_the_prompt(documented):
+    r = run_hook(documented, "prompt", {"session_id": "s-1", "prompt": PROMPT})
+    assert r.returncode == 0 and "flows/payments.md" in r.stdout and "exponential backoff" in r.stdout
+    assert run_hook(documented, "prompt", {"session_id": "s-1", "prompt": "ok"}).stdout.strip() == ""
+
+
+def test_an_edit_with_no_docs_consulted_is_stopped_once(documented, rh):
+    code, text = rh.pre_edit(edit(documented, "s-2"))
+    assert code == 2 and "flows/payments.md" in text and "api/src/main/java/demo/Api.java" in text
+    assert rh.pre_edit(edit(documented, "s-2")) == (0, "")
+    rep = rh.report()
+    assert rep["edit_sessions"] == 1 and rep["consulted_first"] == 0 and rep["stops"] == 1
+
+
+def test_an_injected_prompt_counts_as_consulted(documented, rh):
+    assert rh.prompt({"session_id": "s-3", "prompt": PROMPT})
+    assert rh.pre_edit(edit(documented, "s-3")) == (0, "")
+    rep = rh.report()
+    assert rep["prompts"] == 1 and rep["prompts_with_docs"] == 1
+    assert rep["edit_sessions"] == 1 and rep["consulted_first"] == 1 and rep["stops"] == 0
+
+
+def test_a_docs_tool_in_the_transcript_counts_as_consulted(documented, rh, tmp_path):
+    t = tmp_path / "s-4.jsonl"
+    use = {"type": "tool_use", "id": "t1", "name": "mcp__camarones__read_doc", "input": {"path": "flows/payments.md"}}
+    t.write_text(json.dumps({"type": "user", "message": {"content": "hi"}}) + "\n"
+                 + json.dumps({"type": "assistant", "message": {"content": [use]}}) + "\n", encoding="utf-8")
+    assert rh.pre_edit(edit(documented, "s-4", transcript=t)) == (0, "")
+
+
+def test_reading_a_docs_page_counts_as_consulted(documented, rh, tmp_path):
+    t = tmp_path / "s-5.jsonl"
+    page = str(documented.root / "docs" / "flows" / "payments.md")
+    use = {"type": "tool_use", "id": "t1", "name": "Read", "input": {"file_path": page}}
+    t.write_text(json.dumps({"type": "assistant", "message": {"content": [use]}}) + "\n", encoding="utf-8")
+    assert rh.pre_edit(edit(documented, "s-5", transcript=t)) == (0, "")
+
+
+def test_files_outside_the_service_repos_are_never_stopped(documented, rh):
+    assert rh.pre_edit(edit(documented, "s-6", path=documented.root / "docs" / "flows" / "x.md")) == (0, "")
+    assert rh.report()["edit_sessions"] == 0
+
+
+def test_gate_off_keeps_the_prompt_hook_and_drops_the_stop(documented, rh):
+    ws = documented.services.workspace.workspace()
+    ws["hooks"] = {**(ws.get("hooks") or {}), "gate": False}
+    documented.services.workspace.save_workspace(ws)
+    assert rh.pre_edit(edit(documented, "s-7")) == (0, "")
+    assert rh.prompt({"session_id": "s-7", "prompt": PROMPT})
+
+
+def test_a_broken_payload_never_blocks(documented):
+    env = {**os.environ, "CAMARONES_ROOT": str(documented.root)}
+    r = subprocess.run([sys.executable, str(documented.kit_dir / "camarones.py"), "hook", "pre-edit"], env=env,
+                       input="{not json", capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 0
+    assert run_hook(documented, "pre-edit", {"tool_input": {"file_path": 42}}).returncode == 0
 
 
 # ---------- X7: compliance of what a unit writes ----------

@@ -354,7 +354,7 @@ repo is not there — with git's own line beneath; a token problem links to **Ma
 **What came with the team's repo.** Hooks, MCP servers, settings, skills, files and plugins in `cam-docs` that the kit
 did not write wait here until you approve them on this machine: **Approve (n)** lists them and runs
 `camaron trust --yes`. Approvals live in `~/.camarones/trust/`, never in the repo. **Method hooks in Claude Code**
-turns the kit's three hooks on or off (`camaron hooks`).
+turns the kit's five hooks on or off (`camaron hooks`).
 
 **Plugins.** The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
 whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.

@@ -1459,6 +1459,8 @@
       "action": "_StoreAction",
       "choices": [
        "session-start",
+       "prompt",
+       "pre-edit",
        "post-edit",
        "stop"
       ],
@@ -1481,7 +1483,8 @@
       "action": "_StoreAction",
       "choices": [
        "on",
-       "off"
+       "off",
+       "report"
       ],
       "const": null,
       "default": null,

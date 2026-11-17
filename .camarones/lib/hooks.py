@@ -1,7 +1,11 @@
 """Method hooks (R36, X2): opt-in per project (`camaron hooks on`, `hooks: {method: true}` in workspace.yaml). The kit
-writes three Claude Code hooks into cam-docs/.claude/settings.json and trust recognises them as its own:
-SessionStart puts the plan state in the agent's context, PostToolUse checks a docs page right after it is edited and
-feeds the problems back, Stop reminds once per session to update the docs when the repos moved on."""
+writes five Claude Code hooks into cam-docs/.claude/settings.json and trust recognises them as its own:
+SessionStart puts the plan state in the agent's context; UserPromptSubmit puts the docs, C4 elements and code-graph
+nodes that match the prompt there (app/prompt_context.py, no model call); PreToolUse stops, once per session, the first
+edit of a service-repo file when the session consulted no docs (`hooks: {gate: false}` turns that off); PostToolUse
+checks a docs page right after it is edited and feeds the problems back; Stop reminds once per session to update the
+docs when the repos moved on. The prompt and pre-edit hooks live in app/retrieval_hooks.py, which keeps the docs search
+out of this module's imports."""
 from __future__ import annotations
 
 import json, sys
@@ -11,7 +15,8 @@ from .common import CACHE, DOCS, KIT, ROOT, uv
 from .app import services
 
 CAP = 1800                                        # characters the session start adds to the agent's context
-EVENTS = {"SessionStart": ("", "session-start"), "PostToolUse": ("Edit|Write|MultiEdit", "post-edit"),
+EVENTS = {"SessionStart": ("", "session-start"), "UserPromptSubmit": ("", "prompt"),
+          "PreToolUse": ("Edit|Write|MultiEdit", "pre-edit"), "PostToolUse": ("Edit|Write|MultiEdit", "post-edit"),
           "Stop": ("", "stop")}
 TAG = '" hook '
 
