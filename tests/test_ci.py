@@ -12,7 +12,7 @@ from conftest import KIT_DIR
 
 GOLDEN = Path(__file__).parent / "golden" / "ci"
 LOCAL = {"target": "local", "runner_labels": ["self-hosted"], "runner_tags": [], "kit_repo": "https://example.test/kit.git",
-         "kit_ref": "v9.9.9", "uv": "0.12.18"}
+         "kit_ref": "main", "uv": "0.12.18"}
 SELF = {**LOCAL, "target": "self-hosted", "runner_labels": ["self-hosted", "linux", "docs"], "runner_tags": ["docs"]}
 
 
@@ -57,6 +57,22 @@ def test_the_project_config_is_read(kit, ci):
     kit.services.workspace.save_workspace(ws)
     assert ci.config()["runner_tags"] == ["docs-ai"]
     assert "runs-on: [self-hosted, docs]" in ci.render("github")
+
+
+def test_the_kit_ref_defaults_to_main(kit, ci):
+    """Release tags stopped at v4.26.4, so v<kit> names no ref for current versions: the job clones main unless the
+    project pins a kit with ci.kit_ref."""
+    assert ci.config()["kit_ref"] == "main"
+    assert "CAMARONES_KIT_REF: main" in ci.render("github")
+    assert 'CAMARONES_KIT_REF: "main"' in ci.render("gitlab")
+
+
+def test_ci_kit_ref_pins_the_kit(kit, ci):
+    ws = kit.services.workspace.workspace()
+    ws["ci"] = {"kit_ref": "v4.26.4"}
+    kit.services.workspace.save_workspace(ws)
+    assert ci.config()["kit_ref"] == "v4.26.4"
+    assert "CAMARONES_KIT_REF: v4.26.4" in ci.render("github")
 
 
 def test_camaron_ci_writes_the_service_repo_job(kit, ci):
@@ -116,7 +132,7 @@ def _fetch(ci, defn_script, tmp_path, repo, ref):
 
 @pytest.mark.parametrize("script", ["FRESH_SCRIPT", "PROPOSE_SCRIPT"])
 def test_a_kit_version_with_no_tag_falls_back_to_the_default_branch(ci, tmp_path, script):
-    """The default ref is v<kit>, but the kit repo is not tagged for every version: the job must still get a kit."""
+    """A ci.kit_ref the kit repo does not have (e.g. an untagged version): the job must still get a kit."""
     r, kit = _fetch(ci, getattr(ci, script), tmp_path, _kit_repo(tmp_path), "v9.9.9")
     assert r.returncode == 0, r.stderr
     assert (kit / ".camarones" / "camarones.py").is_file()
