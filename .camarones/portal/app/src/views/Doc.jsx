@@ -3,7 +3,7 @@ import { Aviso, Button, Chip, Skeleton } from '@camaron/ui'
 import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { t as tr } from '../i18n.js'
-import { pageBanners, pager } from './docpage.js'
+import { pageBanners, pageLede, pager } from './docpage.js'
 import Editor from './Editor.jsx'
 import Sources, { FreshIcon } from './Sources.jsx'
 import { pageFresh } from './sources.js'
@@ -57,6 +57,7 @@ export function DocView({ path, anchor, order, extra = null, banner = null, afte
 
   const row = core.byPath(path) || {}
   const title = d.exists ? d.title : english?.title || row.title || d.title
+  const lede = pageLede(d, row)
   const around = pager(order, path)
   const sources = (d.sources?.length ? d.sources : english?.sources) || []      // a missing translation has none of its own
   const changed = async (msg) => { core.toast(msg); await core.reload(); window.CamaronShell.go() }
@@ -64,7 +65,7 @@ export function DocView({ path, anchor, order, extra = null, banner = null, afte
     <div className="docpage">
       <article className="page">
         <h1>{title}</h1>
-        {row.description && <p className="lead">{row.description}</p>}
+        {lede && <p className="lead">{lede}</p>}
         <div className="meta">
           {row.adr_status && <Chip state={adrTone(row.adr_status)}>{t(adrStatusLabel(row.adr_status))}</Chip>}
           <Chip state={STATE[d.trust]}>{t('trust.' + d.trust)}</Chip>

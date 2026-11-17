@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { newPagePath, pageBanners, pager } from './docpage.js'
+import { newPagePath, pageBanners, pageLede, pager } from './docpage.js'
 
 const d = (over = {}) => ({ exists: true, trust: 'confirmed', fresh: 'fresh', ...over })
 
@@ -50,4 +50,11 @@ test('the pager follows the reading order; a page outside it has none', () => {
 test('a new page goes under guides/ with a slug of its title', () => {
   expect(newPagePath('How to deploy (prod)')).toBe('guides/how-to-deploy-prod.md')
   expect(newPagePath('')).toBe('guides/.md')
+})
+
+test("the lede is the description of the page as read, the translation's in Spanish", () => {
+  const row = { description: 'How an order is placed.' }        // the docs index: the English page's front matter
+  expect(pageLede({ description: 'Cómo se hace un pedido.' }, row)).toBe('Cómo se hace un pedido.')
+  expect(pageLede({}, row)).toBe('How an order is placed.')                // a payload without one keeps the index's
+  expect(pageLede({}, {})).toBe('')
 })

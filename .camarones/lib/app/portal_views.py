@@ -75,12 +75,15 @@ def _is_decision(row: dict) -> bool:
 
 
 def read(path: str, lang: str = "") -> dict:
+    """A page as the reader sees it in `lang`: a translation gives its own title and `description` (the lede), and a
+    translation with no description keeps the page's."""
     f = doc_file(path, lang)
     raw = f.read_text(encoding="utf-8") if f.exists() else ""
     fm, body = frontmatter.split_fm(raw)
     row = next((r for r in services.current().doc_status.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
-            "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem, "trust": row.get("trust"),
+            "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem,
+            "description": fm.get("description") or row.get("description") or "", "trust": row.get("trust"),
             "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
             "fresh": row.get("fresh"), "freshness": row.get("freshness"),
             "sourceInfo": _source_info(path, fm.get("x-sources") or [], row.get("freshness")),

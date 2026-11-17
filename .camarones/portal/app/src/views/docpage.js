@@ -17,6 +17,10 @@ export function pageBanners(d, row, lang) {
   return out
 }
 
+// The lede under the H1: the description of the page as read (api/doc gives a translation's own, else the English
+// page's), so the Spanish view does not show the docs index's English one.
+export const pageLede = (d, row) => d.description || row.description || ''
+
 export function pager(order, path) {
   const i = order.indexOf(path)
   return i < 0 ? null : { prev: order[i - 1] || null, next: order[i + 1] || null }
