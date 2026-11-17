@@ -359,6 +359,12 @@ turns the kit's five hooks on or off (`camaron hooks`).
 **Plugins.** The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
 whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
 
+**Skills.** Every agent skill of the project with its icon, where it comes from (the kit, a team copy, the team's, a
+pack) and two switches: **Project** turns it off for the whole team (`camaron skills disable`, written to
+`workspace.yaml`), **This machine** only for you, in Claude Code (`--machine`). A skill that waits for your approval
+says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one into the team's skills
+(`camaron skills add`), and the card above asks you to approve it.
+
 **All commands** has board, checkpoint, ci, export, portal, removed and translated.
 
 ## Quality

@@ -2933,7 +2933,11 @@
        "diff",
        "reset",
        "note",
-       "notes"
+       "notes",
+       "enable",
+       "disable",
+       "add",
+       "remove"
       ],
       "const": null,
       "default": null,
@@ -3015,6 +3019,19 @@
       "nargs": null,
       "options": [
        "--ref"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "machine",
+      "nargs": 0,
+      "options": [
+       "--machine"
       ],
       "required": false,
       "type": null

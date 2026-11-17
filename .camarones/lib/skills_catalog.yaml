@@ -1,0 +1,45 @@
+# The skills panel's icons and the kit's optional skill packs (lib/skills_packs.py).
+# icons: an emoji per kit skill, shown in `camaron skills list` and the desktop app's Team › Skills.
+# packs: third-party skills a project may add with `camaron skills add <pack>`. Off until someone adds one: the pack is
+#   fetched at `commit` (never a branch or a tag), its `skills` folders under `path` are copied into
+#   cam-docs/.camarones/skills/ with the licence `files` beside each, and recorded in .camarones/skills.lock.
+#   `runs_code`: the skill starts programs of its own when it runs (shown before adding it).
+icons:
+  cam-task: "🧭"
+  cam-difficulty: "📏"
+  cam-verify: "🧪"
+  cam-ship: "🚢"
+  cam-retro: "🔁"
+  cam-docs-lookup: "🔎"
+  cam-docs-update: "📝"
+  cam-docs-unit: "🦐"
+  cam-docs-diagrams: "📐"
+  graphify: "🕸️"
+  openwiki: "📚"
+packs:
+  ponytail:
+    title: Ponytail
+    icon: "🪮"
+    summary:
+      en: "The smallest change that fully solves the task, plus review, audit and a shortcut ledger"
+      es: "El cambio más pequeño que resuelve la tarea, más revisión, auditoría y registro de atajos"
+    source: https://github.com/DietrichGebert/ponytail
+    commit: 96608e078b2d5ea607c5c3b8b5a54d1c1fba6846
+    path: skills
+    skills: [ponytail, ponytail-audit, ponytail-debt, ponytail-gain, ponytail-help, ponytail-review]
+    license: MIT
+    files: [LICENSE]
+    runs_code: false
+  impeccable:
+    title: Impeccable
+    icon: "🎨"
+    summary:
+      en: "Frontend design: shape, critique, audit, polish and animate interfaces"
+      es: "Diseño frontend: planificar, criticar, auditar, pulir y animar interfaces"
+    source: https://github.com/pbakaus/impeccable
+    commit: d41d9860b0094dcb68030657da63461212835aaa
+    path: .claude/skills
+    skills: [impeccable]
+    license: Apache-2.0
+    files: [LICENSE, NOTICE.md]
+    runs_code: true            # its launcher downloads a checksummed binary the first time the skill runs
