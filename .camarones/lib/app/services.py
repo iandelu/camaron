@@ -22,6 +22,7 @@ from lib.ports.repo_sync import RepoSync
 from lib.ports.doc_state import DocState
 from lib.ports.doc_store import DocStore
 from lib.ports.vendor import Vendor
+from lib.ports.worktree_ops import WorktreeOps
 
 
 class Services:
@@ -42,6 +43,7 @@ class Services:
     doc_state: DocState
     docs: DocStore
     vendor: Vendor
+    worktrees: WorktreeOps
     components: ModuleType
     templates: ModuleType
     viewers: ModuleType

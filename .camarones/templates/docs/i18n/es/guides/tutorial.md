@@ -514,6 +514,17 @@ solo CLI, y sus argumentos) y `projects [--json]` (los proyectos registrados en 
 aprobar, si los hooks del método están activos), **Plan › Sincronizar** en el portal (lo mismo que `share`, con dónde estás) y `app` (la app de escritorio: las secciones del proyecto por tareas, el portal para leer,
 donde se lanzan ejecuciones, wikis, análisis y comprobaciones; el portal del navegador solo las enseña).
 
+**Cambios de código.** `camaron change start "<título>" --item WI-n [--repo R]… [--files repo:ruta,…] [--base REF]
+[--force]` lo comprueba todo antes (repos presentes y limpios, la puerta de arranque de la tarjeta) y después crea
+`cam/<id>-<slug>` en cada repo (si ya hay una rama de trabajo limpia, la adopta), abre el worktree de la documentación
+`.cw/<id>/`, mueve la tarjeta a **In Progress** y lista la documentación que leer con su confianza. `change phase [ID]
+FASE` solo avanza (`docs`, `assess`, `plan`, `code`, `docs-update`, `verify`, `ship`, `retro`); `change status [ID]`
+enseña los cambios abiertos y su siguiente paso; `change link [ID] URL [--repo NOMBRE|docs]` apunta una PR (tarjeta a
+**In Review**); `change close ID` pide que cada rama esté fusionada en su base, según git (tarjeta a **Done**), o
+`--abandon` (tarjeta a **Ready**), y quita el worktree de la documentación. Todos aceptan `--json`; salir con 1 es que
+está bloqueado, con el motivo, y con 2 un error de uso. El registro vive en `.camarones/.cache/changes/<id>.json`, solo
+en esta máquina.
+
 **Páginas del código, sin IA.** La instalación (y `camaron pages [--json]`, que las pone al día; `camaron diagrams`
 es su alias) escribe `docs/index.md`: qué es el proyecto, una tarjeta por repo y el mapa de contexto. Por cada repo
 escribe `docs/repos/<repo>/index.md`: qué expone (el mapa de endpoints, con la tabla de endpoints plegada), qué datos

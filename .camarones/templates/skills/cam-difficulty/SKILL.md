@@ -33,7 +33,8 @@ description: Step of cam-task — score a change's difficulty, then escalate or 
 5. Split (high, or when the person asks): one draft board item per part, and give the person each part's acceptance
    criteria:
    `{{CLI}} board add story "<part title>" --label draft --repo <repo> --doc <page>` (`--repo`, `--doc` as needed).
-   The person accepts the parts; you never accept one yourself. Each part becomes its own change with its own PRs:
+   The person accepts the parts; you never accept one yourself. Each part becomes its own change with its own PRs
+   (its own `change start`):
    continue with the first part, or stop.
 6. At ship time (`cam-ship`), score again with the real diff. The level never goes down. If it went up, stop and ask
    the person to accept the new level or to split.

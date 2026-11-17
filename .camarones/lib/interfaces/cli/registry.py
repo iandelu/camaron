@@ -25,7 +25,7 @@ ORDER: tuple[str, ...] = (
     "blocks", "pages", "diagrams", "fresh", "kpis", "runs", "pipeline", "mark-documented", "status", "check", "confirm",
     "translated", "up", "wiki", "migrate", "uninstall", "docs", "ci", "plan", "checkpoint", "remote", "share", "trust",
     "join", "stats", "feedback", "arch-draft", "radar", "inventory", "bump", "health", "schemas", "interview", "stack",
-    "prompt", "autopilot", "catalog", "board", "adr", "projects", "app", "config",
+    "prompt", "autopilot", "catalog", "board", "change", "adr", "projects", "app", "config",
 )
 
 

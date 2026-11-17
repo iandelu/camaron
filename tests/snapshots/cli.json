@@ -794,6 +794,132 @@
     "exclusive_groups": [],
     "subparsers": null
    },
+   "change": {
+    "aliases": [],
+    "args": [
+     {
+      "action": "_StoreAction",
+      "choices": [
+       "start",
+       "phase",
+       "status",
+       "link",
+       "close"
+      ],
+      "const": null,
+      "default": null,
+      "dest": "action",
+      "nargs": null,
+      "options": [],
+      "required": null,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "args",
+      "nargs": "*",
+      "options": [],
+      "required": null,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "item",
+      "nargs": null,
+      "options": [
+       "--item"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_AppendAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "repo",
+      "nargs": null,
+      "options": [
+       "--repo"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_AppendAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "files",
+      "nargs": null,
+      "options": [
+       "--files"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "base",
+      "nargs": null,
+      "options": [
+       "--base"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "force",
+      "nargs": 0,
+      "options": [
+       "--force"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "abandon",
+      "nargs": 0,
+      "options": [
+       "--abandon"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "json",
+      "nargs": 0,
+      "options": [
+       "--json"
+      ],
+      "required": false,
+      "type": null
+     }
+    ],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
    "changes": {
     "aliases": [],
     "args": [],

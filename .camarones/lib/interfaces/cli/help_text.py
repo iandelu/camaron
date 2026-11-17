@@ -131,6 +131,12 @@
   adr ACTION [ARGS] [--json]   the decisions (docs/decisions): list | new TITLE --kind new|retro [--problem T]
                             [--touch REPO:PATH] [--supersedes N] | show ID | pack ID (the evidence) | candidates |
                             write ID (the proposed file, no AI) | accept ID [--attendee NAME] | reject ID --why T
+  change ACTION [ARGS] [--json]   a coding change (record in .camarones/.cache/changes, this machine only):
+                            start "TITLE" [--item WI-n] [--repo R]… [--files REPO:PATH,…] [--base REF] [--force]
+                            (a branch per repo, the docs worktree .cw/<id>, the card In Progress, the docs to read) |
+                            phase [ID] PHASE (forward only) | status [ID] | link [ID] URL [--repo NAME|docs] (card In
+                            Review) | close ID [--abandon] (merged: card Done; abandoned: Ready). ID: the folder's
+                            branch, or the only open change
   hooks [on|off] [--json]   method hooks for Claude Code in cam-docs: the plan state at session start, a check of each
                             docs page right after it is edited, a reminder to update the docs before stopping
   ab --qa "QUESTION" | --golden [--runner T] [--judge T] [--json]

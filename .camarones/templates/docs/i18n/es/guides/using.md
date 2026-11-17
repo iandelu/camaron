@@ -165,9 +165,10 @@ Cuando el código se mueve, la documentación lo sigue:
 ## Programar con Camarón
 
 Abre Claude Code o Codex en el espacio de trabajo y pídele un cambio: el agente empieza la skill `cam-task` (y detrás
-`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El cambio va en su propia rama, `cam/<id>-<slug>`, en cada
-repo de servicio, y la documentación en su propio worktree de `cam-docs` (`.cw/<id>`): tu checkout de `cam-docs` y su
-tablero nunca cambian de rama.
+`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`), cuyo primer paso es `camaron change start`: el cambio va en su
+propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación en su propio worktree de `cam-docs`
+(`.cw/<id>`); tu checkout de `cam-docs` y su tablero nunca cambian de rama. Cada paso apunta su fase
+(`camaron change phase`).
 
 - **Primero la documentación.** El agente lee `cam-docs` y resume lo que dice, con citas, antes de tocar código.
 - **Dificultad.** Baja (0–2), media (3–5) o alta (6+). A una baja le toca un plan corto, a una media un plan que
@@ -177,8 +178,10 @@ tablero nunca cambian de rama.
 - **Guardarraíles e impacto.** Rutas prohibidas, gitleaks, páginas que el cambio deja desactualizadas
   (`camaron pr fresh`) y reglas de confianza; después, el impacto en la documentación, los contratos y el tablero.
 - **Una sola pregunta.** «¿Abro las PR?» Si dices que sí, abre una PR de código en borrador por repo y una PR de
-  documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al
-  empezar y a In Review al abrir las PR, y Done es tuyo.
+  documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
+  fusiona. El agente mueve su propia tarjeta con los comandos del cambio: a In Progress con `camaron change start`, a
+  In Review con el primer `camaron change link`; Done es tuyo: `camaron change close` la mueve cuando ya fusionaste
+  (`--abandon`: vuelve a Ready).
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.
@@ -204,8 +207,22 @@ Para adaptar el flujo a tu equipo:
   máquina lo aprueba una vez en `camaron trust`; `camaron skills remove PACK` lo quita (una carpeta que el equipo
   editó se queda).
 
-En versiones posteriores llegará `camaron change`, donde el propio kit produce la evidencia, ejecuta los guardarraíles
-y abre las PR.
+`camaron change` lleva las cuentas del cambio, sin IA, y guarda su registro en esta máquina
+(`.camarones/.cache/changes/<id>.json`):
+
+- `camaron change start "<título>" --item WI-n` lo comprueba todo antes (los repos están y no tienen trabajo sin
+  confirmar, la tarjeta puede empezar) y después crea la rama en cada repo (los repos de la tarea, o `--repo`; si ya
+  tienes una rama de trabajo limpia, la adopta), abre el worktree de la documentación, mueve la tarjeta a
+  **In Progress** y lista la documentación que leer, con su confianza (`--files repo:ruta` añade las páginas que citan
+  esos ficheros). Si no puede empezar, dice por qué; `--force` lo empieza igualmente.
+- `camaron change phase [ID] FASE` sigue los pasos (`docs`, `assess`, `plan`, `code`, `docs-update`, `verify`, `ship`,
+  `retro`), solo hacia delante; `camaron change status` enseña cada cambio abierto y su siguiente paso.
+- `camaron change link [ID] URL [--repo NOMBRE|docs]` apunta una PR: la tarjeta pasa a **In Review**.
+- `camaron change close ID` comprueba con git que cada rama está fusionada en su base: la tarjeta pasa a **Done**.
+  `--abandon` la devuelve a **Ready**. Los dos quitan el worktree de la documentación; las ramas se quedan.
+
+El ID se puede omitir dentro de la rama de un cambio o cuando solo hay uno abierto. Los guardarraíles y abrir las
+propias PR llegan en versiones posteriores.
 
 ## Costes y KPIs
 

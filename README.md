@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.87.0-ff875f?style=flat-square" alt="Versión 4.87.0">
+  <img src="https://img.shields.io/badge/version-4.88.0-ff875f?style=flat-square" alt="Versión 4.88.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -241,9 +241,10 @@ detalle.
 ## Programar con Camarón
 
 Abre Claude Code o Codex en el espacio de trabajo y pídele un cambio de código: el kit le enseña a seguir la skill
-`cam-task` (más `cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El cambio va en su propia rama,
-`cam/<id>-<slug>`, en cada repo de servicio, y la documentación en su propio worktree de `cam-docs` (`.cw/<id>`): tu
-checkout de `cam-docs` y su tablero nunca cambian de rama.
+`cam-task` (más `cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`). El agente empieza con
+`camaron change start`: el cambio va en su propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación
+en su propio worktree de `cam-docs` (`.cw/<id>`); tu checkout de `cam-docs` y su tablero nunca cambian de rama. Cada
+paso apunta su fase (`camaron change phase`).
 
 1. **La documentación primero**: lee `cam-docs` y resume lo que dice, con citas, antes de tocar código.
 2. **Dificultad**: baja (0–2), media (3–5) o alta (6+). En la alta propone partir el cambio en elementos de tablero
@@ -251,7 +252,10 @@ checkout de `cam-docs` y su tablero nunca cambian de rama.
 3. **Prueba primero**, y el agente verifica con el build, los tests y los linters del propio repo más `camaron check`.
 4. **Guardarraíles**: rutas prohibidas, gitleaks, páginas desactualizadas (`camaron pr fresh`) y reglas de confianza.
 5. **Impacto y una sola pregunta**, «¿Abro las PR?»: si dices que sí, abre una PR de código en borrador por repo y una
-   PR de documentación en borrador, enlazadas entre sí. El kit nunca fusiona; el agente pasa su tarjeta a In Progress al empezar y a In Review al abrir las PR, y Done es tuyo.
+   PR de documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
+   fusiona. El agente mueve su propia tarjeta con los comandos del cambio: *In Progress* con `camaron change start`,
+   *In Review* con el primer `camaron change link`; *Done* es tuyo: `camaron change close` la mueve cuando ya
+   fusionaste (`--abandon`: vuelve a *Ready*).
 
 Con superpowers instalado, sus skills de brainstorming, planes, TDD y depuración se usan en esos pasos, dentro de las
 ramas y el worktree del propio cambio.
@@ -275,8 +279,23 @@ el kit, se copian con su licencia en `.camarones/skills/`, quedan anotados en `.
 los aprueba en `camaron trust`; `camaron skills remove PACK` los quita. En la app, **Equipo › Skills** muestra cada
 skill con su icono y sus dos interruptores, y los packs que se pueden añadir.
 
-Los proyectos que ya existen reciben las skills en su próximo refresco. Más adelante llegará `camaron change`: el propio
-kit producirá la evidencia, ejecutará los guardarraíles y abrirá las PR.
+`camaron change` lleva las cuentas del cambio, sin IA, con su registro en esta máquina
+(`.camarones/.cache/changes/<id>.json`):
+
+```sh
+camaron change start "Reintentos idempotentes" --item WI-42 [--repo payments] [--files payments:src/pay.py] [--force]
+camaron change phase assess            # docs → assess → plan → code → docs-update → verify → ship → retro, solo hacia delante
+camaron change status                  # los cambios abiertos: fase, ramas, worktree, PR y el siguiente paso
+camaron change link https://github.com/acme/payments/pull/7   # --repo NOMBRE|docs cuando hay varios
+camaron change close wi-42             # fusionado según git: tarjeta a Done; --abandon: a Ready
+```
+
+`start` lo comprueba todo antes (repos presentes y sin trabajo a medias, la puerta de arranque de la tarjeta), crea
+`cam/<id>-<slug>` en cada repo (adopta una rama de trabajo limpia que ya tengas), abre el worktree `.cw/<id>`, mueve la
+tarjeta a *In Progress* y lista la documentación que leer, con su confianza. `close` quita el worktree; las ramas se
+quedan. El ID se omite dentro de la rama del cambio o si solo hay uno abierto. Todos aceptan `--json`. Los proyectos
+que ya existen reciben las skills en su próximo refresco; los guardarraíles y abrir las PR desde el kit llegarán más
+adelante.
 
 ## La app de escritorio
 

@@ -496,6 +496,16 @@ evidence, write, accept, reject; all take `--json`), `history [--months 12]`
 approval, whether the method hooks are on), the portal's **Plan › Sync** (the same as `share`, with where you stand), `app` (the desktop app: the project's sections by task, the portal to read,
 where runs, wikis, scans and checks start; the browser portal only shows them).
 
+**Coding changes.** `camaron change start "<title>" --item WI-n [--repo R]… [--files repo:path,…] [--base REF]
+[--force]` checks first (repos present and clean, the card's start gate), then creates `cam/<id>-<slug>` in each repo
+(a clean feature branch already checked out is adopted), opens the docs worktree `.cw/<id>/`, moves the card **In
+Progress** and lists the docs to read with their trust. `change phase [ID] PHASE` moves forward only (`docs`, `assess`,
+`plan`, `code`, `docs-update`, `verify`, `ship`, `retro`); `change status [ID]` shows the open changes and their next
+step; `change link [ID] URL [--repo NAME|docs]` records a PR (card **In Review**); `change close ID` needs every branch
+merged into its base, read from git (card **Done**), or `--abandon` (card **Ready**), and removes the docs worktree.
+All take `--json`; exit 1 means blocked, with the reason, 2 a usage error. The record lives in
+`.camarones/.cache/changes/<id>.json`, on this machine only.
+
 **Pages from the code, no AI.** The install (and `camaron pages [--json]`, which brings them up to date;
 `camaron diagrams` is its alias) writes `docs/index.md`: what the project is, a card per repo and the context map. For
 each repo it writes `docs/repos/<repo>/index.md`: what it exposes (the endpoints map, with the endpoints table folded),

@@ -1,5 +1,5 @@
 """MCP read tools for the board: `board_next` and `board_waves`. Agents learn which tasks they may start without
-colliding with work in progress; an agent moves only its own card, with `camaron board move`."""
+colliding with work in progress; an agent moves only its own card, with `camaron change` (cam-task)."""
 from __future__ import annotations
 
 import importlib
@@ -38,7 +38,7 @@ def test_tools_are_listed_and_say_how_an_agent_moves_its_card(mcp):
     assert {"board_next", "board_waves"} <= set(tools) and {"board_next", "board_waves"} <= set(mcp.HANDLERS)
     for name in ("board_next", "board_waves"):
         text = tools[name]["description"].lower()
-        assert "read only" in text and "camaron board move" in text and "--force" in text
+        assert "read only" in text and "camaron change" in text and "--force" in text       # cam-task: WI-60, WI-21
         assert tools[name]["inputSchema"]["type"] == "object"
     assert "may start" in tools["board_next"]["description"]
     assert set(tools["board_next"]["inputSchema"]["properties"]) == {"n", "story", "epic"}

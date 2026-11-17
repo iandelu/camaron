@@ -58,6 +58,7 @@ my-project/
 │   ├── .claude/ .codex/ .agents/ .mcp.json AGENTS.md CLAUDE.md     the agents' setup
 ├── .claude → cam-docs/.claude   .mcp.json → …   AGENTS.md → …       links, so agents opened here see it all
 ├── .cw/<n>/                  a unit's own copy of cam-docs while a parallel run lasts
+├── .cw/<id>/                 a coding change's docs worktree, until `camaron change close`
 └── orders-api/  payments-api/  …   the service repos, untouched
 ```
 
@@ -70,7 +71,8 @@ and `repair` list it as yours, not as something to fix.
 `.camarones/.cache/` holds what can be rebuilt: run logs (`runs/<run>/events.jsonl`), the exported site (`site/`), the
 board's index (`board.db`), the health snapshot and backups of replaced kit files; and what the app's sessions leave on
 this machine: each one's prompt (`prompts/`), each unit's session record (`sessions/`) and the canvas's terminals
-(`terminals/`).
+(`terminals/`). Each coding change's record (`changes/<id>.json`: its branches, docs worktree, phase, PRs and the card
+moves the kit made) lives there too, so a change is seen on this machine only.
 
 **On this machine:**
 
@@ -313,7 +315,7 @@ it at `http://127.0.0.1:8765/mcp` (Streamable HTTP) with the token in `~/.camaro
 | `pipeline_status`, `run_events`, `kpis` | The plan, a run's events, the KPIs |
 | `run_node` | Starts a ready unit, only with `mcp: {pipeline_control: true}` in `workspace.yaml` |
 | `repo_graph` | Asks the graphify code graph of one repo or all |
-| `board_next`, `board_waves` | What may start now without collisions; the open work in waves. Read only; an agent moves its own card with `camaron board move` (`cam-task`) |
+| `board_next`, `board_waves` | What may start now without collisions; the open work in waves. Read only; an agent moves its own card through the CLI (`camaron change start\|link\|close` in `cam-task`, else `camaron board move`) |
 
 It also offers every page as a resource (`camdocs://<path>`, plus `camdocs://llms.txt`) and two prompts,
 `implement-feature` and `update-docs`. Everything goes through the same freshness gate.

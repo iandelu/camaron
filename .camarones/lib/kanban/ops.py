@@ -32,7 +32,8 @@ _FILE_ID = re.compile(r"^([A-Za-z]+-\d+) - ")
 
 _log = logging.getLogger("camaron.board")
 
-HUMAN = ("cli", "portal", "app")          # surfaces a person drives: a refused start can be forced
+HUMAN = ("cli", "portal", "app", "change")   # surfaces a person drives: a refused start can be forced (`change`:
+                                             # the kit following a coding change's fixed rules, lib/app/change.py)
 AGENT = ("mcp", "harness")                # surfaces an agent drives: a refused start is final
 
 
@@ -419,6 +420,27 @@ def _gate(key: str, item: Item, card: dict, cards: dict, items: dict, *, agent: 
     board = [{**n, "status": cards[n["id"]]["status"]} if n["id"] in cards else n
              for n in _board_nodes(cards, items) if n["id"] != key] + [me]
     return graph.blocked_by(me, board, agent=agent)
+
+
+def start_gate(item_id: str, *, surface: str = "cli") -> list[dict]:
+    """Why `item_id` cannot go In Progress now, as `move` would judge it: empty when it can, or already is."""
+    cards, items, _ = load_state()
+    key = item_id.strip().upper()
+    if key not in items:
+        raise BoardError(f"unknown item {item_id}")
+    card = cards.get(key)
+    if card is not None and card["status"] == "In Progress":
+        return []
+    return _gate(key, items[key], card, cards, items, agent=surface in AGENT)
+
+
+def status_of(item_id: str) -> str:
+    """The column `item_id`'s card is in (its file's status when it has no card yet)."""
+    cards, items, _ = load_state()
+    key = item_id.strip().upper()
+    if key not in items:
+        raise BoardError(f"unknown item {item_id}")
+    return _row(items[key], cards.get(key))["status"]
 
 
 def move(item_id: str, status: str, *, before: str | None = None, after: str | None = None, by: str | None = None,

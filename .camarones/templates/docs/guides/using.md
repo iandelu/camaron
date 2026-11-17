@@ -155,9 +155,10 @@ When the code moves, the docs follow:
 ## Coding with Camarón
 
 Open Claude Code or Codex in the workspace and ask for a change: the agent starts the `cam-task` skill (with
-`cam-difficulty`, `cam-verify`, `cam-ship` and `cam-retro` behind it). The change goes on its own branch,
-`cam/<id>-<slug>`, in each service repo, and the docs in their own `cam-docs` worktree (`.cw/<id>`): your `cam-docs`
-checkout and its board never switch branch.
+`cam-difficulty`, `cam-verify`, `cam-ship` and `cam-retro` behind it), whose first step is `camaron change start`: the
+change goes on its own branch, `cam/<id>-<slug>`, in each service repo, and the docs in their own `cam-docs` worktree
+(`.cw/<id>`); your `cam-docs` checkout and its board never switch branch. Each step records its phase
+(`camaron change phase`).
 
 - **Docs first.** The agent reads `cam-docs` and summarises what it says, with citations, before touching code.
 - **Difficulty.** Low (0–2), medium (3–5) or high (6+). A low change gets a short plan, a medium one a plan you approve,
@@ -166,8 +167,9 @@ checkout and its board never switch branch.
 - **Guardrails and impact.** Forbidden paths, gitleaks, pages the change leaves stale (`camaron pr fresh`) and the
   trust rules, then the impact on the docs, the contracts and the board.
 - **One question.** "Open the PRs?" If you say yes it opens a draft code PR per repo and a draft docs PR that link each
-  other. The kit never merges; the agent moves its card to In Progress when it starts and to In Review when it opens
-  the PRs, and Done is yours.
+  other, and records them in the change (`camaron change link`). The kit never merges. The agent moves its own
+  card by running the change commands: In Progress at `camaron change start`, In Review at the first
+  `camaron change link`; Done is yours: `camaron change close` moves it once you merged (`--abandon`: back to Ready).
 
 With superpowers installed, its brainstorming, plans, TDD and debugging skills are used for those steps, inside the
 change's own branches and worktree.
@@ -193,8 +195,22 @@ To adapt the workflow to your team:
   licence into `.camarones/skills/`, recorded in `.camarones/skills.lock` and approved once per machine in
   `camaron trust`; `camaron skills remove PACK` takes it out (a folder the team edited stays).
 
-Later versions bring `camaron change`, where the kit itself produces the evidence, runs the guardrails and opens the
-PRs.
+`camaron change` does the change's bookkeeping, without AI, and keeps its record on this machine
+(`.camarones/.cache/changes/<id>.json`):
+
+- `camaron change start "<title>" --item WI-n` checks everything first (the repos are there and have no uncommitted
+  work, the card may start), then creates the branch in each repo (the item's repos, or `--repo`; a clean feature
+  branch you already have checked out is adopted), opens the docs worktree, moves the card **In Progress** and lists
+  the docs to read, with their trust (`--files repo:path` adds the pages that cite those files). A refused start says
+  why; `--force` starts it anyway.
+- `camaron change phase [ID] PHASE` follows the steps (`docs`, `assess`, `plan`, `code`, `docs-update`, `verify`,
+  `ship`, `retro`), forward only; `camaron change status` shows each open change and its next step.
+- `camaron change link [ID] URL [--repo NAME|docs]` records a PR: the card goes **In Review**.
+- `camaron change close ID` checks with git that every branch is merged into its base: the card goes **Done**.
+  `--abandon` puts it back in **Ready**. Both remove the docs worktree; the branches stay.
+
+ID can be left out inside a change's branch, or when only one change is open. The guardrails and opening the PRs
+themselves come in later versions.
 
 ## Costs and KPIs
 

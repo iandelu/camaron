@@ -145,6 +145,11 @@ def _translations() -> object:
     return translations
 
 
+def _worktrees() -> object:
+    from lib.harness import worktrees
+    return worktrees
+
+
 def _search() -> object:
     from lib.app import search
     return search
@@ -179,6 +184,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "doc_edit": _doc_edit,
     "translations": _translations,
     "search": _search,
+    "worktrees": _worktrees,
 }
 
 
