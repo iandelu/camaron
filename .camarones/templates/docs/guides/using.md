@@ -155,7 +155,7 @@ When the code moves, the docs follow:
 ## Coding with Camarón
 
 Open Claude Code or Codex in the workspace and ask for a change: the agent starts the `cam-task` skill (with
-`cam-difficulty`, `cam-verify`, `cam-ship` and `cam-retro` behind it), which starts with `camaron change start`: the
+`cam-difficulty`, `cam-verify`, `cam-ship` and `cam-retro` behind it), whose first step is `camaron change start`: the
 change goes on its own branch, `cam/<id>-<slug>`, in each service repo, and the docs in their own `cam-docs` worktree
 (`.cw/<id>`); your `cam-docs` checkout and its board never switch branch. Each step records its phase
 (`camaron change phase`).

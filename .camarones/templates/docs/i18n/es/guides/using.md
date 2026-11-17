@@ -165,7 +165,7 @@ Cuando el código se mueve, la documentación lo sigue:
 ## Programar con Camarón
 
 Abre Claude Code o Codex en el espacio de trabajo y pídele un cambio: el agente empieza la skill `cam-task` (y detrás
-`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`), que empieza con `camaron change start`: el cambio va en su
+`cam-difficulty`, `cam-verify`, `cam-ship` y `cam-retro`), cuyo primer paso es `camaron change start`: el cambio va en su
 propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación en su propio worktree de `cam-docs`
 (`.cw/<id>`); tu checkout de `cam-docs` y su tablero nunca cambian de rama. Cada paso apunta su fase
 (`camaron change phase`).
