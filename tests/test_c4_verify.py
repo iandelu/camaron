@@ -161,6 +161,14 @@ def test_the_scan_compares_the_containers(verify_world):
     assert any(drawn in w for w in v.findings(False)[1]) and any(drawn in e for e in v.findings(True)[0])
 
 
+def test_a_model_file_that_is_not_utf8_is_read_as_the_states_read_it(verify_world):
+    kit, v = verify_world
+    f = kit.services.diagrams.arch_dir() / "repos" / "api.c4"
+    f.write_bytes(b"// caf\xe9\n" + f.read_bytes())
+    rep = v.report()
+    assert rep["elements"] and rep["containers"]["scanned"] is True
+
+
 def test_a_datastore_is_compared_only_when_its_technology_or_title_says_so(verify_world):
     kit, v = verify_world
     props = kit.ws / "api" / "src" / "main" / "resources" / "application.properties"

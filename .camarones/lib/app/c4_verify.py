@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 
-from lib import c4edit
 from lib.app import services
 from lib.common import out, repo_dir
 from lib.domain.c4 import anchors, drift
@@ -15,13 +14,6 @@ from lib.harness import freshness
 WORST_FIRST = ("broken", "suspect", "no-evidence", "unchecked", "fresh")
 GATED = ("broken", "no-evidence")
 GRAPH_HINT = "build it with `camaron graph`"
-
-
-def _index() -> dict:
-    try:
-        return c4edit.index()
-    except Exception:                       # a model c4edit cannot read: c4_states already says why
-        return {"elements": {}, "relations": []}
 
 
 def _components(els: dict) -> dict[str, list[str]]:
@@ -102,7 +94,7 @@ def _containers(els: dict, drawn: set) -> tuple[dict, list[dict]]:
 
 def report() -> dict:
     states = freshness.c4_states()
-    els = _index()["elements"] if states["elements"] else {}
+    els = freshness.c4_index()["elements"]
     drawn = {(r["from"], r["to"]) for r in states["relations"].values()}
     repos, derived = {}, {}
     for repo, fqns in _components(els).items():

@@ -144,6 +144,11 @@ def _c4_find(name: str, model) -> tuple[str | None, list[str] | None]:
     return fqn, files[el["file"]][el["start"]:el["end"] + 1]
 
 
+def c4_index() -> dict:
+    """The C4 model as the states read it (a file that is not UTF-8 read with replacements); empty when unreadable."""
+    return _model()[1]
+
+
 def c4_element(name: str, model=None) -> str | None:
     """The FQN of the element a `c4:<name>` source names (see _c4_find)."""
     return _c4_find(name, model or _model())[0]
