@@ -61,6 +61,9 @@ const pullKey = (r) => (r?.status === 'busy' ? BUSY[r.detail] || 'busy' : r?.sta
 const TERMINAL = ['conflict', 'stashed', 'busyGit']
 const pullTone = (key) => (TERMINAL.includes(key) ? 'warn' : key === 'busyRun' ? 'info' : 'error')
 
+// When this machine was last level with the team (app.share.sync_status last_sync); an older server sends last_share.
+export const lastSync = (s) => s?.last_sync ?? s?.last_share ?? null
+
 export const pullSay = (r, remote = '') => {
   const key = pullKey(r)
   const said = { ...stepSay('pull', r, remote, key), tone: pullTone(key) }

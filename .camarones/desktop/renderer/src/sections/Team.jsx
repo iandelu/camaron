@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Skeleton, fetchSay, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
+import { Aviso, Button, Card, Skeleton, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
 import { useCmd } from '../hooks.js'
 import { Failed, JobOutput, Page } from '../parts.jsx'
 import Commands from './Commands.jsx'
@@ -47,7 +47,7 @@ const when = (iso) => {
 }
 
 export function syncLine(s) {
-  const line = t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(s.last_share) })
+  const line = t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(lastSync(s)) })
   return s.changes?.length ? `${line} · ${t('tm.unsaved', { n: s.changes.length })}` : line
 }
 

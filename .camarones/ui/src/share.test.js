@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { catchUpSay, fetchSay, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from './share.js'
+import { catchUpSay, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from './share.js'
 
 const REMOTE = 'https://gitlab-central.example.space/team/docs.git'
 const fatal = "fatal: unable to access 'https://gitlab-central.example.space/team/docs.git/': Could not resolve host: gitlab-central.example.space"
@@ -115,4 +115,11 @@ test('on open, each case the person must act on is worded; only an unexplained e
   expect(cu({ status: 'error', reason: 'no-token', host: 'git.acme', detail: '' }).token).toBe('git.acme')
   expect(cu({ status: 'error', reason: 'unknown', detail: 'fatal: odd' })).toEqual({ key: 'cu.offline', vars: {}, tone: 'warn' })
   expect(cu({ status: 'error', detail: 'boom' }).key).toBe('cu.offline')
+})
+
+test('the last time in step is the server\'s last_sync, or the last share from an older server', () => {
+  expect(lastSync({ last_sync: '2026-11-18T12:00:00+01:00', last_share: '2026-11-18T09:00:00+01:00' })).toBe('2026-11-18T12:00:00+01:00')
+  expect(lastSync({ last_share: '2026-11-18T09:00:00+01:00' })).toBe('2026-11-18T09:00:00+01:00')
+  expect(lastSync({ last_sync: null, last_share: null })).toBe(null)
+  expect(lastSync(null)).toBe(null)
 })

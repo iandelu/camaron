@@ -185,7 +185,7 @@ was inferred from the code with its evidence, the options, "Other" and a comment
 form, so both mix, and whoever comes back sees their answers to change them. At the top: who answered, what nobody
 answered and where people disagree.
 
-**Sync** (`#/sync`, live): this `cam-docs` against the team's repo — n to bring in, m to upload, when this machine last
+**Team sync** (`#/sync`, live): this `cam-docs` against the team's repo — n to bring in, m to upload, when this machine last
 did, and files not saved yet. **Bring in changes** (`camaron pull`) rebases the team's work in; **Upload changes**
 (`camaron push`) checkpoints and pushes yours, and refuses when the team has new changes; **Sync with the team** does
 what `camaron share` does (bring in, then upload). The useful one is the primary button; **Check for news** asks the

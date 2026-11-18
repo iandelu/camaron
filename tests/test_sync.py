@@ -67,6 +67,25 @@ def test_changes_leave_out_the_files_the_kit_rewrites(kit, tmp_path):
     assert s["changes"] == ["docs/mine.md"] and "docs/.status.json" in s["pending"]
 
 
+def test_the_last_time_in_step_is_the_newer_of_an_upload_and_a_good_bring_in(kit):
+    kit.services.templates.init_templates("demo", log=lambda _: None)
+    share, save = kit.services.share, kit.common.save_json
+    last = lambda: share.sync_status()["last_sync"]                     # noqa: E731
+    assert last() is None
+    def caught_up(status, at):
+        save(kit.services.catchup.LAST, {"status": "done", "pull": {"status": status}, "views": {}, "at": at})
+    caught_up("up-to-date", "2026-11-18T10:00:00+01:00")
+    assert last() == "2026-11-18T10:00:00+01:00"                         # never shared: the bring-in alone
+    save(share.SHARED, {"last": "2026-11-18T09:30:00+00:00"})              # 10:30 in +01:00: newer
+    assert last() == "2026-11-18T09:30:00+00:00"
+    caught_up("pulled", "2026-11-18T12:00:00+01:00")
+    assert last() == "2026-11-18T12:00:00+01:00"
+    for status in ("conflict", "stashed", "error", "busy"):              # a bring-in that did not leave it level
+        caught_up(status, "2026-11-18T13:00:00+01:00")
+        assert last() == "2026-11-18T09:30:00+00:00"
+    assert share.sync_status()["last_share"] == "2026-11-18T09:30:00+00:00"
+
+
 def test_auto_share_survives_the_last_share(kit, tmp_path):
     remote = bare(tmp_path)
     kit.services.share.set_auto_share(True)

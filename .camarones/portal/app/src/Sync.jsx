@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { getJSON, postJSON } from './api.js'
 import { t } from './i18n.js'
-import { Skeleton, fetchSay, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
+import { Skeleton, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
 import Failed from './Failed.jsx'
 
 // Sync with the team (app.share.sync_status / app.share.share): where this cam-docs
 // stands against the team's repo and sharing as the team action it is — checkpoint,
 // bring in the team's work, push. A clash is undone and reported, never forced.
 const when = (iso) => { try { return new Date(iso).toLocaleString(document.documentElement.lang || 'en', { dateStyle: 'medium', timeStyle: 'short' }) } catch { return iso } }
+
+export const busyLabel = (action) => t({ pull: 'syPulling', push: 'syPushing', share: 'syWorking' }[action])
 
 export default function Sync() {
   const [s, setS] = useState(null)
@@ -46,7 +48,7 @@ export default function Sync() {
           <div className={`sy-tile ${s.behind ? 'warn' : ''}`}><span className="eyebrow">{t('syBehind')}</span>
             <b>{s.behind ?? '—'}</b><small className="muted">{s.behind ? t('syBehindSub') : t('syBehindNone')}</small></div>
           <div className="sy-tile"><span className="eyebrow">{t('syLast')}</span>
-            <b className="sy-when">{s.last_share ? when(s.last_share) : '—'}</b>
+            <b className="sy-when">{lastSync(s) ? when(lastSync(s)) : '—'}</b>
             <small className="muted">{s.auto ? t('syAutoOn') : t('syAutoOff')}</small></div>
         </div>
       )}
@@ -54,7 +56,7 @@ export default function Sync() {
       <div className="row sy-actions">
         {s.remote ? actions.map(([action, label]) => (
           <button key={action} type="button" className={action === primary ? 'small' : 'ghost small'} disabled={!!busy}
-            onClick={() => act(action)}>{busy === action ? t('syBusy') : t(label)}</button>)) : null}
+            onClick={() => act(action)}>{busy === action ? busyLabel(action) : t(label)}</button>)) : null}
         {s.remote ? <button type="button" className="ghost small" disabled={!!busy} onClick={check}>{t('syCheck')}</button> : null}
         <ShareLine action={result?.action} result={result?.result} remote={s.remote} />
       </div>

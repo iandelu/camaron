@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import { FetchLine, ShareLine } from './Sync.jsx'
+import { FetchLine, ShareLine, busyLabel } from './Sync.jsx'
+import { STRINGS } from './i18n.js'
+import { I18N } from './i18n/portal.js'
 
 const as = (l) => { globalThis.localStorage = { getItem: () => l } }
 afterEach(() => { delete globalThis.localStorage })
@@ -74,4 +76,21 @@ test('a busy pull says what holds the docs', () => {
   as('es')
   expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'run' }} remote={REMOTE} />))
     .toContain('Hay una ejecución del autopiloto usando los docs: traeré los cambios cuando termine.')
+})
+
+test('each team action says what it is doing while it runs', () => {
+  as('en')
+  expect(['pull', 'push', 'share'].map(busyLabel)).toEqual(['Bringing in…', 'Uploading…', 'Working with the team…'])
+  as('es')
+  expect(['pull', 'push', 'share'].map(busyLabel)).toEqual(['Trayendo…', 'Subiendo…', 'Trabajando con el equipo…'])
+})
+
+// Spec §6.4: the UI never uses the bare English word "sync" for the team's docs (the CLI's `sync` is the code repos).
+test('no bare sync in the portal\'s English strings, and the view says what it does', () => {
+  const bare = [...Object.values(STRINGS.en), ...Object.values(I18N.en)]
+    .filter((v) => typeof v === 'string' && /\bsync(ing|ed)?\b/i.test(v) && !/\b(sync with the team|team sync)\b/i.test(v))
+  expect(bare).toEqual([])
+  expect(I18N.en['view.sync']).toBe('Team sync')
+  expect(I18N.en['viewd.sync']).toBe('Bring in the team\'s changes and upload yours')
+  expect(I18N.es['viewd.sync']).toBe('Trae los cambios del equipo y sube los tuyos')
 })

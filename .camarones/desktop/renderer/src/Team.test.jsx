@@ -155,3 +155,9 @@ test('a pull held by a rebase left half way offers a terminal; one held by an au
   expect(run).toContain('traeré los cambios cuando termine')
   expect(run).not.toContain('cu-aviso')
 })
+
+test('the status line\'s last time counts a bring-in, not only an upload', () => {
+  const s = { behind: 0, ahead: 0, changes: [], last_share: null }
+  expect(syncLine({ ...s, last_sync: null })).toContain('última vez nunca')
+  expect(syncLine({ ...s, last_sync: new Date().toISOString() })).not.toContain('nunca')
+})

@@ -88,7 +88,8 @@ def set_auto_share(on: bool) -> None:
 def sync_status(fetch: bool = False) -> dict:
     """Where cam-docs stands against the team's repo, without the network unless `fetch`: the remote and branch, the
     commits ahead / behind the last fetched origin, the files not checkpointed yet (`pending`; `changes` leaves out the
-    derived files the kit rewrites on its own), the last commit and last share."""
+    derived files the kit rewrites on its own), the last commit, the last share and `last_sync`: the newer of the last
+    share and the last catch-up that left this machine level with the team."""
     git = lambda *a: out(["git", *a], cwd=ROOT)                       # noqa: E731
     url = docs_remote()
     branch = git("symbolic-ref", "--short", "HEAD") if (ROOT / ".git").exists() else ""
@@ -109,10 +110,26 @@ def sync_status(fetch: bool = False) -> dict:
         status = run(["git", "status", "--porcelain", "-uall", "--", *paths], cwd=ROOT, check=False, capture=True).stdout or ""
         pending = sorted({ln[3:].strip().strip('"').split(" -> ")[-1] for ln in status.splitlines() if len(ln) > 3})
     head = git("log", "-1", "--format=%h%x00%s%x00%cI").split("\x00") if branch else []
+    last_share = load_json(SHARED, {}).get("last")
     return {"remote": url, "branch": branch, "ahead": ahead, "behind": behind, "pending": pending,
             "changes": [p for p in pending if p not in DERIVED],
             "head": dict(zip(("hash", "subject", "date"), head)) if len(head) == 3 else None,
-            "auto": auto_share(), "last_share": load_json(SHARED, {}).get("last"), "fetched": fetched}
+            "auto": auto_share(), "last_share": last_share, "last_sync": _last_sync(last_share), "fetched": fetched}
+
+
+def _when(iso: str) -> dt.datetime:
+    try:
+        at = dt.datetime.fromisoformat(iso)
+    except (TypeError, ValueError):
+        return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+    return at if at.tzinfo else at.astimezone()                       # aware, so two stamps always compare
+
+
+def _last_sync(last_share: str | None) -> str | None:
+    caught = services.current().catchup.last() or {}
+    level = (caught.get("pull") or {}).get("status") in ("pulled", "up-to-date")
+    times = [t for t in (last_share, caught.get("at") if level else None) if t]
+    return max(times, key=_when) if times else None
 
 
 def docs_remote() -> str:

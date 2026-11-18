@@ -107,8 +107,8 @@ offline, the project still opens and says you are working with the latest you br
 explorer rebuilds itself if it is stale, and the code graphs of repos whose HEAD moved rebuild in the background in the
 app (the terminal wizard only says how many are out of date; `camaron pull` rebuilds them).
 
-Checkpoints stay local and uploading is a step you take, with three actions in **Team** (the app), **Plan › Sync** (the
-portal) and **🤝 Team: bring in, upload or sync with the team** (the terminal wizard):
+Checkpoints stay local and uploading is a step you take, with three actions in **Team** (the app), **Plan › Team sync**
+(the portal) and **🤝 Team: bring in, upload or sync with the team** (the terminal wizard):
 
 - **Bring in changes** (`camaron pull`) — the team's work rebased in; yours is not uploaded.
 - **Upload changes** (`camaron push`) — a checkpoint, then yours pushed. It refuses when the team has new changes: bring
