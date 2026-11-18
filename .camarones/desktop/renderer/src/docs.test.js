@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import { answerView, askBody, askError, buildFailed, c4Card, citeHash, openPortal, portalUrl, startBuild, startWiki, wikiBlocks,
-  wikiBusyWith, wikiError, wikiRepos, wikisRead } from './docs.js'
+import { answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, openPortal, portalUrl, startBuild, startWiki,
+  wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -51,6 +51,7 @@ test("one wiki block per repo of the project, from GET wikis, in the project's o
   expect(blocks.map((b) => b.hasWiki)).toEqual([true, false, true])
   expect(blocks[1]).toEqual({ repo: 'web', hasWiki: false, blocked: 'notCloned', hash: '#/wiki/web',
     body: { repo: 'web', choose: true, starter: true },
+    info: { pages: 0, at: 0, stale: false, old: false, graph: false, graphStale: false, brief: null },
     graph: { id: 'wiki:web', repo: 'web', body: { what: 'wiki-graph', repo: 'web' }, hash: '#/wiki/web' } })
   expect(wikiBlocks(index, [])).toEqual([])
 })
@@ -197,4 +198,87 @@ test('a failed read of the wikis keeps the last good rows and says it failed', (
   expect(wikisRead(start, { error: true })).toEqual({ rows: null, loading: false, failed: true })
   expect(wikisRead(read, { error: true })).toEqual({ rows, loading: false, failed: true })
   expect(wikisRead({ rows, loading: false, failed: true }, { rows: [] })).toEqual({ rows: [], loading: false, failed: false })
+})
+
+// The GET wikis row's own facts ride on the block (the card reads them): an unread row (the tree fallback) carries the defaults.
+test('a block carries its row\'s info, and the defaults when the wikis were not read', () => {
+  const row = { repo: 'api', pages: 3, at: 1700000000, stale: true, old: false, graph: true, graphStale: true, brief: 'ai', cloned: true, chosen: true, canGenerate: true }
+  expect(wikiBlocks(index, [row])[0].info).toEqual({ pages: 3, at: 1700000000, stale: true, old: false, graph: true, graphStale: true, brief: 'ai' })
+  const unread = wikiBlocks(index, null)
+  expect(unread.map((b) => b.info)).toEqual(Array(3).fill({ pages: 0, at: 0, stale: false, old: false, graph: false, graphStale: false, brief: null }))
+})
+
+// Precedence: generating > failed > none (no pages) > old > stale > fresh.
+const blk = (hasWiki, info = {}) => ({ repo: 'r', hasWiki, info: { pages: hasWiki ? 3 : 0, stale: false, old: false, ...info } })
+
+test('a wiki card is in exactly one state, by precedence', () => {
+  expect(wikiState(blk(true))).toBe('fresh')
+  expect(wikiState(blk(true, { stale: true }))).toBe('stale')
+  expect(wikiState(blk(true, { old: true }))).toBe('old')
+  expect(wikiState(blk(true, { stale: true, old: true }))).toBe('old')                 // old beats stale
+  expect(wikiState(blk(false))).toBe('none')
+  expect(wikiState(blk(false, { stale: true, old: true }))).toBe('none')               // no pages beats old and stale
+  expect(wikiState(blk(true, { stale: true }), { failed: true })).toBe('failed')
+  expect(wikiState(blk(false), { failed: true })).toBe('failed')                       // failed beats none
+  expect(wikiState(blk(true, { stale: true }), { running: true })).toBe('generating')
+  expect(wikiState(blk(false), { running: true, failed: true })).toBe('generating')    // generating beats failed
+  expect(wikiState(blk(true), {})).toBe('fresh')
+})
+
+test('the tree fallback block (pages in the tree, no row) is judged by hasWiki', () => {
+  const [api, web] = wikiBlocks(index, null)
+  expect([wikiState(api), wikiState(web)]).toEqual(['fresh', 'none'])
+})
+
+test('each state has one primary action, none while generating', () => {
+  expect(wikiAction('none')).toEqual({ kind: 'generate', mode: '', label: 'docs.generate' })
+  expect(wikiAction('stale')).toEqual({ kind: 'update', mode: 'update', label: 'docs.update' })
+  expect(wikiAction('old')).toEqual({ kind: 'update', mode: 'update', label: 'docs.expand' })
+  expect(wikiAction('failed')).toEqual({ kind: 'retry', mode: '', label: 'retry' })
+  expect(wikiAction('fresh')).toEqual({ kind: 'view', mode: '', label: 'docs.view' })
+  expect(wikiAction('generating')).toEqual({ kind: null })
+})
+
+const full = {
+  summary: { draft: 2, 'needs-reconfirm': 1, orphans: 3, untranslated: 4, confirmed: 9, total: 12 }, feedback: 5 }
+const rows = [{ repo: 'a', pages: 3 }, { repo: 'b', pages: 3, stale: true }, { repo: 'c', pages: 2, old: true }, { repo: 'd', pages: 0 },
+  { repo: 'e', pages: 0, stale: true }, { repo: 'f', pages: 1, stale: true, old: true }]
+const chips = (c) => c.map((x) => [x.key, x.tone, x.n])
+
+test('the health header counts docs, wikis and C4 from what is already read', () => {
+  const got = docsHealth(full, rows, { c4: { exists: true, stale: true, model: true } })
+  expect(chips(got)).toEqual([
+    ['drafts', 'warn', 2], ['reconfirm', 'warn', 1], ['orphans', 'warn', 3], ['untranslated', 'warn', 4], ['feedback', 'info', 5],
+    ['wikiStale', 'warn', 1], ['wikiOld', 'warn', 2], ['wikiNone', 'info', 2], ['wikiFresh', 'ok', 1],
+    ['c4Stale', 'warn', null]])
+  expect(got.map((x) => x.text)).toEqual(['docs.h.drafts', 'docs.h.reconfirm', 'docs.h.orphans', 'docs.h.untranslated', 'docs.h.feedback',
+    'docs.h.wikiStale', 'docs.h.wikiOld', 'docs.h.wikiNone', 'docs.h.wikiFresh', 'docs.h.c4Stale'])
+})
+
+test('a wiki row counts in the bucket of the card it will be: no pages, old, stale, fresh', () => {
+  const got = docsHealth({}, rows, null)
+  expect(chips(got)).toEqual([['wikiStale', 'warn', 1], ['wikiOld', 'warn', 2], ['wikiNone', 'info', 2], ['wikiFresh', 'ok', 1]])
+  expect(docsHealth({}, [{ pages: 0, stale: true, old: true }], null).map((x) => x.key)).toEqual(['wikiNone'])   // no pages wins
+})
+
+test('the C4 chip is current, stale or not built', () => {
+  const c4 = (v) => chips(docsHealth({}, null, { c4: v }))
+  expect(c4({ exists: true, stale: false, model: true })).toEqual([['c4Fresh', 'ok', null]])
+  expect(c4({ exists: true, stale: true, model: true })).toEqual([['c4Stale', 'warn', null]])
+  expect(c4({ exists: false, stale: false, model: false })).toEqual([['c4None', 'info', null]])
+  expect(c4({ exists: false, stale: true, model: true })).toEqual([['c4None', 'info', null]])   // nothing built: not stale
+})
+
+test('an unread source gives no chip, never a zero', () => {
+  expect(chips(docsHealth(full, null, null)).map(([k]) => k)).toEqual(['drafts', 'reconfirm', 'orphans', 'untranslated', 'feedback'])
+  expect(docsHealth({}, null, null)).toEqual([])
+  expect(docsHealth(null, null, null)).toEqual([])
+  expect(docsHealth({}, null, {})).toEqual([])                                         // viewers without c4: nothing to say
+})
+
+test('an all-clear index shows only the good news of what was read', () => {
+  const clear = { summary: { draft: 0, 'needs-reconfirm': 0, orphans: 0, untranslated: 0 }, feedback: 0 }
+  const got = docsHealth(clear, [{ pages: 4 }], { c4: { exists: true, stale: false, model: true } })
+  expect(chips(got)).toEqual([['wikiFresh', 'ok', 1], ['c4Fresh', 'ok', null]])
+  expect(docsHealth(clear, [], null)).toEqual([])                                      // an array with no rows: no bucket, no chip
 })

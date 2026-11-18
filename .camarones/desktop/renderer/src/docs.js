@@ -31,14 +31,65 @@ export const c4Card = { id: 'c4', repo: '', body: { what: 'c4' }, hash: '#/c4' }
 // it to the ones with a wiki), `starter` only when there is no brief and no pages (a starter brief is written without
 // AI), as the portal sent them. `graph` is the wiki-graph build, which needs pages (`hasWiki`).
 export const wikiBlocks = (tree, wikis) => {
-  const block = (repo, hasWiki, blocked, { chosen = false, brief = null, pages = 0 } = {}) => ({ repo, hasWiki, blocked, hash: `#/wiki/${repo}`,
+  const block = (repo, hasWiki, blocked, { chosen = false, brief = null, pages = 0, at = 0, stale = false, old = false, graph = false,
+    graphStale = false } = {}) => ({ repo, hasWiki, blocked, hash: `#/wiki/${repo}`,
     body: { repo, ...(chosen ? {} : { choose: true }), ...(brief || pages ? {} : { starter: true }) },
+    info: { pages, at, stale, old, graph, graphStale, brief },
     graph: { id: `wiki:${repo}`, repo, body: { what: 'wiki-graph', repo }, hash: `#/wiki/${repo}` } })
   if (Array.isArray(wikis)) {
     return wikis.map((w) => block(w.repo, w.pages > 0, w.canGenerate ? null : w.cloned ? 'noEngine' : 'notCloned', w))
   }
   const withWiki = wikiRepos(tree)
   return (tree?.repos || []).map((repo) => block(repo, withWiki.includes(repo), 'unread'))
+}
+
+// A wiki card's state, one at a time: a run in progress, a run that failed, no pages yet, written under an older scope
+// (`old`), the code moved since (`stale`), or fresh. `hasWiki` (not info.pages) decides "no pages": the tree fallback has no row.
+export const wikiState = (block, { running = false, failed = false } = {}) => {
+  if (running) return 'generating'
+  if (failed) return 'failed'
+  if (!block.hasWiki) return 'none'
+  if (block.info?.old) return 'old'
+  if (block.info?.stale) return 'stale'
+  return 'fresh'
+}
+
+// The one primary action of each state: what POST wiki takes as `mode` ('' leaves it out) and the i18n key of its label
+// (`retry` is the shared one). A run in progress has none.
+const WIKI_ACTIONS = {
+  none: { kind: 'generate', mode: '', label: 'docs.generate' },
+  stale: { kind: 'update', mode: 'update', label: 'docs.update' },
+  old: { kind: 'update', mode: 'update', label: 'docs.expand' },
+  failed: { kind: 'retry', mode: '', label: 'retry' },
+  fresh: { kind: 'view', mode: '', label: 'docs.view' },
+}
+export const wikiAction = (state) => WIKI_ACTIONS[state] || { kind: null }
+
+// The header's chips from what the section already read: GET index (`summary`, `feedback`), GET wikis rows and GET viewers.
+// Counted chips are omitted at 0; an unread source (null) gives none, never a zero. Each wiki falls in the one bucket of its
+// card (no pages, old, stale, fresh), so the four add up to the repos. `n` is null for the C4 chips: they are a state.
+export function docsHealth(index, wikis, viewers) {
+  const chip = (key, tone, n = null) => ({ key, tone, n, text: `docs.h.${key}` })
+  const out = []
+  const counted = (key, tone, n) => { if (n > 0) out.push(chip(key, tone, n)) }
+  const sum = index?.summary || {}
+  counted('drafts', 'warn', sum.draft || 0)
+  counted('reconfirm', 'warn', sum['needs-reconfirm'] || 0)
+  counted('orphans', 'warn', sum.orphans || 0)
+  counted('untranslated', 'warn', sum.untranslated || 0)
+  counted('feedback', 'info', index?.feedback || 0)
+  if (Array.isArray(wikis)) {
+    const bucket = (w) => (w.pages > 0 ? (w.old ? 'old' : w.stale ? 'stale' : 'fresh') : 'none')
+    const n = { none: 0, old: 0, stale: 0, fresh: 0 }
+    for (const w of wikis) n[bucket(w)]++
+    counted('wikiStale', 'warn', n.stale)
+    counted('wikiOld', 'warn', n.old)
+    counted('wikiNone', 'info', n.none)
+    counted('wikiFresh', 'ok', n.fresh)
+  }
+  const c4 = viewers?.c4
+  if (c4) out.push(!c4.exists ? chip('c4None', 'info') : c4.stale ? chip('c4Stale', 'warn') : chip('c4Fresh', 'ok'))
+  return out
 }
 
 // GET wikis read again ({rows} or {error}): a failure keeps the last good rows (none after a failed first read) and
