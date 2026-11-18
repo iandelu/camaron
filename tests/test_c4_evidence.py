@@ -104,7 +104,8 @@ def test_stamps_live_under_their_own_key_and_stamping_again_changes_nothing(c4):
 def test_a_symbol_anchor_goes_suspect_a_file_anchor_does_not(c4, kit):
     c4.c4_stamp_all()
     edit(kit, "api", API, COMMENT, CODE)
-    assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "suspect"
+    orders = c4.c4_states()["elements"]["shop.api.orders"]
+    assert orders["state"] == "suspect" and [a["result"] for a in orders["anchors"]] == ["fresh", "changed"]
     c4.c4_ack(["shop.api.orders"], by="ana")
     assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "fresh"
     assert stamps(c4)["c4"]["elements"]["shop.api.orders"]["by"] == "ana"
@@ -267,7 +268,7 @@ def test_c4_sources_resolve_through_fragments(c4):
     assert not c4.c4_exists("shop.nope") and not c4.c4_exists("  ")
 
 
-def test_stamps_from_the_current_kit_migrate(c4, kit):
+def test_stamps_from_the_current_kit_migrate(c4, kit, monkeypatch):
     """A fresh.json written before v2 (no "v" in a c4 stamp): unchanged elements are re-stamped silently, once."""
     from lib.common import save_json
     page(kit, "flows/a.md", ["c4:shop.api"])
@@ -286,7 +287,9 @@ def test_stamps_from_the_current_kit_migrate(c4, kit):
     pages = stamps(c4)["pages"]
     assert pages["flows/a.md"]["sources"]["c4:shop.api"]["v"] == 2
     assert pages["flows/a.md"]["sources"]["c4:shop.api"] == c4.fingerprint("c4:shop.api")
-    assert "v" not in pages["flows/b.md"]["sources"]["c4:shop.api"]
+    assert pages["flows/b.md"]["sources"]["c4:shop.api"] == {**v1, "h": "0" * 16, "v": 1}     # looked at, kept
+    monkeypatch.setattr(c4, "_c4_lines", lambda *a: pytest.fail("a stamp already looked at is looked at again"))
+    assert c4.status("flows/b.md")["state"] == "suspect"
 
 
 def test_an_extend_element_the_current_kit_could_not_find_migrates(c4, kit):
@@ -306,4 +309,104 @@ def test_an_extend_element_the_current_kit_could_not_find_migrates(c4, kit):
     assert c4.FILE.read_text(encoding="utf-8") == before
     pages = stamps(c4)["pages"]
     assert pages["flows/a.md"]["sources"]["c4:shop.api.orders"] == c4.fingerprint("c4:shop.api.orders")
-    assert pages["flows/b.md"]["sources"]["c4:shop.api.nope"] is None
+    assert pages["flows/b.md"]["sources"]["c4:shop.api.nope"] == {"h": "", "n": 0, "k": "c4", "v": 1}   # looked at
+
+
+# ---------- a parent's own block, the gate's cost, shared stamps, failures ----------
+def test_confirming_a_child_does_not_restamp_its_parent(c4, kit):
+    model(kit, MODEL.replace("      metadata { repo 'api' }\n",
+                             f"      metadata {{ repo 'api' code 'api:{API}#Api' }}\n      web = component 'Web'\n"))
+    c4.c4_stamp_all()
+    edit(kit, "api", API, COMMENT, CODE)
+    assert c4.c4_states()["elements"]["shop.api"]["state"] == "suspect"
+    importlib.import_module("lib.c4edit").confirm(["shop.api.web"], by="ana", today="2026-11-18")
+    st = c4.c4_states()["elements"]
+    assert st["shop.api.web"]["confirmed"] is True
+    assert st["shop.api"]["state"] == "suspect"                          # nobody looked at the parent
+
+
+def test_a_page_gate_checks_only_the_elements_it_cites(c4, kit, monkeypatch):
+    page(kit, "flows/a.md", ["c4:shop.api.orders"])
+    looked = []
+    real = c4._result
+    monkeypatch.setattr(c4, "_result", lambda a, *rest: looked.append(a.raw) or real(a, *rest))
+    assert c4.status("flows/a.md")["state"] == "fresh"
+    assert set(looked) == {f"api:{API}", f"api:{API}#Api"}
+    kept = stamps(c4)["c4"]
+    assert set(kept["elements"]) == {"shop.api.orders"} and kept["relations"] == {}
+
+
+def test_a_page_gate_reads_the_model_once_and_writes_nothing_when_nothing_changed(c4, kit, monkeypatch):
+    page(kit, "flows/a.md", ["c4:shop.api.orders", "c4:shop.db"])
+    page(kit, "flows/b.md", ["c4:shop.ghost"])
+    page(kit, "decisions/0001-ghost.md", ["c4:shop.ghost"], kind="decision")
+    reads = []
+    real = c4._model
+    monkeypatch.setattr(c4, "_model", lambda: reads.append(1) or real())
+    c4.states()
+    assert len(reads) == 1
+    monkeypatch.setattr(c4, "save_json", lambda *a: pytest.fail("nothing changed, yet fresh.json was written"))
+    assert c4.status("flows/b.md")["state"] == "fresh"
+
+
+def test_walks_skip_build_and_tool_folders(c4, kit):
+    (kit.ws / "api" / "node_modules" / "left-pad").mkdir(parents=True)
+    (kit.ws / "api" / "node_modules" / "left-pad" / "index.js").write_text("module.exports = 1\n", encoding="utf-8")
+    model(kit, MODEL.replace(GHOST, GHOST + element("vendored", "api:*/left-pad/index.js")
+                             + element("ours", "api:*/demo/Api.java")))
+    st = c4.c4_states()["elements"]
+    assert st["shop.vendored"]["state"] == "broken" and st["shop.ours"]["state"] == "fresh"
+
+
+def test_stamping_where_a_repo_is_not_cloned_keeps_its_fingerprints(c4, kit):
+    c4.c4_stamp_all()
+    taken = stamps(c4)["c4"]["elements"]["shop.api.orders"]["anchors"]
+    away = kit.ws / "api-away"
+    (kit.ws / "api").rename(away)
+    assert c4.c4_ack(["shop.api.orders"], by="ana") == ["shop.api.orders"]
+    assert stamps(c4)["c4"]["elements"]["shop.api.orders"]["anchors"] == taken
+    model(kit, FRAGMENT.replace("'Orders'", "'Order intake'"), "repos/api.c4")      # an edit stamps it again too
+    assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "unchecked"
+    assert stamps(c4)["c4"]["elements"]["shop.api.orders"]["anchors"] == taken
+    away.rename(kit.ws / "api")
+    edit(kit, "api", API, COMMENT, CODE)
+    assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "suspect"
+
+
+def test_stamps_mangled_by_a_merge_count_as_none(c4, kit):
+    from lib.common import save_json
+    c4.c4_stamp_all()
+    data = stamps(c4)
+    data["c4"]["elements"]["shop.api.orders"] = "<<<<<<< HEAD"
+    data["c4"]["elements"]["shop.api.legacy"]["anchors"] = ["oops"]
+    data["c4"]["elements"]["shop.api"]["anchors"] = {f"api:{API}#Api": "oops"}
+    data["c4"]["relations"] = ["oops"]
+    save_json(c4.FILE, data)
+    st = c4.c4_states()
+    assert st["error"] is None and st["elements"]["shop.api.orders"]["state"] == "fresh"
+    assert sorted(st["relations"]) == [READS, f"{READS} [2]"]
+    assert stamps(c4)["c4"]["elements"]["shop.api.orders"]["anchors"] == {f"api:{API}#Api": c4.fingerprint(
+        f"api:{API}#Api")}
+
+
+def test_stamps_that_cannot_be_saved_still_give_states(c4, monkeypatch):
+    def refuse(*_a, **_k):
+        raise PermissionError("read-only")
+    monkeypatch.setattr(c4, "save_json", refuse)
+    st = c4.c4_states()
+    assert st["elements"]["shop.api.orders"]["state"] == "fresh" and "not saved" in st["error"]
+
+
+def test_a_model_file_that_cannot_be_read_is_an_error_not_a_crash(c4, kit, monkeypatch):
+    from pathlib import Path
+    page(kit, "flows/a.md", ["c4:shop.db"])
+    real = Path.read_text
+
+    def read(self, *a, **k):
+        if self.suffix == ".c4":
+            raise PermissionError("denied")
+        return real(self, *a, **k)
+    monkeypatch.setattr(Path, "read_text", read)
+    st = c4.c4_states()
+    assert st["elements"] == {} and "denied" in st["error"]
+    assert c4.status("flows/a.md")["state"] == "stale"

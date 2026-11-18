@@ -138,6 +138,8 @@ def kit(request, tmp_path, isolated_env):
         ws = make_workspace(tmp_path)
         ns = load_kit(ws / "cam-docs", isolated_env, ws)
     yield ns
+    if fresh := sys.modules.get("lib.harness.freshness"):
+        fresh._parsed.cache_clear()             # a C4 parse cached in one test never answers another's monkeypatch
     purge_kit_modules()
 
 
