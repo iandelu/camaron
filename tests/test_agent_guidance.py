@@ -142,3 +142,5 @@ def test_the_rules_ask_every_c4_element_for_code_evidence():
     assert "never mark it `#confirmed` yourself" in conventions
     playbook = (KIT_DIR / "PLAYBOOK.md").read_text(encoding="utf-8")
     assert " ".join(playbook.split()).count("other than those it lists in the handoff for a person to confirm") == 2
+    agents = " ".join((KIT_DIR / "templates" / "AGENTS.md").read_text(encoding="utf-8").split())
+    assert "the code can show carries `metadata { code [...] }`" in agents and "arch-verify" in agents

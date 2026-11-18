@@ -6,7 +6,8 @@ import json, os, subprocess, sys
 
 from conftest import KIT_DIR
 
-KIT_SHARE = 2600                     # 4.89: the architecture tool and its AGENTS.md line cost ~100
+KIT_SHARE = 2650                     # 4.89: the architecture tool and its AGENTS.md line cost ~100; 4.92: the C4
+                                     # evidence rule next to it (spec §8) ~40
 
 
 def _doctor(kit, *args):

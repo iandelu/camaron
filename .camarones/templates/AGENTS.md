@@ -10,7 +10,8 @@ and never receive kit files.
 1. Before coding, look it up: `camarones` MCP tools (`search_docs`, then `read_doc(path, section)` for the section a hit
    names; `repo_graph`) or `{{CAM}}docs/llms.txt`.
    Architecture behind a file or element, with its evidence and state (the kit's `architecture`, not `likec4`):
-   `architecture("<repo>:<path>" or "<element id>")`.
+   `architecture("<repo>:<path>" or "<element id>")`. Every C4 element and relation you write that the code can show
+   carries `metadata { code [...] }` (CONVENTIONS §4); `{{CLI}} arch-verify` checks it.
 2. Code questions: `graphify query "<question>" --graph {{CAM}}graph/<repo>/graph.json` (one repo) or
    `--graph {{CAM}}.camarones/.cache/graph/graph.json` (all repos).
 3. Outside a `cam-task` change, after changing behaviour, update the affected pages in `{{CAM}}docs/` in the same
