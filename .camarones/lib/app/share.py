@@ -220,23 +220,50 @@ def share(log: Log = print) -> dict:
 DERIVED: tuple[str, ...] = ("docs/.status.json", "docs/llms.txt", "docs/llms-full.txt")
 
 
-def _lines(*args: str) -> list[str]:
-    return [ln for ln in out(["git", *args], cwd=ROOT).splitlines() if ln]
+def _nul_lines(*args: str) -> list[str]:
+    raw = run(["git", *args], cwd=ROOT, check=False, capture=True).stdout or ""
+    return [t for t in raw.split("\0") if t]
 
 
 def _in_progress() -> bool:
-    git_dir = ROOT / ".git"
-    return any((git_dir / n).exists() for n in ("rebase-merge", "rebase-apply", "MERGE_HEAD"))
+    """A rebase or merge left half way; the state dirs are asked of git because `.git` is a file in a worktree."""
+    for name in ("rebase-merge", "rebase-apply", "MERGE_HEAD"):
+        where = out(["git", "rev-parse", "--git-path", name], cwd=ROOT)
+        if where and (ROOT / where).exists():
+            return True
+    return False
 
 
 def _dirty() -> dict[str, str]:
-    status = run(["git", "status", "--porcelain", "-uall"], cwd=ROOT, check=False, capture=True).stdout or ""
-    return {ln[3:].strip().strip('"').split(" -> ")[-1]: ln[:2] for ln in status.splitlines() if len(ln) > 3}
+    """Every path the working tree has changed, exact (NUL-separated, so no quoting); both sides of a rename."""
+    entries = _nul_lines("status", "--porcelain", "-z", "-uall")
+    dirty: dict[str, str] = {}
+    i = 0
+    while i < len(entries):
+        code, path = entries[i][:2], entries[i][3:]
+        dirty[path] = code
+        if code[0] in "RC" or code[1] in "RC":
+            i += 1
+            if i < len(entries):
+                dirty[entries[i]] = code
+        i += 1
+    return dirty
 
 
-def _rebase_onto(theirs: str, ident: list[str]) -> tuple[list[str], list[str]]:
+def _autostashes() -> int:
+    return sum("autostash" in ln for ln in out(["git", "stash", "list", "--format=%gs"], cwd=ROOT).splitlines())
+
+
+def _regenerate() -> None:
+    current = services.current()
+    current.doc_status.collect()
+    current.llms.llms()
+
+
+def _rebase_onto(theirs: str, ident: list[str]):
     """Rebase onto the team's branch, resolving clashes in derived files by taking the team's side. Returns the
-    derived paths resolved and the paths that need a person (rebase undone then)."""
+    derived paths resolved, the paths that need a person (rebase undone then) and the failed git run when the rebase
+    could not go on at all (undone too)."""
     def git(*args: str, env: dict | None = None):
         return run(["git", *args], cwd=ROOT, check=False, quiet=True, env=env)
 
@@ -245,11 +272,11 @@ def _rebase_onto(theirs: str, ident: list[str]) -> tuple[list[str], list[str]]:
     for _ in range(200):                                             # a guard: every pass settles one local commit
         if not (r.returncode and _in_progress()):
             break
-        clashing = sorted(_lines("diff", "--name-only", "--diff-filter=U"))
+        clashing = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U"))
         human = [p for p in clashing if p not in DERIVED]
         if human:
             git("rebase", "--abort")
-            return resolved, human
+            return resolved, human, None
         if clashing:
             git("checkout", "--ours", "--", *clashing)               # mid-rebase "ours" is the team's side
             git("add", "--", *clashing)
@@ -259,9 +286,10 @@ def _rebase_onto(theirs: str, ident: list[str]) -> tuple[list[str], list[str]]:
         else:
             r = git(*ident, "rebase", "--continue", env={"GIT_EDITOR": "true"})
     if r.returncode:
-        git("rebase", "--abort")
-        return resolved, []
-    return sorted(set(resolved)), []
+        if _in_progress():
+            git("rebase", "--abort")
+        return resolved, [], r
+    return sorted(set(resolved)), [], None
 
 
 def pull(log: Log = print) -> dict:
@@ -292,7 +320,7 @@ def pull(log: Log = print) -> dict:
     if behind == 0:
         return result("up-to-date", branch)
 
-    changed_by_team = set(_lines("diff", "--name-only", f"HEAD...{theirs}"))
+    changed_by_team = set(_nul_lines("diff", "--name-only", "-z", "--no-renames", f"HEAD...{theirs}"))
     clash = {p: code for p, code in _dirty().items() if p in changed_by_team}
     human = sorted(p for p in clash if p not in DERIVED)
     if human:
@@ -305,10 +333,17 @@ def pull(log: Log = print) -> dict:
             run(["git", "checkout", "--", path], cwd=ROOT, check=False, quiet=True)
 
     log(f"rebasing onto {theirs}…")
-    resolved, human = _rebase_onto(theirs, _ident())
-    if human:
-        return result("conflict", theirs, files=human)
+    stashes = _autostashes()
+    resolved, human, failure = _rebase_onto(theirs, _ident())
     regenerated = sorted(set(regenerated) | set(resolved))
+    if human or failure is not None:
+        if regenerated:
+            _regenerate()
+        return result("conflict", theirs, files=human) if human else {**result("error"), **_failed(failure, url)}
+    if _autostashes() > stashes:                                     # the local changes did not re-apply: keep them safe
+        stuck = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U")) or \
+            sorted(_nul_lines("stash", "show", "--name-only", "-z", "stash@{0}"))
+        return result("conflict", "your uncommitted changes are safe in the stash (autostash)", files=stuck)
 
     said: set[str] = set()
 
@@ -324,9 +359,7 @@ def pull(log: Log = print) -> dict:
             checkpoint_commit("board repaired after sync", warn=warn)
         finally:
             _sharing = False
-    current = services.current()
-    current.doc_status.collect()
-    current.llms.llms()
+    _regenerate()
     return result("pulled", branch, commits=behind, regenerated=regenerated)
 
 

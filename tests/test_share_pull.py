@@ -101,3 +101,61 @@ def test_an_unreachable_remote_says_why(kit, tmp_path):
     kit.services.share.set_remote(str(tmp_path / "missing.git")); kit.services.share.checkpoint_commit("first")
     r = kit.services.share.pull(log=lambda _: None)
     assert r["status"] == "error" and r["reason"] == "not-found" and r["detail"].startswith("fatal: ")
+
+
+def _stashes(kit):
+    return git(kit.root, "stash", "list")
+
+
+def test_a_non_ascii_page_edited_by_both_is_a_conflict_with_no_stash(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    (kit.root / "docs" / "visión.md").write_text("# Base\n", encoding="utf-8"); kit.services.share.checkpoint_commit("v")
+    git(kit.root, "push", "-q", "origin", "main")
+    mate_commits(kit, remote, tmp_path, "docs/visión.md", "# Team\n")
+    (kit.root / "docs" / "visión.md").write_text("# Mine\n", encoding="utf-8")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "conflict" and r["files"] == ["docs/visión.md"]
+    assert _stashes(kit) == ""
+    assert (kit.root / "docs" / "visión.md").read_text(encoding="utf-8") == "# Mine\n"
+
+
+def test_a_page_the_team_renamed_and_i_edited_is_a_conflict(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    (kit.root / "docs" / "plain.md").write_text("# Plain\nline\n" * 5, encoding="utf-8"); kit.services.share.checkpoint_commit("p")
+    git(kit.root, "push", "-q", "origin", "main")
+    mate, _ = kit.projects.join(str(remote), tmp_path / "mate")
+    git(mate, "mv", "docs/plain.md", "docs/moved.md")
+    with (mate / "docs" / "moved.md").open("a", encoding="utf-8") as f:
+        f.write("more\n")
+    git(mate, "add", "-A"); git(mate, "commit", "-q", "-m", "rename"); git(mate, "push", "-q", "origin", "main")
+    with (kit.root / "docs" / "plain.md").open("a", encoding="utf-8") as f:
+        f.write("mine\n")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "conflict" and "docs/plain.md" in r["files"]
+    assert _stashes(kit) == ""
+    assert "mine" in (kit.root / "docs" / "plain.md").read_text(encoding="utf-8")
+
+
+def test_a_rebase_that_cannot_start_is_an_error_and_changes_nothing(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote); mate_commits(kit, remote, tmp_path)
+    head = git(kit.root, "rev-parse", "HEAD")
+    lock = kit.root / ".git" / "index.lock"
+    lock.write_text("", encoding="utf-8")
+    try:
+        r = kit.services.share.pull(log=lambda _: None)
+    finally:
+        lock.unlink(missing_ok=True)
+    assert r["status"] == "error" and r["detail"]
+    assert git(kit.root, "rev-parse", "HEAD") == head
+
+
+def test_a_conflict_after_a_derived_reset_leaves_the_derived_file_regenerated(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    mate_commits(kit, remote, tmp_path, "docs/llms.txt", "team\n")
+    mate_commits(kit, remote, tmp_path, "docs/shared.md", "# Team\n")
+    (kit.root / "docs" / "shared.md").write_text("# Mine\n", encoding="utf-8"); kit.services.share.checkpoint_commit("mine")
+    (kit.root / "docs" / "llms.txt").write_text("local edit\n", encoding="utf-8")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "conflict"
+    text = (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8")
+    assert text and "<<<<<<<" not in text and text != "local edit\n"
