@@ -41,6 +41,15 @@ test('one wiki block per repo of the project, each with its own Generate button'
   expect(out.match(/cu-btn--primary/g)).toHaveLength(1 + 3 + 1)   // Leer + a Generate per repo + Preguntar: one per card
 })
 
+// The wiki blocks sit in their own grid, not in the .dk-stack of Machine's stack input (a 14rem column).
+test('the wiki blocks are laid out by the wikis grid, not by .dk-stack', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  expect(out).toContain('class="dk-page wide"')
+  expect(out).toContain('class="dk-wikis"')
+  expect(out).not.toContain('dk-stack')
+})
+
 test('with no repos there is no wiki block; the Ask card is still there', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render({ repos: [], docs: [] })

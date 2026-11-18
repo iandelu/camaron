@@ -46,6 +46,13 @@ test('a full page has no width cap and fills the height', () => {
   expect(rule('.dk-page.full')).toMatch(/min-height:\s*100%/)
 })
 
+// Docs lays its wikis out in a grid of its own: Machine's stack input shares the old `.dk-stack` name, so that class
+// keeps only its width and never leaks into another layout.
+test('the Docs wikis are a responsive grid and .dk-stack is only a width', () => {
+  expect(rule('.dk-wikis')).toMatch(/repeat\(auto-fill,\s*minmax\(18rem,\s*1fr\)\)/)
+  expect(css).not.toMatch(/\.dk-stack\s*\{[^}]*display/)
+})
+
 // The Libraries scan: its bar and its tick stand still for who asked for less motion, and the check rests drawn, so
 // nothing waits invisible for an animation.
 test('the scan\'s bar and tick do not move for who asked for less motion, and the check rests drawn', () => {

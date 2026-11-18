@@ -65,6 +65,7 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 /* the sections: cards of one task each, the plan's units as rows, folds for what waits, the catalog's forms */
 .dk-body { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }   /* a card's body, inside a health row */
 .dk-run { gap: .6rem; }
+.dk-wikis { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; align-items: start; }
 .dk-slots { display: flex; flex-direction: column; gap: .2rem; }
 .dk-inline { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-narrow { min-width: 4rem; }
@@ -794,7 +795,6 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 @media (max-width: 760px) { .dk-guide { grid-template-columns: minmax(0, 1fr); } .dk-guide-index { position: static; } }
 
 /* The guided tour (Tour.jsx): four dim bands around the target, a ring on it and the bubble */
-.dk-stack { display: flex; flex-direction: column; gap: 1.25rem; }
 .dk-tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 .dk-tour-dim { position: fixed; background: color-mix(in oklch, var(--color-canvas) 72%, transparent); pointer-events: auto; }
 .dk-tour-ring { position: fixed; border: 2px solid var(--color-acento-texto); border-radius: var(--consola-radio-chico);

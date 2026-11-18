@@ -18,7 +18,7 @@ export default function Docs({ srv, jobs, app, index }) {
   const { rows, loading, failed, reload } = useWikis(srv)
   const { running } = useStore(jobs || NO_JOBS)
   return (
-    <Page title={t('nav.docs')}>
+    <Page title={t('nav.docs')} wide>
       <div className="row" data-tour="docs-portal">
         <Button variant="primary" onClick={() => open('#/')}>{t('docs.read')}</Button>
         <Button onClick={() => open('#/review')}>{t('docs.review')}</Button>
@@ -26,7 +26,7 @@ export default function Docs({ srv, jobs, app, index }) {
       </div>
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
-      <div className="dk-stack" data-tour="docs-wikis">
+      <div className="dk-wikis" data-tour="docs-wikis">
         {wikiBlocks(index, rows).map((b) => (             // a failed read is said once, above: the blocks do not repeat it
           <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
             onView={() => open(b.hash)} onDone={reload} />))}
