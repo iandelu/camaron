@@ -144,7 +144,7 @@ def test_moved_code_is_reached_through_services():
     env_facade = _is_facade(mods["env"])
     bad = sorted(f"{a} -> {b}" for a, b in archscan.edges(mods)
                  if b in NEW and not (a in NEW or a == "bootstrap" or (a == "env" and env_facade)
-                                      or a == "adapters.repo_facts"))   # an adapter may import the adapter it reads
+                                      or a.startswith("adapters.")))   # AGENTS.md section 5: an adapter may import another adapter
     assert bad == [], ("outside the new modules, kit code reaches a moved name through services "
                        "(cli.services, req.services or services.current()), never by importing its module:\n"
                        + "\n".join(bad))

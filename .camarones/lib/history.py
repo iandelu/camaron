@@ -80,7 +80,9 @@ def weekly(stamps: list[int], today: date, weeks: int = 12) -> list[dict]:
 def activity(repo: str, weeks: int = 12, today: date | None = None) -> dict | None:
     """The human commits of the last `weeks` per week, how many people wrote them and the latest one; None when git
     cannot read the repo."""
-    log = out(["git", "-C", str(repo_dir(repo)), "log", f"--since={weeks * 7 + 7}.days", "--no-merges",
+    today = today or datetime.now(timezone.utc).date()
+    since = (today - timedelta(days=weeks * 7 + 7)).isoformat()
+    log = out(["git", "-C", str(repo_dir(repo)), "log", f"--since={since}", "--no-merges",
                "--format=%aN%x09%at%x09%s"])
     if not log and out(["git", "-C", str(repo_dir(repo)), "rev-parse", "--is-inside-work-tree"]) != "true":
         return None
@@ -90,7 +92,6 @@ def activity(repo: str, weeks: int = 12, today: date | None = None) -> dict | No
         at, _, subject = rest.partition("\t")
         if at.isdigit() and not BOT.search(author):
             rows.append((author, int(at), subject))
-    today = today or datetime.now(timezone.utc).date()
     buckets = weekly([at for _, at, _ in rows], today, weeks)
     last = max(rows, key=lambda r: r[1], default=None)
     return {"weeks": buckets, "total": sum(w["n"] for w in buckets), "people": len({a for a, _, _ in rows}),
