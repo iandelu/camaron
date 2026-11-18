@@ -188,14 +188,21 @@ def test_a_repo_not_cloned_here_is_not_compared(verify_world):
 
 
 def test_a_scan_that_fails_is_a_warning(verify_world, monkeypatch):
-    _, v = verify_world
+    kit, v = verify_world
+    calls, uses = "shop.api -> shop.worker 'calls (HTTP)'", "customer -> shop.api 'uses'"
+    model(kit, MODEL.replace(GHOST, GHOST + WORKER + "    api -> worker 'calls (HTTP)'\n").replace(
+        "model {\n", "model {\n  customer = actor 'Customer'\n  customer -> shop.api 'uses'\n"))
+    assert v.report()["relations"][calls]["state"] == "fresh"                   # the scan backs it
     quickarch = importlib.import_module("lib.quickarch")
     monkeypatch.setattr(quickarch, "scan", lambda: (_ for _ in ()).throw(KeyError("project")))
-    box = v.report()["containers"]
-    assert box == {"scanned": False, "in_code_not_model": [], "not_compared": [], "error": "'project'"}
+    rep = v.report()
+    assert rep["containers"] == {"scanned": False, "in_code_not_model": [], "not_compared": [], "error": "'project'"}
+    assert (rep["relations"][calls]["state"], rep["relations"][calls]["unchecked"]) == ("unchecked", "no-scan")
+    assert rep["relations"][uses]["state"] == "no-evidence"                    # no scan ever backs a person
     errors, warns = v.findings(True)
-    assert not any("scan" in e for e in errors)
+    assert not any("scan" in e or calls in e for e in errors)
     assert any("code scan failed, so the containers are not compared: 'project'" in w for w in warns)
+    assert any("1 unchecked relation(s): the code scan failed" in w for w in warns)
     assert "containers: the code scan failed ('project'), not compared" in v.text(v.report())
 
 

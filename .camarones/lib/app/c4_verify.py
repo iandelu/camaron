@@ -129,6 +129,8 @@ def report() -> dict:
             state, cause = "unchecked", "not-cloned"
         elif len(ends) == 1 and ends <= no_graph:                         # only one repo's graph derives an edge
             state, cause = "unchecked", "no-graph"
+        elif containers["error"] and not any(els.get(end, {}).get("kind") in drift.PEOPLE for end in pair):
+            state, cause = "unchecked", "no-scan"                           # the scan never backs a person's relation
         else:
             state = "no-evidence"
         relations[key] = {**r, "state": state, "backing": backing, "unchecked": cause}
@@ -161,7 +163,7 @@ def findings(strict: bool) -> tuple[list[str], list[str]]:
     gated = errors if strict else warns
     if rep["error"]:
         warns.append(f"C4 model could not be read: {rep['error']}")
-    unchecked = {"not-cloned": 0, "no-graph": 0}
+    unchecked = {"not-cloned": 0, "no-graph": 0, "no-scan": 0}
     for group in ("elements", "relations"):
         for name, item in rep[group].items():
             for raw in item.get("unreadable") or []:
@@ -178,6 +180,8 @@ def findings(strict: bool) -> tuple[list[str], list[str]]:
                      "here")
     if unchecked["no-graph"]:
         warns.append(f"C4: {unchecked['no-graph']} unchecked relation(s): their repo has no code graph ({GRAPH_HINT})")
+    if unchecked["no-scan"]:
+        warns.append(f"C4: {unchecked['no-scan']} unchecked relation(s): the code scan failed, so nothing compared them")
     for repo, row in rep["repos"].items():
         if row["graph"] == "missing":
             warns.append(f"C4: {repo} has no code graph, so the relations of its components are not compared: "

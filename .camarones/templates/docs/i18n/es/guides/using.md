@@ -166,8 +166,9 @@ Cuando el código se mueve, la documentación lo sigue:
   de un repo, el escaneo de `arch-draft` entre contenedores. Lista lo que está en el código y no en el modelo, los
   ficheros que cubren dos elementos hermanos y las carpetas que ningún elemento cubre, como componentes candidatos. Dice
   lo que no puede comparar: un repo sin grafo (las relaciones entre sus componentes quedan `unchecked`), un repo que no
-  está clonado aquí (sus relaciones quedan `unchecked` y su contenedor sale como no comparado), un almacén de datos o
-  broker que ningún elemento único nombra por tecnología o título, y un grafo construido en otro commit.
+  está clonado aquí (sus relaciones quedan `unchecked` y su contenedor sale como no comparado), un escaneo que falla
+  (las relaciones que compararía quedan `unchecked`; las de una persona nunca), un almacén de datos o broker que ningún
+  elemento único nombra por tecnología o título, y un grafo construido en otro commit.
   `--ack FQN… --by NOMBRE` toma el código de hoy como referencia de un elemento; un nombre que el modelo no tiene sale
   con 1.
 - `camaron check` es la puerta: enlaces rotos, diagramas que no se dibujan, secretos, estructura, y los hallazgos C4 de
