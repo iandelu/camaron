@@ -155,7 +155,7 @@ test('with no repos there is no wiki block; Read still has the C4 card and the c
 test('the page has the chat\'s entry, not the old Ask card, and the panel starts closed', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
-  expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
+  expect(out).toMatch(/<label[^>]*>Preguntar con IA<\/label><input(?![^>]*aria-label)[^>]*>/)      // its name is the label you see
   expect(out).toMatch(/>Preguntar<\/button>/)
   expect(out).not.toContain('docs-ask')
   expect(out).toMatch(/<label[^>]*>Preguntar con IA<\/label>/)                    // the entry's visible name, not the panel
@@ -186,7 +186,7 @@ test('the strings exist in English', () => {
   out = render()
   expect(out).toContain('Ask with AI')
   expect(out).toContain('>See CI</button>')
-  expect(out).toMatch(/aria-label="Question"/)
+  expect(out).toMatch(/<label[^>]*>Ask with AI<\/label>/)
   expect(out).toMatch(/>Ask<\/button>/)
 })
 

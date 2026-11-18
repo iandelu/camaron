@@ -220,7 +220,7 @@ export function AskEntry({ chat, onAsk }) {
   return (
     <form className="dk-ask" data-tour="docs-chat" onSubmit={submit}>
       <label className="eyebrow dk-ask-label" htmlFor={id}>{t('docs.ask')}</label>
-      <input className="cu-input dk-grow" id={id} value={q} placeholder={t('docs.askPh')} aria-label={t('docs.askLabel')}
+      <input className="cu-input dk-grow" id={id} value={q} placeholder={t('docs.askPh')}
         onChange={(e) => setQ(e.target.value)} />
       <Button type="submit" size="sm">{t('docs.askGo')}</Button>
     </form>

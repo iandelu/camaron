@@ -250,14 +250,15 @@ test('the page\'s entry: a labelled field, a button that is not the page\'s prim
   const chat = { get: () => BASE, subscribe: () => () => {}, send: noop }
   const out = renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)
   expect(out).toMatch(/^<form[^>]*data-tour="docs-chat"/)
-  expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
+  expect(out).toMatch(/<label[^>]*>Preguntar con IA<\/label><input/)
   expect(out).toMatch(/<button type="submit" class="cu-btn cu-btn--secondary cu-btn--sm">Preguntar<\/button>/)
   setLang('en')
   const en = renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)
-  expect(en).toMatch(/aria-label="Question"/)
+  expect(en).toMatch(/<label[^>]*>Ask with AI<\/label><input/)
   expect(en).toMatch(/>Ask<\/button>/)
 })
 
+// WCAG 2.5.3, label in name: the field's accessible name is the label you see, so no aria-label may replace it.
 test('the page\'s entry says what it is in words you can see, before its field, tied to it', () => {
   const chat = { get: () => BASE, subscribe: () => () => {}, send: noop }
   const out = renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)
@@ -265,7 +266,7 @@ test('the page\'s entry says what it is in words you can see, before its field, 
   expect(label).not.toBeNull()
   expect(out.indexOf('<label')).toBeLessThan(out.indexOf('<input'))
   expect(out).toMatch(new RegExp(`<input[^>]*id="${label[1]}"`))
-  expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
+  expect(out).not.toMatch(/<input[^>]*aria-label/)
   setLang('en')
   expect(renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)).toMatch(/<label[^>]*>Ask with AI<\/label>/)
 })
