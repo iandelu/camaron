@@ -136,20 +136,17 @@ test('the dots rise above the shrimp and go for who asked for less motion', () =
 })
 
 // The Docs chat (sections/DocsChat.jsx): beside the page, a column of its own that the page's grid gives room to; in a narrow
-// window a drawer over the page, under the title bar (main.cjs draws the window controls there and it drags the window). It
-// rises in by transform and opacity, and stands still for who asked for less motion.
+// window a drawer over the page. It rises in by transform and opacity, and stands still for who asked for less motion.
+const narrowChat = () => css.match(/@media \(max-width: 68rem\)\s*\{((?:[^{}]|\{[^}]*\})*)\}/)[1].match(/\.dk-chat\s*\{([^}]*)\}/)[1]
 test('the chat is a column beside the page and a drawer in a narrow window, and rises in only for who wants motion', () => {
   expect(rule('.dk-docs.with-chat')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s+24rem/)
   expect(rule('.dk-docs > .dk-page')).toMatch(/min-width:\s*0/)
   expect(rule('.dk-chat')).toMatch(/animation:\s*dk-rise\b/)
+  expect(rule('.dk-chat')).toMatch(/width:\s*24rem/)
   expect(rule('.dk-chat-list')).toMatch(/overflow-y:\s*auto/)
   expect(rule('.dk-chat-list')).toMatch(/min-height:\s*0/)
   const narrow = css.match(/@media \(max-width: 68rem\)\s*\{((?:[^{}]|\{[^}]*\})*)\}/)[1]
-  const drawer = narrow.match(/\.dk-chat\s*\{([^}]*)\}/)[1]
-  expect(drawer).toMatch(/position:\s*fixed/)
-  expect(drawer).toMatch(/right:\s*0/)
-  expect(drawer).toMatch(/bottom:\s*0/)
-  expect(drawer).toMatch(/top:\s*3\.5rem/)
+  const drawer = narrowChat()
   expect(drawer).toMatch(/width:\s*min\(24rem,\s*100vw\)/)
   expect(drawer).toMatch(/background:\s*var\(--color-canvas-elevated\)/)
   const z = +drawer.match(/z-index:\s*(\d+)/)[1]
@@ -158,4 +155,25 @@ test('the chat is a column beside the page and a drawer in a narrow window, and 
   expect(narrow).toMatch(/\.dk-docs\.with-chat\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
   expect(reduced).toMatch(/\.dk-chat\s*\{\s*animation:\s*none/)
+})
+
+// The panel takes its rectangle from the main pane (the --dk-main anchor, as the maximised terminal does), never from a sum of
+// the shell's sizes: the jobs panel opens and closes under the pane and the pane is what is left. Docked, it keeps the pane's
+// padding as its margin; as a drawer it is the pane's right edge, so it never covers the title bar, the jobs bar or the status bar.
+test('the chat panel is sized and placed by the main pane, docked and as a drawer', () => {
+  const chat = [...css.matchAll(/([^{}]*)\{([^}]*)\}/g)].filter(([, sel]) => /\.dk-chat(?![\w-])/.test(sel)).map(([, , body]) => body)
+  expect(chat.length).toBeGreaterThan(2)
+  for (const body of chat) {
+    expect(body).not.toMatch(/11\.25rem/)
+    expect(body).not.toMatch(/calc\(\s*100s?vh/)
+  }
+  expect(css).toMatch(/\.dk-main\s*\{[^}]*anchor-name:\s*--dk-main/)
+  const docked = rule('.dk-chat')
+  expect(docked).toMatch(/position:\s*fixed/)
+  expect(docked).toMatch(/position-anchor:\s*--dk-main/)
+  expect(docked).toMatch(/inset:\s*anchor\(top\)\s+anchor\(right\)\s+anchor\(bottom\)\s+auto/)
+  expect(docked).not.toMatch(/(?:^|[\s;])(?:min-)?height:/)
+  const drawer = narrowChat()
+  expect(drawer).not.toMatch(/(?:^|[\s;])(?:position|position-anchor|inset|top|right|bottom|height):/)   // the pane's rectangle, as docked
+  expect(drawer).toMatch(/margin:\s*0/)
 })
