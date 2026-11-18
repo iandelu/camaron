@@ -188,6 +188,17 @@ test("the server's \"no AI\" and \"too slow\" refusals are said in the app's lan
   setLang('es')
 })
 
+// routes/chat.py refuses a turn sent while another runs (409 busy): a plain sentence, never the server's English.
+test('a turn refused because another still runs is said in the app\'s language', () => {
+  const busy = { message: 'busy: a chat turn is still running', status: 409 }
+  setLang('es')
+  expect(askError(busy, t)).toBe('Todavía estoy respondiendo a la pregunta anterior: espera a que termine.')
+  expect(askError(busy.message, t)).toBe(t('docs.chat.busy'))
+  setLang('en')
+  expect(askError(busy, t)).toBe('I am still answering the previous question: wait for it to finish.')
+  setLang('es')
+})
+
 // lib/chat.py turn(): a runner that was asked and gave nothing usable fails the turn naming who (`runner` or `runner:model`).
 test('a runner that gave no answer is named in a sentence of the app\'s language', () => {
   const none = 'claude:haiku gave no answer: is it signed in, and does it have that model?'

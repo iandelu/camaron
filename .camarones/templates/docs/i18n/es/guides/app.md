@@ -505,8 +505,11 @@ el agente y el modelo que elijas.
   el texto lo muestra entero. Si tu sistema pide menos movimiento, el camarón se queda quieto y la respuesta aparece sin
   más.
 - La conversación vive en la memoria de la ventana y no se guarda nada: sobrevive a ir a otra sección y volver (abre el
-  panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía y abandona una respuesta que aún se esté
-  escribiendo. Desaparece al cerrar la ventana o cambiar de proyecto. Sin ningún agente instalado en esta máquina, o con
+  panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía al momento y descarta una respuesta que aún
+  se esté escribiendo: la siguiente pregunta puede salir cuando esa respuesta descartada haya terminado (hasta entonces
+  el camarón sigue pensando). Si el servidor del proyecto aún está respondiendo a una pregunta anterior (desde otra
+  ventana del mismo proyecto, por ejemplo), la nueva se rechaza y el panel lo dice. Desaparece al cerrar la ventana o
+  cambiar de proyecto. Sin ningún agente instalado en esta máquina, o con
   `ask.ai: false` en `workspace.yaml`, el panel lo dice y, en el primer caso, enlaza a **Máquina**.
 
 <!-- portal:#/docs -->

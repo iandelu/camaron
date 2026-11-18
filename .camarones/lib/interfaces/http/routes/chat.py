@@ -2,7 +2,7 @@
 the panel opens with, and one turn as a job the app follows."""
 from __future__ import annotations
 
-from lib.interfaces.http.jobs import start_job
+from lib.interfaces.http.jobs import JOB_LOCK, JOBS, claim_job, run_job
 from lib.interfaces.http.messages import Request, Response, json_response
 from lib.interfaces.http.router import Access, route
 
@@ -15,10 +15,16 @@ def get_models(req: Request) -> Response:
 
 
 @route("POST", "/api/app/chat", access=Access.APP, by=False)
-def post_chat(req: Request) -> Response:                # writes nothing, so no `by`: any JSON body reaches check
+def post_chat(req: Request) -> Response:                # writes no `by`-attributed data, so any JSON body reaches check
+    """One turn at a time: a turn sent while another runs is refused, never attached to it, or it would be handed that
+    turn's answer (the app's Clear drops a turn the server still runs)."""
     from lib import chat
     try:
         runner, model, q, history = chat.check(req.body)        # refused here, before a job exists
     except (ValueError, RuntimeError) as e:
         return json_response({"error": str(e)}, 400)
-    return json_response(start_job("chat", "chat", lambda log: chat.turn(runner, model, q, history, log), quiet=True))
+    with JOB_LOCK:
+        if any(j["kind"] == "chat" and j["status"] == "running" for j in JOBS.values()):
+            return json_response({"error": "busy: a chat turn is still running"}, 409)
+        job = claim_job("chat", "chat", quiet=True)
+    return json_response(run_job(job, lambda log: chat.turn(runner, model, q, history, log)))

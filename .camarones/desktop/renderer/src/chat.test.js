@@ -1,5 +1,6 @@
 import { expect, test, vi } from 'vitest'
 import { chatStore, revealSteps } from './chat.js'
+import { follow } from './cmd.js'
 
 const MODELS = {
   runners: [
@@ -63,7 +64,7 @@ test('the second question carries the first turn as history, never itself', asyn
 })
 
 test('history leaves out what has no text and what failed', async () => {
-  const ends = [done(null, { cited: [], runner: 'claude', model: undefined }), failed('⚠ boom'), done('fine')]
+  const ends = [done(null, { cited: [], runner: 'claude', model: undefined }), failed('⚠ boom'), done('fine'), done('last answer')]
   const { srv, store } = await loaded({ follow: async (...a) => finish(ends.shift())(...a) })
   await store.send('nothing found here')
   await store.send('this fails')
@@ -72,6 +73,8 @@ test('history leaves out what has no text and what failed', async () => {
   expect(bodies(srv)[3].history).toEqual([
     { role: 'user', text: 'nothing found here' }, { role: 'user', text: 'this fails' }, { role: 'user', text: 'this works' }, { role: 'assistant', text: 'fine' },
   ])
+  expect(store.get().messages.at(-1)).toMatchObject({ role: 'assistant', text: 'last answer' })
+  expect(store.get().messages.some((m) => m.error && !/boom/.test(m.error))).toBe(false)
 })
 
 test('a question sent while a turn runs is ignored: one turn at a time', async () => {
@@ -151,52 +154,56 @@ test('a done job that found nothing is an answer with no text and no error', asy
   expect(store.get().running).toBe(false)
 })
 
-test('clear() empties the conversation and a turn still running no longer lands', async () => {
+// The server goes on with a turn the conversation dropped, so clear() keeps the composer closed until that turn ends: it is
+// followed to its end (never given up on) and its answer is thrown away.
+test('clear() empties the conversation at once, and the dropped turn is followed to its end without landing', async () => {
   const { turns, follow } = held()
   const { store } = await loaded({ follow })
   const turn = store.send('one')
   await vi.waitFor(() => expect(turns).toHaveLength(1))
-  expect(turns[0].opts.gone()).toBe(false)
   store.clear()
-  expect(store.get()).toMatchObject({ messages: [], running: false })
-  expect(turns[0].opts.gone()).toBe(true)
+  expect(store.get()).toMatchObject({ messages: [], running: true })
+  expect(turns[0].opts.gone?.() ?? false).toBe(false)
   turns[0].resolve(done('too late'))
   await turn
   expect(store.get()).toMatchObject({ messages: [], running: false })
 })
 
-test('the old turn that ends after clear() does not touch a new one, and a new send works', async () => {
+test('after clear() no question goes out until the dropped turn ends; then a new one goes alone', async () => {
   const { turns, follow } = held()
   const { srv, store } = await loaded({ follow })
   const old = store.send('old')
   await vi.waitFor(() => expect(turns).toHaveLength(1))
   store.clear()
+  await store.send('fresh')
+  expect(srv.post).toHaveBeenCalledTimes(1)
+  expect(store.get().messages).toEqual([])
+  turns[0].resolve(done('old answer'))
+  await old
+  expect(store.get()).toMatchObject({ messages: [], running: false })
   const fresh = store.send('fresh')
   await vi.waitFor(() => expect(turns).toHaveLength(2))
   expect(bodies(srv)[1]).toMatchObject({ q: 'fresh', history: [] })
-  turns[0].resolve(done('old answer'))
-  await old
-  expect(store.get().running).toBe(true)
-  expect(store.get().messages.map((m) => m.text)).toEqual(['fresh'])
   turns[1].resolve(done('fresh answer'))
   await fresh
   expect(store.get().running).toBe(false)
   expect(store.get().messages.map((m) => m.text)).toEqual(['fresh', 'fresh answer'])
 })
 
-test('a POST that ends after clear() does not land either', async () => {
+test('a POST that ends after clear() is followed to its end and does not land either', async () => {
   const { srv, store } = await loaded()
   let release
   srv.post.mockImplementationOnce(() => new Promise((r) => { release = r }))
   const turn = store.send('one')
   await vi.waitFor(() => expect(release).toBeTypeOf('function'))
   store.clear()
+  expect(store.get()).toMatchObject({ messages: [], running: true })
   release({ id: 'j' })
   await turn
   expect(store.get()).toMatchObject({ messages: [], running: false })
 })
 
-test('a refused POST after clear() leaves no error message behind', async () => {
+test('a refused POST after clear() leaves no error message behind and opens the composer', async () => {
   const { srv, store } = await loaded()
   let refuse
   srv.post.mockImplementationOnce(() => new Promise((_, r) => { refuse = r }))
@@ -206,6 +213,79 @@ test('a refused POST after clear() leaves no error message behind', async () => 
   refuse(new Error('boom'))
   await turn
   expect(store.get()).toMatchObject({ messages: [], running: false })
+})
+
+test('clear() with no turn running leaves the composer open', async () => {
+  const { store } = await loaded()
+  await store.send('one')
+  store.clear()
+  expect(store.get()).toMatchObject({ messages: [], running: false })
+})
+
+// The project server as the store meets it, followed by cmd.js's own follow: one chat turn at a time. `attach`: a POST while a
+// turn runs is handed the running job (what start_job did before routes/chat.py refused it); otherwise it is refused with 409
+// busy. end(q) finishes the turn that asked q; failGet() makes the next read of a job fail as a dropped connection would.
+function jobServer({ attach = false } = {}) {
+  const jobs = []
+  let failing = 0
+  const srv = {
+    get: vi.fn(async (name) => {
+      if (name === 'app/chat/models') return MODELS
+      if (failing) { failing -= 1; throw new Error('Failed to fetch') }
+      const j = jobs.find((x) => name.startsWith(`jobs/${x.id}?`))
+      return { status: j.status, log: [], lines: 0, result: j.result }
+    }),
+    post: vi.fn(async (_name, body) => {
+      const running = jobs.find((j) => j.status === 'running')
+      if (running && attach) return { id: running.id, status: 'running' }
+      if (running) throw Object.assign(new Error('busy: a chat turn is still running'), { status: 409 })
+      jobs.push({ id: String(jobs.length + 1), q: body.q, status: 'running', result: null })
+      return { id: jobs.at(-1).id, status: 'running' }
+    }),
+  }
+  const end = (q) => Object.assign(jobs.find((j) => j.q === q), { status: 'done', result: { answer: `answer to: ${q}`, cited: [], runner: 'claude' } })
+  const store = chatStore(srv, { follow: (s, job, opts) => follow(s, job, { ...opts, sleep: () => new Promise((r) => setTimeout(r, 1)) }) })
+  return { srv, store, end, failGet: () => { failing += 1 } }
+}
+const settle = () => new Promise((r) => setTimeout(r, 10))
+const said = (store) => store.get().messages.map((m) => [m.role, m.text || m.error])
+
+test('a question asked right after clear() never gets the dropped question\'s answer, even from a server that attaches', async () => {
+  const { srv, store, end } = jobServer({ attach: true })
+  await store.load()
+  const first = store.send('first question')
+  await vi.waitFor(() => expect(srv.post).toHaveBeenCalledTimes(1))
+  store.clear()
+  store.send('second question')
+  await settle()
+  expect(srv.post).toHaveBeenCalledTimes(1)
+  end('first question')
+  await first
+  expect(said(store)).toEqual([])
+  const second = store.send('second question')
+  await vi.waitFor(() => expect(srv.post).toHaveBeenCalledTimes(2))
+  end('second question')
+  await second
+  expect(said(store)).toEqual([['user', 'second question'], ['assistant', 'answer to: second question']])
+})
+
+test('a turn whose follow failed ends with that error; a question while the server still runs it is refused as busy', async () => {
+  const { srv, store, end, failGet } = jobServer()
+  await store.load()
+  failGet()
+  await store.send('first question')
+  expect(store.get().running).toBe(false)
+  await store.send('second question')
+  expect(srv.post).toHaveBeenCalledTimes(2)
+  expect(said(store)).toEqual([['user', 'first question'], ['assistant', 'Failed to fetch'],
+    ['user', 'second question'], ['assistant', 'busy: a chat turn is still running']])
+  end('first question')
+  const third = store.send('third question')
+  await vi.waitFor(() => expect(srv.post).toHaveBeenCalledTimes(3))
+  end('third question')
+  await third
+  expect(said(store).at(-1)).toEqual(['assistant', 'answer to: third question'])
+  expect(store.get().running).toBe(false)
 })
 
 test('the messages outlast a section: the store keeps them while nobody listens', async () => {

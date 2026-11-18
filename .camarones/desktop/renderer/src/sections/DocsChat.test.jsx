@@ -176,6 +176,7 @@ test.each([
   ['no answer within 90 s: claude is slow or waiting for a login; try again', 'La IA no ha respondido a tiempo', 'The AI did not answer in time'],
   ['claude:haiku gave no answer: is it signed in, and does it have that model?', 'claude:haiku no ha contestado: ¿ha iniciado sesión y tiene ese modelo?',
     'claude:haiku gave no answer: is it signed in, and does it have that model?'],
+  ['busy: a chat turn is still running', 'Todavía estoy respondiendo a la pregunta anterior', 'I am still answering the previous question'],
 ])('a failed turn is said in the app\'s language: %s', (raw, es, en) => {
   const failed = (lang) => { setLang(lang); return panel({ messages: [ask, reply(undefined, { error: raw })] }) }
   const out = failed('es')

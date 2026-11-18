@@ -7,6 +7,7 @@ import importlib
 import json
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -673,6 +674,29 @@ def test_the_turn_route_starts_a_quiet_job_that_ends_with_its_result(answerer, a
     end = finished(app_server, job["id"])
     assert end["status"] == "done" and end["rc"] == 0 and end["log"] == [RETRIED]
     assert set(end["result"]) == TURN_KEYS and end["result"]["cited"] == [FAILURE]
+
+
+def test_a_turn_sent_while_one_runs_is_refused_not_given_the_running_ones_answer(answerer, app_server, monkeypatch):  # noqa: F811
+    from lib import chat
+    release = threading.Event()
+
+    def held(runner, model, q, history, log):
+        release.wait(30)
+        return {"rc": 0, "result": {"answer": f"answer to: {q}", "cited": [], "runner": runner, "model": model}}
+    monkeypatch.setattr(chat, "turn", held)
+    url = app_server + "/api/app/chat"
+    try:
+        code, first = call(url, {"q": "first question", "runner": "fake"}, token=TOKEN)
+        assert code == 200 and first["status"] == "running"
+        code, second = call(url, {"q": "second question", "runner": "fake"}, token=TOKEN)
+        assert (code, second) == (409, {"error": "busy: a chat turn is still running"})
+        assert call(url, {"q": " ", "runner": "fake"}, token=TOKEN)[0] == 400                 # a bad turn is still a 400
+    finally:
+        release.set()
+    assert finished(app_server, first["id"])["result"]["answer"] == "answer to: first question"
+    code, third = call(url, {"q": "third question", "runner": "fake"}, token=TOKEN)
+    assert code == 200 and third["id"] != first["id"] and third["quiet"] is True
+    assert finished(app_server, third["id"])["result"]["answer"] == "answer to: third question"
 
 
 def test_a_slow_turn_fails_its_job_with_the_reason_in_its_log(answerer, app_server, monkeypatch):  # noqa: F811

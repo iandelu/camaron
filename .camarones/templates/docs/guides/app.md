@@ -485,8 +485,10 @@ model you pick.
   "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
   When your system asks for reduced motion the shrimp stays still and the answer simply appears.
 - The conversation lives in the window's memory, nothing is saved: it survives going to another section and coming back
-  (open the panel again), one question runs at a time, and **Clear** empties it and drops an answer still being
-  written. It is gone when the window is closed or the project is switched. With no agent installed on this machine, or
+  (open the panel again), one question runs at a time, and **Clear** empties it at once and throws away an answer still
+  being written: the next question can go once that dropped answer has ended (the shrimp keeps thinking until then). If
+  the project's server is still answering an earlier question (from another window of the same project, say), a new
+  one is refused and the panel says so. It is gone when the window is closed or the project is switched. With no agent installed on this machine, or
   with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to **Machine**.
 
 <!-- portal:#/docs -->

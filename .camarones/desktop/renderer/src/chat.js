@@ -2,7 +2,8 @@ import { follow } from './cmd.js'
 
 // The Docs chat's conversation as one store for the window (like jobs.js). Docs unmounts when you go to the Board and
 // useJob drops a result on unmount, so the messages and the turn in flight live here, and a late answer still lands.
-// One per window: the rail switches projects by reloading it. Errors are kept as the raw strings; the panel words them.
+// One per window: switching projects opens a new window in this one's place. Errors are kept as the raw strings; the
+// panel words them.
 
 // Growing prefixes of text, cut after a whole word, at most maxMs / stepMs of them, the last one the whole text: the
 // answer arrives in one piece, so showing it in chunks is presentation only.
@@ -40,6 +41,8 @@ export function chatStore(srv, { follow: followJob = follow } = {}) {
     }
   }
 
+  // A turn dropped by clear() is still followed to its end, its answer thrown away: the server runs one turn at a time and
+  // refuses another meanwhile, so the composer stays closed (`running`) until it ends.
   async function send(q) {
     const text = String(q ?? '').trim()
     if (!text || state.running) return
@@ -50,16 +53,14 @@ export function chatStore(srv, { follow: followJob = follow } = {}) {
     let reply
     try {
       const job = await srv.post('app/chat', { q: text, history, runner: state.choice?.runner ?? '', model: state.choice?.model ?? '' })
-      const end = await followJob(srv, job, { onLine: (l) => lines.push(l), gone: () => epoch !== mine })
-      if (epoch !== mine) return
+      const end = await followJob(srv, job, { onLine: (l) => lines.push(l) })
       reply = end.status === 'done'
         ? { text: end.result?.answer || '', result: end.result }
         : { text: '', error: (lines.at(-1) || end.status).replace(/^⚠ /, '') }
     } catch (e) {
-      if (epoch !== mine) return
       reply = { text: '', error: e.message }
     }
-    set({ messages: [...state.messages, message('assistant', reply)], running: false })
+    set(epoch === mine ? { messages: [...state.messages, message('assistant', reply)], running: false } : { running: false })
   }
 
   return {
@@ -73,7 +74,7 @@ export function chatStore(srv, { follow: followJob = follow } = {}) {
     },
     clear() {
       epoch++
-      set({ messages: [], running: false })
+      set({ messages: [] })
     },
   }
 }
