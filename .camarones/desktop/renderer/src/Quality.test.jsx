@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import { DriftList, HooksReport, QualityViews, SecretsResult } from './sections/Quality.jsx'
+import Quality, { DriftList, HooksReport, SecretsResult } from './sections/Quality.jsx'
 import { setLang } from './i18n.js'
 
-afterEach(() => setLang('es'))
+afterEach(() => { setLang('es'); delete globalThis.location })
 
 const drift = [
   { path: 'chub/CLAUDE.md', state: 'not linked', what: 'workspace link', why: 'yours' },
@@ -38,18 +38,20 @@ test('a file of the person\'s that stays is not a failure: all is in place, and 
   expect(out).toContain('se queda como está')
 })
 
-// Libraries is a view of Quality, beside the board: two links, the open one marked, never a section of the nav.
-test('quality has two views, the board and the libraries, and says which one is open', () => {
-  const links = (view) => renderToStaticMarkup(<QualityViews view={view} />).split('</a>').filter((x) => x.includes('<a '))
-  const [board, libs] = links('libs')
-  expect(board).toContain('href="#/quality"')
-  expect(board).not.toContain('aria-current')
-  expect(libs).toContain('href="#/quality/libs"')
-  expect(libs).toContain('aria-current="page"')
-  expect(libs).toContain('Librerías')
-  expect(links('health')[0]).toContain('aria-current="page"')
+const never = () => new Promise(() => {})
+const props = { srv: { get: never, post: never }, jobs: { subscribe: () => () => {}, get: () => ({ running: [], done: [] }) } }
+const render = (hash) => { globalThis.location = { hash }; return renderToStaticMarkup(<Quality {...props} />) }
+const current = (out) => [...out.matchAll(/<a [^>]*aria-current="page"[^>]*>([^<]*)<\/a>/g)].map((m) => m[1])
+
+test('quality is a place: the board and the libraries are its tabs, the open one marked', () => {
+  const libs = render('#/quality/libs')
+  expect(libs).toContain('data-tour="tabs-quality"')
+  expect(libs.match(/<h1/g)).toHaveLength(1)
+  expect(current(libs)).toEqual(['Librerías'])
+  expect(libs).toContain('href="#/quality"')
+  expect(current(render('#/quality'))).toEqual(['Salud'])
   setLang('en')
-  expect(renderToStaticMarkup(<QualityViews view="health" />)).toContain('>Libraries<')
+  expect(current(render('#/quality/libs'))).toEqual(['Libraries'])
 })
 
 test('the secret scan: clean, the places it found (never a value), or a scan that could not run', () => {

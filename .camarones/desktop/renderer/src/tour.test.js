@@ -1,19 +1,33 @@
 import { expect, test } from 'vitest'
-import { holes, place, tourAction, tourIds, TOURS } from './tour.js'
+import { HOME, holes, place, tourAction, tourAlias, tourIds, TOURS } from './tour.js'
 import { S } from './i18n.js'
-import { LIBS } from './nav.js'
+import { LIBS, VIEWS } from './nav.js'
 
-test('a tour of the whole app and one per section, each with something to show', () => {
-  expect(tourIds()).toEqual(['app', 'summary', 'board', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine'])
-  expect(TOURS.app.length).toBeGreaterThanOrEqual(14)
+test('a tour of the whole app and one per place, each with something to show', () => {
+  expect(tourIds()).toEqual(['app', 'flow', 'plan', 'board', 'quality', 'libs', 'docs', 'interviews', 'settings'])
+  expect(TOURS.app.length).toBeGreaterThanOrEqual(11)
   for (const id of tourIds()) expect(TOURS[id].length, id).toBeGreaterThanOrEqual(3)
-  for (const id of tourIds().filter((x) => x !== 'app')) expect(TOURS[id].every((s) => s.section === (id === 'libs' ? LIBS : id)), id).toBe(true)
+  for (const id of tourIds().filter((x) => x !== 'app')) {
+    expect(TOURS[id].every((s) => s.section === HOME[id] || s.section.startsWith(HOME[id] + '/')), id).toBe(true)
+  }
+  expect(HOME.libs).toBe(LIBS)
 })
 
-test('the tour of the app walks the nav, which no longer lists libraries (a view of quality)', () => {
+test('the tour of the app walks the five places and the guide, not libraries', () => {
   const nav = TOURS.app.map((s) => s.target).filter((x) => x.startsWith('nav-'))
-  expect(nav).not.toContain('nav-libs')
-  expect(nav).toContain('nav-quality')
+  expect(nav).toEqual(['nav-flow', 'nav-board', 'nav-quality', 'nav-docs', 'nav-settings', 'nav-guide'])
+})
+
+test('the Settings tour visits every tab', () => {
+  const places = new Set(TOURS.settings.map((s) => s.section))
+  for (const v of VIEWS.settings.slice(1)) expect(places.has(`settings/${v}`), v).toBe(true)
+})
+
+test('old tour ids still resolve', () => {
+  expect(tourAlias('team')).toBe('docs')
+  expect(tourAlias('summary')).toBe('flow')
+  expect(tourAlias('machine')).toBe('settings')
+  expect(tourAlias('plan')).toBe('plan')
 })
 
 test('every step has its title and text in both languages', () => {

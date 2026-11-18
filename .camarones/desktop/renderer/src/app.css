@@ -422,6 +422,11 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 .dk-bd-id { font-size: var(--text-meta); }
 .dk-bd-title { line-height: 1.3; overflow-wrap: anywhere; }
 .dk-bd-bar { justify-content: flex-end; }
+.dk-bd-add { position: relative; }
+.dk-bd-menu { position: absolute; right: 0; top: calc(100% + .25rem); z-index: 5; min-width: 16rem; display: grid; padding: .25rem;
+  border: 1px solid var(--color-ink-dim); border-radius: var(--consola-radio-chico); background: var(--color-canvas-elevated); }
+.dk-bd-menuitem { display: grid; gap: .1rem; text-align: left; padding: .5rem .6rem; border: 0; background: none; color: var(--color-ink); cursor: pointer; font: inherit; }
+.dk-bd-menuitem:hover, .dk-bd-menuitem:focus-visible { background: color-mix(in srgb, var(--color-ink) 8%, transparent); outline: none; box-shadow: inset 0 0 0 2px var(--color-acento-texto); }
 .dk-bd-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
 /* on a full page the board fills what is left of the window: the columns reach its bottom, the panel stays at the top */
 .dk-page.full > .dk-bd-wrap { flex: 1; }
@@ -448,6 +453,7 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 
 /* a page whose title carries its actions beside it (parts.jsx Page `actions`) */
 .dk-page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; }
+.dk-page-h { font-size: var(--text-h2); margin: 0; }
 .dk-page-acts { flex-wrap: nowrap; }
 
 /* Decisiones (sections/Decisions.jsx, sections/adr/): the list as one ruled panel under its filters, the decisions the
@@ -588,7 +594,8 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 
 /* The review (sections/adr/Review.jsx): the parts beside the one in view, the attendees and the decision under them,
    the keys at the foot. Its type comes from --rv-*: the console's sizes here, the display ones while presenting. */
-.dk-rv-screen { --rv-q: var(--text-h2); --rv-h: var(--text-h3); --rv-body: var(--text-body-sm); --rv-opt: var(--text-body);
+.dk-rv-screen { display: flex; flex-direction: column; gap: 1.25rem;
+                --rv-q: var(--text-h2); --rv-h: var(--text-h3); --rv-body: var(--text-body-sm); --rv-opt: var(--text-body);
                 --rv-small: var(--text-meta); }
 .dk-rv { display: grid; grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr); gap: 1rem 1.5rem; align-items: start; }
 .dk-rv-nav { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
@@ -686,7 +693,8 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 .dk-rv-sum { margin: 0 0 .75rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: var(--text-body-sm); }
 .dk-rv-dlg-acts { justify-content: flex-end; margin-top: 1rem; }
 
-/* Presenting (P; Esc leaves): a screen shared in a meeting. The app around the review goes. The header's row stays,
+/* Presenting (P; Esc leaves): a screen shared in a meeting. The app around the review goes, and so do the Docs page's
+   title, team strip and tabs around it (the page that holds the review is the one that grows). The header's row stays,
    empty: it is the window's title bar, which drags the window and has the system's controls drawn over it. One part per
    screen under a strip of the parts' marks, in the theme's display sizes (CAMARON.md, the fifth approved exception); a
    part taller than the screen scrolls in its pane, so the attendees, the decision and the keys stay in view. */
@@ -695,10 +703,10 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 .dk:has(.dk-present) .dk-top { border-bottom: 0; }
 .dk:has(.dk-present) .dk-main { display: flex; flex-direction: column; padding: 0 clamp(1.25rem, 4vw, 4rem) 1.25rem; }
 .dk-rv-root:has(> .dk-present), .dk-rv-screen.dk-present { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.dk-rv-screen.dk-present { --rv-q: var(--text-display-md); --rv-h: var(--text-h1); --rv-body: var(--text-h3); --rv-opt: var(--text-h2);
+.dk-rv-screen.dk-present { gap: 1rem; --rv-q: var(--text-display-md); --rv-h: var(--text-h1); --rv-body: var(--text-h3); --rv-opt: var(--text-h2);
                            --rv-small: var(--text-body); }
-.dk-present .dk-page { flex: 1; min-height: 0; width: 100%; max-width: 90rem; margin: 0 auto; gap: 1rem; }
-.dk-present .dk-page h1 { font-size: var(--text-h2); }
+.dk-page:has(.dk-present) { flex: 1; min-height: 0; width: 100%; max-width: 90rem; margin: 0 auto; gap: 1rem; }
+.dk-page:has(.dk-present) > :is(h1, [data-tour="docs-team"], .dk-guide-tabs) { display: none; }
 .dk-present :is(.dk-adr-steps, .dk-adr-path, .dk-rv-whole) { display: none; }
 .dk-present .dk-rv { display: flex; flex-direction: column; align-items: stretch; flex: 1; min-height: 0; }
 .dk-present .dk-rv-nav { flex: none; flex-direction: row; flex-wrap: wrap; align-items: center; }

@@ -1,15 +1,31 @@
 'use strict'
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
 const path = require('node:path')
 const r = require('../lib/renderer.cjs')
 
-test('a project window loads the app from its own server, on a section', () => {
-  assert.equal(r.projectUrl('http://127.0.0.1:5123'), 'http://127.0.0.1:5123/desktop/#/summary')
-  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'plan'), 'http://127.0.0.1:5123/desktop/#/plan')
-  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'x y'), 'http://127.0.0.1:5123/desktop/#/summary')   // no odd sections
+test('a project window loads the app from its own server, on a place (Flow by default)', () => {
+  assert.equal(r.projectUrl('http://127.0.0.1:5123'), 'http://127.0.0.1:5123/desktop/#/flow')
+  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'board'), 'http://127.0.0.1:5123/desktop/#/board')
+  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'x y'), 'http://127.0.0.1:5123/desktop/#/flow')   // no odd places
   assert.equal(r.projectUrl('http://127.0.0.1:5123', 'start'), 'http://127.0.0.1:5123/desktop/#/start')   // the first-run wizard
   assert.ok(r.SECTIONS.includes('start'))
+})
+
+// An old section name (a 4.x caller) still opens: the renderer's redirect (nav.js movedRoute) takes it to its place.
+test('the old section names still open, for the renderer to send where they moved', () => {
+  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'plan'), 'http://127.0.0.1:5123/desktop/#/plan')
+  assert.equal(r.projectUrl('http://127.0.0.1:5123', 'machine'), 'http://127.0.0.1:5123/desktop/#/machine')
+})
+
+// The two lists live in the renderer's nav.js (an ES module the main process cannot load): they must stay the same.
+test("the places and the old names are the renderer's", () => {
+  const nav = fs.readFileSync(path.join(__dirname, '..', 'renderer', 'src', 'nav.js'), 'utf-8')
+  const list = (name) => JSON.parse(nav.match(new RegExp(`export const ${name} = (\\[[^\\]]*\\])`))[1].replace(/'/g, '"'))
+  assert.deepEqual([...r.SECTIONS].sort(), [...list('PROJECT'), ...list('MACHINE'), 'start'].sort())
+  const moved = nav.match(/const MOVED = \{([^}]*)\}/)[1]
+  assert.deepEqual([...r.MOVED].sort(), [...moved.matchAll(/(\w+):/g)].map((m) => m[1]).sort())
 })
 
 test('the hub is the same build, from disk', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Card } from '@camaron/ui'
 import { fields, toArgs } from '@camaron/ui/cmdform.js'
-import { others } from '../catalog.js'
+import { others, wantedCommand } from '../catalog.js'
 import { useCmd, useHash } from '../hooks.js'
 import { Failed, Fold, JobOutput } from '../parts.jsx'
 import { lang, t } from '../i18n.js'
@@ -15,7 +15,7 @@ export const catalog = (srv) => (CATALOG ||= srv.get('app/catalog').catch((e) =>
 export default function Commands({ srv, jobs, section }) {
   const [cmds, setCmds] = useState(null)
   const [error, setError] = useState('')
-  const want = (useHash().match(/^#\/[\w-]+\/([\w-]+)/) || [])[1]
+  const want = wantedCommand(useHash(), section)
   const load = () => catalog(srv).then((c) => { setCmds(c.commands); setError('') }, (e) => setError(e.message))
   useEffect(() => { load() }, [])
   const { safe, careful } = others(cmds, section)

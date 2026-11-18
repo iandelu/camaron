@@ -54,3 +54,17 @@ test('the scan\'s bar and tick do not move for who asked for less motion, and th
   expect(reduced).toMatch(/\.dk-bar i[^{]*\{[^}]*animation:\s*none/)
   expect(rule('.dk-tick-check')).toMatch(/stroke-dashoffset:\s*0\b/)
 })
+
+// The review lives inside Docs: presenting takes the Docs page (the one that holds the review) to the whole height and
+// hides its title, the team strip and the tabs, so only the review stays on screen; the review's parts keep their gap.
+test('presenting a review hides the Docs chrome around it and keeps the height chain', () => {
+  const exact = (sel) => css.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\>]/g, '\\$&') + '\\s*\\{([^}]*)\\}'))?.[1] ?? ''
+  const page = exact('.dk-page:has(.dk-present)')
+  expect(page).toMatch(/flex:\s*1/)
+  expect(page).toMatch(/min-height:\s*0/)
+  const hidden = css.match(/\.dk-page:has\(\.dk-present\)\s*>\s*:is\(([^)]*(?:\([^)]*\))?[^)]*)\)\s*\{([^}]*)\}/)
+  expect(hidden?.[2]).toMatch(/display:\s*none/)
+  for (const sel of ['h1', '[data-tour="docs-team"]', '.dk-guide-tabs']) expect(hidden?.[1]).toContain(sel)
+  expect(css).not.toMatch(/\.dk-present \.dk-page\b/)
+  expect(rule('.dk-rv-screen')).toMatch(/display:\s*flex[\s\S]*flex-direction:\s*column/)
+})

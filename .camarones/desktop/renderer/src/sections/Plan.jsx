@@ -18,7 +18,7 @@ const Canvas = lazy(() => import('./Canvas.jsx'))           // React Flow loads 
 // the view with the one action that moves it. A unit in progress with no session open is paused; an open one says what
 // its agent is doing. With no view picked, the canvas opens as soon as a run or a session is on during the visit
 // (already on when the plan arrives, or started from here) and stays until the person picks another. An address with a
-// terminal (#/plan?term=<id>, where every session opened from the app lands) shows the canvas for the visit with that
+// terminal (#/flow/plan?term=<id>, where every session opened from the app lands) shows the canvas for the visit with that
 // terminal in front, without picking the view for later. Under the view, what the plan cost.
 const VIEWS = ['board', 'phases', 'canvas']
 const TONES = ['ready', 'running', 'paused', 'awaiting', 'blocked', 'waiting', 'done']
@@ -46,12 +46,12 @@ export default function Plan({ srv, jobs }) {
     const id = setInterval(load, active ? 3000 : windows ? 5000 : 15000)
     return () => clearInterval(id)
   }, [active, windows, running.length])
-  // The address is taken once: put back to #/plan (and told to useHash), the same terminal asked again is a new visit.
+  // The address is taken once: put back to #/flow/plan (and told to useHash), the same terminal asked again is a new visit.
   useEffect(() => {
     if (!asked) return
     setFocus(asked)
     setVisit(true)
-    history.replaceState(null, '', '#/plan')
+    history.replaceState(null, '', '#/flow/plan')
     dispatchEvent(new Event('hashchange'))
   }, [asked])
   const pick = (v) => { setVisit(false); setFocus(null); setView(v); try { localStorage.setItem('dk.planView', v) } catch { /* private window: not kept */ } }
@@ -110,7 +110,7 @@ export default function Plan({ srv, jobs }) {
         {unit ? <Detail u={unit} all={data.units} srv={srv} a={a} plan={data} onClose={() => setOpen(null)} onChanged={load} /> : null}
       </div>
       <div data-tour="plan-cost"><Cost srv={srv} active={active} /></div>
-      <Commands srv={srv} jobs={jobs} section="plan" />
+      <Commands srv={srv} jobs={jobs} section="flow/plan" />
       <Reset srv={srv} jobs={jobs} onChanged={load} />
     </Page>
   )
