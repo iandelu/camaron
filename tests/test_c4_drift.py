@@ -95,3 +95,66 @@ def test_source_files_leave_out_tests_build_output_and_non_code():
 def test_prompt_context_keeps_its_filters(kit):
     pc, moved = (importlib.import_module(m) for m in ("lib.app.prompt_context", "lib.domain.c4.drift"))
     assert pc.NOT_SOURCE is moved.NOT_SOURCE and pc.TEST_FILE is moved.TEST_FILE
+
+
+def test_a_call_between_a_parent_and_its_child_is_no_relation():
+    graph = {"nodes": [{"id": "m", "source_file": "src/Main.java"}, {"id": "g", "source_file": "src/geo/G.java"}],
+             "links": [{"source": "m", "target": "g", "relation": "calls"},
+                       {"source": "g", "target": "m", "relation": "imports"}]}
+    assert drift.derive(graph, {"src/Main.java": "gw", "src/geo/G.java": "gw.geo"}) == {}
+
+
+def test_windows_paths_read_as_posix():
+    graph = {"nodes": [{"id": "a", "source_file": "src\\geo\\A.java"}, {"id": "b", "source_file": "src\\err\\B.java"}],
+             "links": [{"source": "a", "target": "b", "relation": "calls", "source_location": "L2"}]}
+    assert drift.source_files(graph) == ["src/err/B.java", "src/geo/A.java"]
+    got = drift.derive(graph, {"src/geo/A.java": "gw.geo", "src/err/B.java": "gw.err"})
+    assert got[("gw.geo", "gw.err")]["example"] == "src/geo/A.java:L2"
+
+
+def test_a_graph_that_is_not_node_link_derives_nothing():
+    odd_ids = {"nodes": [{"id": ["a"], "source_file": "a/A.java"}, {"id": "b", "source_file": "b/B.java"}],
+               "links": [{"source": ["a"], "target": "b", "relation": "calls"},
+                         {"source": "b", "target": {"x": 1}, "relation": ["calls"]}]}
+    for graph, files in (({"nodes": {"a": 1}, "links": "x"}, []), ({"nodes": ["x"], "links": [1]}, []),
+                         (odd_ids, ["a/A.java", "b/B.java"])):
+        assert drift.source_files(graph) == files
+        assert drift.derive(graph, {"a/A.java": "s.a", "b/B.java": "s.b"}) == {}
+
+
+def el(kind, title, technology="", repo=None):
+    return {"kind": kind, "title": title, "technology": technology, "metadata": {"repo": repo} if repo else {}}
+
+
+SCAN = {"repos": {"api": {}, "app": {}, "app Cloud Functions": {"repo": "app"}},
+        "dbs": {"PostgreSQL:orders": {"label": "PostgreSQL", "name": "orders"},
+                "PostgreSQL:shop": {"label": "PostgreSQL", "name": "shop"}}}
+
+
+def test_a_datastore_matches_on_its_technology_or_title():
+    els = {"s": el("system", "Shop"), "s.api": el("service", "Api", repo="api"),
+           "s.db": el("database", "Orders", "PostgreSQL"), "s.bus": el("queue", "Kafka events")}
+    match = drift.matcher(SCAN, els)
+    assert (match("api"), match("PostgreSQL:orders"), match("Kafka")) == ("s.api", "s.db", "s.bus")
+
+
+def test_a_name_alone_or_a_person_matches_nothing():
+    els = {"shop": el("system", "Shop"), "shop.api": el("service", "Api", repo="api"),
+           "admin": el("externalSystem", "Shop admin"), "ops": el("actor", "Keycloak operator", "Keycloak")}
+    match = drift.matcher(SCAN, els)
+    assert match("PostgreSQL:shop") is None and match("Keycloak") is None
+
+
+def test_two_datastores_alike_tie_unless_the_name_tells_them_apart():
+    els = {"s.a": el("database", "Billing", "PostgreSQL"), "s.b": el("database", "Ledger", "PostgreSQL")}
+    assert drift.matcher(SCAN, els)("PostgreSQL:orders") is None
+    els["s.b"] = el("database", "Orders ledger", "PostgreSQL")
+    assert drift.matcher(SCAN, els)("PostgreSQL:orders") == "s.b"
+
+
+def test_a_repo_goes_to_its_outermost_element_then_to_its_title():
+    els = {"s.api": el("service", "Api", repo="api"), "s.api.inner": el("component", "Inner", repo="api"),
+           "s.app": el("mobileApp", "app", repo="app"), "s.fn": el("service", "app Cloud Functions", repo="app")}
+    assert drift.repo_boxes(els) == {"api": ["s.api"], "app": ["s.app", "s.fn"]}
+    match = drift.matcher(SCAN, els)
+    assert (match("api"), match("app"), match("app Cloud Functions")) == ("s.api", "s.app", "s.fn")

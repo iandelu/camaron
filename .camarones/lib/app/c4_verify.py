@@ -24,20 +24,13 @@ def _index() -> dict:
         return {"elements": {}, "relations": []}
 
 
-def _meta_repo(el: dict) -> str | None:
-    repo = (el.get("metadata") or {}).get("repo")
-    return repo.strip() if isinstance(repo, str) and repo.strip() else None
-
-
 def _components(els: dict) -> dict[str, list[str]]:
     """Per repo, the elements nested under a container whose `metadata.repo` names it."""
-    got: dict[str, set] = {}
-    for fqn, el in els.items():
-        repo = _meta_repo(el)
-        kids = [f for f in els if f.startswith(fqn + ".")]
-        if repo and kids:
-            got.setdefault(repo, set()).update(kids)
-    return {repo: sorted(kids) for repo, kids in got.items()}
+    got = {}
+    for repo, boxes in drift.repo_boxes(els).items():
+        if kids := sorted({f for f in els for box in boxes if f.startswith(box + ".")}):
+            got[repo] = kids
+    return got
 
 
 def _graph(repo: str) -> tuple[dict | None, str, str]:
@@ -46,7 +39,7 @@ def _graph(repo: str) -> tuple[dict | None, str, str]:
         data = json.loads(services.current().code.repo_graph(repo).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None, "missing", ""
-    if not isinstance(data, dict):
+    if not isinstance(data, dict) or not all(isinstance(data.get(k, []), list) for k in ("nodes", "links")):
         return None, "missing", ""
     built = str(data.get("built_at_commit") or "")
     head = out(["git", "-C", str(repo_dir(repo)), "rev-parse", "HEAD"]) if built else ""
@@ -73,44 +66,20 @@ def _repo_drift(repo: str, fqns: list[str], els: dict, drawn: set) -> tuple[dict
     return row, derived
 
 
-def _matcher(scan: dict, els: dict):
-    """A scan name → the element that stands for it: a repo through `metadata.repo` (its title when the repo has
-    several, as an app and its Cloud Functions), anything else by technology and title among the elements neither in
-    nor around a repo container; None when nothing or more than one fits."""
-    by_repo: dict[str, list[str]] = {}
-    for fqn, el in els.items():
-        if repo := _meta_repo(el):
-            by_repo.setdefault(repo, []).append(fqn)
-    boxes = [f for found in by_repo.values() for f in found]
-    loose = [f for f in els if anchors.container_repo(f, els) is None and not any(b.startswith(f + ".") for b in boxes)]
-
-    def match(name: str) -> str | None:
-        if name in scan.get("repos", {}):
-            found = by_repo.get(scan["repos"][name].get("repo", name), [])
-            if len(found) > 1:
-                found = [f for f in found if str(els[f].get("title", "")).strip().lower() == name.lower()]
-            return found[0] if len(found) == 1 else None
-        db = scan.get("dbs", {}).get(name)
-        words = [(db["label"], 2), (db["name"], 1)] if db else [(name, 2)]
-        scored = {}
-        for f in loose:
-            text = f"{els[f].get('technology', '')} {els[f].get('title', '')}".lower()
-            scored[f] = sum(w for word, w in words if word and str(word).lower() in text)
-        top = max(scored.values(), default=0)
-        best = [f for f, s in scored.items() if s == top]
-        return best[0] if top and len(best) == 1 else None
-    return match
-
-
 def _containers(els: dict, drawn: set) -> tuple[dict, list[dict]]:
-    """The scan's edges as model pairs: those no drawn relation stands for, those an end of which no element stands
-    for, and every matched edge (what backs drawn relations)."""
-    box = {"in_code_not_model": [], "not_compared": []}
+    """The scan's edges as model pairs: those no drawn relation stands for, those an end of which no single element
+    stands for and the repo containers the scan could not read (not compared), and every matched edge (what backs
+    drawn relations). Nothing is scanned when no element names its repo."""
+    box = {"scanned": False, "in_code_not_model": [], "not_compared": [], "error": None}
+    boxes = drift.repo_boxes(els)
+    if not boxes:
+        return box, []
     try:
         scan = services.current().arch_scan.scan()
     except Exception as e:                  # a scan that fails leaves the containers not compared, never check broken
         return {**box, "error": str(e) or type(e).__name__}, []
-    match, proofs, matched, seen = _matcher(scan, els), scan.get("edge_evidence") or {}, [], set()
+    box["scanned"] = True
+    match, proofs, matched, seen = drift.matcher(scan, els), scan.get("edge_evidence") or {}, [], set()
     for a, b, _, label in scan.get("edges") or []:
         if (a, b, label) in seen:
             continue
@@ -126,6 +95,8 @@ def _containers(els: dict, drawn: set) -> tuple[dict, list[dict]]:
         matched.append(edge)
         if not drift.covered_by((fa, fb), drawn) and not any(drift.covered_by(d, {(fa, fb)}) for d in drawn):
             box["in_code_not_model"].append(edge)
+    box["not_compared"] += [{"element": f, "repo": repo, "why": "its repo is not cloned here"}
+                            for repo, found in sorted(boxes.items()) if not repo_dir(repo).is_dir() for f in found]
     return box, matched
 
 
@@ -136,7 +107,7 @@ def report() -> dict:
     repos, derived = {}, {}
     for repo, fqns in _components(els).items():
         repos[repo], derived[repo] = _repo_drift(repo, fqns, els, drawn)
-    containers, scanned = _containers(els, drawn) if any(_meta_repo(e) for e in els.values()) else ({}, [])
+    containers, scanned = _containers(els, drawn)
     no_graph = {repo for repo, row in repos.items() if row["graph"] == "missing"}
     absent = {r for r in services.current().workspace.repo_names() if not repo_dir(r).is_dir()}
     relations = {}
@@ -148,15 +119,19 @@ def report() -> dict:
                    if drift.covered_by((a, b), {pair})]
         backing += [{"by": "scan", **e} for e in scanned
                     if drift.covered_by((e["from"], e["to"]), {pair}) or drift.covered_by(pair, {(e["from"], e["to"])})]
+        cause = None
         if r.get("own"):
             state = r["own"]
+            cause = "not-cloned" if state == "unchecked" else None
         elif backing:
             state = "fresh"
-        elif ends & absent or (len(ends) == 1 and ends <= no_graph):      # only one repo's graph derives an edge
-            state = "unchecked"
+        elif ends & absent:
+            state, cause = "unchecked", "not-cloned"
+        elif len(ends) == 1 and ends <= no_graph:                         # only one repo's graph derives an edge
+            state, cause = "unchecked", "no-graph"
         else:
             state = "no-evidence"
-        relations[key] = {**r, "state": state, "backing": backing}
+        relations[key] = {**r, "state": state, "backing": backing, "unchecked": cause}
     return {"elements": states["elements"], "relations": relations, "repos": repos, "containers": containers,
             "error": states["error"]}
 
@@ -186,21 +161,23 @@ def findings(strict: bool) -> tuple[list[str], list[str]]:
     gated = errors if strict else warns
     if rep["error"]:
         warns.append(f"C4 model could not be read: {rep['error']}")
-    unchecked = 0
+    unchecked = {"not-cloned": 0, "no-graph": 0}
     for group in ("elements", "relations"):
         for name, item in rep[group].items():
             for raw in item.get("unreadable") or []:
                 gated.append(f"{_where(item)}C4 {name}: unreadable evidence entry {raw!r}")
             state = item["state"]
             if state == "unchecked":
-                unchecked += 1
+                unchecked[item.get("unchecked") or "not-cloned"] += 1
             elif state == "fresh" or (state == "no-evidence" and item.get("confirmed")):
                 continue
             else:
                 (gated if state in GATED else warns).append(_line(item, name))
-    if unchecked:
-        warns.append(f"C4: {unchecked} unchecked element(s) or relation(s): their repo is not cloned here or has no "
-                     f"code graph ({GRAPH_HINT})")
+    if unchecked["not-cloned"]:
+        warns.append(f"C4: {unchecked['not-cloned']} unchecked element(s) or relation(s): their repo is not cloned "
+                     "here")
+    if unchecked["no-graph"]:
+        warns.append(f"C4: {unchecked['no-graph']} unchecked relation(s): their repo has no code graph ({GRAPH_HINT})")
     for repo, row in rep["repos"].items():
         if row["graph"] == "missing":
             warns.append(f"C4: {repo} has no code graph, so the relations of its components are not compared: "
@@ -212,9 +189,9 @@ def findings(strict: bool) -> tuple[list[str], list[str]]:
             gated.append(f"C4 drift in {repo}: {i['from']} -> {i['to']} is in the code ({i['count']} edge(s)"
                          f"{_example(i)}) but not in the model{stale}")
     box = rep["containers"]
-    if box.get("error"):
+    if box["error"]:
         warns.append(f"C4: the code scan failed, so the containers are not compared: {box['error']}")
-    for i in box.get("in_code_not_model") or []:
+    for i in box["in_code_not_model"]:
         where = f" ({i['example']})" if i.get("example") else ""
         gated.append(f"C4 drift: {i['from']} -> {i['to']} '{i['label']}' is in the code{where} but not in the model")
     return errors, warns
@@ -237,16 +214,22 @@ def _drift_text(rep: dict) -> list[str]:
             lines.append("  candidate components (code no element covers)")
             lines += [f"    {c['folder']}/  {c['files']} file(s)" for c in row["coverage"]]
     box = rep["containers"]
-    if box:
-        lines.append("containers" + (f": the code scan failed ({box['error']})" if box.get("error") else ""))
-        found = box["in_code_not_model"]
-        if not box.get("error"):
-            lines.append(f"  in the code, not in the model ({len(found)})" if found
-                         else "  in the code, not in the model: none")
+    if box["error"]:
+        lines.append(f"containers: the code scan failed ({box['error']}), not compared")
+    elif not box["scanned"]:
+        if rep["elements"]:
+            lines.append("containers: not compared, no element names its repo (metadata { repo '…' })")
+    else:
+        found, unseen = box["in_code_not_model"], [i for i in box["not_compared"] if "element" in i]
+        lines.append("containers")
+        lines.append(f"  in the code, not in the model ({len(found)})" if found else
+                     "  in the code, not in the model: none" + (" in the repos cloned here" if unseen else ""))
         lines += [f"    {i['from']} -> {i['to']} '{i['label']}'{_example(i)}" for i in found]
         if box["not_compared"]:
-            lines.append(f"  not compared, no element stands for one end ({len(box['not_compared'])})")
-            lines += [f"    {i['from']} -> {i['to']} '{i['label']}'" for i in box["not_compared"]]
+            lines.append(f"  not compared ({len(box['not_compared'])})")
+            lines += [f"    {i['element']}: {i['why']}" if "element" in i else
+                      f"    {i['from']} -> {i['to']} '{i['label']}': no single element for {', '.join(i['unmatched'])}"
+                      for i in box["not_compared"]]
     return lines
 
 

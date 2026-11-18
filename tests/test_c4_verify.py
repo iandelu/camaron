@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from test_c4_evidence import API, CODE, COMMENT, FRAGMENT, GHOST, MODEL, READS, edit, element, model
+from test_c4_evidence import API, CODE, COMMENT, DB, FRAGMENT, GHOST, MODEL, READS, edit, element, model
 
 
 def cli(kit, *args):
@@ -64,6 +64,7 @@ def test_unchecked_never_fails(verify_world):
     errors, warns = v.findings(True)
     assert not any("unchecked" in e for e in errors)
     assert sum("unchecked" in w for w in warns) == 1
+    assert any("unchecked" in w and "not cloned here" in w and "camaron graph" not in w for w in warns)
 
 
 def test_a_confirmed_element_without_evidence_is_not_a_finding(verify_world):
@@ -148,15 +149,81 @@ def test_a_relation_anchored_to_a_line_needs_no_graph(verify_world):
 def test_the_scan_compares_the_containers(verify_world):
     kit, v = verify_world
     box = v.report()["containers"]
-    assert box == {"in_code_not_model": [], "not_compared": [{"from": "api", "to": "worker", "label": "calls (HTTP)",
-                                                              "unmatched": ["worker"]}]}
+    assert box == {"scanned": True, "in_code_not_model": [], "error": None,
+                   "not_compared": [{"from": "api", "to": "worker", "label": "calls (HTTP)", "unmatched": ["worker"]}]}
     assert not any("worker" in x for x in sum(v.findings(True), []))      # not compared is never drift
     model(kit, MODEL.replace(GHOST, GHOST + WORKER))
     box = v.report()["containers"]
-    assert box == {"in_code_not_model": [{"from": "shop.api", "to": "shop.worker", "label": "calls (HTTP)",
-                                          "example": f"api:{API}#L4"}], "not_compared": []}
+    assert box == {"scanned": True, "error": None, "not_compared": [],
+                   "in_code_not_model": [{"from": "shop.api", "to": "shop.worker", "label": "calls (HTTP)",
+                                          "example": f"api:{API}#L4"}]}
     drawn = f"C4 drift: shop.api -> shop.worker 'calls (HTTP)' is in the code (api:{API}#L4) but not in the model"
     assert any(drawn in w for w in v.findings(False)[1]) and any(drawn in e for e in v.findings(True)[0])
+
+
+def test_a_datastore_is_compared_only_when_its_technology_or_title_says_so(verify_world):
+    kit, v = verify_world
+    props = kit.ws / "api" / "src" / "main" / "resources" / "application.properties"
+    props.parent.mkdir(parents=True)
+    props.write_text("spring.datasource.url=jdbc:postgresql://db:5432/orders\n", encoding="utf-8", newline="\n")
+    box = v.report()["containers"]
+    assert {"from": "api", "to": "PostgreSQL:orders", "label": "reads/writes",
+            "unmatched": ["PostgreSQL:orders"]} in box["not_compared"]               # 'Orders DB' names no technology
+    model(kit, MODEL.replace(DB, "    db = database 'Orders DB' {\n      technology 'PostgreSQL'\n    }\n"))
+    box = v.report()["containers"]
+    assert {"from": "shop.api", "to": "shop.db", "label": "reads/writes",
+            "example": "api:src/main/resources/application.properties#L1"} in box["in_code_not_model"]
+
+
+def test_a_repo_not_cloned_here_is_not_compared(verify_world):
+    kit, v = verify_world
+    model(kit, MODEL.replace(GHOST, GHOST + WORKER))
+    kit.common.rmtree(kit.ws / "worker")
+    box = v.report()["containers"]
+    assert box["in_code_not_model"] == []
+    assert box["not_compared"] == [{"element": "shop.worker", "repo": "worker", "why": "its repo is not cloned here"}]
+    out = "\n".join(v.text(v.report()))
+    assert "in the code, not in the model: none in the repos cloned here" in out
+    assert "shop.worker: its repo is not cloned here" in out
+
+
+def test_a_scan_that_fails_is_a_warning(verify_world, monkeypatch):
+    _, v = verify_world
+    quickarch = importlib.import_module("lib.quickarch")
+    monkeypatch.setattr(quickarch, "scan", lambda: (_ for _ in ()).throw(KeyError("project")))
+    box = v.report()["containers"]
+    assert box == {"scanned": False, "in_code_not_model": [], "not_compared": [], "error": "'project'"}
+    errors, warns = v.findings(True)
+    assert not any("scan" in e for e in errors)
+    assert any("code scan failed, so the containers are not compared: 'project'" in w for w in warns)
+    assert "containers: the code scan failed ('project'), not compared" in v.text(v.report())
+
+
+def test_without_a_repo_container_the_containers_are_not_compared(kit):
+    model(kit, "model {\n  shop = system 'Shop'\n}\n")
+    v = importlib.import_module("lib.app.c4_verify")
+    rep = v.report()
+    assert rep["containers"] == {"scanned": False, "in_code_not_model": [], "not_compared": [], "error": None}
+    assert rep["repos"] == {} and "containers: not compared, no element names its repo" in "\n".join(v.text(rep))
+
+
+@pytest.mark.parametrize("text", ["{not json", '{"nodes": {"a": 1}}', '{"nodes": [], "links": "x"}', "[1, 2]"])
+def test_a_graph_that_cannot_be_read_is_missing(verify_world, text):
+    kit, v = verify_world
+    g = kit.services.code.repo_graph("api")
+    g.parent.mkdir(parents=True, exist_ok=True)
+    g.write_text(text, encoding="utf-8")
+    assert v.report()["repos"]["api"]["graph"] == "missing"
+
+
+def test_a_graph_with_odd_entries_still_reports(verify_world):
+    kit, v = verify_world
+    g = kit.services.code.repo_graph("api")
+    g.parent.mkdir(parents=True, exist_ok=True)
+    g.write_text(json.dumps({"nodes": ["x", {"id": ["a"], "source_file": API}],
+                             "links": [1, {"source": ["a"], "target": "b", "relation": "calls"}]}), encoding="utf-8")
+    api = v.report()["repos"]["api"]
+    assert api["graph"] == "ok" and api["in_code_not_model"] == []
 
 
 def test_a_container_edge_backs_a_relation_between_their_parts(verify_world):
@@ -181,7 +248,7 @@ def test_arch_verify_json_and_ack(verify_world):
     r = cli(kit, "arch-verify", "--json")
     data = json.loads(r.stdout)
     assert r.returncode == 0 and data["elements"]["shop.db"]["state"] == "no-evidence"
-    assert data["repos"]["api"]["graph"] == "missing" and data["containers"]["in_code_not_model"] == []
+    assert data["repos"]["api"]["graph"] == "missing" and data["containers"]["scanned"] is True
     assert cli(kit, "arch-verify", "--ack", "shop.api.orders").returncode != 0
 
 

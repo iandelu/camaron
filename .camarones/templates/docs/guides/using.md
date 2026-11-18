@@ -154,12 +154,14 @@ When the code moves, the docs follow:
   `suspect`, `broken`, `no-evidence`, `unchecked`) and the drift. A relation is backed by its own `code` anchor or by
   what the code shows between its two ends: the code graph (`camaron graph`) between the components of a repo, the
   `arch-draft` scan between containers. It lists what is in the code but not in the model, files two sibling elements
-  both cover, and the folders no element covers, offered as candidate components. A repo with no graph is not compared
-  (the relations between its components stay `unchecked`), and a graph built at another commit is named. `--ack FQN… --by NAME` takes today's
-  code as an element's reference; a name the model does not have exits 1.
+  both cover, and the folders no element covers, offered as candidate components. It also names what it cannot compare:
+  a repo with no graph (the relations between its components stay `unchecked`), a repo not cloned here (its relations
+  stay `unchecked` and its container is listed as not compared), a datastore or broker no single element names by
+  technology or title, and a graph built at another commit. `--ack FQN… --by NAME` takes today's code as an element's
+  reference; a name the model does not have exits 1.
 - `camaron check` is the gate: broken links, diagrams that do not render, secrets, structure, and the C4 findings of
-  `arch-verify` as warnings. `check --strict` makes `broken`, `no-evidence`, drift and unreadable `evidence` entries
-  errors; `suspect`, `unchecked` and a missing or stale graph stay warnings.
+  `arch-verify` as warnings. `check --strict` makes `broken`, `no-evidence`, drift and unreadable evidence entries
+  (`code` or `evidence`) errors; `suspect`, `unchecked` and a missing or stale graph stay warnings.
 
 ## Coding with Camarón
 
