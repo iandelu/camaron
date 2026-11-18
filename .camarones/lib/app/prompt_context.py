@@ -112,7 +112,7 @@ def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]]) -> tuple[lis
     files = files | _named_files(prompt, elements)
     covered = {}
     for repo, path in files:
-        for fqn in c4_lookup.covering(repo, path, elements):
+        for fqn in c4_lookup.covering(repo, path, elements)[:1]:
             covered[fqn] = covered.get(fqn, 0) + 1
     scored = []
     for fqn, el in elements.items():

@@ -98,7 +98,7 @@ def test_decisions_come_accepted_first_and_by_citation_then_by_code(ctx_world):
     assert c4_lookup.decisions_about("shop.billing") == []
 
 
-def test_covering_is_most_specific_first_and_skips_the_repo_anchor(ctx_world):
+def test_covering_is_most_specific_first_and_ends_with_the_repo_container(ctx_world):
     from lib.app import c4_lookup
     write_model(ctx_world, """model {
   shop = system 'Shop' {
@@ -112,4 +112,19 @@ def test_covering_is_most_specific_first_and_skips_the_repo_anchor(ctx_world):
 }
 """)
     assert c4_lookup.covering("api", "src/main/java/demo/Api.java") == ["shop.payments", "shop.api"]
-    assert c4_lookup.covering("api", "README.md") == []
+    assert c4_lookup.covering("api", "src/main/java/demo/Other.java") == ["shop.api"]
+    assert c4_lookup.covering("api", "README.md") == ["shop.api"]
+    assert c4_lookup.covering("web", "README.md") == []
+
+
+def test_a_file_only_a_repo_container_covers_returns_the_container(ctx_world):
+    from lib.app import c4_lookup
+    write_model(ctx_world, """model {
+  shop = system 'Shop' {
+    orders = service 'Orders' {
+      metadata { repo 'api' }
+    }
+  }
+}
+""")
+    assert c4_lookup.covering("api", "src/Anything.java") == ["shop.orders"]

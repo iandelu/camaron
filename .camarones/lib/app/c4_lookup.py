@@ -22,15 +22,18 @@ def _elements() -> dict:
 
 
 def _anchors(fqn: str, elements: dict) -> list[anchors.Anchor]:
+    """The anchors that name code, without the repo anchor that stands for a whole repo."""
     return [a for a in anchors.of_element(fqn, elements)[0] if a.kind != "repo"]
 
 
 def covering(repo: str, rel: str, elements: dict | None = None) -> list[str]:
-    """The elements whose anchors cover `rel` of `repo`, most specific anchor first."""
+    """The elements whose anchors cover `rel` of `repo`, most specific anchor first; a repo container (its `repo`
+    metadata) covers every file of the repo and sorts last. Callers that want one element take the first."""
     els = _elements() if elements is None else elements
     found = []
     for fqn in els:
-        best = max((anchors.specificity(a) for a in _anchors(fqn, els) if anchors.covers(a, repo, rel)), default=None)
+        best = max((anchors.specificity(a) for a in anchors.of_element(fqn, els)[0] if anchors.covers(a, repo, rel)),
+                   default=None)
         if best is not None:
             found.append((-best, fqn))
     return [fqn for _, fqn in sorted(found)]

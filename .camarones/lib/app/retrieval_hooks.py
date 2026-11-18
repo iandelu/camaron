@@ -124,7 +124,7 @@ def _elements_of(repo: str, rel: str) -> str:
         return ""
     if not fqns:
         return ""
-    named = ", ".join(f"{f} ({(states.get(f) or {}).get('state', 'no-evidence')})" for f in fqns[:3])
+    named = ", ".join(f"{f} ({(states.get(f) or {}).get('state', 'no-evidence')})" for f in fqns[:1])
     return f"\n- C4: {named} — architecture(\"{repo}:{rel}\") says what the code backs"
 
 
