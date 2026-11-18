@@ -333,3 +333,23 @@ def test_pack_refuses_what_it_cannot_find_or_a_legacy_adr(adr, kit):
     (kit.root / "docs" / "decisions" / "0004-new.md").write_text("# 0004 — New\n\n## Status\n\nProposed\n", encoding="utf-8")
     with pytest.raises(adr.AdrError, match=r"start its review in the app first \(Decisiones › Revisar en sesión\)"):
         adr.pack("0004")
+
+
+def test_c4_elements_are_those_whose_anchors_cover_the_touched_file_most_specific_first(pack_world):
+    kit, adr_pack, state = pack_world
+    write_doc(kit, "architecture/model.c4", """model {
+  shop = system 'Shop' {
+    api = service 'Api' {
+      metadata { repo 'api' }
+    }
+    orders = service 'Orders' {
+      technology 'Java'
+      metadata { code ['api:api-core/src/main/java/demo/shop/orders/'] }
+    }
+    cart = service 'Cart' {
+      metadata { code ['api:api-core/src/main/java/demo/shop/cart/'] }
+    }
+  }
+}
+""")
+    assert [e["fqn"] for e in adr_pack.build(state)["c4"]] == ["shop.orders", "shop.api"]

@@ -356,6 +356,26 @@ def _move_cache(old: str, new_id: str) -> None:
         pass
 
 
+def _elements_of(touches) -> list[str]:
+    """The most specific C4 element covering each touched file of a repo, once each, in touch order; cam-docs touches
+    cover none, and a model that cannot be read names none."""
+    from .app import c4_lookup
+    found: list[str] = []
+    for touch in _texts_of(touches):
+        repo, sep, rel = touch.partition(":")
+        if not sep or repo == CAM_DIR:
+            continue
+        try:
+            found += c4_lookup.covering(repo, rel.split("#", 1)[0])[:1]
+        except Exception:  # noqa: BLE001 — a broken model never stops framing a decision
+            return found
+    return list(dict.fromkeys(found))
+
+
+def _texts_of(values) -> list[str]:
+    return [t for t in (str(v).strip() for v in values or []) if t]
+
+
 def write_without_ai(id: str) -> dict:
     id = _id(id)
     with FileLock(LOCK):
@@ -368,7 +388,8 @@ def write_without_ai(id: str) -> dict:
             return get(id)
         number = adr_doc.next_number({*files, *_state_ids()}) if id in files else id
         raw = adr_doc.render_new({**{k: state.get(k) for k in ("title", "problem", "drivers", "constraints", "options_hint",
-                                                               "touches")}, "evidence": _pack_evidence(id)}, number)
+                                                               "touches")}, "evidence": _pack_evidence(id),
+                                  "elements": _elements_of(state.get("touches"))}, number)
         if state.get("points"):
             raw = _with_points(raw, state["points"])
         _write(_adr_file(number, state), raw)

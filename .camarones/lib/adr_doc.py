@@ -331,14 +331,18 @@ def render_hints(options: list[str]) -> str:
 def render_new(fields: dict, number: str) -> str:
     """The full proposed file: Status `Proposed`, `x-owner: ai`, the person's framing and an empty decision. What the
     person did not give is a `TODO(question)`, never an invented fact. The proposal carries no date: accepting writes it.
-    `fields["evidence"]` are more (claim, evidence) rows, after the touches'; they add no source."""
+    `fields["evidence"]` are more (claim, evidence) rows, after the touches'; they add no source.
+    `fields["elements"]` are the C4 elements the decision is about (FQNs, computed by the caller): each is cited as
+    `c4:<fqn>` in `x-sources`, after the touches."""
     title = " ".join(str(fields.get("title") or "").split())
     touches = list(dict.fromkeys(_texts(fields.get("touches"))))
     drivers, constraints, options = (_texts(fields.get(k)) for k in ("drivers", "constraints", "options_hint"))
+    elements = list(dict.fromkeys(_texts(fields.get("elements"))))
     fm = {"type": "decision", "title": f"{number} — {title}",
           "description": description(title, "proposed"),
           "tags": sorted({t.partition(":")[0] for t in touches if ":" in t and not t.startswith(CAM_DIR + ":")}),
-          "x-sources": list(dict.fromkeys(_source(t) for t in touches)), "x-owner": "ai"}
+          "x-sources": list(dict.fromkeys([*(_source(t) for t in touches), *(f"c4:{e}" for e in elements)])),
+          "x-owner": "ai"}
     context = str(fields.get("problem") or "").strip() or "TODO(question): what is the problem and which forces are at play?"
     if constraints:
         context += "\n\n**Constraints**\n\n" + _bullets(constraints)

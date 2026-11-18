@@ -579,3 +579,31 @@ def test_the_parts_of_a_review_follow_its_points_and_diagram(adr):
     assert "diagram" in adr.parts_of({"points": []}, {"diagram": "```mermaid\n```"})
     assert "diagram" not in adr.parts_of({"points": []}, {"diagram": ""})
     assert adr.KINDS == ("new", "retro") and adr.PHASES[0] == "problem" and adr.PHASES[-1] == "rejected"
+
+
+MODEL = """model {
+  shop = system 'Shop' {
+    orders = service 'Orders' {
+      metadata { repo 'api' code ['api:src/orders/'] }
+    }
+    cart = service 'Cart' {
+      metadata { repo 'web' }
+    }
+  }
+}
+"""
+
+
+def test_an_adr_cites_the_most_specific_element_covering_each_touch(adr, kit):
+    (kit.root / "docs" / "architecture").mkdir(parents=True, exist_ok=True)
+    (kit.root / "docs" / "architecture" / "model.c4").write_text(MODEL, encoding="utf-8", newline="\n")
+    a = written(adr, touches=["api:src/orders/A.java", "api:src/orders/B.java", "cam-docs:docs/x.md", "api:other/C.java"])
+    assert kit.frontmatter.split_fm(a["raw"])[0]["x-sources"] == [
+        "api:src/orders/A.java", "api:src/orders/B.java", "docs/x.md", "api:other/C.java", "c4:shop.orders"]
+
+
+def test_an_adr_is_framed_without_elements_when_the_model_cannot_be_read(adr, kit):
+    (kit.root / "docs" / "architecture").mkdir(parents=True, exist_ok=True)
+    (kit.root / "docs" / "architecture" / "model.c4").write_text("model { ((( ", encoding="utf-8", newline="\n")
+    a = written(adr, touches=["api:src/orders/A.java"])
+    assert kit.frontmatter.split_fm(a["raw"])[0]["x-sources"] == ["api:src/orders/A.java"]

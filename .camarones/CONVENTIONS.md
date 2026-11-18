@@ -152,6 +152,7 @@ ERD · ownership table (table → writer services → reader services) · migrat
 
 **Decision** (`docs/decisions/NNNN-<slug>.md`, `type: decision`, `x-owner: human` once accepted)
 Status · Context · Decision · Consequences · Evidence. Agents may only create `Status: proposed`.
+Cite in `x-sources` the C4 elements the decision is about (`c4:<element>`, e.g. `c4:shop.orders`) next to the code it rests on.
 
 Optional sections, in this order, left out when they have nothing to say: **Decision drivers** (after Context),
 **Considered options** (after the drivers), **Confirmation** (how the team will know the decision is followed: a test,

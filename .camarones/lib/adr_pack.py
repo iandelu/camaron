@@ -20,7 +20,7 @@ from . import adr, adr_doc, c4edit, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
 from .domain.docs import frontmatter, page_outline, trust_levels
-from .app import services
+from .app import c4_lookup, services
 
 NEIGHBOURS, PAGES, ADRS, COMMITS, MONTHS, QUESTIONS, C4, LIBRARIES = 30, 15, 10, 40, 12, 10, 20, 30
 LIMIT = 20000
@@ -130,13 +130,17 @@ def _commits(touches: list[str]) -> list[dict]:
 
 
 def _c4(touches: list[str]) -> list[dict]:
-    repos = set(index.by_repo(touches))
+    """The elements whose anchors cover a touched file, the most specific of each file first, once each."""
+    els = c4edit.index()["elements"]
+    fqns: list[str] = []
+    for repo, paths in index.by_repo(touches).items():
+        for rel in sorted(paths):
+            fqns += c4_lookup.covering(repo, rel, els)
     found = []
-    for fqn, el in sorted(c4edit.index()["elements"].items()):
-        repo = (el.get("metadata") or {}).get("repo")
-        if repo in repos:
-            found.append({"fqn": fqn, "title": el.get("title") or fqn, "technology": el.get("technology") or "",
-                          "repo": repo})
+    for fqn in dict.fromkeys(fqns):
+        el = els[fqn]
+        found.append({"fqn": fqn, "title": el.get("title") or fqn, "technology": el.get("technology") or "",
+                      "repo": (el.get("metadata") or {}).get("repo")})
     return found[:C4]
 
 

@@ -292,6 +292,13 @@ def test_more_evidence_rows_follow_the_touches_and_add_no_source(adr_doc, kit):
     assert fm["x-sources"] == ["api:a.java"]
 
 
+def test_a_new_adr_cites_the_c4_elements_after_the_touches_once_each(adr_doc, kit):
+    fields = {"title": "T", "touches": ["api:src/A.java"], "elements": ["shop.api", "shop.api", " ", "shop.web"]}
+    fm, _ = kit.frontmatter.split_fm(adr_doc.render_new(fields, "0002"))
+    assert fm["x-sources"] == ["api:src/A.java", "c4:shop.api", "c4:shop.web"]
+    assert fm["tags"] == ["api"]
+
+
 def test_a_new_adr_tags_the_repos_it_touches_once_each(adr_doc, kit):
     fields = {"title": "T", "touches": ["web:a.ts", "api:b.java", "api:c.java", "cam-docs:docs/x.md", "api:b.java"]}
     fm, _ = kit.frontmatter.split_fm(adr_doc.render_new(fields, "0001"))

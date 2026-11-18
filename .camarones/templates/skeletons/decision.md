@@ -5,6 +5,7 @@ description: Why the project chose <option> for <problem>, what it costs, and wh
 tags: [<repo>, <topic>]
 x-sources:
   - <repo>:<path>
+  - c4:<element>   # a C4 element the decision is about, e.g. c4:shop.orders
 ---
 # <NNNN — decision in a few words>
 
