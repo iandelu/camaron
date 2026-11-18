@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test, vi } from 'vitest'
 import { Button } from '@camaron/ui'
 import { CatchUpNote, FirstRunNotice } from './sections/Summary.jsx'
-import { TerminalButton } from './sections/Team.jsx'
+import { TerminalButton } from './sections/TeamStrip.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -33,13 +33,15 @@ test('a catch-up that hit a conflict warns, names the files and opens a terminal
   const el = CatchUpNote({ srv: { post }, catchUp: { status: 'done', pull: { status: 'conflict', files: ['docs/a.md', 'docs/b.md'] } } })
   const out = renderToStaticMarkup(el)
   expect(out).toContain('chocan con los tuyos en docs/a.md, docs/b.md')
-  expect(out).toContain('href="#/team"')
+  expect(out).toContain('href="#/docs"')
+  expect(out).toContain('>Repo del equipo<')
+  expect(out).not.toContain('#/team')
   const term = walk(el).find((b) => b.props.children === 'Abrir una terminal aquí')
   term.props.onClick()
   expect(post).toHaveBeenCalledWith('app/terminal', {})
 })
 
-test('offline warns with a link to Team; pulled is a quiet status line; up to date shows nothing', () => {
+test('offline warns with a link to the team strip in Docs; pulled is a quiet status line; up to date shows nothing', () => {
   const offline = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'error', reason: 'unknown', detail: 'fatal: odd' } }} />)
   expect(offline).toContain('No llego al repo del equipo')
   expect(offline).not.toContain('Abrir una terminal')
@@ -69,7 +71,7 @@ test('on open, a known reason reads as a share does, with the token to save; a r
   const net = renderToStaticMarkup(<CatchUpNote srv={{}} remote={remote} catchUp={{ status: 'done', pull: { status: 'error', reason: 'network', detail: '' } }} />)
   expect(net).toContain('No llego a git.acme: revisa la conexión, la VPN o el proxy.')
   const token = renderToStaticMarkup(<CatchUpNote srv={{}} remote={remote} catchUp={{ status: 'done', pull: { status: 'error', reason: 'no-token', host: 'git.acme', detail: '' } }} />)
-  expect(token).toContain('href="#/machine?host=git.acme"')
+  expect(token).toContain('href="#/settings/tokens?host=git.acme"')
   const post = vi.fn().mockResolvedValue({ opened: true })
   const el = CatchUpNote({ srv: { post }, catchUp: { status: 'done', pull: { status: 'busy', detail: 'git' } } })
   expect(renderToStaticMarkup(el)).toContain('Hay un rebase o un merge a medias en cam-docs: termínalo o cancélalo en una terminal.')

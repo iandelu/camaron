@@ -14,7 +14,7 @@ test('the first-run wizard has the window to itself', () => {
   expect(out).not.toContain('dk-side')
   expect(out).toContain('<header class="dk-top">')
   expect(out).toContain('<main class="dk-main" id="main" tabindex="-1">')
-  globalThis.location = { hash: '#/plan' }
+  globalThis.location = { hash: '#/flow' }
   expect(renderToStaticMarkup(<App />)).toContain('dk-rail')
 })
 
@@ -51,13 +51,27 @@ test("the hub asks what to document and offers a folder or the team's docs", () 
   expect(out).not.toContain('Añadir carpeta')
 })
 
-// The palette has a button for who does not know ⌘K, and each section shows its g shortcut (drawn, not read twice).
+// The palette has a button for who does not know ⌘K, and each place shows its g shortcut (drawn, not read twice).
 test('the header opens the palette and the sidebar shows the shortcuts', () => {
   globalThis.window = { camaronApp: { token: 't' } }
   const out = renderToStaticMarkup(<App />)
   expect(out).toMatch(/<button type="button" class="dk-find" aria-haspopup="dialog" data-tour="find">[^<]+<span class="cu-keys">/)
-  expect(out).toContain('<span class="dk-hint" aria-hidden="true"><span class="cu-keys"><kbd class="cu-kbd">g</kbd><kbd class="cu-kbd">p</kbd></span></span>')
+  expect(out).toContain('<span class="dk-hint" aria-hidden="true"><span class="cu-keys"><kbd class="cu-kbd">g</kbd><kbd class="cu-kbd">f</kbd></span></span>')
   expect(out).toContain('<dialog class="dk-pal"></dialog>')
+})
+
+test('the sidebar lists the four places, then settings and the guide', () => {
+  globalThis.window = { camaronApp: { token: 't' } }
+  const side = renderToStaticMarkup(<App />).split('<nav class="dk-side"')[1].split('</nav>')[0]
+  const hrefs = [...side.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1])
+  expect(hrefs).toEqual(['#/flow', '#/board', '#/quality', '#/docs', '#/settings', '#/guide'])
+})
+
+test('the brand and the first crumb go to Flow', () => {
+  globalThis.window = { camaronApp: { token: 't' } }
+  const out = renderToStaticMarkup(<App />)
+  expect(out).toMatch(/<a class="cu-brand"[^>]*href="#\/flow"|href="#\/flow"[^>]*class="cu-brand"/)
+  expect(out).not.toContain('#/summary')
 })
 
 // I3: the portal is the reader and has no token; a project's header has the way to it, in the system browser (a button
@@ -69,15 +83,14 @@ test('the project header has Ver portal, a button that opens the browser', () =>
   expect(out.split('<header')[1].split('</header>')[0]).not.toMatch(/<a [^>]*href="\.\.\//)
 })
 
-// CAMARON.md: breadcrumbs on every view. Inside Decisiones the section itself is a step back, then the place.
+// CAMARON.md: breadcrumbs on every view. Inside Docs › Decisiones each step is a link back, the ADR is the page.
 test('a place inside the decisions adds its crumb and links back to the list', () => {
   globalThis.window = { camaronApp: { token: 't' } }
-  globalThis.location = { hash: '#/decisions/0012' }
+  globalThis.location = { hash: '#/docs/decisions/0012' }
   const crumbs = renderToStaticMarkup(<App />).split('<nav class="cu-crumbs"')[1].split('</nav>')[0]
-  expect(crumbs).toContain('<a href="#/decisions">Decisiones</a>')
+  expect(crumbs).toContain('<a href="#/docs">Docs</a>')
+  expect(crumbs).toContain('<a href="#/docs/decisions">Decisiones</a>')
   expect(crumbs).toContain('<span aria-current="page">ADR 0012</span>')
-  globalThis.location = { hash: '#/decisions' }
-  expect(renderToStaticMarkup(<App />)).toContain('<span aria-current="page">Decisiones</span>')
-  globalThis.location = { hash: '#/plan' }
+  globalThis.location = { hash: '#/flow/plan' }
   expect(renderToStaticMarkup(<App />)).toContain('<span aria-current="page">Plan</span>')
 })

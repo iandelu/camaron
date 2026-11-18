@@ -3,6 +3,7 @@ import { t } from '../../i18n.js'
 import { Page } from '../../parts.jsx'
 import { AdrHead, Stepper, heading } from './Read.jsx'
 import { TouchChip } from './TouchSearch.jsx'
+import { ADR_BASE } from '../../adr.js'
 
 // Evidencia (spec §2.3): the problem as it was framed, the pack (lib/adr_pack.py, no AI) as one line and as its
 // Markdown, and the way on. S1 has one: Escribir sin IA. Investigar comes with the jury (S2) and is not drawn here.
@@ -37,7 +38,7 @@ function Framing({ state }) {
           <dd><ul className="dk-adr-touches">{touches.map((x) => <TouchChip key={x} touch={x} />)}</ul></dd></div>
       ) : null}
       {s.supersedes ? (
-        <div className="dk-adr-dlrow"><dt>{t('adr.f.supersedes')}</dt><dd><a href={`#/decisions/${s.supersedes}`}>{`ADR ${s.supersedes}`}</a></dd></div>
+        <div className="dk-adr-dlrow"><dt>{t('adr.f.supersedes')}</dt><dd><a href={`${ADR_BASE}/${s.supersedes}`}>{`ADR ${s.supersedes}`}</a></dd></div>
       ) : null}
     </dl>
   )

@@ -102,3 +102,6 @@ export function gateMessage(blockedBy, t) {
   const ids = named.map((b) => (KINDS.includes(b.kind) ? `${b.id} (${t(`bd.kind.${b.kind}`)})` : b.id)).join(', ')
   return t(gateKey(named), { ids })
 }
+
+// Stories are written in the portal's Historias; every other type has the form here.
+export const addChoices = (types) => (types || []).map((type) => ({ type, where: type === 'story' ? 'portal' : 'form' }))

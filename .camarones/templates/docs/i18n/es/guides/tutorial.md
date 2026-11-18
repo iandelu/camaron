@@ -163,7 +163,7 @@ páginas obsoletas y nunca reescribe a escondidas las páginas confirmadas. El C
 **Salud del proyecto.** `camaron health` imprime, sin IA, un veredicto y tres áreas (máquina, documentación, código) con la
 siguiente acción de cada una, y una tabla por repo: si usa SonarQube (con su puerta de calidad cuando hay token guardado), la
 cobertura, las vulnerabilidades y la deuda técnica que registra `docs/quality/`. La cobertura sale de SonarQube cuando hay un
-token de SonarQube guardado en la máquina (Máquina > Tokens) y se puede leer el proyecto; si no, de los informes que deja la
+token de SonarQube guardado en la máquina (Ajustes > Tokens) y se puede leer el proyecto; si no, de los informes que deja la
 build en local. `--refresh` la recalcula antes (es el único momento en que pregunta al servidor de SonarQube) y `--json`
 imprime la foto. La Calidad de la app de escritorio y la vista Salud del portal (solo lectura) enseñan la misma foto.
 
@@ -190,7 +190,7 @@ arquitectura, el tablero y las historias, el estado en vivo del plan, la calidad
 (`camaron app`) es donde operas: ejecutar el plan, las entrevistas, compartir, la salud y las librerías, las wikis y el
 explorador C4, la preparación. El portal nunca ejecuta nada en tu máquina, así que el botón que echas de menos ahí está
 en la app. Las dos se explican pantalla a pantalla en sus propias guías —[el portal](portal.md) y
-[la app de escritorio](app.md)— y la app enseña todas las guías en **Máquina › Guía**, con un recorrido guiado.
+[la app de escritorio](app.md)— y la app enseña todas las guías en su **Guía** (`g h`), con un recorrido guiado.
 [Cómo funciona Camarón](internals.md) cuenta el servidor, las APIs y el MCP.
 
 | | Comando | Qué es |
@@ -204,8 +204,8 @@ La exportación son ficheros estáticos (imagen de nginx, GitLab/GitHub Pages) y
 ejecuta la imagen que subió la CI: `docker run -d -p 8080:80 <registry>/<group>/cam-docs/portal:latest`.
 
 El menú lateral del portal tiene siete zonas —Docs, Tablero, Historias, Arquitectura, Plan, Calidad y Revisión— y
-Ctrl K / ⌘K salta a cualquier página o vista. Las secciones de la app son Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo,
-Calidad y Docs (Librerías es una vista de Calidad), más Máquina y Guía; `g` y una letra salta de una a otra.
+Ctrl K / ⌘K salta a cualquier página o vista. Los lugares de la app son Flujo (Resumen y Plan), Tablero, Calidad (Librerías es una vista), Docs (Decisiones y Entrevistas son pestañas),
+más Ajustes y Guía; `g` y una letra salta de una a otra.
 
 En la app, **Empezar** o **Seguir** una unidad y la actualización de la doc (**Plan › Mantenerla al día**) abren el
 agente como una terminal en el lienzo del Plan, donde le escribes como en cualquier terminal: F6 sale de la terminal
@@ -401,12 +401,12 @@ reescribe están en `CONVENTIONS.md` sección 6.
   `review-fixes` que la IA aplica en la siguiente sesión.
 - Con el idioma en español, **Editar** edita la traducción (`docs/i18n/es/…`).
 - Editar una página ✅ la pasa a **⚠️ pendiente de reconfirmar** hasta que alguien la vuelva a mirar.
-- No edites a mano lo generado (`llms.txt`, `llms-full.txt`, `docs/.status.json`, los visores). Las wikis mejor regenerarlas con
-  **Generar la wiki** (app, **Docs**): una actualización de OpenWiki puede reescribir lo que cambies.
+- No edites a mano lo generado (`llms.txt`, `llms-full.txt`, `docs/.status.json`, los visores). Las wikis mejor regenerarlas desde la
+  app (**Docs**) que editarlas: una actualización de OpenWiki puede reescribir lo que cambies.
 
 ## 7. OpenWiki: una wiki por repo
 
-App → **Docs** → **Generar la wiki** (log en directo), asistente → **📚 Wikis**, o `camaron wiki <repo>` en una terminal. La
+App → **Docs** → **Wikis** → la tarjeta del repo (**Generar la wiki**, o **Actualizar** cuando el código ha cambiado; log en directo), asistente → **📚 Wikis**, o `camaron wiki <repo>` en una terminal. La
 wiki se guarda en `cam-docs/wikis/<repo>/` (el repo ve un enlace `openwiki/` sin versionar); la lees en el portal del
 navegador (**Docs** → **Wikis**), donde sus páginas aparecen como `wikis/<repo>/…`. Usa el proveedor de OpenWiki si hay uno configurado (`openwiki auth configure <proveedor>`);
 si no, Claude Code o Codex. Los archivos que OpenWiki añade al propio repo (`AGENTS.md`, `CLAUDE.md`, `.github/`) se quitan
@@ -416,10 +416,13 @@ Cada wiki es una sesión de agente completa, así que solo la llevan los repos q
 **Elegir qué repos tienen wiki** (se guarda como `wiki: true` en `.camarones/workspace.yaml`). Elige los servicios con
 lógica, no librerías ni repos de CI. La primera wiki de un repo espera a su brief (`wikis/<repo>/INSTRUCTIONS.md`, que
 escribe la unidad repo-brief) para usar tu glosario; `camaron wiki <repo> --force` se salta esa comprobación, y el comando ni elige el repo ni escribe un brief: pide el repo
-clonado y un motor. En **Docs** de la app, todos los repos tienen **Generar la wiki**: si el repo aún no está elegido, lo
-elige, y si no tiene brief, antes escribe uno inicial con el análisis estático (sin IA), que la unidad repo-brief
-sustituye después. El botón queda cerrado, con el motivo, si el repo no está clonado (clónalo desde **Máquina**) o no
-hay ningún motor de wiki instalado. Se lanzan de una en una (mientras se genera la de un repo, el botón de los demás espera), y un lote se para en cuanto el motor se queda sin cuota o sin sesión, en vez de fallar todos los repos
+clonado y un motor. En **Docs › Wikis** de la app, la tarjeta de cada repo muestra el estado de su wiki con una sola
+acción; si aún no tiene páginas, es **Generar la wiki**: si el repo aún no está elegido, lo elige, y si no tiene brief,
+antes escribe uno inicial con el análisis estático (sin IA), que la unidad repo-brief sustituye después. **Actualizar** y
+**Ampliar** lanzan el mismo OpenWiki sobre una wiki que ya tiene páginas. **Reintentar** aparece tras una ejecución
+fallida: tras una primera ejecución fallida (aún sin páginas) repite la generación inicial. La acción queda cerrada, con
+el motivo, si el repo no está clonado (clónalo desde **Ajustes**) o no hay ningún motor de wiki instalado. Se lanzan de
+una en una (mientras se genera la de un repo, las de los demás esperan), y un lote se para en cuanto el motor se queda sin cuota o sin sesión, en vez de fallar todos los repos
 que quedan.
 
 ## 8. CI

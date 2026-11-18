@@ -4,12 +4,12 @@ import { chapters, guideAt, guideHref, inline, linkTarget, parse, searchGuides }
 import { inPanel, sectionFor } from '../catalog.js'
 import { portalUrl } from '../docs.js'
 import { useHash } from '../hooks.js'
-import { LIBS } from '../nav.js'
+import { goPlace } from '../nav.js'
 import { Failed, Page } from '../parts.jsx'
 import { catalog } from './Commands.jsx'
 import { lang, t } from '../i18n.js'
 import { useTour } from '../Tour.jsx'
-import { tourIds } from '../tour.js'
+import { tourAlias, tourIds } from '../tour.js'
 
 // The kit's guides (lib/guide.py, from the installed kit): how to use Camarón, this app, the portal and how it works
 // inside. Rendered from blocks (guide.js) as React elements; the markers become buttons that go where the text says.
@@ -26,9 +26,10 @@ const remember = (v) => { try { localStorage.setItem(KEY, v) } catch { /* a priv
 // Where a marker goes from this window; null when this window cannot go there (Kit dev outside a kit checkout, a
 // command the catalog does not list or has not sent yet, a tour that does not exist).
 export function markerAction({ kind, target }, { sections = [], commands = [], tours = [] }) {
-  if (kind === 'go') {                                 // a section, or Quality's libraries (go:quality/libs)
-    const libs = target === LIBS
-    return sections.includes(libs ? 'quality' : target) ? { label: t('gd.go', { s: t(libs ? 'nav.libs' : 'nav.' + target) }), href: `#/${target}` } : null
+  if (kind === 'go') {                                 // a place, or a view of one (go:docs/decisions); old names follow their moves
+    const place = goPlace(target)
+    return place && sections.includes(place.split('/')[0])
+      ? { label: t('gd.go', { s: t('nav.' + place.split('/').pop()) }), href: `#/${place}` } : null
   }
   if (kind === 'cmd') {
     const c = commands.find((x) => x.name === target)
@@ -36,7 +37,10 @@ export function markerAction({ kind, target }, { sections = [], commands = [], t
     return s ? { label: t('gd.cmd', { c: target }), href: inPanel(c) ? `#/${s}` : `#/${s}/${target}` } : null
   }
   if (kind === 'portal') return /^#\//.test(target) ? { label: t('gd.portal'), portal: target } : null
-  if (kind === 'tour') return tours.includes(target) ? { label: t('gd.tour'), tour: target } : null
+  if (kind === 'tour') {
+    const id = tourAlias(target)
+    return tours.includes(id) ? { label: t('gd.tour'), tour: id } : null
+  }
   return null
 }
 

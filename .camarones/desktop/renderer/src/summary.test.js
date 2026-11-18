@@ -18,12 +18,12 @@ test('an agent unit opens a session with the agent; one left half done continues
 })
 
 test('the units the wizard runs go where that work is done', () => {
-  expect(action({ kind: 'next', unit: unit('setup', 'wizard') })).toEqual({ kind: 'link', href: '#/machine', label: 'next.machine' })
-  expect(action({ kind: 'next', unit: unit('answers', 'wizard') })).toEqual({ kind: 'link', href: '#/interviews', label: 'next.answers' })
-  expect(action({ kind: 'next', unit: unit('ci', 'wizard') })).toEqual({ kind: 'link', href: '#/team', label: 'next.ci' })
+  expect(action({ kind: 'next', unit: unit('setup', 'wizard') })).toEqual({ kind: 'link', href: '#/settings', label: 'next.machine' })
+  expect(action({ kind: 'next', unit: unit('answers', 'wizard') })).toEqual({ kind: 'link', href: '#/docs/interviews', label: 'next.answers' })
+  expect(action({ kind: 'next', unit: unit('ci', 'wizard') })).toEqual({ kind: 'link', href: '#/docs/ci', label: 'next.ci' })
   expect(action({ kind: 'next', unit: unit('confirm', 'wizard') })).toEqual({ kind: 'link', href: '../#/review', label: 'next.review' })
   expect(action({ kind: 'next', unit: unit('portal', 'wizard') })).toEqual({ kind: 'link', href: '../#/', label: 'next.read' })
-  expect(action({ kind: 'next', unit: unit('odd', 'wizard') })).toEqual({ kind: 'link', href: '#/plan', label: 'next.plan' })
+  expect(action({ kind: 'next', unit: unit('odd', 'wizard') })).toEqual({ kind: 'link', href: '#/flow/plan', label: 'next.plan' })
 })
 
 test('then review in the portal, then read', () => {
@@ -34,7 +34,7 @@ test('then review in the portal, then read', () => {
 
 test('an interview unit sends you to choose how interviews run until someone chose it', () => {
   const iv = { kind: 'next', unit: unit('interview-context', 'agent') }
-  expect(action(iv, { interviews: null })).toEqual({ kind: 'link', href: '#/interviews', label: 'iv.choose' })
+  expect(action(iv, { interviews: null })).toEqual({ kind: 'link', href: '#/docs/interviews', label: 'iv.choose' })
   expect(action(iv, { interviews: 'team' }).kind).toBe('agent')
   expect(action(iv).kind).toBe('agent')
 })

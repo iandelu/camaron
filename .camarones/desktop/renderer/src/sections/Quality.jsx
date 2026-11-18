@@ -5,8 +5,9 @@ import { ago } from '../jobs.js'
 import { openSession, sessionNote } from '../plan.js'
 import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, secretsVerdict, seconds } from '../quality.js'
 import { useAgents, useCmd, useHash, useJob, useStore } from '../hooks.js'
-import { LIBS, qualityView } from '../nav.js'
-import { AgentPicker, Failed, Fold, JobOutput, Page, ResultView, UnitRow } from '../parts.jsx'
+import { LIBS, viewOf } from '../nav.js'
+import { AgentPicker, Failed, Fold, JobOutput, ResultView, UnitRow } from '../parts.jsx'
+import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
 import LibrariesView from './Libs.jsx'
 import { SEV, sevWord } from '@camaron/ui/libs.jsx'
@@ -22,22 +23,11 @@ const LINKS = { review: '../#/review' }
 const repoHref = (r) => '../#/health/' + encodeURIComponent(r)
 
 export default function Quality({ srv, jobs }) {
-  const view = qualityView(useHash())
+  const view = viewOf(useHash(), 'quality')
   return (
-    <Page title={t('nav.quality')} wide={view === 'libs'}>
-      <QualityViews view={view} />
+    <Place section="quality" view={view} wide={view === 'libs'}>
       {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
-    </Page>
-  )
-}
-
-export function QualityViews({ view }) {
-  const views = [['health', '#/quality', t('q.viewHealth')], ['libs', `#/${LIBS}`, t('nav.libs')]]
-  return (
-    <nav className="dk-guide-tabs" aria-label={t('q.views')} data-tour="q-views">
-      {views.map(([id, href, label]) => (
-        <a key={id} href={href} className={'dk-guide-tab' + (id === view ? ' on' : '')} aria-current={id === view ? 'page' : undefined}>{label}</a>))}
-    </nav>
+    </Place>
   )
 }
 
@@ -228,7 +218,7 @@ function Evals({ srv, jobs, user }) {
       {unit ? <ul className="dk-units"><UnitRow u={unit} all={plan.units} srv={srv} a={a} plan={plan} onChanged={load} /></ul> : null}
       <div className="row">
         {confirmed ? <Button size="sm" variant="primary" disabled={act.running} onClick={() => run({ action: 'run', json: true })}>{t('q.ask', { n: confirmed })}</Button> : null}
-        {!unit && noAgent ? <Button size="sm" href="#/machine">{t('next.machine')}</Button> : null}
+        {!unit && noAgent ? <Button size="sm" href="#/settings">{t('next.machine')}</Button> : null}
         {!unit && !noAgent ? (<>
           <Button size="sm" variant={confirmed ? 'ghost' : 'primary'} disabled={act.running || !a.agent} onClick={propose}>{t('q.propose', { agent: a.label(a.agent) })}</Button>
           <AgentPicker a={a} />

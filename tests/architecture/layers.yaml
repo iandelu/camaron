@@ -66,6 +66,7 @@ answers: app
 budget: app
 bump: app
 c4edit: app
+chat: app
 ci: app
 docs: facade
 doctor: app

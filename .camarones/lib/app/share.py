@@ -363,7 +363,10 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
     from lib import creds
     log(f"fetching {url}…")
     env = {**creds.git_env(url), **(_no_ssh_prompt() if timeout else {})}
-    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=env, timeout=timeout)
+    try:
+        r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=env, timeout=timeout)
+    except subprocess.TimeoutExpired:                                # read as git's own network failure
+        r = subprocess.CompletedProcess(["git", "fetch"], 124, "", f"fatal: timed out after {timeout:g} s")
     if r.returncode:
         return {**result("error"), **_failed(r, url)}
     theirs = f"origin/{branch}"

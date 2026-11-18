@@ -53,7 +53,7 @@ found, **Continue**, and follow the first-run wizard: repos, tools, install, sta
 It lands on the **Summary** with the next step. Prefer the terminal? `camaron` in that folder opens the same steps in
 the wizard; you can switch between them halfway.
 
-<!-- go:summary -->
+<!-- go:flow -->
 
 ## Joining your team
 
@@ -63,9 +63,9 @@ already have, and only prepares your machine — the team already chose the repo
 plan, and the sessions go on where they were.
 
 What came with the team's repo and runs code or steers agents (hooks, MCP servers, settings, skills, plugins) waits
-until you approve it on your machine: **Team › What came with the team's repo**, or `camaron trust`.
+until you approve it on your machine: **Settings › Trust**, or `camaron trust`.
 
-<!-- go:team -->
+<!-- go:settings/trust -->
 
 ## A normal day
 
@@ -76,7 +76,7 @@ until you approve it on your machine: **Team › What came with the team's repo*
 3. **Or do several at once** — **Plan › Run the ready ones** (`camaron run --parallel 2`): each unit in its own copy of
    `cam-docs`, merged when it ends. **Autopilot** (`camaron autopilot`) goes one by one, unattended.
 4. **Read and review** what it wrote — **View portal**, then Review.
-5. **Upload** — **Team › Upload changes** or `camaron push` (or **Sync with the team**, `camaron share`, to bring in and upload).
+5. **Upload** — **Docs › Upload changes** or `camaron push` (or **Sync with the team**, `camaron share`, to bring in and upload).
 
 Each unit ends with a local commit in `cam-docs` and a handoff note, so the next session — yours or a colleague's —
 knows what was checked, what was not and what comes next.
@@ -107,7 +107,7 @@ offline, the project still opens and says you are working with the latest you br
 explorer rebuilds itself if it is stale, and the code graphs of repos whose HEAD moved rebuild in the background in the
 app (the terminal wizard only says how many are out of date; `camaron pull` rebuilds them).
 
-Checkpoints stay local and uploading is a step you take, with three actions in **Team** (the app), **Plan › Team sync**
+Checkpoints stay local and uploading is a step you take, with three actions in the team strip of **Docs** (the app), **Plan › Team sync**
 (the portal) and **🤝 Team: bring in, upload or sync with the team** (the terminal wizard):
 
 - **Bring in changes** (`camaron pull`) — the team's work rebased in; yours is not uploaded.
@@ -119,7 +119,7 @@ A line says how far apart you are (n to bring in · m to upload · last time …
 button. **Upload on save** (`camaron share --auto on`) uploads after every checkpoint, on this machine only. A conflict is
 undone and nothing is touched; something that looks like a secret is never pushed.
 
-No team repo yet? Paste its URL in **Team › The team's repo** (`camaron remote <url>`); your first upload publishes it.
+No team repo yet? Paste its URL in **Docs › The team's repo** (`camaron remote <url>`); your first upload publishes it.
 
 ## The board and stories
 
@@ -148,7 +148,7 @@ machine, your own never). **Update ▾** proposes the latest version, or the one
 branch in that repo (`camaron bump`), without committing or pushing; in a Maven module it changes the parent pom of the
 same repo, where the version is set.
 
-SonarQube: save a token in **Machine › Tokens** and the health check reads each repo's gate, coverage and issues.
+SonarQube: save a token in **Settings › Tokens** and the health check reads each repo's gate, coverage and issues.
 
 <!-- go:quality -->
 <!-- go:quality/libs -->
@@ -242,22 +242,22 @@ themselves come in later versions.
 - **Docs written by an older kit:** **Plan › Start the docs again** — **Redo** reopens every finished unit for review
   (nothing deleted); **Wipe and start over** tags `cam-docs` in git, deletes what was generated and restarts the plan,
   keeping interviews, confirmed pages and the board (`camaron docs reset --redo | --wipe`).
-- **Uninstall a project:** **Machine › Uninstall this project** — **See what it would remove** first. It stops the
+- **Uninstall a project:** **Settings › Kit › Uninstall this project** — **See what it would remove** first. It stops the
   portal, zips `cam-docs` into the system's temporary folder, removes what the kit added to each repo and the workspace
   folder (also inside your own `.claude/` and `CLAUDE.md`), and deletes `cam-docs`. The repos end exactly as in their last commit (`camaron uninstall`).
-- **Update the kit:** **Machine › Update the kit** (`camaron self-update`) updates every project on this machine at
+- **Update the kit:** **Settings › Kit › Update the kit** (`camaron self-update`) updates every project on this machine at
   once and restarts the app.
 
-<!-- go:machine -->
+<!-- go:settings/kit -->
 
 ## When something fails
 
 | Symptom | First thing to try |
 |---|---|
 | A tool is missing or the wrong version | **Quality › Requirements and tools**, or `camaron doctor` |
-| A kit file or link was edited or deleted | **Machine › Repair the kit's files**, or `camaron repair` |
+| A kit file or link was edited or deleted | **Settings › Kit › Repair the kit's files**, or `camaron repair` |
 | Your own `.claude/` or `CLAUDE.md` was already in the workspace folder | Nothing to do: setup and **Repair** link the kit's entries inside your folder and import its rules into your `CLAUDE.md`; a file of yours that cannot be combined is listed as yours and kept |
-| A private repo will not clone | Save a token in **Machine › Tokens** and **Clone or pull the repos** |
+| A private repo will not clone | Save a token in **Settings › Tokens** and **Clone or pull the repos** |
 | An agent session left a unit half done | **Plan**, open the unit, **Continue** (or **Start over**) |
 | A run's unit is blocked after merging | Its `integrate:<unit>` unit resolves it; or **Retry** |
 | The portal will not show a button you expect | It runs nothing on your machine: do it in the app |

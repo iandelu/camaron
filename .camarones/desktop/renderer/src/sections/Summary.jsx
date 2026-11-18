@@ -5,7 +5,7 @@ import { openSession, sessionNote } from '../plan.js'
 import { useAgents, useStore } from '../hooks.js'
 import { firstRunPending } from '../nav.js'
 import { AgentPicker, Failed, Page } from '../parts.jsx'
-import { TerminalButton } from './Team.jsx'
+import { TerminalButton } from './TeamStrip.jsx'
 import { useTour } from '../Tour.jsx'
 import { lang, t } from '../i18n.js'
 
@@ -62,14 +62,14 @@ export default function Summary({ srv, jobs }) {
         <h2 className="dk-next-title">{heading}</h2>
         {step.unit && <code className="muted small">{step.unit.id}</code>}
         {next.kind === 'agent' && a.agents && !a.agents.length
-          ? <Aviso tone="warn" title={t('next.noAgent')}><Button href="#/machine">{t('next.machine')}</Button></Aviso>
+          ? <Aviso tone="warn" title={t('next.noAgent')}><Button href="#/settings">{t('next.machine')}</Button></Aviso>
           : (
             <div className="row">
               {next.kind === 'agent' && <AgentPicker a={a} />}
               {next.kind === 'agent'
                 ? <Button variant="primary" disabled={!a.agent || launch.busy} onClick={start}>{t(next.label, { agent: a.label(a.agent) })}</Button>
                 : <Button variant="primary" href={next.href}>{t(next.label)}</Button>}
-              {next.href !== '#/plan' && <Button variant="ghost" href="#/plan">{t('next.plan')}</Button>}
+              {next.href !== '#/flow/plan' && <Button variant="ghost" href="#/flow/plan">{t('next.plan')}</Button>}
             </div>
           )}
         {launch.note && <p className="muted small" role="status">{launch.note}</p>}
@@ -101,7 +101,7 @@ export default function Summary({ srv, jobs }) {
 }
 
 // What the window's catch-up with the team left: a clash or no route to the repo warns (the files, a terminal to
-// resolve it, Team), a pull that brought changes is a quiet line, up to date says nothing.
+// resolve it, the team strip in Docs), a pull that brought changes is a quiet line, up to date says nothing.
 export function CatchUpNote({ srv, catchUp, remote = '' }) {
   const said = catchUpSay(catchUp, remote)
   if (!said) return null
@@ -110,8 +110,8 @@ export function CatchUpNote({ srv, catchUp, remote = '' }) {
   return (
     <Aviso tone="warn" title={title} detail={said.detail} action={<span className="row">
       {said.terminal ? <TerminalButton srv={srv} /> : null}
-      {said.token ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button> : null}
-      <Button size="sm" href="#/team">{t('nav.team')}</Button></span>} />
+      {said.token ? <Button size="sm" variant="ghost" href={`#/settings/tokens?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button> : null}
+      <Button size="sm" href="#/docs">{t('strip.repo')}</Button></span>} />
   )
 }
 

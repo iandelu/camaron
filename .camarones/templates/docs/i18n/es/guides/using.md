@@ -54,7 +54,7 @@ La primera vez descarga Electron (unos 100 MB) en `~/.camarones/desktop`. **Eleg
 arquitectura y listo. Terminas en el **Resumen**, con el siguiente paso. ¿Prefieres la terminal? `camaron` en esa
 carpeta abre los mismos pasos en el asistente; puedes cambiar de uno a otro a medias.
 
-<!-- go:summary -->
+<!-- go:flow -->
 
 ## Unirte a tu equipo
 
@@ -64,9 +64,9 @@ clona, o reutiliza la copia que ya tienes, y solo prepara tu máquina: el equipo
 arquitectura y el plan, y las sesiones siguen donde se quedaron.
 
 Lo que llegó con el repo del equipo y ejecuta código o guía a los agentes (hooks, servidores MCP, ajustes, skills,
-plugins) espera a que lo apruebes en tu máquina: **Equipo › Lo que llegó con el repo del equipo**, o `camaron trust`.
+plugins) espera a que lo apruebes en tu máquina: **Ajustes › Confianza**, o `camaron trust`.
 
-<!-- go:team -->
+<!-- go:settings/trust -->
 
 ## Un día normal
 
@@ -78,7 +78,7 @@ plugins) espera a que lo apruebes en tu máquina: **Equipo › Lo que llegó con
    copia de `cam-docs`, que se fusiona al terminar. El **Piloto automático** (`camaron autopilot`) va una a una, sin
    vigilancia.
 4. **Lee y revisa** lo que escribió: **Ver portal** y después Revisión.
-5. **Sube**: **Equipo › Subir cambios** o `camaron push` (o **Sincronizar**, `camaron share`, para traer y subir).
+5. **Sube**: **Docs › Subir cambios** o `camaron push` (o **Sincronizar**, `camaron share`, para traer y subir).
 
 Cada unidad termina con un commit local en `cam-docs` y una nota de relevo, así que la siguiente sesión —tuya o de un
 compañero— sabe qué se comprobó, qué no y qué viene después.
@@ -112,7 +112,7 @@ trajiste. Tras traer, el explorador C4 se reconstruye solo si estaba desactualiz
 cuyo HEAD se movió se reconstruyen en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
 desactualizados; los rehace `camaron pull`).
 
-Los checkpoints se quedan en local y subir es un paso que das tú, con tres acciones en **Equipo** (la app),
+Los checkpoints se quedan en local y subir es un paso que das tú, con tres acciones en la franja del equipo de **Docs** (la app),
 **Plan › Sincronizar** (el portal) y **🤝 Equipo: traer, subir o sincronizar** (el asistente de la terminal):
 
 - **Traer cambios** (`camaron pull`): el trabajo del equipo rebasado dentro; lo tuyo no se sube.
@@ -124,7 +124,7 @@ Una línea dice cuánto os separa (n por traer · m por subir · última vez …
 **Subir al guardar** (`camaron share --auto on`) sube tras cada checkpoint, solo en esta máquina. Un conflicto se
 deshace sin tocar nada; algo que parece un secreto nunca se sube.
 
-¿Aún no hay repo del equipo? Pega su URL en **Equipo › Repo del equipo** (`camaron remote <url>`); tu primera subida lo
+¿Aún no hay repo del equipo? Pega su URL en **Docs › Repo del equipo** (`camaron remote <url>`); tu primera subida lo
 publica.
 
 ## El tablero y las historias
@@ -156,7 +156,7 @@ máquina los nombres de las librerías, nunca las vuestras). **Actualizar ▾** 
 sus avisos, y crea una rama en ese repo (`camaron bump`), sin commit ni push; en un módulo Maven cambia el pom padre
 del mismo repo, que es donde está la versión.
 
-SonarQube: guarda un token en **Máquina › Tokens** y la comprobación de salud lee la puerta de calidad, la cobertura y
+SonarQube: guarda un token en **Ajustes › Tokens** y la comprobación de salud lee la puerta de calidad, la cobertura y
 los problemas de cada repo.
 
 <!-- go:quality -->
@@ -256,23 +256,23 @@ propias PR llegan en versiones posteriores.
   terminada para revisarla (sin borrar nada); **Borrar y empezar de cero** etiqueta `cam-docs` en git, borra lo generado
   y vuelve a empezar el plan, conservando las entrevistas, las páginas confirmadas y el tablero
   (`camaron docs reset --redo | --wipe`).
-- **Desinstalar un proyecto:** **Máquina › Desinstalar este proyecto**, primero **Ver qué borraría**. Para el portal,
+- **Desinstalar un proyecto:** **Ajustes › Kit › Desinstalar este proyecto**, primero **Ver qué borraría**. Para el portal,
   guarda `cam-docs` en un `.zip` en la carpeta temporal del sistema, quita lo que el kit añadió a cada repo y a la
   carpeta del workspace (también dentro de tu propio `.claude/` y `CLAUDE.md`), y borra `cam-docs`. Los repos quedan exactamente como en su último commit
   (`camaron uninstall`).
-- **Actualizar el kit:** **Máquina › Actualizar el kit** (`camaron self-update`) actualiza a la vez todos los proyectos
+- **Actualizar el kit:** **Ajustes › Kit › Actualizar el kit** (`camaron self-update`) actualiza a la vez todos los proyectos
   de esta máquina y reinicia la app.
 
-<!-- go:machine -->
+<!-- go:settings/kit -->
 
 ## Cuando algo falla
 
 | Síntoma | Lo primero que probar |
 |---|---|
 | Falta una herramienta o tiene otra versión | **Calidad › Requisitos y herramientas**, o `camaron doctor` |
-| Alguien editó o borró un fichero o un enlace del kit | **Máquina › Reparar los archivos del kit**, o `camaron repair` |
+| Alguien editó o borró un fichero o un enlace del kit | **Ajustes › Kit › Reparar los archivos del kit**, o `camaron repair` |
 | Ya tenías tu propio `.claude/` o `CLAUDE.md` en la carpeta del espacio de trabajo | Nada: setup y **Reparar** enlazan dentro de tu carpeta lo del kit e importan sus reglas en tu `CLAUDE.md`; un fichero tuyo que no se puede combinar sale como tuyo y se queda |
-| Un repo privado no se clona | Guarda un token en **Máquina › Tokens** y **Clonar o actualizar los repos** |
+| Un repo privado no se clona | Guarda un token en **Ajustes › Tokens** y **Clonar o actualizar los repos** |
 | Una sesión de agente dejó una unidad a medias | **Plan**, abre la unidad y **Seguir** (o **Empezar de cero**) |
 | Una unidad de una ejecución queda bloqueada al fusionar | La resuelve su unidad `integrate:<unidad>`; o **Reintentar** |
 | El portal no enseña un botón que esperabas | No ejecuta nada en tu máquina: hazlo en la app |

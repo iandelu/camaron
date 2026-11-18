@@ -8,6 +8,8 @@ import { EMPTY, check, toBody } from './sections/adr/NewForm.jsx'
 import { blocks } from './sections/adr/Prose.jsx'
 import { Stepper } from './sections/adr/Read.jsx'
 import { TouchSearchView } from './sections/adr/TouchSearch.jsx'
+import Docs from './sections/Docs.jsx'
+import { Place } from './Place.jsx'
 import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -53,7 +55,7 @@ test('a decided legacy ADR reads as closed, with no way back into a review', () 
     const out = legacy({ adr: { id: '0003', title: 'JPA', chip, legacy: true, sections: { status: 'Accepted (2024-03-01)' } } })
     expect(out).not.toContain('Revisar en sesión')
     expect(out).toContain('Esta decisión está cerrada')
-    expect(out).toContain('href="#/decisions/new"')
+    expect(out).toContain('href="#/docs/decisions/new"')
   }
   expect(legacy({ adr: { id: '0003', chip: 'accepted', legacy: true, sections: {} } }, 'en')).toContain('This decision is closed')
   expect(legacy({ adr: { id: '0003', chip: 'unknown', legacy: true, sections: {} } })).toContain('Revisar en sesión')
@@ -80,7 +82,7 @@ test('the evidence step offers writing without AI and no research button in S1',
 // ---------- the list ----------
 test('each row links to its ADR and says its kind, repos and points', () => {
   const out = list({ rows: [row()], candidates: [] })
-  expect(out).toContain('href="#/decisions/0012"')
+  expect(out).toContain('href="#/docs/decisions/0012"')
   expect(out).toContain('Nueva · api · puntos decididos: 1/3')
   expect(list({ rows: [row({ kind: 'retro', repos: ['api', 'vets'], points: { total: 0, decided: 0 } })], candidates: [] }))
     .toContain('Retro · api, vets')
@@ -115,9 +117,9 @@ test('a search that finds nothing says so and how to get out', () => {
 
 test('the header offers the candidates with their number and a new ADR', () => {
   const out = list({ rows: [row()], candidates: [{}, {}, {}] })
-  expect(out).toContain('href="#/decisions/candidates"')
+  expect(out).toContain('href="#/docs/decisions/candidates"')
   expect(out).toContain('Candidatas · 3')
-  expect(out).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/decisions\/new">/)
+  expect(out).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/docs\/decisions\/new">/)
   expect(list({ rows: [row()], candidates: null })).not.toContain('Candidatas ·')     // still being read
   expect(list({ rows: [row()], candidates: [] })).not.toContain('dk-adr-strip')
 })
@@ -126,7 +128,7 @@ test('the strip names the first candidates, and the empty list keeps it', () => 
   const four = ['postgresql', 'kafka', 'redis', 'helm'].map((label) => ({ key: `x:${label}`, label }))
   expect(list({ rows: [row()], candidates: four })).toContain('postgresql, kafka, redis…')
   const empty = list({ rows: [], candidates: four })
-  expect(empty).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/decisions\/new">/)
+  expect(empty).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/docs\/decisions\/new">/)
   expect(empty).toContain('4 decisiones en el código sin ADR')
 })
 
@@ -194,8 +196,8 @@ test('every place of the section draws before its data comes', () => {
   const waiting = () => new Promise(() => {})
   const srv = { get: waiting, post: waiting }
   try {
-    for (const [hash, shown] of [['#/decisions', 'cu-skel'], ['#/decisions/0012', 'ADR 0012'], ['#/decisions/candidates', 'Candidatas'],
-      ['#/decisions/new', 'Crear y reunir la evidencia']]) {
+    for (const [hash, shown] of [['#/docs/decisions', 'cu-skel'], ['#/docs/decisions/0012', 'ADR 0012'], ['#/docs/decisions/candidates', 'Candidatas'],
+      ['#/docs/decisions/new', 'Crear y reunir la evidencia']]) {
       globalThis.location = { hash }
       expect(html(<Decisions srv={srv} />), hash).toContain(shown)
     }
@@ -245,7 +247,7 @@ test('a legacy ADR already decided says what its file says about it', () => {
   const out = legacy({ adr: { id: '0009', title: 'EhCache', status: 'superseded', legacy: true,
     sections: { status: 'Superseded by [0010](0010-redis.md)' } } })
   expect(out).toContain('Superseded by')
-  expect(out).toContain('href="#/decisions/0010"')
+  expect(out).toContain('href="#/docs/decisions/0010"')
   expect(legacy({ adr: { id: '0003', status: 'proposed', legacy: true, sections: { status: 'Propuesto <!-- x -->' } } })).not.toContain('Propuesto')
 })
 
@@ -318,4 +320,54 @@ test('no candidates says why and where to go', () => {
   const out = html(<CandidatesView rows={[]} onPick={noop} />)
   expect(out).toContain('Ninguna decisión del código está sin ADR')
   expect(out).toContain('href="#/quality/libs"')
+})
+
+// ---------- inside Docs ----------
+// Decisions lives in Docs, which owns the h1: every ADR screen still says which ADR it is, under the tabs, with its own
+// actions beside that heading; the list's actions sit beside one too.
+const inDocs = (node, lang) => html(<Place section="docs" view="decisions">{node}</Place>, lang)
+const heading = (out) => (out.match(/<div class="dk-page-head"><h2 class="dk-page-h">([^<]*)<\/h2>(?:<div class="row dk-page-acts">(.*?)<\/div>)?<\/div>/) || [])
+
+test('inside Docs each ADR screen is headed by its number and title', () => {
+  const adr = { id: '0012', title: 'Sesiones en Redis', chip: 'review', state: { phase: 'review', mode: 'manual' },
+    parts: [{ id: 'context', status: 'pending' }], sections: { context: 'Hoy' } }
+  const review = inDocs(<ReviewView adr={adr} current="context" onUi={noop} onPresent={noop} />)
+  expect(review.match(/<h1/g)).toHaveLength(1)
+  expect(heading(review)[1]).toBe('0012 · Sesiones en Redis')
+  expect(heading(review)[2]).toContain('Presentar')                        // Present sits beside the title
+  const ev = inDocs(<EvidenceView adr={{ ...adr, state: { phase: 'evidence', mode: 'manual' } }} pack={null} onPack={noop} onWrite={noop} />)
+  expect(heading(ev)[1]).toBe('0012 · Sesiones en Redis')
+  const old = inDocs(<LegacyView adr={{ id: '0003', title: 'JPA', status: 'proposed', legacy: true, sections: {} }} onReview={noop} />)
+  expect(heading(old)[1]).toBe('0003 · JPA')
+  expect(heading(inDocs(<NewFormView fields={EMPTY} errors={{}} onChange={noop} onSubmit={noop} search={async () => []} />))[1]).toBe('Nuevo ADR')
+  expect(heading(inDocs(<CandidatesView rows={[]} onPick={noop} />))[1]).toBe('Candidatas')
+})
+
+test("inside Docs the list's actions sit beside a heading that does not repeat the tab", () => {
+  const out = inDocs(<AdrListView rows={[row()]} filter="all" q="" onFilter={noop} onQ={noop} candidates={[{}]} />)
+  const [, title, acts] = heading(out)
+  expect(title).toBe('Decisiones del proyecto')
+  expect(acts).toContain('Candidatas · 1')
+  expect(acts).toContain('Nuevo ADR')
+  expect(heading(inDocs(<AdrListView rows={[row()]} filter="all" q="" onFilter={noop} onQ={noop} />, 'en'))[1]).toBe('Project decisions')
+})
+
+// The review's two columns need the wide page: Docs widens while one ADR is open, and keeps its width for the list. The page
+// sits in the place's chat grid (`dk-docs`), which keeps the chat panel's column.
+test('Docs widens for an open ADR, not for the list', () => {
+  const waiting = () => new Promise(() => {})
+  const srv = { get: waiting, post: waiting }
+  const docs = (hash) => {
+    globalThis.location = { origin: 'http://127.0.0.1:5000', hash }
+    const out = html(<Docs srv={srv} jobs={null} app={{}} index={null} />)
+    expect(out).toMatch(/^<div class="dk-docs">/)
+    return out.replace(/^<div class="dk-docs">/, '')
+  }
+  try {
+    const one = docs('#/docs/decisions/0012')
+    expect(one).toMatch(/^<div class="dk-page wide">/)
+    expect(one).toContain('<h2 class="dk-page-h">ADR 0012</h2>')
+    expect(docs('#/docs/decisions')).toMatch(/^<div class="dk-page">/)
+    expect(docs('#/docs')).toMatch(/^<div class="dk-page">/)
+  } finally { delete globalThis.location }
 })

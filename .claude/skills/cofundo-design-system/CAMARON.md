@@ -40,7 +40,17 @@ for the portal.
   inline SVG, aria-hidden, in currentColor, next to its «Escaneo terminado». It is also the one animation that moves
   more than `transform` and `opacity`: its check draws itself with `stroke-dashoffset` (it rests drawn, and stands
   still under `prefers-reduced-motion`).
-  A fifth approved exception (asked by the user on 2026-11-16, "ver las skills con su icono"): the desktop Team ›
-  Skills card (`SkillsList` in `desktop/renderer/src/sections/Team.jsx`) shows each skill's and each optional pack's
+  A fifth approved exception (asked by the user on 2026-11-16, "ver las skills con su icono"): the desktop Settings ›
+  Skills card (`SkillsList` in `desktop/renderer/src/sections/SettingsTeam.jsx`) shows each skill's and each optional pack's
   icon, an emoji from `lib/skills_catalog.yaml` (🧩 when it has none), aria-hidden, in `.dk-skill-icon`, always next
   to the skill's name. Emoji only there; they never stand in for a word.
+  A sixth approved exception: the desktop Docs place's state, health and read-button icons (`DocsIcon` in
+  `desktop/renderer/src/sections/DocsIcons.jsx`), inline SVG, `aria-hidden`, in `currentColor`, always next to their
+  word.
+  A seventh approved exception: the desktop Docs chat's shrimp (`Shrimp` in
+  `desktop/renderer/src/sections/Shrimp.jsx`), inline SVG, `aria-hidden`, a picture beside the words that say its state.
+  It is the favicon's own markup inlined (`shrimpMarkup`, with the coral and ink mapped to theme tokens), never a second
+  drawing: the favicon's groups only gained class names (`shrimp-antennae`, `shrimp-tail`, `shrimp-eye`) that change
+  nothing it renders, so the `scripts/icons.py` output is unchanged. It moves with `transform` and `opacity` only
+  (antennae sway while it thinks, the tail flicks while an answer is revealed) and stands still under
+  `prefers-reduced-motion`.

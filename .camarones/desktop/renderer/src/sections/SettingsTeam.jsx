@@ -1,160 +1,23 @@
-import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Skeleton, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
+import { useEffect, useRef } from 'react'
+import { Button, Card } from '@camaron/ui'
 import { useCmd } from '../hooks.js'
-import { Failed, JobOutput, Page } from '../parts.jsx'
-import Commands from './Commands.jsx'
-import { ago } from '../jobs.js'
+import { JobOutput } from '../parts.jsx'
 import { lang, t } from '../i18n.js'
 import { skillsView, switchArgs } from '../skills.js'
 
-// The team by task: the team's cam-docs repo and syncing with it (where it stands, bring in, upload), the agent config and
-// hooks that came with it and this machine has not approved, the agents' skills and the plugins. The board and CI are
-// the portal's.
 // A kind or a state the CLI names in English (trust, plugins), in the user's words; an unknown one as it comes.
-const word = (family, v) => { const k = `${family}.${v}`; const w = t(k); return w === k ? v : w }
-
-export default function Team({ srv, jobs }) {
-  const [tick, setTick] = useState(0)          // a pack added below arrives in the Trust card to approve
-  return (
-    <Page title={t('nav.team')}>
-      <Repo srv={srv} jobs={jobs} />
-      <Trust srv={srv} jobs={jobs} tick={tick} />
-      <Skills srv={srv} jobs={jobs} onChange={() => setTick((n) => n + 1)} />
-      <Plugins srv={srv} jobs={jobs} />
-      <div className="row">
-        <Button size="sm" variant="ghost" href="../#/kanban">{t('tm.board')}</Button>
-        <Button size="sm" variant="ghost" href="../#/ci">{t('tm.ci')}</Button>
-      </div>
-      <Commands srv={srv} jobs={jobs} section="team" />
-    </Page>
-  )
-}
-
-// The team's repo (remote): bring in, upload, or both in one go (sync/pull, sync/push, sync/share); the one that fits
-// where it stands is the primary. A clash is undone and reported, never forced.
-const SAY = { pull: pullSay, push: pushSay, share: shareSay }
-const OK = { pull: pullOk, push: pushOk, share: shareOk }
-const BUSY = { pull: 'tm.pulling', push: 'tm.pushing', share: 'tm.working' }
-
-export async function runSync(srv, kind) {
-  const r = await srv.post(`sync/${kind}`, {})
-  return { result: r.result, sync: r.sync }
-}
-
-const when = (iso) => {
-  const at = Date.parse(iso || '')
-  return Number.isNaN(at) ? t('tm.never') : ago(at / 1000, Date.now() / 1000, t)
-}
-
-export function syncLine(s) {
-  const line = t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(lastSync(s)) })
-  return s.changes?.length ? `${line} · ${t('tm.unsaved', { n: s.changes.length })}` : line
-}
-
-export function SyncActions({ s, busy, onRun, onCheck }) {
-  const primary = syncPrimary(s)
-  const btn = (kind, label) => (
-    <Button size="sm" variant={primary === kind ? 'primary' : undefined} disabled={!!busy} onClick={() => onRun(kind)}>
-      {busy === kind ? t(BUSY[kind]) : t(label)}</Button>)
-  return (<>
-    {btn('pull', 'tm.pull')}
-    {btn('push', 'tm.push')}
-    {btn('share', 'tm.sync')}
-    <Button size="sm" variant="ghost" disabled={!!busy} onClick={onCheck}>{t('tm.check')}</Button>
-  </>)
-}
-
-export function TerminalButton({ srv }) {
-  return <Button size="sm" variant="ghost" onClick={() => srv.post('app/terminal', {}).catch(() => {})}>{t('tm.terminal')}</Button>
-}
-
-export function SyncResult({ kind, result, remote, srv }) {
-  if (kind === 'share') return <ShareResult result={result} remote={remote} srv={srv} />
-  if (!result) return null
-  const step = kind === 'pull' ? result.pull ?? (result.status === 'busy' ? null : result) : result
-  if (!step) return <p className="small" role="status">{t('sy.pull.busy')}</p>
-  const said = SAY[kind](step, remote)
-  const m = t(said.key, said.vars)
-  const title = m === said.key ? step.status : m
-  if (OK[kind](step) || said.tone === 'info') return <p className="small" role="status">{title}</p>
-  const action = said.token
-    ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
-    : said.terminal ? <TerminalButton srv={srv} /> : null
-  return <Aviso tone={said.terminal ? 'warn' : 'error'} title={title} detail={said.detail} action={action} />
-}
-function Repo({ srv, jobs }) {
-  const [s, setS] = useState(null)
-  const [url, setUrl] = useState('')
-  const [busy, setBusy] = useState('')
-  const [result, setResult] = useState(null)
-  const [error, setError] = useState('')
-  const c = useCmd(srv, jobs)
-  const load = (fetch) => srv.get(`sync${fetch ? '?fetch=1' : ''}`)
-    .then((x) => { setS(x); setUrl(x.remote || ''); setError('') }, (e) => setError(e.message))
-  useEffect(() => { load(false) }, [])
-  const cmd = async (name, args) => { await c.run(name, args); load(false) }
-  async function sync(kind) {
-    setBusy(kind)
-    setResult(null)
-    try { const r = await runSync(srv, kind); setResult({ kind, result: r.result }); setS(r.sync) } catch (e) { setResult({ kind, result: { status: 'error', detail: e.message } }) } finally { setBusy('') }
-  }
-  async function check() { setBusy('check'); try { await load(true) } finally { setBusy('') } }
-  const clean = url.trim()
-  return (
-    <Card className="dk-run" data-tour="team-repo">
-      <span className="eyebrow">{t('tm.repo')}</span>
-      <div className="row">
-        <input className="cu-input dk-grow" value={url} placeholder="git@github.com:equipo/cam-docs.git" aria-label={t('tm.repo')}
-               onChange={(e) => setUrl(e.target.value)} />
-        <Button size="sm" disabled={c.running || !clean || clean === s?.remote || clean.startsWith('-')}
-                onClick={() => cmd('remote', { url: clean })}>{t('tm.save')}</Button>
-      </div>
-      {error ? <Failed title={t('tm.failed')} detail={error} onRetry={() => { setError(''); load(false) }} />
-        : !s ? <Skeleton lines={2} /> : !s.remote ? <p className="muted small">{t('tm.noRemote')}</p> : (<>
-        <p className="small">{syncLine(s)}</p>
-        <div className="row">
-          <SyncActions s={s} busy={busy} onRun={sync} onCheck={check} />
-          <label className="dk-check"><input type="checkbox" checked={!!s.auto} disabled={c.running}
-            onChange={() => cmd('share', { auto: s.auto ? 'off' : 'on' })} />{t('tm.auto')}</label>
-        </div>
-      </>)}
-      <FetchNote fetched={s?.fetched} remote={s?.remote} />
-      {result ? <SyncResult kind={result.kind} result={result.result} remote={s?.remote} srv={srv} /> : null}
-      <JobOutput c={c} />
-    </Card>
-  )
-}
-
-// A share's outcome. A failure git explained (no route to the host, no token…) says so in words, git's line beneath,
-// and a refused token links to the Tokens card for that host.
-export function ShareResult({ result, remote, srv }) {
-  if (!result) return null
-  const said = shareSay(result, remote)
-  const m = t(said.key, said.vars)
-  const title = m === said.key ? result.status : m
-  if (shareOk(result)) return <p className="small" role="status">{title}</p>
-  const token = said.token
-    ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
-    : result.status === 'conflict' && srv ? <TerminalButton srv={srv} /> : null
-  return <Aviso tone="error" title={title} detail={said.detail} action={token} />
-}
-
-export function FetchNote({ fetched, remote }) {
-  const said = fetchSay(fetched, remote)
-  if (!said) return null
-  return <Aviso tone="warn" title={t('tm.fetchFailed')} detail={said.detail}>{said.key ? t(said.key, said.vars) : null}</Aviso>
-}
+export const word = (family, v) => { const k = `${family}.${v}`; const w = t(k); return w === k ? v : w }
 
 // What came with the team's repo (agent config, plugins) and this machine has not approved: nothing of it loads
 // until it is. Approving runs `trust --yes` after a dialog that lists it. (The method hooks' switch is Quality's.)
-function Trust({ srv, jobs, tick = 0 }) {
+export function Trust({ srv, jobs, tick = 0, onChange }) {
   const list = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   const dialog = useRef(null)
   const load = () => { list.run('trust', { json: true }) }
   useEffect(() => { load() }, [tick])
   const rows = list.job?.result?.pending
-  const then = async (p) => { await p; load() }
+  const then = async (p) => { await p; load(); onChange?.() }
   return (
     <Card className="dk-run" data-tour="team-trust">
       <span className="eyebrow">{t('tm.trust')}</span>
@@ -183,7 +46,7 @@ function Trust({ srv, jobs, tick = 0 }) {
 // The agents' skills (`skills list --json`): each with its icon and two switches — the project's, for the whole team
 // (workspace.yaml), and this machine's, for you only (a Claude Code deny rule in the git-ignored settings.local.json).
 // Below, the kit's optional packs: adding one copies it into the team's skills, so the Trust card asks to approve it.
-function Skills({ srv, jobs, onChange }) {
+export function Skills({ srv, jobs, onChange }) {
   const list = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   const load = () => list.run('skills', { action: 'list', json: true })
@@ -238,7 +101,7 @@ export function SkillsList({ data, busy = false, onSwitch = () => {}, onAdd = ()
 // .camarones/plugins/, they arrive when you pull it). On or off is this machine's choice only; a team plugin that
 // runs code or steers an agent is approved first (the card above), one that sends the docs out is off until enabled.
 const PLUGIN_STATE = { active: ['ok', 'tm.active'], 'off on this machine': [undefined, 'tm.off'], invalid: ['bad', 'tm.invalid'] }
-function Plugins({ srv, jobs }) {
+export function Plugins({ srv, jobs }) {
   const list = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   useEffect(() => { list.run('plugins', { json: true }) }, [])

@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'vitest'
-import { allowedParents, cardAt, childrenOf, fit, gateKey, gateMessage, moveOutcome, parentLabel, parentOf, placed, sendMove, shouldFocus } from './board.js'
+import { addChoices, allowedParents, cardAt, childrenOf, fit, gateKey, gateMessage, moveOutcome, parentLabel, parentOf, placed, sendMove, shouldFocus } from './board.js'
 import { setLang, t } from './i18n.js'
 
 const rows = [
@@ -166,4 +166,11 @@ test("sendMove hands the server's blocker objects to confirm as they came", asyn
   expect(await sendMove(post, (bs) => ((seen = bs), true), { id: 'WI-1', status: 'Ready' })).toEqual({ kind: 'sent' })
   expect(seen).toEqual(blockedBy)
   expect(calls[1]).toEqual({ id: 'WI-1', status: 'Ready', force: true })
+})
+
+test('addChoices: the story goes to the portal, every other type to the form, in the board order', () => {
+  expect(addChoices(['story', 'task', 'bug'])).toEqual([
+    { type: 'story', where: 'portal' }, { type: 'task', where: 'form' }, { type: 'bug', where: 'form' }])
+  expect(addChoices(['bug', 'story'])).toEqual([{ type: 'bug', where: 'form' }, { type: 'story', where: 'portal' }])
+  expect(addChoices([])).toEqual([])
 })

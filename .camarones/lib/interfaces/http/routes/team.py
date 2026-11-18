@@ -122,6 +122,11 @@ def get_kpis(req: Request) -> Response:
     return json_response(kpis.dashboard())
 
 
+@route("GET", "/api/misses")
+def get_misses(req: Request) -> Response:
+    return json_response({"misses": usage.misses()})
+
+
 @route("POST", "/api/kpis/miss")
 def post_kpis_miss(req: Request) -> Response:
     try:

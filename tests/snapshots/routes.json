@@ -86,6 +86,16 @@
   },
   {
     "method": "POST",
+    "path": "/api/app/chat",
+    "access": "app"
+  },
+  {
+    "method": "GET",
+    "path": "/api/app/chat/models",
+    "access": "app"
+  },
+  {
+    "method": "POST",
     "path": "/api/app/cmd",
     "access": "app"
   },
@@ -442,6 +452,11 @@
   {
     "method": "POST",
     "path": "/api/kpis/miss",
+    "access": "public"
+  },
+  {
+    "method": "GET",
+    "path": "/api/misses",
     "access": "public"
   },
   {
