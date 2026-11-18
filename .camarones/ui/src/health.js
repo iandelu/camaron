@@ -82,9 +82,9 @@ export function fmtDebt(minutes) {
   return [days && `${days} d`, hours % 8 && `${hours % 8} h`].filter(Boolean).join(' ')
 }
 
-// The app's link to Máquina › Tokens with the SonarQube host filled in.
+// The app's link to Settings › Tokens with the SonarQube host filled in.
 // Without a host (the snapshot did not carry one) the Tokens card opens on SonarQube and asks for it.
-export const sonarConnectHash = (host) => `#/machine?${host ? `host=${encodeURIComponent(host)}&` : ''}kind=sonarqube`
+export const sonarConnectHash = (host) => `#/settings/tokens?${host ? `host=${encodeURIComponent(host)}&` : ''}kind=sonarqube`
 
 function figureOf(snapshot, area, key) {
   return count(snapshot?.areas?.[area]?.figures?.find((f) => f.key === key)?.n)
