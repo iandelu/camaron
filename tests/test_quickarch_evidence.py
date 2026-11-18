@@ -66,7 +66,11 @@ def test_the_scan_cites_the_file_a_header_like_line_sits_in(kit):
 
 def test_a_relation_takes_the_earliest_line_numerically(kit):
     from lib import quickarch
-    assert min(["a#L10", "a#L2"], key=lambda a: (quickarch._line(a), a)) == "a#L2"
+    url = "spring.datasource.url=jdbc:postgresql://db:5432/orders\n"
+    (kit.ws / "api" / "db.properties").write_text("# db\n" + url + "#\n" * 7 + url, encoding="utf-8", newline="\n")
+    scan = quickarch.scan()
+    assert {"api:db.properties#L2", "api:db.properties#L10"} <= set(scan["evidence"]["PostgreSQL:orders"])
+    assert scan["edge_evidence"][("api", "PostgreSQL:orders", "reads/writes")] == "api:db.properties#L2"
 
 
 def test_the_cache_dependency_stays_out_of_the_first_look_sources(kit):
