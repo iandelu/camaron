@@ -19,7 +19,7 @@ HEADER = re.compile(rf"^(\s*)({NAME})\s*=\s*({NAME})\b(\s*(?:{STR}))?(\s*(?:{STR
 EXTEND = re.compile(r"^\s*extend\s+([\w.-]+)\s*\{")
 RELATION = re.compile(rf"^\s*(\w[\w.-]*?)?\s*(?:-\[({NAME})\]->|->)\s*([\w.-]+)(?:\s*({STR}))?")
 PROP = re.compile(rf"^\s*(technology|description|title|link|icon|notation)\s+({STR})\s*$")
-META_PAIR = re.compile(rf"({NAME})\s+({STR})")
+META_PAIR = re.compile(rf"({NAME})\s+({STR}|\[\s*(?:(?:{STR})\s*,?\s*)*\])")
 VIEW = re.compile(r"^\s*(?:dynamic\s+|deployment\s+)?view\s+([\w-]+)(?:\s+of\s+([\w.-]+))?")
 EDITABLE = ("title", "technology", "description", "kind")
 
@@ -39,6 +39,21 @@ def quote(value: str) -> str:
     if "'" not in value:
         return f"'{value}'"
     return '"' + value.replace('"', "'") + '"'
+
+
+def _meta_value(raw: str) -> str | list[str]:
+    if raw.startswith("["):
+        return [unquote(v) for v in re.findall(STR, raw)]
+    return unquote(raw)
+
+
+def _block_meta(lines: list[str], depths: list[int], i: int, j: int) -> dict:
+    meta = {}
+    for k in range(i, j + 1):
+        if re.match(r"^\s*metadata\s*\{", lines[k]):
+            e = _end(lines, k, depths)
+            meta = {n: _meta_value(v) for n, v in META_PAIR.findall(" ".join(lines[k:e + 1]).split("{", 1)[1])}
+    return meta
 
 
 def validate() -> tuple[bool, str]:
@@ -133,8 +148,11 @@ def _parse_file(rel: str, text: str, elements: dict, relations: list, kinds: set
                 stack.append(("element", fqn, d))
         elif m := RELATION.match(line):
             end = _end(lines, i, depths)
+            body = lines[i + 1:end] if opens else []
+            tags = [t for l in body if l.strip().startswith("#") for t in re.findall(r"#([\w-]+)", _strip(l))]
             relations.append({"from": m.group(1) or scope, "rawTo": m.group(3), "label": unquote(m.group(4)),
-                              "kind": m.group(2), "file": rel, "start": i, "end": end, "scope": scope})
+                              "kind": m.group(2), "file": rel, "start": i, "end": end, "scope": scope,
+                              "tags": tags, "metadata": _block_meta(lines, depths, i + 1, end) if opens else {}})
             if opens:
                 stack.append(("other", None, d))
         elif opens:
@@ -156,8 +174,7 @@ def _details(texts: dict[str, str], el: dict) -> dict:
         if m := PROP.match(lines[i]):
             props[m.group(1)] = unquote(m.group(2))
         elif re.match(r"^\s*metadata\s*\{", lines[i]):
-            j = _end(lines, i, depths)
-            meta = {k: unquote(v) for k, v in META_PAIR.findall(" ".join(lines[i:j + 1]).split("{", 1)[1])}
+            meta = _block_meta(lines, depths, i, i)
     el = {**el, "tags": tags, "technology": props.get("technology", ""), "metadata": meta}
     if not el["headerDescription"] and "description" in props:
         el["description"] = props["description"]
@@ -291,13 +308,17 @@ def _set_tags(lines: list[str], el: dict, tags: list[str]) -> list[str]:
     return keep[:el["start"] + 1] + row + keep[el["start"] + 1:]
 
 
+def _meta_text(v: str | list[str]) -> str:
+    return "[" + ", ".join(quote(x) for x in v) + "]" if isinstance(v, list) else quote(v)
+
+
 def _set_meta(lines: list[str], el: dict, meta: dict) -> list[str]:
     lines = _expand(lines, el)
     el = _relocate(lines, el["fqn"], el["file"])
     depths = _depths(lines)
     own = _own(lines, el, depths)
     ind = el["indent"] + "  "
-    block = [f"{ind}metadata {{", *(f"{ind}  {k} {quote(v)}" for k, v in meta.items()), f"{ind}}}"]
+    block = [f"{ind}metadata {{", *(f"{ind}  {k} {_meta_text(v)}" for k, v in meta.items()), f"{ind}}}"]
     at = next((i for i in own if re.match(r"^\s*metadata\s*\{", lines[i])), None)
     if at is not None:
         return lines[:at] + block + lines[_end(lines, at, depths) + 1:]

@@ -297,3 +297,25 @@ def test_the_portal_removes_an_element(kit, portal):
     assert code == 200 and r["removed"] == ["shop.db"]
     assert call(f"{portal}/api/c4/remove", {"fqn": "shop.db"})[0] == 404
     assert call(f"{portal}/api/c4/remove", {"fqn": "shop"})[0] == 400
+
+
+LISTED = MODEL.replace("      metadata { repo 'orders' }",
+                       "      metadata {\n        repo 'orders'\n        code ['orders:src/A.java', 'orders:src/b/']\n      }")
+
+
+def test_list_metadata_is_read_and_kept_on_confirm(arch):
+    from lib import c4edit
+    (arch / "model.c4").write_text(LISTED, encoding="utf-8", newline="\n")
+    assert c4edit.index()["elements"]["shop.orders"]["metadata"]["code"] == ["orders:src/A.java", "orders:src/b/"]
+    c4edit.confirm(["shop.orders"], by="ana", today="2026-11-18")
+    meta = c4edit.index()["elements"]["shop.orders"]["metadata"]
+    assert meta["code"] == ["orders:src/A.java", "orders:src/b/"] and meta["confirmed-by"] == "ana"
+
+
+def test_relation_metadata_and_tags_are_read(arch):
+    from lib import c4edit
+    text = MODEL.replace("      -> billing 'charges'\n",
+                         "      -> billing 'charges' {\n        #confirmed\n        metadata { code 'orders:src/Pay.java#L3' }\n      }\n")
+    (arch / "model.c4").write_text(text, encoding="utf-8", newline="\n")
+    rel = next(r for r in c4edit.index()["relations"] if r["to"] == "shop.billing")
+    assert rel["metadata"] == {"code": "orders:src/Pay.java#L3"} and rel["tags"] == ["confirmed"]
