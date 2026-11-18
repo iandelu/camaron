@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import Docs, { AnswerView, BuildCard, WikiBlock, WikiCard, WikisUnread } from './sections/Docs.jsx'
+import Docs, { AnswerView, BuildCard, WikiBlock, WikiCard, WikiGrid, WikisUnread } from './sections/Docs.jsx'
 import { wikiBlocks } from './docs.js'
 import { setLang } from './i18n.js'
 
@@ -330,4 +330,55 @@ test('the wiki card speaks English', () => {
   expect(card({ pages: 1 })).toContain('1 page ·')
   expect(card({ graph: false })).toContain('aria-label="Build the graph: Wiki graph · api"')
   expect(card({ graph: true, graphStale: true })).toContain('Rebuild the graph')
+})
+
+// The section's cards by what GET wikis read (useWikis' state). Rows never read (the first read in flight, or a first read that
+// failed: the tree fallback) are only defaults, so those cards are quiet. A failed re-read keeps the last good rows: the cards keep
+// their state and actions, and the one notice above says it may be out of date.
+const grid = (wikis) => renderToStaticMarkup(
+  <WikiGrid srv={srv} jobs={null} index={index} wikis={{ reload: () => {}, ...wikis }} running={[]} open={() => {}} />)
+const primaries = (out) => out.match(/<button[^>]*cu-btn--primary[^>]*>/g)
+
+test('while the first read is in flight every card is quiet: no state word, no figures, closed', () => {
+  const out = grid({ rows: null, loading: true, failed: false })
+  expect(out.match(/data-wiki-state="unread"/g)).toHaveLength(3)
+  for (const word of ['Al día', 'Desfasada', 'Alcance anterior', 'Sin páginas todavía', 'páginas ·', 'escrita']) expect(out).not.toContain(word)
+  expect(primaries(out).every((b) => b.includes('disabled'))).toBe(true)
+  expect(out).not.toContain('No he podido')
+})
+
+test('a failed re-read keeps the last good state of each card and its actions, and the notice is said once', () => {
+  const rows = [row({ repo: 'api' }), row({ repo: 'web', stale: true })]
+  const out = grid({ rows, loading: false, failed: true })
+  expect(out).toContain('data-wiki-state="fresh"')
+  expect(out).toContain('data-wiki-state="stale"')
+  expect(out).not.toContain('data-wiki-state="unread"')
+  for (const text of ['Al día', 'Desfasada', '12 páginas']) expect(out).toContain(text)
+  expect(out).toMatch(/escrita hace \d+ d/)                                          // the section's own clock, not the test's NOW
+  expect(primaries(out)).toHaveLength(2)
+  expect(primaries(out).some((b) => b.includes('disabled'))).toBe(false)
+  expect(primaries(out).map((b) => b.match(/aria-label="([^:]*):/)[1])).toEqual(['Ver', 'Actualizar'])
+  expect(out.match(/No he podido volver a leer el estado de las wikis/g)).toHaveLength(1)
+})
+
+test('a first read that failed leaves quiet cards and says it once, above, not in each card', () => {
+  const out = grid({ rows: null, loading: false, failed: true })
+  expect(out.match(/data-wiki-state="unread"/g)).toHaveLength(3)
+  expect(out).not.toContain('Al día')
+  expect(primaries(out).every((b) => b.includes('disabled'))).toBe(true)
+  expect(out.match(/No he podido leer el estado de las wikis/g)).toHaveLength(1)    // the notice, not a line per card
+})
+
+test('the card repeats the unread reason only when nobody said it above', () => {
+  const unread = wikiBlocks({ repos: ['api'], docs: [{ path: 'repos/api/a.md', space: 'wiki' }] }, null)[0]
+  expect(wikiCard(unread)).toContain('No he podido leer el estado de las wikis')
+  expect(wikiCard(unread, { failed: true })).not.toContain('No he podido leer')
+  expect(wikiCard(unread, { loading: true })).not.toContain('No he podido leer')
+  expect(primary(wikiCard(unread, { failed: true }))).toContain('disabled')
+  const kept = wikiBlocks({ repos: ['api'] }, [row({ stale: true })])[0]
+  const out = wikiCard(kept, { failed: true })                                       // last good rows: not quiet because a re-read failed
+  expect(out).toContain('data-wiki-state="stale"')
+  expect(primary(out)).not.toContain('disabled')
+  const wired = renderToStaticMarkup(<WikiBlock srv={srv} jobs={null} block={unread} failed onView={() => {}} onDone={() => {}} />)
+  expect(wired).not.toContain('No he podido leer')
 })

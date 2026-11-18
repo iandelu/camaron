@@ -17,7 +17,7 @@ const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
 export default function Docs({ srv, jobs, app, index }) {
   const open = (hash) => openPortal(app, location.origin, hash)
-  const { rows, loading, failed, reload } = useWikis(srv)
+  const wikis = useWikis(srv)
   const { running } = useStore(jobs || NO_JOBS)
   return (
     <Page title={t('nav.docs')} wide>
@@ -27,14 +27,23 @@ export default function Docs({ srv, jobs, app, index }) {
         <Button variant="ghost" onClick={() => open('#/search')}>{t('docs.search')}</Button>
       </div>
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
-      {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
-      <div className="dk-wikis" data-tour="docs-wikis">
-        {wikiBlocks(index, rows).map((b, i) => (          // a failed read is said once, above: the blocks do not repeat it
-          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
-            onView={() => open(b.hash)} onDone={reload} />))}
-      </div>
+      <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
       <Ask srv={srv} open={open} />
     </Page>
+  )
+}
+
+// The wiki cards and, once a read failed, the one notice above them (the cards do not repeat it). `wikis` is useWikis' state.
+export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, reload }, running, open }) {
+  return (
+    <>
+      {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
+      <div className="dk-wikis" data-tour="docs-wikis">
+        {wikiBlocks(index, rows).map((b, i) => (
+          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading} failed={failed} busyWith={wikiBusyWith(running, b.repo)}
+            onView={() => open(b.hash)} onDone={reload} />))}
+      </div>
+    </>
   )
 }
 
@@ -86,12 +95,12 @@ export function BuildCard({ title, hint, build, onBuild, onView }) {
 
 // One block per repo: its card runs POST wiki (Generate chooses the repo and writes the starter brief, Update asks for mode
 // `update`) and the graph build, and opens the wiki in the portal. Wiring only: what the card shows is WikiCard's.
-export function WikiBlock({ srv, jobs, block, loading = false, busyWith = '', index = 0, onView, onDone }) {
+export function WikiBlock({ srv, jobs, block, loading = false, failed = false, busyWith = '', index = 0, onView, onDone }) {
   const gen = useJob(srv, jobs, async (action) => startWiki(srv, block, action))
   const graph = useJob(srv, jobs, () => startBuild(srv, block.graph))
   const run = async (action) => { if ((await gen.run(action))?.status === 'done') onDone?.() }
   const build = async () => { if ((await graph.run())?.status === 'done') onDone?.() }
-  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} busyWith={busyWith} index={index} now={Date.now() / 1000}
+  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} failed={failed} busyWith={busyWith} index={index} now={Date.now() / 1000}
     onGenerate={run} onUpdate={run} onGraph={build} onView={onView} />
 }
 
@@ -106,10 +115,11 @@ const figures = ({ pages, at, brief }, now) => [
 ].filter(Boolean)
 
 // One repo's wiki as a card: its state (icon and word), one primary action, and View beside it once there are pages. `gen` and
-// `graph` are useJob states; `now` is epoch seconds, as the rows' `at`. Before the wikis are read (`loading`, or the tree
-// fallback's `blocked: 'unread'`) its row is only defaults, so it says nothing about freshness and closes its action. A reason of
-// its own (not cloned, no engine) or another repo's run (busyWith) closes what writes pages, never View.
-export function WikiCard({ block, gen, graph, loading = false, busyWith = '', index = 0, now, onGenerate, onUpdate, onGraph, onView }) {
+// `graph` are useJob states; `now` is epoch seconds, as the rows' `at`. Before the wikis are read (`loading` the first read, or the
+// tree fallback's `blocked: 'unread'`) its row is only defaults, so it says nothing about freshness and closes its action. A
+// failed re-read (`failed`) keeps the last good rows, so it does not quiet the card; it only spares the card the unread reason,
+// said once above. A reason of its own (not cloned, no engine) or another repo's run (busyWith) closes what writes pages, never View.
+export function WikiCard({ block, gen, graph, loading = false, failed = false, busyWith = '', index = 0, now, onGenerate, onUpdate, onGraph, onView }) {
   const title = t('docs.wikiBlock', { repo: block.repo })
   const graphTitle = t('docs.wiki', { repo: block.repo })
   const pages = block.hasWiki || gen.job?.status === 'done'
@@ -118,7 +128,7 @@ export function WikiCard({ block, gen, graph, loading = false, busyWith = '', in
   const state = unread ? 'unread' : own === 'none' && block.blocked ? 'blocked' : own
   const action = wikiAction(unread || state === 'blocked' ? 'none' : state)
   const writes = !!action.kind && action.kind !== 'view'
-  const why = (block.blocked && !(block.blocked === 'unread' && loading) ? t(WHY[block.blocked]) : '')
+  const why = (block.blocked && !(block.blocked === 'unread' && (loading || failed)) ? t(WHY[block.blocked]) : '')
     || (busyWith && writes ? t('docs.wikiBusy', { repo: busyWith }) : '')
   const label = action.label && t(action.label)
   const line = unread || state === 'generating' ? [] : figures(block.info, now)
