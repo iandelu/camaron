@@ -159,3 +159,33 @@ def test_a_conflict_after_a_derived_reset_leaves_the_derived_file_regenerated(ki
     assert r["status"] == "conflict"
     text = (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8")
     assert text and "<<<<<<<" not in text and text != "local edit\n"
+
+
+def test_push_uploads_local_work(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    assert kit.services.share.push(log=lambda _: None)["status"] == "pushed"
+    assert "docs/mine.md" in git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()
+    assert kit.services.share.sync_status()["last_share"]
+
+
+def test_push_with_nothing_new(kit, tmp_path):
+    publish(kit, bare(tmp_path))
+    assert kit.services.share.push(log=lambda _: None)["status"] == "nothing"
+
+
+def test_push_refuses_when_the_team_moved_and_rebases_nothing(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote); mate_commits(kit, remote, tmp_path)
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    head_remote = git(remote, "rev-parse", "main")
+    assert kit.services.share.push(log=lambda _: None)["status"] == "behind"
+    assert git(remote, "rev-parse", "main") == head_remote
+    assert not (kit.root / "docs" / "theirs.md").exists()
+
+
+def test_push_blocked_by_staged_secrets(kit, tmp_path, monkeypatch):
+    publish(kit, bare(tmp_path))
+    import lib.quality
+    monkeypatch.setattr(lib.quality, "staged_secrets", lambda: ["docs/mine.md:1 generic-api-key"])
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    assert kit.services.share.push(log=lambda _: None)["status"] == "blocked"

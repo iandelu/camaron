@@ -363,6 +363,45 @@ def pull(log: Log = print) -> dict:
     return result("pulled", branch, commits=behind, regenerated=regenerated)
 
 
+def push(log: Log = print) -> dict:
+    """Upload local cam-docs work; never rebases and never pulls. Returns {"status", "detail"}: pushed · nothing ·
+    behind (the team moved: pull first, nothing changed) · blocked (secrets staged) · no-remote · error."""
+    url = docs_remote()
+    if not url:
+        return {"status": "no-remote", "detail": ""}
+    global _sharing
+    _sharing = True
+    try:
+        checkpoint_commit("share", warn=log)
+    finally:
+        _sharing = False
+    if run(["git", "diff", "--cached", "--quiet"], cwd=ROOT, check=False, quiet=True).returncode != 0:
+        return {"status": "blocked", "detail": "staged changes were not committed (possible secrets): run check --secrets"}
+    if run(["git", "rev-parse", "--verify", "--quiet", "HEAD"], cwd=ROOT, check=False, quiet=True).returncode != 0:
+        return {"status": "nothing", "detail": ""}
+    branch = out(["git", "symbolic-ref", "--short", "HEAD"], cwd=ROOT)
+    if not branch:
+        return {"status": "error", "detail": "detached HEAD: check out a branch first"}
+    from lib import creds
+    auth = creds.git_env(url)
+    log(f"fetching {url}…")
+    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=auth)
+    if r.returncode:
+        return _failed(r, url)
+    theirs = f"origin/{branch}"
+    if run(["git", "rev-parse", "--verify", "--quiet", theirs], cwd=ROOT, check=False, quiet=True).returncode == 0:
+        if int(out(["git", "rev-list", "--count", f"HEAD..{theirs}"], cwd=ROOT) or 0) > 0:
+            return {"status": "behind", "detail": theirs}
+        if out(["git", "rev-list", "--count", f"{theirs}..HEAD"], cwd=ROOT) == "0":
+            return {"status": "nothing", "detail": branch}
+    log(f"pushing {branch}…")
+    r = run(["git", "push", "--quiet", "-u", "origin", branch], cwd=ROOT, check=False, quiet=True, env=auth)
+    if r.returncode:
+        return _failed(r, url)
+    _shared()
+    return {"status": "pushed", "detail": branch}
+
+
 def _shared() -> None:
     """Remember when this machine last shared (the portal's Sync view shows it)."""
     SHARED.parent.mkdir(parents=True, exist_ok=True)
