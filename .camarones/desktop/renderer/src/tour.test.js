@@ -1,12 +1,19 @@
 import { expect, test } from 'vitest'
 import { holes, place, tourAction, tourIds, TOURS } from './tour.js'
 import { S } from './i18n.js'
+import { LIBS } from './nav.js'
 
 test('a tour of the whole app and one per section, each with something to show', () => {
   expect(tourIds()).toEqual(['app', 'summary', 'board', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine'])
   expect(TOURS.app.length).toBeGreaterThanOrEqual(14)
   for (const id of tourIds()) expect(TOURS[id].length, id).toBeGreaterThanOrEqual(3)
-  for (const id of tourIds().filter((x) => x !== 'app')) expect(TOURS[id].every((s) => s.section === id), id).toBe(true)
+  for (const id of tourIds().filter((x) => x !== 'app')) expect(TOURS[id].every((s) => s.section === (id === 'libs' ? LIBS : id)), id).toBe(true)
+})
+
+test('the tour of the app walks the nav, which no longer lists libraries (a view of quality)', () => {
+  const nav = TOURS.app.map((s) => s.target).filter((x) => x.startsWith('nav-'))
+  expect(nav).not.toContain('nav-libs')
+  expect(nav).toContain('nav-quality')
 })
 
 test('every step has its title and text in both languages', () => {

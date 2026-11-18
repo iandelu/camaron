@@ -34,7 +34,7 @@ export function CandidatesView({ rows, onPick }) {
   if (!list.length) return (
     <Page title={t('adr.cand.title')}>
       <EmptyState title={t('adr.cand.none')} action={
-        <div className="row"><Button variant="primary" href="#/decisions/new">{t('adr.new')}</Button><Button href="#/libs">{t('adr.cand.libs')}</Button></div>}>
+        <div className="row"><Button variant="primary" href="#/decisions/new">{t('adr.new')}</Button><Button href="#/quality/libs">{t('adr.cand.libs')}</Button></div>}>
         {t('adr.cand.noneBody')}
       </EmptyState>
     </Page>

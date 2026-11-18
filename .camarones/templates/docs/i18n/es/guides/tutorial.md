@@ -205,7 +205,7 @@ ejecuta la imagen que subió la CI: `docker run -d -p 8080:80 <registry>/<group>
 
 El menú lateral del portal tiene siete zonas —Docs, Tablero, Historias, Arquitectura, Plan, Calidad y Revisión— y
 Ctrl K / ⌘K salta a cualquier página o vista. Las secciones de la app son Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo,
-Calidad, Librerías y Docs, más Máquina y Guía; `g` y una letra salta de una a otra.
+Calidad y Docs (Librerías es una vista de Calidad), más Máquina y Guía; `g` y una letra salta de una a otra.
 
 En la app, **Empezar** o **Seguir** una unidad y la actualización de la doc (**Plan › Mantenerla al día**) abren el
 agente como una terminal en el lienzo del Plan, donde le escribes como en cualquier terminal: F6 sale de la terminal

@@ -8,7 +8,7 @@ import { TourOffer } from './sections/Summary.jsx'
 import Machine from './sections/Machine.jsx'
 import { entries } from './palette.js'
 import { tourIds, TOURS } from './tour.js'
-import { MACHINE, PROJECT } from './nav.js'
+import { LIBS, MACHINE, PROJECT } from './nav.js'
 import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -42,7 +42,7 @@ test('the first step has no Back, the last says Done, a missing target says so',
 
 test('every Show me in the guides starts a tour that exists, every Go to names a section', () => {
   for (const [f, id] of markers('tour')) expect(tourIds(), `${f}: tour:${id}`).toContain(id)
-  for (const [f, s] of markers('go')) expect([...PROJECT, ...MACHINE], `${f}: go:${s}`).toContain(s)
+  for (const [f, s] of markers('go')) expect([...PROJECT, ...MACHINE, LIBS], `${f}: go:${s}`).toContain(s)
 })
 
 test('every step points at something the app marks with data-tour', () => {

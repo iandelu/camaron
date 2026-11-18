@@ -4,6 +4,7 @@ import { chapters, guideAt, guideHref, inline, linkTarget, parse, searchGuides }
 import { inPanel, sectionFor } from '../catalog.js'
 import { portalUrl } from '../docs.js'
 import { useHash } from '../hooks.js'
+import { LIBS } from '../nav.js'
 import { Failed, Page } from '../parts.jsx'
 import { catalog } from './Commands.jsx'
 import { lang, t } from '../i18n.js'
@@ -25,7 +26,10 @@ const remember = (v) => { try { localStorage.setItem(KEY, v) } catch { /* a priv
 // Where a marker goes from this window; null when this window cannot go there (Kit dev outside a kit checkout, a
 // command the catalog does not list or has not sent yet, a tour that does not exist).
 export function markerAction({ kind, target }, { sections = [], commands = [], tours = [] }) {
-  if (kind === 'go') return sections.includes(target) ? { label: t('gd.go', { s: t('nav.' + target) }), href: `#/${target}` } : null
+  if (kind === 'go') {                                 // a section, or Quality's libraries (go:quality/libs)
+    const libs = target === LIBS
+    return sections.includes(libs ? 'quality' : target) ? { label: t('gd.go', { s: t(libs ? 'nav.libs' : 'nav.' + target) }), href: `#/${target}` } : null
+  }
   if (kind === 'cmd') {
     const c = commands.find((x) => x.name === target)
     const s = c && sectionFor(c, sections)

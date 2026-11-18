@@ -100,16 +100,14 @@ export function FetchNote({ fetched, remote }) {
 }
 
 // What came with the team's repo (agent config, plugins) and this machine has not approved: nothing of it loads
-// until it is. Approving runs `trust --yes` after a dialog that lists it. The method hooks, on or off.
+// until it is. Approving runs `trust --yes` after a dialog that lists it. (The method hooks' switch is Quality's.)
 function Trust({ srv, jobs, tick = 0 }) {
   const list = useCmd(srv, jobs, { quiet: true })
-  const hooks = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   const dialog = useRef(null)
-  const load = () => { list.run('trust', { json: true }); hooks.run('hooks', { json: true }) }
+  const load = () => { list.run('trust', { json: true }) }
   useEffect(() => { load() }, [tick])
   const rows = list.job?.result?.pending
-  const on = hooks.job?.result?.enabled
   const then = async (p) => { await p; load() }
   return (
     <Card className="dk-run" data-tour="team-trust">
@@ -131,10 +129,6 @@ function Trust({ srv, jobs, tick = 0 }) {
           </div>
         </dialog>
       </>) : <p className="small">{t('tm.trusted')}</p>) : <JobOutput c={list} />}
-      {on != null ? (
-        <label className="dk-check"><input type="checkbox" checked={on} disabled={act.running}
-          onChange={() => then(act.run('hooks', { state: on ? 'off' : 'on' }))} />{t('tm.hooks')}</label>
-      ) : null}
       <JobOutput c={act} />
     </Card>
   )

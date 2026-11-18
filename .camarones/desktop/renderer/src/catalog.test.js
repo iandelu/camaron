@@ -37,3 +37,16 @@ test('where the app runs each command', () => {
   expect(sectionFor(c('up', 'docs'))).toBeNull()
   expect(sectionFor(c('ci', 'team'), ['summary', 'plan'])).toBeNull()      // a section this window lacks
 })
+
+// The method hooks are a quality tool (what the agents consult before editing), so quality runs them; team keeps the trust.
+test('the method hooks are a panel of quality, not of team', () => {
+  expect(sectionFor(c('hooks', 'team'))).toBe('quality')
+  expect(inPanel(c('hooks', 'team'))).toBe(true)
+  const cmds = [c('hooks', 'team'), c('ci', 'team')]
+  expect(others(cmds, 'team').safe.map((x) => x.name)).toEqual(['ci'])           // not twice: its panel is Quality's
+  expect(others(cmds, 'quality').safe).toEqual([])
+})
+
+test('the secret scan is `check --secrets`: the full check stays in the folded list', () => {
+  expect(others([c('check', 'check')], 'quality').safe.map((x) => x.name)).toEqual(['check'])
+})

@@ -192,7 +192,7 @@ The export is plain static files (nginx image, GitLab/GitHub Pages) and works wi
 image CI pushed: `docker run -d -p 8080:80 <registry>/<group>/cam-docs/portal:latest`.
 
 The portal's sidebar has seven zones — Docs, Board, Stories, Architecture, Plan, Quality and Review — and Ctrl K / ⌘K
-jumps to any page or view. The app's sections are Summary, Board, Decisions, Plan, Interviews, Team, Quality, Libraries and Docs,
+jumps to any page or view. The app's sections are Summary, Board, Decisions, Plan, Interviews, Team, Quality and Docs (Libraries is a view of Quality),
 plus Machine and Guide; `g` then a letter jumps between them.
 
 In the app, **Start** or **Continue** on a unit and the docs update (**Plan › Keep it current**) open the agent as a

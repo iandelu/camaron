@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, inventoryArgs, lookupProgress, pytestSummary, scanProgress, seconds, setupProgress } from './quality.js'
+import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, inventoryArgs, lookupProgress, pytestSummary, scanProgress, secretsVerdict, seconds, setupProgress } from './quality.js'
 
 const fix = (cmd, args = {}) => ({ cmd, args })
 
@@ -34,7 +34,7 @@ test('a check\'s time in seconds, for "checked n min ago"', () => {
 })
 
 test('the board rows whose controls the app owns; review is a link and repos a table, neither an action', () => {
-  expect(BOARD_ACTIONS).toEqual(['doctor', 'drift', 'fresh', 'evals', 'context', 'blocks', 'ab', 'libs'])
+  expect(BOARD_ACTIONS).toEqual(['doctor', 'drift', 'fresh', 'evals', 'context', 'blocks', 'ab', 'secrets', 'hooks', 'libs'])
   expect(BOARD_ACTIONS).not.toContain('review')
   expect(BOARD_ACTIONS).not.toContain('repos')
 })
@@ -76,4 +76,24 @@ test('a running lookup is attached to, and its progress read despite the colon i
     .toEqual({ n: 12, total: 400, name: 'org.postgresql:postgresql' })
   expect(lookupProgress([])).toEqual({ n: 0, total: 0, name: '' })
   expect(lookupProgress(undefined).total).toBe(0)
+})
+
+// `check --secrets` prints "WARN  <why>" for a scan it could not run and "ERROR <file:line: possible secret …>" per finding:
+// no output is a clean scan, and a scan that did not run is never a clean one.
+test('the secret scan: findings, a scan that could not run, or clean', () => {
+  expect(secretsVerdict(['ERROR docs/a.md:3: possible secret (aws-key) — remove it or use a placeholder', 'WARN  slow']))
+    .toEqual({ state: 'found', items: ['docs/a.md:3: possible secret (aws-key) — remove it or use a placeholder'] })
+  expect(secretsVerdict(['WARN  gitleaks not installed — secret scan skipped']))
+    .toEqual({ state: 'skipped', items: ['gitleaks not installed — secret scan skipped'] })
+  expect(secretsVerdict([])).toEqual({ state: 'clean', items: [] })
+  expect(secretsVerdict(['reading…', '✔ done'])).toEqual({ state: 'clean', items: [] })
+  expect(secretsVerdict(undefined)).toEqual({ state: 'clean', items: [] })
+})
+
+test('the share of code-editing sessions that read the docs first: a percentage, or a dash with no sessions', () => {
+  expect(hooksShare({ share: 0.75 })).toBe('75%')
+  expect(hooksShare({ share: 1 })).toBe('100%')
+  expect(hooksShare({ share: 0 })).toBe('0%')
+  expect(hooksShare({ share: null })).toBe('—')
+  expect(hooksShare(undefined)).toBe('—')
 })

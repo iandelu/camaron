@@ -2,14 +2,13 @@
 // without the commands its own panels already run. What deletes or moves data goes apart, last.
 export const ZONES = { plan: ['generate'], interviews: ['interviews'], team: ['team'], quality: ['check', 'analyze'],
   machine: ['machine'] }
-const PANELS = { plan: ['run', 'autopilot', 'docs'], interviews: ['interview'], team: ['remote', 'share', 'trust', 'hooks', 'plugins'],
-  quality: ['doctor', 'eval', 'ab', 'inventory', 'health', 'fresh', 'blocks'],
+const PANELS = { plan: ['run', 'autopilot', 'docs'], interviews: ['interview'], team: ['remote', 'share', 'trust', 'plugins'],
+  quality: ['doctor', 'eval', 'ab', 'inventory', 'health', 'fresh', 'blocks', 'hooks'],
   machine: ['setup', 'config', 'sync', 'detect', 'stack', 'profile', 'self-update', 'repair', 'uninstall'] }
 
 export function others(commands, section) {
   const zones = ZONES[section] || []
-  const mine = (commands || []).filter((c) => zones.includes(c.zone) && c.verdict !== 'portal'
-    && !(PANELS[section] || []).includes(c.name))
+  const mine = (commands || []).filter((c) => zones.includes(c.zone) && c.verdict !== 'portal' && !inPanel(c))
   return { safe: mine.filter((c) => !c.destructive), careful: mine.filter((c) => c.destructive) }
 }
 

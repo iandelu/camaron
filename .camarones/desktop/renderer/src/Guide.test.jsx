@@ -63,6 +63,9 @@ test('markerAction: where each marker goes, null when it cannot go there', () =>
   expect(markerAction({ kind: 'portal', target: 'javascript:alert(1)' }, ctx)).toBeNull()
   expect(markerAction({ kind: 'tour', target: 'plan' }, ctx)).toEqual({ label: 'Enséñamelo', tour: 'plan' })
   expect(markerAction({ kind: 'go', target: 'kitdev' }, ctx)).toBeNull()
+  expect(markerAction({ kind: 'go', target: 'quality/libs' }, ctx)).toEqual({ label: 'Ir a Librerías', href: '#/quality/libs' })
+  expect(markerAction({ kind: 'go', target: 'quality/libs' }, { ...ctx, sections: ['plan'] })).toBeNull()
+  expect(markerAction({ kind: 'go', target: 'quality/nope' }, ctx)).toBeNull()
 })
 
 test('the search box is there, in the machine language', () => {

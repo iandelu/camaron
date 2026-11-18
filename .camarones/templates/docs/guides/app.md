@@ -28,7 +28,7 @@ Each project has its own window, served by that project's own local server (see
 |---|---|
 | Header | The brand (back to Summary), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
 | Rail | One button per project of this machine, with its initials. Another project opens **in this window**: the app starts that project's server, moves the window to it and stops the old one. Stopping it ends the sessions open on its canvas, so when one is live the app asks first: *{n} sessions are open in this project: switching project ends them.* — **Cancel** or **Switch anyway**. A project that is not on disk is greyed out. **+** opens the start screen |
-| Sections | Summary, Board, Decisions, Plan, Interviews, Team, Quality, Libraries and Docs; then, under **This app**, Machine, Guide and (only in a checkout of the kit) Kit dev. Hover one to see its shortcut |
+| Sections | Summary, Board, Decisions, Plan, Interviews, Team, Quality and Docs (Libraries is a view of Quality); then, under **This app**, Machine, Guide and (only in a checkout of the kit) Kit dev. Hover one to see its shortcut |
 | Main area | The section you are in |
 | Jobs panel and status bar | What runs now and the last jobs, with their output; the status bar shows the first running job and the kit's version |
 
@@ -56,7 +56,7 @@ Inside a section, a command's card shows the same thing: a state chip, the error
 | Keys | Goes to |
 |---|---|
 | <kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd> | The palette: a section, another project, an action or, once you type, any command and any chapter of this guide |
-| <kbd>g</kbd> then <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>l</kbd> <kbd>d</kbd> | Summary, Board, Decisions, Plan, Interviews, Team, Quality, Libraries, Docs |
+| <kbd>g</kbd> then <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>d</kbd> | Summary, Board, Decisions, Plan, Interviews, Team, Quality, Docs |
 | <kbd>g</kbd> then <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Machine, Guide, Kit dev (in a checkout of the kit) |
 
 The second letter has to come within a second and a half of the <kbd>g</kbd>. Shortcuts are ignored while you type in a
@@ -353,8 +353,8 @@ repo is not there — with git's own line beneath; a token problem links to **Ma
 
 **What came with the team's repo.** Hooks, MCP servers, settings, skills, files and plugins in `cam-docs` that the kit
 did not write wait here until you approve them on this machine: **Approve (n)** lists them and runs
-`camaron trust --yes`. Approvals live in `~/.camarones/trust/`, never in the repo. **Method hooks in Claude Code**
-turns the kit's five hooks on or off (`camaron hooks`).
+`camaron trust --yes`. Approvals live in `~/.camarones/trust/`, never in the repo. The switch for the kit's own method
+hooks is in **Quality**.
 
 **Plugins.** The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
 whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
@@ -370,7 +370,8 @@ says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one in
 ## Quality
 
 The project's health in one board: this machine, the docs and the code (`#/quality`, <kbd>g</kbd> <kbd>q</kbd>). It
-reads `camaron health`, which needs no AI.
+reads `camaron health`, which needs no AI. Two views sit under the title: **Health**, the board, and **Libraries**
+(`#/quality/libs`, below); the old `#/libs` address still opens it.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -381,8 +382,8 @@ and **Check everything** (`camaron health --refresh`). Then three areas, each wi
 | Area | States | Figures | What Open reveals |
 |---|---|---|---|
 | Machine | Ready · Review · At risk | tools, missing | **Requirements and tools**: what is missing first, each with **Install** (`camaron doctor --install …`), **Install the pinned ones** (`camaron setup`), **Check again**, and kit files out of place with **Repair**. **Kit files**: each file or link that is off, with why; **Repair** puts back the kit's, checks again and says what it could not fix and why. A file of yours that the kit never replaces is listed as kept, not as something to fix |
-| Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them) and **With and without cam-docs (AI)** (the same question asked twice) |
-| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries section |
+| Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them), **With and without cam-docs (AI)** (the same question asked twice), **Secret scan** (gitleaks over the docs and the wikis, `camaron check --secrets`: it runs when you open the row, lists each place it found — never the value — and says plainly when it could not run) and **Hooks for the agents** (the switch for the five Claude Code method hooks, `camaron hooks`, and what they saw: prompts that got docs, sessions that read the docs before their first code edit, edits stopped) |
+| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries view |
 
 A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Machine › Tokens with the
 server filled in. A figure that could not be read shows "—", never 0. Below the board: **See the KPIs** (portal) and
@@ -390,12 +391,14 @@ server filled in. A figure that could not be read shows "—", never 0. Below th
 
 <!-- cmd:health -->
 <!-- cmd:check -->
+<!-- cmd:hooks -->
 
 ## Libraries
 
-Every repo's dependencies, read from its manifests and lockfiles without AI (`#/libs`, <kbd>g</kbd> <kbd>l</kbd>).
+Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's second view
+(`#/quality/libs`).
 
-<!-- go:libs -->
+<!-- go:quality/libs -->
 <!-- tour:libs -->
 
 - **Scan for vulnerabilities** runs `camaron inventory --cves` (OSV-Scanner with its offline database, downloaded once);

@@ -2,11 +2,13 @@
 // points at; its title and text are i18n keys tour.<id>.<n>.t / .b (n from 1). Where the bubble goes and the dim around
 // the target are worked out here, so the overlay (Tour.jsx) only draws.
 
+import { LIBS } from './nav.js'
+
 const nav = (s) => ({ section: null, target: `nav-${s}` })
 const at = (section, ...targets) => targets.map((target) => ({ section, target }))
 
 export const TOURS = {
-  app: [{ section: null, target: 'rail' }, ...['summary', 'board', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine'].map(nav),
+  app: [{ section: null, target: 'rail' }, ...['summary', 'board', 'plan', 'interviews', 'team', 'quality', 'docs', 'machine'].map(nav),
     { section: null, target: 'find' }, { section: null, target: 'portal' }, { section: null, target: 'menu' },
     { section: null, target: 'jobs' }, nav('guide')],
   summary: at('summary', 'summary-next', 'summary-doctor', 'summary-stats'),
@@ -15,7 +17,7 @@ export const TOURS = {
   interviews: at('interviews', 'iv-mode', 'iv-questionnaire', 'iv-agents'),
   team: at('team', 'team-repo', 'team-trust', 'team-plugins'),
   quality: at('quality', 'q-verdict', 'q-areas', 'q-repos'),
-  libs: at('libs', 'libs-actions', 'libs-filters', 'libs-table'),
+  libs: at(LIBS, 'libs-actions', 'libs-filters', 'libs-table'),
   docs: at('docs', 'docs-portal', 'docs-c4', 'docs-wikis', 'docs-ask'),
   machine: at('machine', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-tokens', 'mc-repos', 'mc-kit', 'mc-uninstall'),
 }

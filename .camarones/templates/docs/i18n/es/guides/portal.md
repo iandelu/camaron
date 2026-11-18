@@ -181,13 +181,6 @@ bruto está a un clic.
 **Datos** (`#/data`, en vivo): las tablas y colecciones de cada repo leídas del código, con el diagrama ER y sus
 campos.
 
-**Librerías** (`#/libs`, en vivo): la misma pantalla que la de la app de escritorio. Una línea por librería con la
-versión que usan los repos y la última estable, las vulnerables primero, cada una diciendo en qué repos está; filtros
-(categoría, repo, ámbito, solo vulnerables, solo desactualizadas) que se quedan a la vista al bajar, y nada se desplaza
-de lado. Al abrir una librería, por repo, el comando `camaron bump` con la versión propuesta, listo para copiar (el
-portal no ejecuta nada en tu máquina); luego sus avisos y por qué está. Escanear y buscar versiones nuevas se hace en la
-app de escritorio o con `camaron inventory --cves --latest`. `#/libs/<repo>` la abre para un solo repo.
-
 <!-- portal:#/c4 -->
 
 ## Plan
@@ -220,6 +213,13 @@ solo lectura, de la última comprobación. Las filas enlazan a Revisión, Librer
 la app o con `camaron health`. `#/health/<repo>` es un repo completo: su puerta de calidad de SonarQube y nueve cifras,
 la cobertura y los informes de los que sale, sus librerías vulnerables, su deuda técnica por la página de la que sale y
 las páginas que citan su código y están desactualizadas.
+
+**Librerías** (`#/libs`, en vivo): la misma pantalla que la de la app de escritorio. Una línea por librería con la
+versión que usan los repos y la última estable, las vulnerables primero, cada una diciendo en qué repos está; filtros
+(categoría, repo, ámbito, solo vulnerables, solo desactualizadas) que se quedan a la vista al bajar, y nada se desplaza
+de lado. Al abrir una librería, por repo, el comando `camaron bump` con la versión propuesta, listo para copiar (el
+portal no ejecuta nada en tu máquina); luego sus avisos y por qué está. Escanear y buscar versiones nuevas se hace en la
+app de escritorio o con `camaron inventory --cves --latest`. `#/libs/<repo>` la abre para un solo repo.
 
 **KPIs** (`#/kpis`, en vivo): ¿funciona la documentación? **Plan desde 0** (lo que costó el plan), páginas y elementos
 C4 confirmados, páginas desactualizadas, búsquedas sin respuesta, unidades hechas, coste de IA del mes, preguntas de
@@ -267,9 +267,9 @@ El portal pinta el Markdown con algunos extras; los agentes leen los mismos fich
 | `#/docs`, `#/docs/<ruta>`, `#/new` | Portada de Docs, una página, una página nueva |
 | `#/wikis`, `#/wiki/<repo>`, `#/wiki/<repo>/<página>` | Wikis, el grafo de una wiki, una página de wiki |
 | `#/kanban`, `#/kanban/<ID>`, `#/stories` | Tablero, una tarjeta, Historias |
-| `#/c4`, `#/c4/<vista>`, `#/code`, `#/data`, `#/libs` | Arquitectura |
+| `#/c4`, `#/c4/<vista>`, `#/code`, `#/data` | Arquitectura |
 | `#/pipeline`, `#/interview`, `#/sync` | Plan |
-| `#/health`, `#/health/<repo>`, `#/kpis`, `#/ci` | Calidad |
+| `#/health`, `#/health/<repo>`, `#/libs`, `#/libs/<repo>`, `#/kpis`, `#/ci` | Calidad |
 | `#/review`, `#/search/<palabras>`, `#/ask/<pregunta>` | Revisión, búsqueda, Preguntar |
 
 Las direcciones antiguas (`#/doc/…`, `#/status`, `#/wikis/<repo>`) siguen funcionando.

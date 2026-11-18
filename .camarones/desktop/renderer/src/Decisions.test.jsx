@@ -317,5 +317,5 @@ test('the candidates group by what they are, with their repos and a way to write
 test('no candidates says why and where to go', () => {
   const out = html(<CandidatesView rows={[]} onPick={noop} />)
   expect(out).toContain('Ninguna decisión del código está sin ADR')
-  expect(out).toContain('href="#/libs"')
+  expect(out).toContain('href="#/quality/libs"')
 })

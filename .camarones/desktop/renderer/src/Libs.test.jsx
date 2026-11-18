@@ -11,9 +11,9 @@ const idle = { job: null, error: '', running: false, stop: () => {} }
 
 afterEach(() => setLang('es'))
 
-test('Libraries is its own section of the app, with a title while it loads', () => {
+test('Libraries is a view of Quality: it draws no page title of its own while it loads', () => {
   const out = renderToStaticMarkup(<Libs srv={srv} jobs={null} />)
-  expect(out).toContain('Librerías')
+  expect(out).not.toContain('<h1')
 })
 
 test('its actions: scan, look for newer versions, reread, and the portal', () => {

@@ -28,7 +28,7 @@ Cada proyecto tiene su ventana, servida por el servidor local de ese proyecto (v
 |---|---|
 | Cabecera | La marca (vuelve al Resumen), dónde estás (`proyecto › sección`), **Ver portal**, **Buscar o ir a…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) y **⋯**. La cabecera es la barra de la ventana: arrástrala para moverla |
 | Raíl | Un botón por cada proyecto de esta máquina, con sus iniciales. Otro proyecto se abre **en esta ventana**: la app arranca el servidor de ese proyecto, lleva la ventana a él y para el anterior. Pararlo cierra las sesiones abiertas en su lienzo, así que si alguna sigue viva la app pregunta antes: *Hay {n} sesiones abiertas en este proyecto: al cambiar de proyecto se cierran.* — **Cancelar** o **Cambiar igualmente**. Un proyecto que no está en el disco sale apagado. **+** abre la pantalla de inicio |
-| Secciones | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad, Librerías y Docs; después, bajo **Esta app**, Máquina, Guía y (solo en un checkout del kit) Kit dev. Al pasar por una ves su atajo |
+| Secciones | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad y Docs (Librerías es una vista de Calidad); después, bajo **Esta app**, Máquina, Guía y (solo en un checkout del kit) Kit dev. Al pasar por una ves su atajo |
 | Zona central | La sección en la que estás |
 | Panel de trabajos y barra de estado | Lo que corre ahora y los últimos trabajos, con su salida; la barra de estado enseña el primer trabajo en curso y la versión del kit |
 
@@ -57,7 +57,7 @@ una **Salida** plegada que se abre sola cuando algo falla.
 | Teclas | Va a |
 |---|---|
 | <kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd> | La paleta: una sección, otro proyecto, una acción o, en cuanto escribes, cualquier comando y cualquier capítulo de esta guía |
-| <kbd>g</kbd> y después <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>l</kbd> <kbd>d</kbd> | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad, Librerías, Docs |
+| <kbd>g</kbd> y después <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>d</kbd> | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad, Docs |
 | <kbd>g</kbd> y después <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Máquina, Guía, Kit dev (en un checkout del kit) |
 
 La segunda letra tiene que llegar en segundo y medio desde la <kbd>g</kbd>. Los atajos no cuentan mientras escribes en
@@ -365,8 +365,8 @@ proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de gi
 
 **Lo que llegó con el repo del equipo.** Los hooks, servidores MCP, ajustes, skills, ficheros y plugins de `cam-docs`
 que no escribió el kit esperan aquí a que los apruebes en esta máquina: **Aprobar (n)** los lista y ejecuta
-`camaron trust --yes`. Las aprobaciones viven en `~/.camarones/trust/`, nunca en el repo. **Hooks del método en Claude
-Code** activa o quita los cinco hooks del kit (`camaron hooks`).
+`camaron trust --yes`. Las aprobaciones viven en `~/.camarones/trust/`, nunca en el repo. El interruptor de los hooks
+del método del propio kit está en **Calidad**.
 
 **Plugins.** Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
 uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
@@ -383,7 +383,8 @@ dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno
 ## Calidad
 
 La salud del proyecto en un solo panel: esta máquina, la documentación y el código (`#/quality`, <kbd>g</kbd>
-<kbd>q</kbd>). Lee `camaron health`, que no usa IA.
+<kbd>q</kbd>). Lee `camaron health`, que no usa IA. Bajo el título hay dos vistas: **Salud**, el panel, y **Librerías**
+(`#/quality/libs`, más abajo); la dirección antigua `#/libs` sigue abriéndola.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -394,8 +395,8 @@ Arriba, un veredicto («Páginas desactualizadas: 3 · Críticas o altas: 2», o
 | Área | Estados | Cifras | Qué enseña Abrir |
 |---|---|---|---|
 | Máquina | Lista · Revisar · Riesgo | herramientas, faltan | **Requisitos y herramientas**: primero lo que falta, cada cosa con **Instalar** (`camaron doctor --install …`), **Instalar las fijadas** (`camaron setup`), **Volver a comprobar**, y ficheros del kit fuera de su sitio con **Reparar**. **Ficheros del kit**: cada fichero o enlace fuera de su sitio, con su motivo; **Reparar** repone lo del kit, vuelve a comprobar y dice qué no ha podido y por qué. Un fichero tuyo que el kit nunca reemplaza sale como «se queda como está», no como algo por arreglar |
-| Documentación | Al día · Revisar · Riesgo | páginas desactualizadas, por revisar | **Páginas desactualizadas** (cada una con **Sigue valiendo**, o **Añadir una unidad que las actualice**), **Preguntas de control (IA)** (confirmar preguntas de oro, hacerlas, o **Proponer preguntas con {agente}**), **Contexto de cada sesión** (los tokens que carga cada sesión de agente frente al presupuesto), **Páginas por revisar** (portal), **Bloques generados** (actualizarlos) y **Con y sin cam-docs (IA)** (la misma pregunta dos veces) |
-| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en el portal). **Librerías** → la sección Librerías |
+| Documentación | Al día · Revisar · Riesgo | páginas desactualizadas, por revisar | **Páginas desactualizadas** (cada una con **Sigue valiendo**, o **Añadir una unidad que las actualice**), **Preguntas de control (IA)** (confirmar preguntas de oro, hacerlas, o **Proponer preguntas con {agente}**), **Contexto de cada sesión** (los tokens que carga cada sesión de agente frente al presupuesto), **Páginas por revisar** (portal), **Bloques generados** (actualizarlos), **Con y sin cam-docs (IA)** (la misma pregunta dos veces), **Escaneo de secretos** (gitleaks sobre la documentación y las wikis, `camaron check --secrets`: se ejecuta al abrir la fila, lista cada sitio donde encontró algo —nunca el valor— y dice claro cuando no pudo ejecutarse) y **Hooks para los agentes** (el interruptor de los cinco hooks del método de Claude Code, `camaron hooks`, y lo que han visto: prompts con documentación, sesiones que leyeron la documentación antes de su primera edición de código, ediciones frenadas) |
+| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en el portal). **Librerías** → la vista Librerías |
 
 Un repo que usa SonarQube sin token guardado enseña **Conectar SonarQube**, que abre Máquina › Tokens con el servidor
 escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo del panel: **Ver los KPIs** (portal) y
@@ -403,12 +404,14 @@ escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo d
 
 <!-- cmd:health -->
 <!-- cmd:check -->
+<!-- cmd:hooks -->
 
 ## Librerías
 
-Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA (`#/libs`, <kbd>g</kbd> <kbd>l</kbd>).
+Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la segunda vista de Calidad
+(`#/quality/libs`).
 
-<!-- go:libs -->
+<!-- go:quality/libs -->
 <!-- tour:libs -->
 
 - **Buscar vulnerabilidades** ejecuta `camaron inventory --cves` (OSV-Scanner con su base de datos sin conexión, que se

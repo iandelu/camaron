@@ -1,8 +1,9 @@
 import { inPanel, sectionFor } from './catalog.js'
+import { LIBS } from './nav.js'
 
 // The ⌘K palette and the `g` shortcuts, pure: which letter goes where, what the palette lists, how a query picks.
 
-export const GO = { s: 'summary', b: 'board', a: 'decisions', p: 'plan', i: 'interviews', t: 'team', q: 'quality', l: 'libs', d: 'docs', m: 'machine', h: 'guide', k: 'kitdev' }
+export const GO = { s: 'summary', b: 'board', a: 'decisions', p: 'plan', i: 'interviews', t: 'team', q: 'quality', d: 'docs', m: 'machine', h: 'guide', k: 'kitdev' }
 export const keyFor = (section) => Object.keys(GO).find((k) => GO[k] === section)
 const CHORD_MS = 1500
 
@@ -21,7 +22,8 @@ export const typing = (el) => !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagNa
 export function entries({ sections, projects = [], commands = [], guide = [], t, lang = 'es' }) {
   return [
     { id: 'sections', label: t('pal.sections'),
-      items: sections.map((s) => ({ id: `go:${s}`, label: t('nav.' + s), keys: ['g', keyFor(s)], href: `#/${s}` })) },
+      items: sections.flatMap((s) => [{ id: `go:${s}`, label: t('nav.' + s), keys: ['g', keyFor(s)], href: `#/${s}` },
+        ...(s === 'quality' ? [{ id: 'go:libs', label: t('nav.libs'), sub: t('nav.quality'), href: `#/${LIBS}` }] : [])]) },
     { id: 'projects', label: t('pal.projects'),
       items: projects.filter((p) => !p.current && p.exists).map((p) => ({ id: `project:${p.path}`, label: p.name, sub: t('pal.switch'), project: p })) },
     { id: 'actions', label: t('pal.actions'), items: [

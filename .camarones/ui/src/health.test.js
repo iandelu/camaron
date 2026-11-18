@@ -149,17 +149,19 @@ test('a fact the snapshot does not hold is a dash and a neutral state, never 0 o
   expect(out).not.toContain('undefined')
 })
 
-test('rowsFor docs gives the six rows in spec order, with the error message of a failed source', () => {
+test('rowsFor docs gives the eight rows in spec order, with the error message of a failed source', () => {
   const s = snapshot()
   s.docs = { ...s.docs, stale: { error: 'no index' }, suspect: { error: 'no index' }, evals: { error: 'bad yaml' } }
   const rows = rowsFor('docs', s)
-  expect(rows.map((r) => r.id)).toEqual(['fresh', 'evals', 'context', 'review', 'blocks', 'ab'])
+  expect(rows.map((r) => r.id)).toEqual(['fresh', 'evals', 'context', 'review', 'blocks', 'ab', 'secrets', 'hooks'])
   expect(rows[0]).toMatchObject({ state: 'warn', figure: null, error: 'no index' })
   expect(rows[1]).toMatchObject({ state: 'warn', figure: null, error: 'bad yaml' })
   expect(rows[2]).toMatchObject({ state: 'ok', figure: '900/2000' })
   expect(rows[3]).toMatchObject({ state: 'ok', figure: '0' })
   expect(rows[4]).toEqual({ id: 'blocks', state: null, figure: null })        // no fact in the snapshot
   expect(rows[5]).toEqual({ id: 'ab', state: null, figure: null })
+  expect(rows[6]).toEqual({ id: 'secrets', state: null, figure: null })       // the app reads them live, the snapshot holds nothing
+  expect(rows[7]).toEqual({ id: 'hooks', state: null, figure: null })
 })
 
 test('rowsFor docs rates stale pages bad, suspect and unconfirmed questions warn', () => {

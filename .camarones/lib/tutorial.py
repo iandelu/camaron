@@ -206,8 +206,8 @@ PAGES = {
                  "que se despliega con Docker o en cualquier hosting estático (`camaron up --static` la enseña tal "
                  "cual). Inicio pregunta primero y enseña el estado del proyecto; el menú lateral tiene siete zonas: "
                  "Docs (páginas y wikis), Tablero, Historias, Arquitectura (el C4 con sus elementos para corregir y "
-                 "confirmar, el grafo de código, Datos y Librerías), Plan (el Pipeline en vivo, la Entrevista y "
-                 "Sincronizar), Calidad (Salud, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o "
+                 "confirmar, el grafo de código y Datos), Plan (el Pipeline en vivo, la Entrevista y "
+                 "Sincronizar), Calidad (Salud, Librerías, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o "
                  "lleva la pregunta a Preguntar, que da las secciones que responden con su cita, sin IA. El portal "
                  "nunca ejecuta nada en tu máquina: lanzar el plan, generar wikis, construir el explorador C4 o "
                  "responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Máquina › Guía) o "
@@ -222,7 +222,6 @@ PAGES = {
    |      Entrevistas                                                           |
    |      Equipo       A esta máquina le falta algo: gitleaks   ( Verlo )       |
    |      Calidad                                                               |
-   |      Librerías                                                             |
    |      Docs                                                                  |
    |      Máquina      TRABAJOS  Hecho  doctor  ahora              Historial    |
    |      Guía                                                                  |
@@ -237,10 +236,10 @@ PAGES = {
                  "actualización de la doc va en Sesiones sueltas; mientras corre el piloto, Tomar el control abre en el "
                  "nodo la conversación de una unidad en marcha para corregirla, y Devolver al piloto se la devuelve; "
                  "debajo, lo que lleva costado el plan), Entrevistas, Equipo (compartir, aprobar lo que llegó con el repo del equipo, "
-                 "plugins), Calidad (la salud del proyecto: máquina, documentación y código, repo a repo), Librerías "
-                 "(buscar vulnerabilidades repo a repo, con su barra, Parar y un tick al acabar; en qué repos está cada "
-                 "una, primero donde tiene avisos; y Actualizar en una rama nueva, también un módulo Maven cuya versión "
-                 "fija el pom padre) y Docs (abre el portal en tu navegador, construye "
+                 "plugins), Calidad (la salud del proyecto: máquina, documentación y código, repo a repo; el escaneo de "
+                 "secretos y los hooks del método; y su vista Librerías: buscar vulnerabilidades repo a repo, con su "
+                 "barra, Parar y un tick al acabar; en qué repos está cada una, primero donde tiene avisos; y "
+                 "Actualizar en una rama nueva, también un módulo Maven cuya versión fija el pom padre) y Docs (abre el portal en tu navegador, construye "
                  "el explorador C4, genera las wikis y responde con IA); debajo, Máquina (setup, que dice «Lista» cuando "
                  "ya corrió en esta máquina, idioma y modelos, "
                  "dónde se abren las sesiones, tokens, repos, el kit y desinstalar) y Guía: todo esto explicado a fondo, con botones que te llevan "
@@ -742,8 +741,8 @@ PAGES = {
                  "interview and syncs with the team; exported (`camaron portal`) it is a read-only site deployed with "
                  "Docker or on any static host (`camaron up --static` shows it as is). Home asks first and shows the "
                  "project's state; the sidebar has seven zones: Docs (pages and wikis), Board, Stories, Architecture "
-                 "(the C4 model with its elements to fix and confirm, the code graph, Data and Libraries), Plan (the "
-                 "live Pipeline, the Interview and Sync), Quality (Health, KPIs and CI) and Review. Ctrl K jumps to "
+                 "(the C4 model with its elements to fix and confirm, the code graph and Data), Plan (the "
+                 "live Pipeline, the Interview and Sync), Quality (Health, Libraries, KPIs and CI) and Review. Ctrl K jumps to "
                  "any page or view, or takes the question to Ask, which gives the sections that answer with their "
                  "citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, "
                  "building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the "
@@ -758,7 +757,6 @@ PAGES = {
    |      Interviews                                                            |
    |      Team         This machine is missing something: gitleaks  ( See )     |
    |      Quality                                                               |
-   |      Libraries                                                             |
    |      Docs                                                                  |
    |      Machine      JOBS  Done  doctor  just now                 History     |
    |      Guide                                                                 |
@@ -774,7 +772,7 @@ PAGES = {
                  "below, what the plan has cost so far), "
                  "Interviews, "
                  "Team (share, approve what came with the team's repo, plugins), Quality (the project's health: "
-                 "machine, docs and code, repo by repo), Libraries (scan for vulnerabilities repo by repo, with its bar, Stop and a tick when it ends; which repos "
+                 "machine, docs and code, repo by repo; the secret scan and the method hooks; and its Libraries view: scan for vulnerabilities repo by repo, with its bar, Stop and a tick when it ends; which repos "
                  "each one is in, the flagged ones first; and Update on a new branch, a Maven module whose parent pom "
                  "sets the version included) and "
                  "Docs (opens the portal in your browser, builds the C4 explorer, generates the wikis and answers with "

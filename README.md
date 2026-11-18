@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.88.0-ff875f?style=flat-square" alt="Versión 4.88.0">
+  <img src="https://img.shields.io/badge/version-4.89.0-ff875f?style=flat-square" alt="Versión 4.89.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -315,9 +315,8 @@ escribirías en la terminal.
 | 📜 **Decisiones** (`g a`) | Los ADR sin IA: plantear una decisión (nueva o retroactiva) o partir de una **candidata** que el código ya tomó, reunir su **evidencia**, revisarla parte por parte y punto por punto, y **aceptarla** o rechazarla |
 | 🗺️ **Plan** (`g p`) | Ejecutar las unidades listas en paralelo o con el piloto automático (se saltan una unidad con su sesión abierta), cada unidad con su botón (aprobar, reintentar, seguir, rehacer), por estado, por fases o en el **lienzo**: el grafo del plan, donde cada unidad que trabaja una ejecución es una terminal en vivo, y **Empezar** o **Seguir** una unidad y la actualización de la doc (**Mantenerla al día**) abren una terminal en la que le escribes al agente (<kbd>F6</kbd> sale de ella; **Cerrar** deja la unidad en pausa, **Quitar** retira una que acabó con error y la actualización va en **Sesiones sueltas**; `camaron config set sessions window` las abre en una ventana). Mientras corre el piloto, **Tomar el control** abre en su nodo la conversación de una unidad en marcha para corregir al agente sin parar las demás, **Devolver al piloto** se la devuelve y sigue con ella, y **Parar** la saca de esa ejecución; lo que lleva costado el plan (debajo de las unidades) y empezar la documentación otra vez |
 | 🎙️ **Entrevistas** (`g i`) | Cuestionario del equipo o en vivo, exportar e importar respuestas, cerrar la ronda |
-| 🤝 **Equipo** (`g t`) | El repo del equipo y compartir, aprobar lo que llegó con él, hooks y plugins |
-| ✅ **Calidad** (`g q`) | La salud del proyecto sin IA: máquina, documentación y código, repo a repo (SonarQube, cobertura, vulnerabilidades, deuda) |
-| 📦 **Librerías** (`g l`) | Una línea por librería con la versión que usan los repos y la última estable (**Buscar versiones nuevas**), sus vulnerabilidades (el escaneo va repo a repo con su barra, se puede parar y acaba con un tick con lo que encontró) y **Actualizar ▾** con esa versión ya puesta, en una rama nueva, sin commit. La misma pantalla que la del portal |
+| 🤝 **Equipo** (`g t`) | El repo del equipo y compartir, aprobar lo que llegó con él (también sus hooks) y plugins |
+| ✅ **Calidad** (`g q`) | La salud del proyecto sin IA: máquina, documentación y código, repo a repo (SonarQube, cobertura, vulnerabilidades, deuda); el **escaneo de secretos** (gitleaks, `camaron check --secrets`) y los **hooks del método** de Claude Code (el interruptor y lo que han visto) como filas del panel; y la vista **Librerías** (`#/quality/libs`; `#/libs` sigue abriéndola): una línea por librería con la versión que usan los repos y la última estable (**Buscar versiones nuevas**), sus vulnerabilidades (el escaneo va repo a repo con su barra, se puede parar y acaba con un tick con lo que encontró) y **Actualizar ▾** con esa versión ya puesta, en una rama nueva, sin commit. La misma pantalla que la del portal |
 | 📖 **Docs** (`g d`) | Abrir el portal, construir el explorador C4, generar la wiki de cada repo y preguntar con IA |
 | 🧰 **Máquina** (`g m`) | Preparar la máquina (dice «Lista», cuándo y con qué kit, una vez hecho), idioma y modelos, dónde se abren las sesiones (en el lienzo del plan o en una ventana de terminal), tokens, repos, el kit y desinstalar |
 | 📘 **Guía** (`g h`) | Toda la documentación de Camarón dentro de la app, con botones que te llevan a cada sitio y un **recorrido guiado** |
@@ -365,9 +364,9 @@ El menú lateral tiene siete zonas (el exportado, Docs, Arquitectura y Revisión
 | **Docs** | Portada, cada página con su confianza, su frescura y sus fuentes (que se abren en tu editor), editar, confirmar, pedir un cambio; las wikis de OpenWiki |
 | **Tablero** | El Kanban con filtros, oleadas, tarjetas bloqueadas y la puerta de salida |
 | **Historias** | Escribir una historia (*Como / quiero / para* y lo que toca), el veredicto INVEST y subtareas en oleadas que no chocan, sin IA; **✨ Sugerir con IA** opcional |
-| **Arquitectura** | El modelo C4 con sus elementos para corregir, eliminar y confirmar; el grafo de código; Datos (diagramas ER); Librerías |
+| **Arquitectura** | El modelo C4 con sus elementos para corregir, eliminar y confirmar; el grafo de código; Datos (diagramas ER) |
 | **Plan** | El Pipeline en vivo (aprobar, reintentar), la Entrevista del equipo y Sincronizar |
-| **Calidad** | Salud (de solo lectura), KPIs (con lo que costó el plan y las preguntas que nadie encontró) y CI |
+| **Calidad** | Salud (de solo lectura), Librerías, KPIs (con lo que costó el plan y las preguntas que nadie encontró) y CI |
 | **Revisión** | Lo pendiente de revisar, confirmar varias a la vez, las revisiones que espera un agente |
 
 Dos escritores en la misma página no se pisan: el portal y el MCP escriben cada página con su candado

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Brand, Breadcrumbs, Button, EmptyState, Keys, Skeleton, SkipLink } from '@camaron/ui'
-import { START, firstRunRoute, initials, sectionOf, sections } from './nav.js'
+import { START, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
 import { jobsStore } from './jobs.js'
 import { chord, entries, keyFor, typing } from './palette.js'
 import { crumb } from './adr.js'
@@ -21,7 +21,6 @@ import Docs from './sections/Docs.jsx'
 import Guide, { loadGuides } from './sections/Guide.jsx'
 import Interviews from './sections/Interviews.jsx'
 import KitDev from './sections/KitDev.jsx'
-import Libs from './sections/Libs.jsx'
 import Machine from './sections/Machine.jsx'
 import Plan from './sections/Plan.jsx'
 import Quality from './sections/Quality.jsx'
@@ -85,6 +84,7 @@ function Project({ app }) {
     return () => jobs.stop()
   }, [])
   const here = sectionOf(hash, { kitdev })
+  useEffect(() => { const to = movedRoute(hash); if (to) location.replace(to) }, [hash])    // an old address of a place that moved
   const full = here === START                           // the first-run wizard: no rail, no section nav
   const sub = here === 'decisions' ? crumb(hash, t) : null     // a place inside a section: its own crumb, the section a link
   const { project, machine } = sections({ kitdev })
@@ -217,7 +217,7 @@ function Rail({ app, projects: { list, busy, open } }) {
   )
 }
 
-const SECTIONS = { summary: Summary, board: Board, decisions: Decisions, plan: Plan, interviews: Interviews, team: Team, quality: Quality, libs: Libs, docs: Docs, machine: Machine,
+const SECTIONS = { summary: Summary, board: Board, decisions: Decisions, plan: Plan, interviews: Interviews, team: Team, quality: Quality, docs: Docs, machine: Machine,
   guide: Guide, kitdev: KitDev, start: Start }
 function Section({ here, ...props }) {
   const View = SECTIONS[here]

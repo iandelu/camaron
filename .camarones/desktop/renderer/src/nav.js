@@ -1,6 +1,6 @@
 // The app's places, pure: a project's sections, this machine's, which one an address asks for, a project's initials.
 
-export const PROJECT = ['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs']
+export const PROJECT = ['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'docs']
 export const MACHINE = ['machine', 'guide', 'kitdev']
 
 // Kit dev is the bench of a checkout of the kit (lib/kitdev.py): only there.
@@ -9,10 +9,30 @@ export const sections = ({ kitdev }) => ({ project: PROJECT, machine: kitdev ? M
 // The first-run wizard (#/start): a place of its own, full width, never listed in the nav.
 export const START = 'start'
 
+// Places that moved into another section keep their old address (a bookmark, an old guide): #/libs is Quality's libraries.
+const MOVED = { libs: 'quality' }
+
 export function sectionOf(hash, flags) {
   const s = ((hash || '').match(/^#\/([\w-]+)/) || [])[1]
   const all = [...PROJECT, ...sections(flags).machine, START]
-  return all.includes(s) ? s : 'summary'
+  return all.includes(s) ? s : MOVED[s] || 'summary'
+}
+
+// Quality shows its board or, beside it, the libraries. The second segment of #/quality/<x> is also the command the
+// palette opens in the folded list, so only `libs` is a view.
+export const LIBS = 'quality/libs'
+export const qualityView = (hash) => (/^#\/(quality\/)?libs(?=[/?]|$)/.test(hash || '') ? 'libs' : 'health')
+
+// Where an old address goes now (what follows it is kept), or null when it has not moved.
+export const movedRoute = (hash) => {
+  const m = String(hash || '').match(/^#\/libs(?=[/?]|$)(.*)$/)
+  return m ? `#/${LIBS}${m[1]}` : null
+}
+
+// The place the tours and the nav follow: the section, but the libraries are a place of their own inside Quality.
+export function placeOf(hash, flags) {
+  const s = sectionOf(hash, flags)
+  return s === 'quality' && qualityView(hash) === 'libs' ? LIBS : s
 }
 
 // What #/machine?host=<h>&kind=<k> asks the Tokens card to fill in (Quality links there for a repo's SonarQube).

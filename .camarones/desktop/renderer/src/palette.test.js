@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest'
 import { chord, entries, GO, keyFor, pick, typing } from './palette.js'
 
-const ALL = ['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine', 'guide', 'kitdev']
+const ALL = ['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'docs', 'machine', 'guide', 'kitdev']
 const t = (k) => `<${k}>`
 
 test('one letter per section, each section once', () => {
-  expect(GO).toEqual({ s: 'summary', b: 'board', a: 'decisions', p: 'plan', i: 'interviews', t: 'team', q: 'quality', l: 'libs', d: 'docs', m: 'machine', h: 'guide', k: 'kitdev' })
+  expect(GO).toEqual({ s: 'summary', b: 'board', a: 'decisions', p: 'plan', i: 'interviews', t: 'team', q: 'quality', d: 'docs', m: 'machine', h: 'guide', k: 'kitdev' })
   expect(keyFor('guide')).toBe('h')
   expect(GO.b).toBe('board')
   expect(keyFor('board')).toBe('b')
@@ -91,4 +91,14 @@ test('the guide chapters show once you type, like the commands', () => {
   const found = pick(groups, 'plan').find((g) => g.id === 'guide')
   expect(found.label).toBe('<pal.guide>')
   expect(found.items).toEqual(guide)
+})
+
+// Libraries left the nav for Quality: the palette still takes you there by name, with no shortcut of its own.
+test('the palette lists the libraries right after quality, when this window has quality', () => {
+  const ids = (sections) => entries({ sections, t }).find((g) => g.id === 'sections').items.map((i) => i.id)
+  expect(ids(['summary', 'quality', 'docs'])).toEqual(['go:summary', 'go:quality', 'go:libs', 'go:docs'])
+  expect(ids(['summary', 'docs'])).toEqual(['go:summary', 'go:docs'])
+  const libs = entries({ sections: ['quality'], t }).find((g) => g.id === 'sections').items[1]
+  expect(libs).toEqual({ id: 'go:libs', label: '<nav.libs>', sub: '<nav.quality>', href: '#/quality/libs' })
+  expect(pick(entries({ sections: ['quality'], t: (k) => ({ 'nav.libs': 'Librerías' })[k] || k }), 'librerias').map((g) => g.id)).toEqual(['sections'])
 })

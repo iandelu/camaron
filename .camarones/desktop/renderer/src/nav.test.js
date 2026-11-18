@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, MACHINE, PROJECT, sectionOf, sections, termOf, tokenPrefill } from './nav.js'
+import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PROJECT, qualityView, sectionOf, sections, termOf, tokenPrefill } from './nav.js'
 
 test('a project has its sections; this machine has its own, Kit dev only in a kit checkout', () => {
-  expect(PROJECT).toEqual(['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs'])
+  expect(PROJECT).toEqual(['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'docs'])
   expect(sections({ kitdev: false }).machine).toEqual(['machine', 'guide'])
   expect(sections({ kitdev: true }).machine).toEqual(MACHINE)
   expect(MACHINE).toEqual(['machine', 'guide', 'kitdev'])
@@ -86,4 +86,38 @@ test('an address can ask the Plan for one terminal', () => {
   expect(termOf('#/plan')).toBe(null)
   expect(termOf('#/plan?term=../x')).toBe(null)
   expect(termOf('#/board?term=t-a-1')).toBe(null)
+})
+
+// Libraries is a view of Quality, next to the board; #/libs was a section of its own until the kit moved it.
+test('libraries is not a section of the nav: it lives in quality, and the old address still opens it', () => {
+  expect(PROJECT).not.toContain('libs')
+  expect(sectionOf('#/quality/libs', {})).toBe('quality')
+  expect(sectionOf('#/libs', {})).toBe('quality')
+  expect(sectionOf('#/libs?x=1', {})).toBe('quality')
+})
+
+test('quality shows the board, or the libraries when the address asks for them', () => {
+  expect(qualityView('#/quality')).toBe('health')
+  expect(qualityView('#/quality/radar')).toBe('health')            // a command of the folded list, not a view
+  expect(qualityView('#/quality/libs')).toBe('libs')
+  expect(qualityView('#/libs')).toBe('libs')
+  expect(qualityView('#/quality/libsx')).toBe('health')
+  expect(qualityView('')).toBe('health')
+})
+
+test('the old address of libraries is rewritten to the new one, anything after it kept; nothing else moves', () => {
+  expect(movedRoute('#/libs')).toBe('#/quality/libs')
+  expect(movedRoute('#/libs?repo=web')).toBe('#/quality/libs?repo=web')
+  expect(movedRoute('#/quality/libs')).toBeNull()
+  expect(movedRoute('#/libsx')).toBeNull()
+  expect(movedRoute('#/plan')).toBeNull()
+  expect(movedRoute('')).toBeNull()
+})
+
+test('a place is the section, but quality\'s libraries are a place of their own (the tours follow it)', () => {
+  expect(LIBS).toBe('quality/libs')
+  expect(placeOf('#/quality/libs', {})).toBe(LIBS)
+  expect(placeOf('#/libs', {})).toBe(LIBS)
+  expect(placeOf('#/quality', {})).toBe('quality')
+  expect(placeOf('#/plan/unit-x', {})).toBe('plan')
 })

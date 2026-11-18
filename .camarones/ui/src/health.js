@@ -90,7 +90,11 @@ function figureOf(snapshot, area, key) {
   return count(snapshot?.areas?.[area]?.figures?.find((f) => f.key === key)?.n)
 }
 
-// The rows of one area, in the order of the spec. `state` null = no fact to rate (blocks, ab).
+// Rows the snapshot holds no fact for: the app reads them live (blocks, ab, the secret scan, the hooks). The portal has no
+// place for them, so it leaves them out.
+const appRows = () => ['blocks', 'ab', 'secrets', 'hooks'].map((id) => ({ id, state: null, figure: null }))
+
+// The rows of one area, in the order of the spec. `state` null = no fact to rate (appRows).
 export function rowsFor(area, snapshot) {
   const unread = (ids, block) => ids.map((id) => ({ id, state: 'warn', figure: null, ...(failed(block) && { error: block.error }) }))
   if (area === 'machine') {
@@ -101,7 +105,7 @@ export function rowsFor(area, snapshot) {
   }
   if (area === 'docs') {
     const d = snapshot?.docs
-    if (!good(d)) return [...unread(['fresh', 'evals', 'context', 'review'], d), { id: 'blocks', state: null, figure: null }, { id: 'ab', state: null, figure: null }]
+    if (!good(d)) return [...unread(['fresh', 'evals', 'context', 'review'], d), ...appRows()]
     const { stale, suspect, evals, context, review } = d
     const err = (...blocks) => blocks.find(failed)
     const row = (id, blocks, rate) => {
@@ -121,8 +125,7 @@ export function rowsFor(area, snapshot) {
       row('review', [review], () => Number.isInteger(review)
         ? { id: 'review', state: review > 0 ? 'warn' : 'ok', figure: String(review) }
         : unknown('review')),
-      { id: 'blocks', state: null, figure: null },
-      { id: 'ab', state: null, figure: null },
+      ...appRows(),
     ]
   }
   return codeRows(snapshot)
