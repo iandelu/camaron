@@ -178,20 +178,22 @@ function Notices({ state, onRetry }) {
 }
 const Unread = ({ onRetry }) => <Aviso tone="warn" title={t('docs.chat.unread')} action={<Button size="sm" onClick={onRetry}>{t('retry')}</Button>} />
 
-// An answer while it is revealed (`shown`) is its text alone: who wrote it and its sources follow once it is whole.
+// An answer while it is revealed (`shown`) is its text alone, the rest laid out but hidden so the answer keeps its height: who
+// wrote it and its sources follow once it is whole.
 function Reply({ message, shown, onOpen, onSkip }) {
   if (message.error) return <Aviso tone="error" title={askError(message.error, t)} />
   const view = answerView(message.result)
-  return shown == null ? <AnswerView view={view} onOpen={onOpen} />
-    : <AnswerView view={{ ...view, text: shown, by: '', sources: [] }} onOpen={onOpen} onText={onSkip} />
+  return shown == null || view.kind !== 'answer' ? <AnswerView view={view} onOpen={onOpen} />
+    : <AnswerView view={{ ...view, text: shown, rest: view.text.slice(shown.length), by: '', sources: [] }} onOpen={onOpen} onText={onSkip} />
 }
 
-// The answer as text, who wrote it, and its sources as buttons that open the page in the portal. `onText`: a click on the text.
+// The answer as text, who wrote it, and its sources as buttons that open the page in the portal. `onText`: a click on the text;
+// `rest`: the part not revealed yet.
 export function AnswerView({ view, onOpen, onText }) {
   if (view.kind === 'none') return <p className="muted">{t('docs.askNone')}</p>
   return (
     <div className="dk-out">
-      <p className="dk-answer" onClick={onText}>{view.text}</p>
+      <p className="dk-answer" onClick={onText}>{view.text}{view.rest ? <span className="dk-answer-rest" aria-hidden="true">{view.rest}</span> : null}</p>
       {view.by ? <p className="muted small">{t('docs.by', { who: view.by })}</p> : null}
       {view.sources.length ? (
         <div className="row">

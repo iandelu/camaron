@@ -122,6 +122,12 @@ test.each(['dk-shrimp-sway', 'dk-shrimp-flick'])('%s starts and ends at the favi
   expect(Math.max(...turns)).toBeGreaterThan(0)
 })
 
+// The part of an answer not revealed yet keeps its room (hidden, not removed), so the answer never grows while it fills in.
+test('the unrevealed rest of an answer is hidden but keeps its place', () => {
+  expect(rule('.dk-answer-rest')).toMatch(/visibility:\s*hidden/)
+  expect(rule('.dk-answer-rest')).not.toMatch(/display:\s*none/)
+})
+
 test('the tail flicks about the apex of its fan, the translate the favicon gives its group', () => {
   const favicon = readFileSync(new URL('../../../portal/app/public/favicon.svg', import.meta.url), 'utf-8')
   const [, x, y] = favicon.match(/class="shrimp-tail"\s+transform="translate\(([\d.]+) ([\d.]+)\)"/)

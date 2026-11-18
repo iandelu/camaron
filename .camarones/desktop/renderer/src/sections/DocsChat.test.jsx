@@ -174,11 +174,13 @@ test('while a turn runs the shrimp thinks with the one joke, and neither the com
   expect(status(panel({ messages: [ask], running: true }))).toBe('Peeling your docs…')
 })
 
+// The rest of the answer is laid out but hidden while it is revealed: the answer has its whole height from the first step, so
+// the list can bring its start into view once when it lands and never move again while it fills in.
 test('while an answer is revealed the shrimp answers, plainly; the text shown is the reveal\'s and the list is busy', () => {
   const out = panel({ messages: [ask, reply(JWT)] }, { reveal: { id: 2, text: 'It uses' } })
   expect(out).toContain('class="dk-shrimp answering"')
   expect(status(out)).toBe('Contestando…')
-  expect(out).toContain('>It uses</p>')
+  expect(out).toContain('>It uses<span class="dk-answer-rest" aria-hidden="true"> JWT.</span></p>')
   expect(out).not.toContain('It uses JWT.')
   expect(out).toMatch(/class="dk-chat-list"[^>]*aria-busy="true"/)
   setLang('en')
@@ -188,6 +190,8 @@ test('while an answer is revealed the shrimp answers, plainly; the text shown is
 test('a reveal of another message leaves this one whole', () => {
   const out = panel({ messages: [ask, reply(JWT)] }, { reveal: { id: 9, text: 'x' } })
   expect(out).toContain('It uses JWT.')
+  expect(out).not.toContain('dk-answer-rest')
+  expect(panel({ messages: [ask, reply(JWT)] }, { reveal: { id: 2, text: 'It uses JWT.' } })).not.toContain('dk-answer-rest')
 })
 
 test('an answer shows its text, who wrote it and its sources as buttons that open the portal', () => {
