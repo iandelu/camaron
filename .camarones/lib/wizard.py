@@ -2398,8 +2398,18 @@ class W:
             return
         if what == "share" and not self.yes(self.t("sh_confirm", url=url), default=True):
             return
+        cu = services.current().catchup
         while True:
-            r = self.safe(self.busy, getattr(sh, what))
+            if what == "pull":                                     # the catch-up routine: its lock, the C4, the last result
+                run = self.safe(self.busy, cu.run)
+                if run and not run.get("pull"):
+                    if run["status"] == "busy":
+                        self.say(self.t("cu_busy"), "grey62")
+                    self.pause()
+                    return
+                r = run and run["pull"]
+            else:
+                r = self.safe(self.busy, getattr(sh, what))
             if not r:
                 return
             url = sh.docs_remote() or url
@@ -2416,14 +2426,22 @@ class W:
             self.banner()
             self.add_token(r["host"])
         ok = r["status"] in ("pushed", "up-to-date", "nothing", "pulled")
+        key = "sh_" + r["status"].replace("-", "_")
+        unknown = what != "pull" and r["status"] != "behind" and key not in T[self.lang]
         if what == "pull":
             line = self._pull_line(r, url) or (self.t("sh_nothing"), "")
         elif r["status"] == "behind":
             line = self.t("sh_behind"), "red"
+        elif unknown:
+            line = self.t("sh_err_unknown"), "red"
         else:
-            line = self.t("sh_" + r["status"].replace("-", "_"), url=url, detail=r["detail"], cli=cli_cmd()), \
+            line = self.t(key, url=url, detail=r["detail"], cli=cli_cmd()), \
                 f"bold {ORANGE}" if r["status"] == "pushed" else ("" if ok else "red")
         self.say(*line)
+        if unknown and r.get("detail"):
+            self.say(self.t("sh_git_said", detail=r["detail"]), "dim")
+        if what == "pull" and run["views"]["graphs"]:
+            self.safe(self.busy, cu.rebuild_graphs, run["views"]["graphs"])
         if ok and what != "pull" and not sh.AUTO_SHARE.exists():    # asked once; the CLI flag changes it later
             on = bool(self.yes(self.t("sh_auto_ask", cli=cli_cmd()), default=True))
             sh.set_auto_share(on)

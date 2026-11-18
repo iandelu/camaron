@@ -439,3 +439,40 @@ def test_an_unfinished_first_run_does_not_catch_up(kit, fake_wizard, monkeypatch
     monkeypatch.setattr(kit.wizard.W, "catch_up", lambda self: order.append("catch_up"))
     fake_wizard([])._run()
     assert order == ["first_run"]
+
+
+def test_the_pull_choice_runs_the_catch_up_not_a_bare_pull(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "pull", lambda *a, **kw: pytest.fail("the catch-up does the pull"))
+    calls = []
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: calls.append(1) or pulled("pulled", commits=2))
+    w = fake_wizard(["pull"])
+    w.do_share()
+    assert calls == [1] and w.t("cu_pulled", n=2) in said
+
+
+def test_the_pull_choice_rebuilds_the_stale_graphs_it_was_asked_for(kit, fake_wizard, monkeypatch):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    r = pulled("up-to-date"); r["views"]["graphs"] = ["web"]
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: r)
+    seen = []
+    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda repos, log=print: seen.append(repos))
+    fake_wizard(["pull"]).do_share()
+    assert seen == [["web"]]
+
+
+def test_a_busy_catch_up_on_the_pull_choice_says_so_and_does_not_raise(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.catchup, "run",
+                        lambda log=print: {"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""})
+    w = fake_wizard(["pull"])
+    w.do_share()
+    assert w.t("cu_busy") in said
+
+
+def test_an_unexpected_status_says_it_could_not_and_shows_the_detail(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "push", lambda log=print: {"status": "odd", "detail": "what git said"})
+    w = fake_wizard(["push"])
+    w.do_share()
+    assert w.t("sh_err_unknown") in said and w.t("sh_git_said", detail="what git said") in said
