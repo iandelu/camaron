@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
-import { Failed, JobChip, Page } from './parts.jsx'
+import { Failed, JobChip, Page, PlaceContext } from './parts.jsx'
+import { Place } from './Place.jsx'
 import { setLang } from './i18n.js'
 
 // A read that failed says what, shows the server's own message and offers to try again: never a dead end.
@@ -38,4 +39,24 @@ test('a page with actions sets them beside its title; one without keeps the bare
   const out = renderToStaticMarkup(<Page title="Decisiones" actions={<button type="button">Nuevo</button>} />)
   expect(out).toMatch(/^<div class="dk-page"><div class="dk-page-head"><h1 class="t-impact">Decisiones<\/h1><div class="row dk-page-acts"><button/)
   expect(renderToStaticMarkup(<Page title="Plan" />)).toBe('<div class="dk-page"><h1 class="t-impact">Plan</h1></div>')
+})
+
+test('inside a place a page keeps only its actions and body', () => {
+  const out = renderToStaticMarkup(<PlaceContext.Provider value={true}><Page title="X" actions={<b>act</b>}><p>body</p></Page></PlaceContext.Provider>)
+  expect(out).toContain('<b>act</b>')
+  expect(out).toContain('<p>body</p>')
+  expect(out).not.toContain('<h1')
+  expect(renderToStaticMarkup(<Page title="X" />)).toContain('<h1 class="t-impact">X</h1>')
+})
+
+test('a place sets title, head, tabs and body in order', () => {
+  setLang('es')
+  const out = renderToStaticMarkup(<Place section="docs" view="wikis" head={<i>strip</i>}>c</Place>)
+  const at = ['<h1', '<i>strip</i>', 'nav class="dk-guide-tabs"', 'href="#/docs"', 'href="#/docs/wikis"', 'href="#/docs/decisions"', 'href="#/docs/interviews"', '>c<']
+    .map((x) => out.indexOf(x))
+  expect(at.every((n) => n >= 0)).toBe(true)
+  expect([...at].sort((a, b) => a - b)).toEqual(at)
+  expect(out).toMatch(/href="#\/docs\/wikis"[^>]*aria-current="page"|aria-current="page"[^>]*href="#\/docs\/wikis"/)
+  expect(out).toContain('data-tour="tabs-docs"')
+  expect(renderToStaticMarkup(<Place section="settings" view="general" badges={{ trust: 2 }}>c</Place>)).toContain('Confianza · 2')
 })

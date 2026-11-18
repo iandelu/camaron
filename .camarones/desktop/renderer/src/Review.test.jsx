@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { ReviewView } from './sections/adr/Review.jsx'
+import { Page } from './parts.jsx'
 import { S, setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -101,7 +102,7 @@ function drawn(node, hit) {
   if (Array.isArray(node)) { for (const n of node) { const found = drawn(n, hit); if (found) return found } return null }
   if (!node?.type) return null
   if (hit(node)) return node
-  if (typeof node.type !== 'function') return drawn(node.props?.children, hit)
+  if (typeof node.type !== 'function' || node.type === Page) return drawn(node.props?.children, hit)
   try { return drawn(node.type(node.props), hit) } catch { return null }
 }
 const view = (props) => <ReviewView current="context" onPart={noop} onPoint={noop} onAttendees={noop} onAccept={noop} onReject={noop} onPresent={noop} onGo={noop} onUi={noop} {...props} />

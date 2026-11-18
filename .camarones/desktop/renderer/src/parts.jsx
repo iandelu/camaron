@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { Aviso, Button, Chip, Thinking } from '@camaron/ui'
 import { shape } from '@camaron/ui/result.js'
 import { chip, state } from './jobs.js'
@@ -10,7 +10,11 @@ import { lang, t } from './i18n.js'
 
 // `wide` widens the page; `full` takes the whole window, however wide, and its height (the Board's columns). `actions`
 // sit beside the title (Decisiones: Candidatas, Nuevo ADR).
+// Inside a Place the page's title and width are the place's: a page then renders only its actions and body.
+export const PlaceContext = createContext(false)
+
 export const Page = ({ title, actions = null, children, wide = false, full = false }) => {
+  if (useContext(PlaceContext)) return <>{actions && <div className="row dk-page-acts">{actions}</div>}{children}</>
   const h1 = <h1 className="t-impact">{title}</h1>
   return (
     <div className={'dk-page' + (wide ? ' wide' : '') + (full ? ' full' : '')}>
