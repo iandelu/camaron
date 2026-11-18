@@ -3,6 +3,7 @@ with the team (pull + push on demand, or after every checkpoint with auto-share)
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 import subprocess
 import sys
@@ -306,9 +307,18 @@ def _rebase_onto(theirs: str, ident: list[str]):
     return sorted(set(resolved)), [], None
 
 
-def pull(log: Log = print) -> dict:
+def _no_ssh_prompt() -> dict:
+    """A bounded fetch must not wait on ssh asking for a passphrase or a host key, unless ssh was set up on purpose."""
+    if os.environ.get("GIT_SSH_COMMAND") or os.environ.get("GIT_SSH") or \
+            out(["git", "config", "--get", "core.sshCommand"], cwd=ROOT):
+        return {}
+    return {"GIT_SSH_COMMAND": "ssh -o BatchMode=yes -o ConnectTimeout=10"}
+
+
+def pull(log: Log = print, timeout: float | None = None) -> dict:
     """Bring in the team's work (fetch + rebase onto origin); never pushes and never commits, except the board's own
-    repair. Local work stays put: a clash leaves HEAD and every file as they were. Returns {"status", "commits",
+    repair. Local work stays put: a clash leaves HEAD and every file as they were. With `timeout`, the fetch gives up
+    after that many seconds (an error, reason network) and ssh never prompts. Returns {"status", "commits",
     "files", "regenerated", "detail"}: up-to-date · pulled · nothing · no-remote · conflict · stashed (brought in, but
     uncommitted changes that would not re-apply are kept in git's stash) · busy · error."""
     result = lambda status, detail="", **kw: {"status": status, "commits": 0, "files": [],   # noqa: E731
@@ -325,7 +335,8 @@ def pull(log: Log = print) -> dict:
         return result("error", "detached HEAD: check out a branch first")
     from lib import creds
     log(f"fetching {url}…")
-    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=creds.git_env(url))
+    env = {**creds.git_env(url), **(_no_ssh_prompt() if timeout else {})}
+    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=env, timeout=timeout)
     if r.returncode:
         return {**result("error"), **_failed(r, url)}
     theirs = f"origin/{branch}"

@@ -71,3 +71,29 @@ def test_now_is_utc_to_the_second():
     """now() moved from docs.py to core/clock.py (F5a): an ISO time in UTC without microseconds, as .state.json keeps it."""
     now = importlib.import_module("lib.core.clock").now()
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", now)
+
+
+SLEEP = ["import time; time.sleep(5)"]
+
+
+def test_run_gives_up_after_its_timeout_as_a_network_failure(kit):
+    import sys
+    from lib.core import process
+    from lib.projects import git_failure
+    r = process.run([sys.executable, "-c", *SLEEP], check=False, quiet=True, timeout=0.5)
+    assert r.returncode == 124 and r.stderr == "fatal: timed out after 0.5 s"
+    assert git_failure(r.stderr) == "network"
+
+
+def test_run_with_check_raises_on_a_timeout(kit):
+    import sys
+    import pytest
+    from lib.core import process
+    with pytest.raises(RuntimeError, match="timed out"):
+        process.run([sys.executable, "-c", *SLEEP], check=True, quiet=True, timeout=0.5)
+
+
+def test_run_without_a_timeout_waits_as_before(kit):
+    import sys
+    from lib.core import process
+    assert process.run([sys.executable, "-c", "print('ok')"], check=False, capture=True).stdout.strip() == "ok"

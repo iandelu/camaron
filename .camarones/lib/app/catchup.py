@@ -42,10 +42,13 @@ def rebuild_graphs(repos: list[str], log: Log = print) -> bool:
     return bool(services.current().viewers.graph(rebuild=False, log=log))
 
 
+FETCH_TIMEOUT = 30                                   # seconds: opening never waits on a host that does not answer
+
+
 def _pull(log: Log) -> dict:
     if scheduler.busy():
         return {"status": "busy", "commits": 0, "files": [], "regenerated": [], "detail": "run"}
-    return services.current().share.pull(log)
+    return services.current().share.pull(log, timeout=FETCH_TIMEOUT)
 
 
 def _run(log: Log) -> dict:

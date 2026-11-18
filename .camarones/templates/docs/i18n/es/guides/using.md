@@ -109,7 +109,8 @@ Desde una terminal: `camaron confirm <página> --by <nombre>`, `camaron feedback
 terminal— se trae solo el trabajo del equipo y nunca se sube nada. Si los cambios del equipo chocan con los tuyos, no
 toca nada y dice qué ficheros; sin conexión, el proyecto se abre igual y avisa de que trabajas con lo último que
 trajiste. Tras traer, el explorador C4 se reconstruye solo si estaba desactualizado, y los grafos de código de los repos
-cuyo HEAD se movió se reconstruyen en segundo plano.
+cuyo HEAD se movió se reconstruyen en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
+desactualizados; los rehace `camaron pull`).
 
 Los checkpoints se quedan en local y subir es un paso que das tú, con tres acciones en **Equipo** (la app),
 **Plan › Sincronizar** (el portal) y **🤝 Equipo: traer, subir o sincronizar** (el asistente de la terminal):

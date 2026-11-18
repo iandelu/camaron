@@ -98,3 +98,12 @@ def test_a_failing_c4_build_does_not_break_the_catch_up(kit, tmp_path, monkeypat
     r = kit.services.catchup.run(log=lambda _: None)
     assert r["status"] == "done" and r["views"]["c4"] == "failed"
     assert kit.services.catchup.last() == r
+
+def test_the_catch_up_bounds_its_fetch(kit, monkeypatch):
+    seen = {}
+    def pull(log=print, timeout=None):
+        seen["timeout"] = timeout
+        return {"status": "up-to-date", "commits": 0, "files": [], "regenerated": [], "detail": ""}
+    monkeypatch.setattr(kit.services.share, "pull", pull)
+    fake_c4(kit, monkeypatch, {"exists": False, "stale": False, "model": False})
+    assert kit.services.catchup.run(log=lambda _: None)["pull"]["status"] == "up-to-date" and seen["timeout"] == 30

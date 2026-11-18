@@ -220,7 +220,8 @@ un solo elemento, y el kit nunca lee ni escribe a través de él. Si en la carpe
 dos líneas que importan sus reglas (`@AGENTS.md`); `uninstall` las quita y deja lo tuyo. Al abrir un proyecto (la ventana de la app o el
 asistente de la terminal) se trae solo el trabajo del equipo y nunca se sube: si choca con el tuyo no toca nada y dice
 qué ficheros; sin conexión se abre igual. Tras traer, el explorador C4 se reconstruye si estaba desactualizado y los
-grafos de los repos cuyo HEAD se movió, en segundo plano. Subir es un paso explícito, con tres acciones en
+grafos de los repos cuyo HEAD se movió, en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
+desactualizados; los rehace `camaron pull`). Subir es un paso explícito, con tres acciones en
 **Equipo**, **Plan › Sincronizar** en el portal y el menú de la terminal: **Traer cambios** (`camaron pull`),
 **Subir cambios** (`camaron push`, se niega si el equipo tiene cambios nuevos) y **Sincronizar** (`camaron share`, traer
 y subir); con `camaron share --auto on` (**Subir al guardar**) cada checkpoint se sube solo, en esta máquina. Un conflicto se

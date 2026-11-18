@@ -70,15 +70,21 @@ def which(name: str) -> str | None:
 
 
 def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool = False,
-        capture: bool = False, env: dict | None = None) -> subprocess.CompletedProcess:
-    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows)."""
+        capture: bool = False, env: dict | None = None, timeout: float | None = None) -> subprocess.CompletedProcess:
+    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows). Past `timeout`
+    seconds the command is killed and returns 124 with a git-like "timed out" line, so callers read it as a failure."""
     exe = which(cmd[0]) or cmd[0]
     full = [exe, *cmd[1:]]
     kw: dict = {"cwd": str(cwd) if cwd else None, "env": {**os.environ, **(env or {})}}
     if capture or quiet:
         kw.update(capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
-        r = subprocess.run(full, **kw)
+        r = subprocess.run(full, timeout=timeout, **kw)
+    except subprocess.TimeoutExpired:
+        said = f"fatal: timed out after {timeout:g} s"
+        if check:
+            raise RuntimeError(f"command failed ({said}): {' '.join(cmd)}") from None
+        return subprocess.CompletedProcess(full, 124, "", said)
     except OSError as e:
         # a tool that is missing, unreadable, or blocked (e.g. Windows Smart App Control /
         # WinError 4551) must not crash the wizard — treat it like "not available" instead

@@ -252,3 +252,45 @@ def test_changes_the_autostash_could_not_put_back_are_stashed_not_a_conflict(kit
     assert r["status"] == "stashed" and r["files"] == ["docs/shared.md"]
     assert "stash" in r["detail"]
     assert "autostash" in _stashes(kit)
+
+
+def _spy_fetch(kit, monkeypatch, instead=None):
+    """Every `git fetch` pull runs, with its keyword arguments; `instead` runs in its place."""
+    share = kit.services.share
+    real, seen = share.run, []
+
+    def spy(cmd, **kw):
+        if cmd[:2] == ["git", "fetch"]:
+            seen.append(kw)
+            if instead:
+                return real(instead, **kw)
+        return real(cmd, **kw)
+    monkeypatch.setattr(share, "run", spy)
+    return seen
+
+
+def test_a_fetch_that_hangs_gives_up_as_a_network_error(kit, tmp_path, monkeypatch):
+    import sys
+    publish(kit, bare(tmp_path))
+    _spy_fetch(kit, monkeypatch, instead=[sys.executable, "-c", "import time; time.sleep(5)"])
+    r = kit.services.share.pull(log=lambda _: None, timeout=0.5)
+    assert r["status"] == "error" and r["reason"] == "network" and "timed out" in r["detail"]
+
+
+def test_a_bounded_fetch_never_lets_ssh_ask_unless_ssh_was_set_up(kit, tmp_path, monkeypatch):
+    publish(kit, bare(tmp_path))
+    for name in ("GIT_SSH_COMMAND", "GIT_SSH"):
+        monkeypatch.delenv(name, raising=False)
+    seen = _spy_fetch(kit, monkeypatch)
+    pull = lambda **kw: kit.services.share.pull(log=lambda _: None, **kw)      # noqa: E731
+    pull(timeout=30)
+    assert seen[-1]["timeout"] == 30 and "BatchMode=yes" in seen[-1]["env"]["GIT_SSH_COMMAND"]
+    pull()
+    assert seen[-1]["timeout"] is None and "GIT_SSH_COMMAND" not in seen[-1]["env"]
+    monkeypatch.setenv("GIT_SSH_COMMAND", "ssh -i mine")
+    pull(timeout=30)
+    assert "GIT_SSH_COMMAND" not in seen[-1]["env"]
+    monkeypatch.delenv("GIT_SSH_COMMAND")
+    git(kit.root, "config", "core.sshCommand", "ssh -i mine")
+    pull(timeout=30)
+    assert "GIT_SSH_COMMAND" not in seen[-1]["env"]

@@ -383,13 +383,13 @@ def test_catch_up_says_what_happened(kit, fake_wizard, monkeypatch, said, result
     assert w.t(key, **vars) in said
 
 
-def test_catch_up_rebuilds_the_stale_graphs(kit, fake_wizard, monkeypatch):
-    r = pulled("up-to-date"); r["views"]["graphs"] = ["web"]
+def test_catch_up_on_open_says_which_graphs_are_stale_and_does_not_rebuild_them(kit, fake_wizard, monkeypatch, said):
+    r = pulled("up-to-date"); r["views"]["graphs"] = ["web", "api"]
     monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: r)
-    seen = []
-    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda repos, log=print: seen.append(repos))
-    fake_wizard([]).catch_up()
-    assert seen == [["web"]]
+    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda *a, **kw: pytest.fail("opening never waits on graphs"))
+    w = fake_wizard([])
+    w.catch_up()
+    assert w.t("cu_graphs_stale", n=2, cli=kit.wizard.cli_cmd()) in said
 
 
 def test_catch_up_survives_an_exception(kit, fake_wizard, monkeypatch):

@@ -159,6 +159,7 @@ T = {
         "cu_stashed": "He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos: están a salvo en el stash de git (`git stash list`). Revísalos en una terminal.",
         "cu_busy": "Ya se está poniendo al día otro proceso: sigo con lo que hay.",
         "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
+        "cu_graphs_stale": "{n} grafo(s) de código desactualizado(s): los rehace la app o «{cli} pull».",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "Te unes a «{name}»: el equipo ya eligió repos, stack y arquitectura, y el plan sigue donde lo dejaron. "
                         "Yo solo preparo esta máquina: herramientas y repos. Nada de pelar dos veces la misma gamba.",
@@ -531,6 +532,7 @@ T = {
         "cu_stashed": "I brought in the team's changes, but your unsaved changes clashed with them: they are safe in git's stash (`git stash list`). Review them in a terminal.",
         "cu_busy": "Another process is already catching up: carrying on with what's here.",
         "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
+        "cu_graphs_stale": "{n} code graph(s) out of date: the app or “{cli} pull” rebuilds them.",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "You're joining “{name}”: the team already picked the repos, stack and architecture, and the plan carries "
                         "on where they left it. I'll just set up this machine: tools and repos. No peeling the same shrimp twice.",
@@ -2361,8 +2363,8 @@ class W:
         line = self._pull_line(r)
         if line:
             self.say(line[0], line[1])
-        if run["views"]["graphs"]:
-            self.safe(self.busy, cu.rebuild_graphs, run["views"]["graphs"])
+        if run["views"]["graphs"]:                       # slow: the app or `camaron pull` rebuilds them, never the way in
+            self.say(self.t("cu_graphs_stale", n=len(run["views"]["graphs"]), cli=cli_cmd()), "grey62")
 
     def _pull_line(self, r: dict, url: str = "") -> tuple[str, str] | None:
         st = r.get("status")
