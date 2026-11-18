@@ -12,6 +12,7 @@
   llms                      regenerate docs/llms.txt
   graph                     rebuild the cross-repo code graph (.camarones/.cache/graph/graph.html)
   arch | arch-validate      live C4 editor | validate the C4 model
+  arch-verify [--json] [--ack FQN.. --by NAME]   check the C4 against the code: evidence, drift, coverage
   portal                    export the read-only portal (docs, C4, code graphs, wikis) to .camarones/.cache/site for CI / hosting
   up [--port] [--docker|--static]   serve the portal: live editable server (default), or the export in Docker / without it
   wiki REPO.. [--init|--update] [--engine openwiki|claude|codex] [--force]   generate / refresh the OpenWiki of repos,

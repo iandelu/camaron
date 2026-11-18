@@ -337,6 +337,52 @@
     "exclusive_groups": [],
     "subparsers": null
    },
+   "arch-verify": {
+    "aliases": [],
+    "args": [
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "json",
+      "nargs": 0,
+      "options": [
+       "--json"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": [],
+      "dest": "ack",
+      "nargs": "+",
+      "options": [
+       "--ack"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": "",
+      "dest": "by",
+      "nargs": null,
+      "options": [
+       "--by"
+      ],
+      "required": false,
+      "type": null
+     }
+    ],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
    "autopilot": {
     "aliases": [],
     "args": [

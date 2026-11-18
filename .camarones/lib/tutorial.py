@@ -165,6 +165,7 @@ PAGES = {
      |-- diagramas Mermaid que no se dibujan  ERROR   (mermaid-cli)
      |-- secretos copiados en la doc          ERROR   (gitleaks: bloquea commit y portal)
      |-- palabras a evitar del glosario       aviso   (ERROR con --strict)
+     |-- C4 sin evidencia o desfasado         aviso   (ERROR con --strict)
      |-- estructura: TL;DR, secciones, largo  aviso   (ERROR con --strict)
      |-- reglas :::rule sin su codigo         ERROR
      +-- fuentes, frontmatter, traducciones   ERROR / aviso""",
@@ -702,6 +703,7 @@ PAGES = {
      |-- Mermaid diagrams that don't render   ERROR   (mermaid-cli)
      |-- secrets copied into the docs         ERROR   (gitleaks: blocks commit and portal)
      |-- glossary words to avoid              warning (ERROR with --strict)
+     |-- C4 without evidence or out of date   warning (ERROR with --strict)
      |-- structure: TL;DR, sections, size     warning (ERROR with --strict)
      |-- :::rule blocks whose code is gone    ERROR
      +-- sources, frontmatter, translations   ERROR / warning""",

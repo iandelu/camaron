@@ -17,6 +17,32 @@ class ArchValidate(Command):
         return 0 if ok else 1
 
 
+@command("arch-verify", "app", "check", es="Comprobar el C4 contra el código", en="Check the C4 against the code")
+class ArchVerify(Command):
+    def configure(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("--json", action="store_true")
+        parser.add_argument("--ack", nargs="+", default=[])
+        parser.add_argument("--by", default="")
+
+    def run(self, args: argparse.Namespace, cli: CliContext) -> int:
+        from lib.app import c4_verify
+        from lib.harness import freshness
+        if args.ack:
+            if not args.by:
+                print("--ack needs --by NAME", file=sys.stderr)
+                return 2
+            try:
+                done = freshness.c4_ack(args.ack, args.by)
+            except Exception as e:
+                print(f"could not acknowledge: {e}", file=sys.stderr)
+                return 1
+            print("acknowledged:", ", ".join(done) or "nothing")
+            return 0
+        rep = c4_verify.report()
+        print(json.dumps(rep, indent=2, ensure_ascii=False) if args.json else "\n".join(c4_verify.text(rep)))
+        return 0
+
+
 def cmd_doctor(a, cli: CliContext) -> int:
     from lib.common import VERSIONS
     from lib.core.paths import cli_cmd

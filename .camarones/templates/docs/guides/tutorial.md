@@ -167,6 +167,7 @@ translations it reports:
 | Possible secret in `docs/` or a wiki (file and line only, never the value) | ERROR; also blocks checkpoint commits and `camaron portal` | gitleaks |
 | A word from the glossary's **Avoid** column | warning (ERROR with `--strict`) | an Avoid column in `docs/domain/glossary.md` |
 | Generated block edited by hand or behind the code (`camaron blocks`) | warning (ERROR with `--strict`) | — |
+| C4 element or relation with no evidence, whose code changed or is gone (`camaron arch-verify`) | warning (ERROR with `--strict`; `unchecked` stays a warning) | — |
 | Page structure: TL;DR under the title, the sections of its skeleton in `.camarones/skeletons/`, size budget, vague references | warning (ERROR with `--strict`) | — |
 
 mermaid-cli and gitleaks come with the full install (the `quality` component; mermaid-cli downloads a headless Chromium
@@ -482,7 +483,7 @@ next action apart.
 ## 9. Commands (for scripts and agents)
 
 `camaron help` (per-project copy: `./camaron.command help`, Windows `camaron.cmd help`): `setup`, `sync`, `detect`,
-`plan`, `plan next`, `status`, `check [--strict|--secrets]`, `confirm`, `feedback`, `checkpoint`, `graph`, `arch` (live C4 editor), `arch-validate`,
+`plan`, `plan next`, `status`, `check [--strict|--secrets]`, `confirm`, `feedback`, `checkpoint`, `graph`, `arch` (live C4 editor), `arch-validate`, `arch-verify [--json] [--ack FQN.. --by NAME]` (C4 against the code),
 `wiki <repo>`, `portal` (export), `up [--static|--docker]`, `down`, `ci`, `prompt <unit>`, `migrate`, `doctor`,
 `doctor --json` (each check with the command that fixes it), `doctor --install git|node|docker|java|claude|codex`,
 `doctor --local` (proposes a free local model for this computer, installs nothing), `doctor --context` (the tokens

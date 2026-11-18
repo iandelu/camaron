@@ -95,7 +95,9 @@ def check(strict: bool = False, secrets_only: bool = False) -> tuple[list[str], 
     for n in services.current().wiki.old_wikis():
         warns.append(f"wikis/{n}: written with an older, narrower scope — regenerate it for a complete wiki: "
                      f"{cli_cmd()} wiki {n}")
-    return errors, warns + architecture_warnings()
+    from lib.app import c4_verify
+    c4_errors, c4_warns = c4_verify.findings(strict)
+    return errors + c4_errors, warns + architecture_warnings() + c4_warns
 
 
 def architecture_warnings() -> list[str]:
