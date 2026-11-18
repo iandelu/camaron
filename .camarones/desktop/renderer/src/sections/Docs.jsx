@@ -9,6 +9,7 @@ import { JobOutput, Page } from '../parts.jsx'
 import { t } from '../i18n.js'
 import { DocsHealth } from './DocsHealth.jsx'
 import { DocsIcon } from './DocsIcons.jsx'
+import { DocsMisses } from './DocsMisses.jsx'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
 // href the window would follow). The portal has no app token (only the board's), so what it shows but cannot run is
@@ -33,6 +34,7 @@ export default function Docs({ srv, jobs, app, index }) {
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
         onDone={reloadViewers} /></div>
       <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
+      <DocsMisses srv={srv} />
       <Ask srv={srv} open={open} />
     </Page>
   )

@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest'
-import { answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, openPortal, portalUrl, readViewers, startBuild, startWiki,
-  viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
+import { actOnMiss, answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, missAction, missesOf, openPortal, portalUrl, readMisses,
+  readViewers, startBuild, startWiki, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -353,4 +353,52 @@ test('an all-clear index shows only the good news of what was read', () => {
   const got = docsHealth(clear, [{ pages: 4 }], { c4: { exists: true, stale: false, model: true } })
   expect(chips(got)).toEqual([['wikiFresh', 'ok', 1], ['c4Fresh', 'ok', null]])
   expect(docsHealth(clear, [], null)).toEqual([])                                      // an array with no rows: no bucket, no chip
+})
+
+// The questions the docs could not answer: GET misses ({misses}) on mount, POST kpis/miss to add one to the open questions
+// or forget it (the server answers the new {misses}). A rejection is said as the server said it.
+const missRows = [{ q: 'how are refunds made', n: 3, last: '2026-11-17' }, { q: 'who owns billing', n: 1, last: '2026-11-16' }]
+
+test('a question is added to the open questions or dismissed with kpis/miss', async () => {
+  const srv = { post: vi.fn(() => Promise.resolve({ misses: [] })) }
+  expect(await missAction(srv, 'who owns billing', 'question')).toEqual({ misses: [] })
+  expect(srv.post).toHaveBeenLastCalledWith('kpis/miss', { q: 'who owns billing', action: 'question' })
+  await missAction(srv, 'who owns billing', 'dismiss')
+  expect(srv.post).toHaveBeenLastCalledWith('kpis/miss', { q: 'who owns billing', action: 'dismiss' })
+})
+
+test('the list is what an answer carries as `misses`; anything else is no list', () => {
+  expect(missesOf({ misses: missRows })).toBe(missRows)
+  expect(missesOf({ misses: [] })).toEqual([])
+  for (const bad of [null, undefined, {}, { misses: null }, { misses: 'x' }, [], 'x']) expect(missesOf(bad)).toBeNull()
+})
+
+test('a read of the misses hands over the list; a failed or malformed one hands over null', async () => {
+  const set = vi.fn()
+  const srv = fakeSrv(() => Promise.resolve({ misses: missRows }))
+  await readMisses(srv, () => true, set)
+  expect(srv.get).toHaveBeenCalledWith('misses')
+  expect(set.mock.calls).toEqual([[missRows]])
+  const failed = vi.fn()
+  await readMisses(fakeSrv(() => Promise.reject(new Error('Failed to fetch'))), () => true, failed)
+  await readMisses(fakeSrv(() => Promise.resolve({ error: 'x' })), () => true, failed)
+  expect(failed.mock.calls).toEqual([[null], [null]])
+})
+
+test('a read of the misses that lands after the card is gone sets nothing', async () => {
+  const set = vi.fn()
+  await readMisses(fakeSrv(() => Promise.resolve({ misses: missRows })), () => false, set)
+  await readMisses(fakeSrv(() => Promise.reject(new Error('x'))), () => false, set)
+  expect(set).not.toHaveBeenCalled()
+})
+
+test('an action on a question gives the server\'s new list, or the rejection in the server\'s words, and never rejects', async () => {
+  const say = vi.fn((e) => `said: ${e.message}`)
+  const ok = { post: vi.fn(() => Promise.resolve({ misses: [missRows[1]] })) }
+  expect(await actOnMiss(ok, 'how are refunds made', 'dismiss', say)).toEqual({ misses: [missRows[1]] })
+  expect(ok.post).toHaveBeenCalledWith('kpis/miss', { q: 'how are refunds made', action: 'dismiss' })
+  const refused = { post: vi.fn(() => Promise.reject(new Error('not in the list: who owns billing'))) }
+  expect(await actOnMiss(refused, 'who owns billing', 'question', say)).toEqual({ error: 'said: not in the list: who owns billing' })
+  expect(say).toHaveBeenCalledTimes(1)
+  expect(await actOnMiss({ post: () => Promise.resolve({}) }, 'x', 'dismiss', say)).toEqual({ misses: null })      // no list: the card keeps its own
 })

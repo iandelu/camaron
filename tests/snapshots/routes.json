@@ -435,6 +435,11 @@
     "access": "public"
   },
   {
+    "method": "GET",
+    "path": "/api/misses",
+    "access": "public"
+  },
+  {
     "method": "POST",
     "path": "/api/new",
     "access": "public"

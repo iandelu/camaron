@@ -99,6 +99,11 @@ button.dk-hchip:hover { border-color: var(--tone); }
 .dk-wiki.is-generating .dk-wiki-word { color: var(--color-ink); }
 .dk-wiki .cu-btn--primary .cu-thinking { --cu-think-base: color-mix(in srgb, var(--color-on-accent) 72%, var(--color-accent));
   --cu-think-glint: var(--color-on-accent); }
+/* the unanswered questions (sections/DocsMisses.jsx): one row each, the question taking the room (it wraps), then its count and two small buttons */
+.dk-misses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.dk-miss { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.dk-miss-q { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.dk-miss-n { font-variant-numeric: tabular-nums; }
 .dk-slots { display: flex; flex-direction: column; gap: .2rem; }
 .dk-inline { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-narrow { min-width: 4rem; }

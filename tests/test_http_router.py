@@ -59,7 +59,7 @@ AREA: dict[tuple[str, str], str] = {
     ], "runs"),
     **dict.fromkeys([
         ("GET", "/api/interview"), ("POST", "/api/interview/answer"), ("GET", "/api/kpis"),
-        ("POST", "/api/kpis/miss"), ("GET", "/api/sync"), ("POST", "/api/sync/share"),
+        ("POST", "/api/kpis/miss"), ("GET", "/api/misses"), ("GET", "/api/sync"), ("POST", "/api/sync/share"),
     ], "team"),
     **dict.fromkeys([
         ("POST", "/api/c4/confirm"), ("POST", "/api/c4/element"), ("POST", "/api/c4/relation"),

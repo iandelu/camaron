@@ -99,14 +99,32 @@ export const wikisRead = (prev, got) => (got.error
   ? { rows: prev.rows, loading: false, failed: true }
   : { rows: got.rows, loading: false, failed: false })
 
-// GET viewers (what the C4 explorer and the graphs are), read on mount and again after the C4 build: the answer goes to `set`,
-// null when the read failed, and nothing once the section is gone (`isAlive`). Resolves when it has landed.
-export const readViewers = (srv, isAlive, set) => srv.get('viewers').then(
-  (viewers) => { if (isAlive()) set(viewers) },
+// A GET the section reads on its own: `pick` is what it keeps of the answer, which goes to `set`; null when the read failed,
+// and nothing once the section is gone (`isAlive`). Resolves when it has landed.
+const readInto = (name, pick = (got) => got) => (srv, isAlive, set) => srv.get(name).then(
+  (got) => { if (isAlive()) set(pick(got)) },
   () => { if (isAlive()) set(null) })
+
+// GET viewers (what the C4 explorer and the graphs are), read on mount and again after the C4 build.
+export const readViewers = readInto('viewers')
 
 // What the section keeps of a read: a failed one (null) leaves the last answer, so a chip does not vanish when a reload fails.
 export const viewersRead = (prev, got) => got ?? prev
+
+// The questions nobody could answer (lib/usage.py misses(): {q, n, last}, this machine only). GET misses and POST kpis/miss both
+// answer {misses}; `missesOf` is the list in an answer, null when it carries none (a card with no list shows nothing).
+export const missesOf = (got) => (Array.isArray(got?.misses) ? got.misses : null)
+export const readMisses = readInto('misses', missesOf)
+
+// POST kpis/miss: `question` adds the question to the open questions of the next interview, `dismiss` forgets it; either way the
+// server answers the new list.
+export const missAction = (srv, q, action) => srv.post('kpis/miss', { q, action })
+
+// An action as the card keeps it, never rejecting: the server's new list (null if the answer had none: the card keeps its own),
+// or the rejection said by `say` (the server's own words).
+export const actOnMiss = (srv, q, action, say) => missAction(srv, q, action).then(
+  (got) => ({ misses: missesOf(got) }),
+  (e) => ({ error: say(e) }))
 
 // What POST wiki takes for a card's action: the block's body, plus the action's `mode` when it has one (Update).
 export const wikiRequest = (block, action = {}) => ({ ...block.body, ...(action.mode ? { mode: action.mode } : {}) })
