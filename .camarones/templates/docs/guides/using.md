@@ -151,8 +151,9 @@ When the code moves, the docs follow:
 - In CI, `camaron ci` writes a job per service repo that comments on each pull request which pages it leaves out of
   date, without AI; `camaron pr propose <url>` lets an agent propose the doc changes in a PR of `cam-docs`.
 - `camaron arch-verify` checks the C4 model against the code: each element's and relation's evidence state (`fresh`,
-  `suspect`, `broken`, `no-evidence`, `unchecked`) and the drift. A relation is backed by its own `code` anchor or by
-  what the code shows between its two ends: the code graph (`camaron graph`) between the components of a repo, the
+  `suspect`, `broken`, `no-evidence`, `unchecked`) and the drift; a `no-evidence` item a person confirmed
+  (`#confirmed`) says so and is no finding. A relation is backed by its own `code` anchor or by what the code shows
+  between its two ends: the code graph (`camaron graph`) between the components of a repo, the
   `arch-draft` scan between containers. It lists what is in the code but not in the model, files two sibling elements
   both cover, and the folders no element covers, offered as candidate components. It also names what it cannot compare:
   a repo with no graph (the relations between its components stay `unchecked`), a repo not cloned here (its relations

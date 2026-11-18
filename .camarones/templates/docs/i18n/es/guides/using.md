@@ -161,7 +161,8 @@ Cuando el código se mueve, la documentación lo sigue:
   desactualizadas, sin IA; `camaron pr propose <url>` deja que un agente proponga los cambios de la documentación en
   una PR de `cam-docs`.
 - `camaron arch-verify` comprueba el modelo C4 contra el código: el estado de evidencia de cada elemento y relación
-  (`fresh`, `suspect`, `broken`, `no-evidence`, `unchecked`) y la deriva. Una relación la respalda su propio ancla
+  (`fresh`, `suspect`, `broken`, `no-evidence`, `unchecked`) y la deriva; un elemento `no-evidence` que una persona
+  confirmó (`#confirmed`) lo dice y no es un hallazgo. Una relación la respalda su propio ancla
   `code` o lo que el código muestra entre sus dos extremos: el grafo de código (`camaron graph`) entre los componentes
   de un repo, el escaneo de `arch-draft` entre contenedores. Lista lo que está en el código y no en el modelo, los
   ficheros que cubren dos elementos hermanos y las carpetas que ningún elemento cubre, como componentes candidatos. Dice

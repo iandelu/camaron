@@ -132,7 +132,8 @@ def report() -> dict:
 
 def _what(item: dict) -> str:
     if item["state"] == "no-evidence":
-        return "nothing in the code backs it: add metadata { code [...] }"
+        return ("confirmed by a person; nothing in the code backs it" if item.get("confirmed")
+                else "nothing in the code backs it: add metadata { code [...] }")
     parts = [f"{a['result']} {a['raw']}" for a in item["anchors"] if a["result"] in ("missing", "changed")]
     return "; ".join(parts) or item["state"]
 

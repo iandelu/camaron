@@ -327,6 +327,15 @@ def test_arch_verify_text_lists_worst_first(verify_world):
     assert "shop.api.legacy" in legacy and "shop.db" not in legacy
 
 
+def test_arch_verify_text_says_a_person_vouched_for_a_confirmed_item(verify_world):
+    _, v = verify_world
+    lines = v.text(v.report())
+    ghost = next(line for line in lines if line.strip().startswith("shop.ghost "))
+    db = next(line for line in lines if line.strip().startswith("shop.db "))
+    assert "confirmed by a person" in ghost and "add metadata" not in ghost
+    assert "add metadata { code [...] }" in db
+
+
 def test_arch_verify_text_prints_the_drift_and_the_candidates(verify_world):
     kit, _ = verify_world
     graph(kit, (OLD, API, "imports", "L3"))
