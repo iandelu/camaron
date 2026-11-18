@@ -1,52 +1,68 @@
 import { expect, test } from 'vitest'
-import { inPanel, others, sectionFor, ZONES } from './catalog.js'
+import { inPanel, others, sectionFor, wantedCommand, ZONES } from './catalog.js'
 
 const c = (name, zone, more = {}) => ({ name, zone, verdict: 'app', destructive: false, ...more })
+const names = (cmds, place) => { const o = others(cmds, place); return [...o.safe, ...o.careful].map((x) => x.name) }
 
-test('each section reads the catalog zones of its work', () => {
-  expect(ZONES).toMatchObject({ plan: ['generate'], interviews: ['interviews'], team: ['team'], quality: ['check', 'analyze'],
-    machine: ['machine'] })
+test('each place reads the catalog zones of its work', () => {
+  expect(ZONES).toEqual({ 'flow/plan': ['generate'], quality: ['check', 'analyze'], docs: ['team', 'interviews'], settings: ['machine'] })
 })
 
-test('quality and machine leave out what their panels run', () => {
+test('quality and settings leave out what their panels run', () => {
   const cmds = ['doctor', 'eval', 'ab', 'inventory', 'fresh', 'blocks', 'check', 'radar'].map((n) => c(n, n === 'radar' ? 'analyze' : 'check'))
-  expect(others(cmds, 'quality').safe.map((x) => x.name)).toEqual(['check', 'radar'])
-  const m = ['setup', 'config', 'sync', 'detect', 'stack', 'profile', 'self-update', 'repair', 'version'].map((n) => c(n, 'machine'))
-  expect(others([...m, c('uninstall', 'machine', { destructive: true }), c('unlink', 'machine', { destructive: true })], 'machine'))
-    .toEqual({ safe: [m[8]], careful: [c('unlink', 'machine', { destructive: true })] })
+  expect(names(cmds, 'quality')).toEqual(['check', 'radar'])
+  const m = ['setup', 'config', 'sync', 'detect', 'stack', 'profile', 'repair', 'version'].map((n) => c(n, 'machine'))
+  const extra = [c('self-update', 'machine'), c('uninstall', 'machine', { destructive: true }), c('unlink', 'machine', { destructive: true })]
+  expect(others([...m, ...extra], 'settings')).toEqual({ safe: [m[7]], careful: [extra[2]] })
 })
 
-test('all the commands of a section, but the ones its panels already run; what deletes goes last', () => {
+test('all the commands of a place, but the ones its panels already run; what deletes goes last', () => {
   const cmds = [c('run', 'generate'), c('autopilot', 'generate'), c('wiki', 'generate'), c('pr', 'generate'),
     c('remote', 'team'), c('ci', 'team'), c('confirm', 'generate', { verdict: 'portal' }),
     c('unlink', 'team', { destructive: true })]
-  expect(others(cmds, 'plan')).toEqual({ safe: [cmds[2], cmds[3]], careful: [] })
-  expect(others(cmds, 'team')).toEqual({ safe: [cmds[5]], careful: [cmds[7]] })
-  expect(others(cmds, 'summary')).toEqual({ safe: [], careful: [] })
-  expect(others(null, 'plan')).toEqual({ safe: [], careful: [] })
+  expect(others(cmds, 'flow/plan')).toEqual({ safe: [cmds[2], cmds[3]], careful: [] })
+  expect(others(cmds, 'docs')).toEqual({ safe: [cmds[5]], careful: [cmds[7]] })
+  expect(others(cmds, 'flow')).toEqual({ safe: [], careful: [] })
+  expect(others(null, 'flow/plan')).toEqual({ safe: [], careful: [] })
 })
 
-// The ⌘K palette takes you to a command: the section whose panel runs it, else the one whose "All commands" lists it.
+test('docs lists ci but none of the commands that moved to settings or interviews', () => {
+  const cmds = ['ci', 'remote', 'share', 'trust', 'plugins', 'skills', 'interview'].map((n) => c(n, n === 'interview' ? 'interviews' : 'team'))
+  expect(names(cmds, 'docs')).toContain('ci')
+  for (const n of ['remote', 'share', 'trust', 'plugins', 'skills', 'interview']) expect(names(cmds, 'docs')).not.toContain(n)
+})
+
 test('where the app runs each command', () => {
   expect(sectionFor(c('doctor', 'check'))).toBe('quality')
   expect(inPanel(c('doctor', 'check'))).toBe(true)
   expect(sectionFor(c('radar', 'analyze'))).toBe('quality')
   expect(inPanel(c('radar', 'analyze'))).toBe(false)
-  expect(sectionFor(c('uninstall', 'machine', { destructive: true }))).toBe('machine')
+  expect(sectionFor(c('uninstall', 'machine', { destructive: true }))).toBe('settings/kit')
+  expect(sectionFor(c('trust', 'team'))).toBe('settings/trust')
+  expect(sectionFor(c('interview', 'interviews'))).toBe('docs/interviews')
+  expect(sectionFor(c('run', 'generate'))).toBe('flow/plan')
   expect(sectionFor(c('confirm', 'generate', { verdict: 'portal' }))).toBeNull()
   expect(sectionFor(c('up', 'docs'))).toBeNull()
-  expect(sectionFor(c('ci', 'team'), ['summary', 'plan'])).toBeNull()      // a section this window lacks
+  expect(sectionFor(c('radar', 'analyze'), ['flow', 'quality'])).toBe('quality')
+  expect(sectionFor(c('radar', 'analyze'), ['flow'])).toBeNull()
 })
 
-// The method hooks are a quality tool (what the agents consult before editing), so quality runs them; team keeps the trust.
-test('the method hooks are a panel of quality, not of team', () => {
+test('the method hooks are a panel of quality', () => {
   expect(sectionFor(c('hooks', 'team'))).toBe('quality')
   expect(inPanel(c('hooks', 'team'))).toBe(true)
   const cmds = [c('hooks', 'team'), c('ci', 'team')]
-  expect(others(cmds, 'team').safe.map((x) => x.name)).toEqual(['ci'])           // not twice: its panel is Quality's
-  expect(others(cmds, 'quality').safe).toEqual([])
+  expect(names(cmds, 'docs')).toEqual(['ci'])
+  expect(names(cmds, 'quality')).toEqual([])
 })
 
 test('the secret scan is `check --secrets`: the full check stays in the folded list', () => {
-  expect(others([c('check', 'check')], 'quality').safe.map((x) => x.name)).toEqual(['check'])
+  expect(names([c('check', 'check')], 'quality')).toEqual(['check'])
+})
+
+test('the wanted command is the segment after the place, unless it is a view', () => {
+  expect(wantedCommand('#/quality/radar', 'quality')).toBe('radar')
+  expect(wantedCommand('#/quality/libs', 'quality')).toBeNull()
+  expect(wantedCommand('#/flow/plan/plan', 'flow/plan')).toBe('plan')
+  expect(wantedCommand('#/docs/decisions/0012', 'docs')).toBeNull()
+  expect(wantedCommand('#/settings', 'settings')).toBeNull()
 })
