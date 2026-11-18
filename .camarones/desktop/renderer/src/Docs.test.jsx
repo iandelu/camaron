@@ -25,7 +25,7 @@ test('every step of the Docs tour points at something the page renders', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render()
   const targets = TOURS.docs.map((s) => s.target)
-  expect(targets).toEqual(['docs-portal', 'docs-health', 'docs-c4', 'docs-wikis', 'docs-ask'])
+  expect(targets).toEqual(['docs-portal', 'docs-health', 'docs-c4', 'docs-wikis', 'docs-chat'])
   for (const target of targets) expect(out, target).toContain(`data-tour="${target}"`)
 })
 
@@ -113,7 +113,7 @@ test('one wiki block per repo of the project, each quiet until the wikis are rea
   expect(out).not.toContain('Grafo del wiki')                        // no graph row until a read says the graph is missing
   expect(out).toMatch(/aria-label="Ver: Wiki · api"/)
   expect(out).not.toMatch(/aria-label="Ver: Wiki · web"/)
-  expect(out.match(/cu-btn--primary/g)).toHaveLength(1 + 3 + 1)   // Leer + one action per card + Preguntar
+  expect(out.match(/cu-btn--primary/g)).toHaveLength(1 + 3)       // Leer + one action per card; the chat's entry is not primary
 })
 
 // The wiki blocks sit in their own grid, not in the .dk-stack of Machine's stack input (a 14rem column).
@@ -125,20 +125,35 @@ test('the wiki blocks are laid out by the wikis grid, not by .dk-stack', () => {
   expect(out).not.toContain('dk-stack')
 })
 
-test('with no repos there is no wiki block; the Ask card is still there', () => {
+test('with no repos there is no wiki block; the chat\'s entry is still there', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render({ repos: [], docs: [] })
   expect(out).not.toContain('Generar la wiki')
   expect(out).toContain('Construir el explorador C4')
-  expect(out).toContain('Preguntar con IA')
+  expect(out).toContain('data-tour="docs-chat"')
 })
 
-test('Ask has a question field and a Preguntar button', () => {
+// The Ask card (a field that answered once and forgot) is gone: the page has the chat's entry, and the panel opens beside it.
+test('the page has the chat\'s entry, not the old Ask card, and the panel starts closed', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render()
-  expect(out).toContain('Preguntar con IA')
   expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
   expect(out).toMatch(/>Preguntar<\/button>/)
+  expect(out).not.toContain('docs-ask')
+  expect(out).not.toContain('Preguntar con IA')
+  expect(out).not.toContain('Responde solo con lo que dice la documentación')
+  expect(out).not.toContain('dk-chat')
+  expect(out).toMatch(/^<div class="dk-docs"><div class="dk-page wide">/)
+})
+
+test('Docs takes the window\'s chat store and still renders without one', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const state = { messages: [{ id: 1, role: 'user', text: 'q' }], running: true, runners: [], choice: null, ai: true, loadError: '' }
+  const chat = { get: () => state, subscribe: () => () => {}, load: () => {}, send: () => {}, pick: () => {}, clear: () => {} }
+  const out = renderToStaticMarkup(<Docs srv={srv} jobs={null} chat={chat} app={{ openExternal: () => {} }} index={index} />)
+  expect(out).toContain('data-tour="docs-chat"')
+  expect(out).not.toContain('dk-chat')
+  expect(render()).toContain('data-tour="docs-chat"')
 })
 
 test('the strings exist in English', () => {
@@ -148,7 +163,6 @@ test('the strings exist in English', () => {
   expect(out).toContain('Wiki · api')
   expect(out).toContain('Generate the wiki')
   expect(out).not.toContain('Picks this repo for a wiki')
-  expect(out).toContain('Ask with AI')
   expect(out).toMatch(/aria-label="Question"/)
   expect(out).toMatch(/>Ask<\/button>/)
 })

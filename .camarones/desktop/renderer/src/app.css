@@ -104,6 +104,37 @@ button.dk-hchip:hover { border-color: var(--tone); }
 .dk-miss { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .dk-miss-q { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
 .dk-miss-n { font-variant-numeric: tabular-nums; }
+/* the Docs chat (sections/DocsChat.jsx): while open, a column beside the page that the page's grid gives room to (the page side
+   shrinks, never the panel); the conversation scrolls inside the panel and the shrimp with its words sits over the composer. The
+   panel's height is the main pane's: the window less the title bar, the status bar, the jobs bar (and its border) and the pane's
+   padding. */
+.dk-docs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.dk-docs.with-chat { grid-template-columns: minmax(0, 1fr) 24rem; }
+.dk-docs > .dk-page { min-width: 0; }
+.dk-ask { display: flex; align-items: center; gap: .5rem; max-width: 40rem; }
+.dk-chat { position: sticky; top: 0; display: flex; flex-direction: column; gap: .6rem; height: calc(100svh - 11.25rem - 1px); min-height: 20rem;
+  padding: .9rem; border: 1px solid var(--color-rule); border-radius: var(--consola-radio-tarjeta); background: var(--color-canvas-elevated);
+  animation: dk-rise var(--duration-normal) var(--ease-out-soft) both; }
+.dk-chat:focus-visible { outline: 2px solid var(--color-acento-texto); outline-offset: 2px; }
+.dk-chat > :not(.dk-chat-list) { flex: none; }
+.dk-chat-head { flex-wrap: nowrap; gap: .25rem; }
+.dk-chat-title { flex: 1; min-width: 0; margin: 0; font-size: var(--text-body); }
+.dk-chat-pick { width: 100%; }
+.dk-chat-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: .75rem; overflow-wrap: anywhere; }
+.dk-chat-list > p { margin: 0; }
+.dk-chat-q { align-self: flex-end; max-width: 85%; padding: .45rem .7rem; border-radius: var(--consola-radio-control); background: var(--color-canvas);
+  white-space: pre-wrap; }
+.dk-chat-status { display: flex; align-items: flex-end; gap: .5rem; min-height: 2.5rem; padding-top: .6rem; }
+.dk-chat-form { display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
+.dk-chat-field { width: 100%; min-height: 3.5rem; max-height: 10rem; padding: .45rem .65rem; line-height: 1.4; resize: vertical; }
+.dk-chat-field[aria-disabled="true"] { opacity: .6; }
+/* a window too narrow for both: the panel is a drawer over the page, under the title bar (the header drags the window and
+   main.cjs draws the window controls over it, so no control of the panel may sit there), above the page, below the tour */
+@media (max-width: 68rem) {
+  .dk-docs.with-chat { grid-template-columns: minmax(0, 1fr); }
+  .dk-chat { position: fixed; top: 3.5rem; right: 0; bottom: 0; z-index: 20; width: min(24rem, 100vw); height: auto; min-height: 0;
+    border-width: 0 0 0 1px; border-radius: 0; background: var(--color-canvas-elevated); box-shadow: var(--sombra-menu); }
+}
 .dk-slots { display: flex; flex-direction: column; gap: .2rem; }
 .dk-inline { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-narrow { min-width: 4rem; }
@@ -193,13 +224,14 @@ button.dk-hchip:hover { border-color: var(--tone); }
 /* The shrimp (sections/Shrimp.jsx): the favicon's drawing, still but for the one part a state moves, by transform or opacity only. The antennae
    turn about the head end of their own box. The tail keeps its own origin, the apex of its fan, and repeats its group's translate(…) because a CSS
    transform replaces that attribute (the favicon's own value: style.test.js checks it). */
-.dk-shrimp-box { display: inline-flex; align-items: flex-end; gap: .25rem; flex: none; }
+.dk-shrimp-box { position: relative; display: inline-flex; flex: none; }
 .dk-shrimp { width: 2.5rem; height: 2.5rem; flex: none; }
 .dk-shrimp .shrimp-antennae { transform-box: fill-box; transform-origin: 1% 72%; }
 .dk-shrimp .shrimp-tail { transform-origin: 0 0; }
 .dk-shrimp.thinking .shrimp-antennae { animation: dk-shrimp-sway 1.6s ease-in-out infinite; }
 .dk-shrimp.answering .shrimp-tail { animation: dk-shrimp-flick .5s ease-in-out infinite; }
-.dk-shrimp-dots { display: inline-flex; align-items: flex-end; gap: .2rem; padding-bottom: .5rem; }
+/* the thinking dots rise above the head (the drawing's left third), over the box, so they never push what sits beside it */
+.dk-shrimp-dots { position: absolute; left: .35rem; bottom: 100%; display: inline-flex; gap: .2rem; }
 .dk-shrimp-dots i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--color-ink-dim); animation: dk-shrimp-dot 1.2s ease-in-out infinite; }
 .dk-shrimp-dots i:nth-child(2) { animation-delay: .15s; }
 .dk-shrimp-dots i:nth-child(3) { animation-delay: .3s; }
@@ -805,6 +837,8 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
   .dk-term.tone-running { animation: none; }
   .dk-tour-ring { transition: none; }
   .dk-shrimp.thinking .shrimp-antennae, .dk-shrimp.answering .shrimp-tail, .dk-shrimp-dots i { animation: none; }
+  .dk-shrimp-dots { display: none; }
+  .dk-chat { animation: none; }
 }
 
 /* The guide (sections/Guide.jsx): tabs per guide, a search, the chapter index beside the text */

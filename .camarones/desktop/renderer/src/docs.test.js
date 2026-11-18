@@ -188,6 +188,19 @@ test("the server's \"no AI\" and \"too slow\" refusals are said in the app's lan
   setLang('es')
 })
 
+// lib/chat.py turn(): a runner that was asked and gave nothing usable fails the turn naming who (`runner` or `runner:model`).
+test('a runner that gave no answer is named in a sentence of the app\'s language', () => {
+  const none = 'claude:haiku gave no answer: is it signed in, and does it have that model?'
+  setLang('es')
+  expect(askError({ message: none }, t)).toBe('claude:haiku no ha contestado: ¿ha iniciado sesión y tiene ese modelo?')
+  expect(askError(none, t)).toBe('claude:haiku no ha contestado: ¿ha iniciado sesión y tiene ese modelo?')
+  expect(askError('gemini gave no answer: is it signed in, and does it have that model?', t)).toMatch(/^gemini no ha contestado/)
+  setLang('en')
+  expect(askError({ message: none }, t)).toBe('claude:haiku gave no answer: is it signed in, and does it have that model?')
+  setLang('es')
+  expect(askError({ message: 'it gave no answer' }, t)).toBe('El servidor lo ha rechazado: it gave no answer')
+})
+
 // One wiki runs at a time on the server (routes/analysis.py wiki(): another repo's start is 409 busy). The jobs store's
 // running list says which repo's runs: Generate closes on the others; the repo that runs keeps its own button.
 test('a wiki running for one repo closes Generate on the others', () => {

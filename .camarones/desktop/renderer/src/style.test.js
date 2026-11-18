@@ -124,3 +124,38 @@ test('the shrimp is sized in rem and its dots take their colour from the theme',
   expect(px(rule('.dk-shrimp'), 'height')).toBeGreaterThan(0)
   expect(rule('.dk-shrimp-dots i')).toMatch(/background:\s*var\(--color-ink-dim\)/)
 })
+
+// The spec puts the thinking dots above the head, over the drawing's own box, not beside it; for who asked for less motion
+// they go, and the label alone says the state.
+test('the dots rise above the shrimp and go for who asked for less motion', () => {
+  expect(rule('.dk-shrimp-box')).toMatch(/position:\s*relative/)
+  expect(rule('.dk-shrimp-dots')).toMatch(/position:\s*absolute/)
+  expect(rule('.dk-shrimp-dots')).toMatch(/bottom:\s*100%/)
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
+  expect(reduced).toMatch(/\.dk-shrimp-dots\s*\{\s*display:\s*none/)
+})
+
+// The Docs chat (sections/DocsChat.jsx): beside the page, a column of its own that the page's grid gives room to; in a narrow
+// window a drawer over the page, under the title bar (main.cjs draws the window controls there and it drags the window). It
+// rises in by transform and opacity, and stands still for who asked for less motion.
+test('the chat is a column beside the page and a drawer in a narrow window, and rises in only for who wants motion', () => {
+  expect(rule('.dk-docs.with-chat')).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)\s+24rem/)
+  expect(rule('.dk-docs > .dk-page')).toMatch(/min-width:\s*0/)
+  expect(rule('.dk-chat')).toMatch(/animation:\s*dk-rise\b/)
+  expect(rule('.dk-chat-list')).toMatch(/overflow-y:\s*auto/)
+  expect(rule('.dk-chat-list')).toMatch(/min-height:\s*0/)
+  const narrow = css.match(/@media \(max-width: 68rem\)\s*\{((?:[^{}]|\{[^}]*\})*)\}/)[1]
+  const drawer = narrow.match(/\.dk-chat\s*\{([^}]*)\}/)[1]
+  expect(drawer).toMatch(/position:\s*fixed/)
+  expect(drawer).toMatch(/right:\s*0/)
+  expect(drawer).toMatch(/bottom:\s*0/)
+  expect(drawer).toMatch(/top:\s*3\.5rem/)
+  expect(drawer).toMatch(/width:\s*min\(24rem,\s*100vw\)/)
+  expect(drawer).toMatch(/background:\s*var\(--color-canvas-elevated\)/)
+  const z = +drawer.match(/z-index:\s*(\d+)/)[1]
+  expect(z).toBeGreaterThan(+rule('.dk-term-max').match(/z-index:\s*(\d+)/)[1])
+  expect(z).toBeLessThan(+rule('.dk-tour').match(/z-index:\s*(\d+)/)[1])
+  expect(narrow).toMatch(/\.dk-docs\.with-chat\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
+  expect(reduced).toMatch(/\.dk-chat\s*\{\s*animation:\s*none/)
+})

@@ -170,11 +170,14 @@ export function answerView(r) {
   return { kind: 'answer', text: r.answer, by: r.runner ? (r.model ? `${r.runner} (${r.model})` : r.runner) : '', sources }
 }
 
-// The server refuses in English (lib/answers.py raises RuntimeError): the two refusals a person can act on get their
-// own sentence; anything else goes through the wizard's errorLine.
+// The server refuses in English (lib/answers.py raises RuntimeError): the refusals a person can act on get their own
+// sentence (the chat's runner that gave nothing, lib/chat.py turn(), keeps whom it names); anything else goes through the
+// wizard's errorLine.
 export function askError(e, t) {
   const msg = String(e?.message ?? e ?? '')
   if (/^no AI answer here/.test(msg)) return t('docs.askNoAi')
   if (/^no answer within/.test(msg)) return t('docs.askSlow')
+  const none = /^(\S+) gave no answer:/.exec(msg)
+  if (none) return t('docs.chat.gaveNothing', { who: none[1] })
   return errorLine(e, t)
 }

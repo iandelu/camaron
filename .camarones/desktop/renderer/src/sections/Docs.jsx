@@ -1,42 +1,58 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
-import { answerView, askBody, askError, buildFailed, c4Card, docsHealth, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
+import { buildFailed, c4Card, docsHealth, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
   wikiBlocks, wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
 import { JobOutput, Page } from '../parts.jsx'
 import { t } from '../i18n.js'
+import { AskEntry, DocsChat } from './DocsChat.jsx'
 import { DocsHealth } from './DocsHealth.jsx'
 import { DocsIcon } from './DocsIcons.jsx'
 import { DocsMisses } from './DocsMisses.jsx'
 
+export { AnswerView } from './DocsChat.jsx'
+
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
 // href the window would follow). The portal has no app token (only the board's), so what it shows but cannot run is
-// run here: the C4 explorer, each repo's wiki (generate it, build its graph) and Ask's AI answer. One wiki runs at a
-// time: while one runs (the jobs store), Generate is closed on the other repos.
+// run here: the C4 explorer, each repo's wiki (generate it, build its graph) and the docs chat, on the window's chat
+// store, in a panel beside the page. One wiki runs at a time: while one runs (the jobs store), Generate is closed on
+// the other repos. The models are read on mount, so the picker is ready when the panel opens; closing it gives the
+// focus back to what opened it.
 const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
-export default function Docs({ srv, jobs, app, index }) {
+const QUIET = { messages: [], running: false, runners: null, choice: null, ai: true, loadError: '' }
+const NO_CHAT = { ...NO_JOBS, get: () => QUIET, load: () => {}, send: () => {}, pick: () => {}, clear: () => {} }
+export default function Docs({ srv, jobs, chat, app, index }) {
   const open = (hash) => openPortal(app, location.origin, hash)
   const wikis = useWikis(srv)
   const { viewers, reload: reloadViewers } = useViewers(srv)
   const { running } = useStore(jobs || NO_JOBS)
+  const talk = chat || NO_CHAT
+  const [chatting, setChatting] = useState(false)
+  const opener = useRef(null)
+  useEffect(() => { talk.load() }, [])
+  const ask = () => { opener.current = document.activeElement; setChatting(true) }
+  const close = () => { setChatting(false); opener.current?.focus() }
   const drafts = index?.summary?.draft || 0
   return (
-    <Page title={t('nav.docs')} wide>
-      <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
-      <div className="row" data-tour="docs-portal">
-        <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
-        <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
-        <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
-      </div>
-      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
-        onDone={reloadViewers} /></div>
-      <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
-      <DocsMisses srv={srv} />
-      <Ask srv={srv} open={open} />
-    </Page>
+    <div className={chatting ? 'dk-docs with-chat' : 'dk-docs'}>
+      <Page title={t('nav.docs')} wide>
+        <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
+        <div className="row" data-tour="docs-portal">
+          <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
+          <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
+          <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
+        </div>
+        <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
+          onDone={reloadViewers} /></div>
+        <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
+        <DocsMisses srv={srv} />
+        <AskEntry chat={talk} onAsk={ask} />
+      </Page>
+      {chatting ? <DocsChat chat={talk} onClose={close} onOpen={open} /> : null}
+    </div>
   )
 }
 
@@ -186,61 +202,5 @@ export function WikiCard({ block, gen, graph, loading = false, failed = false, b
         </>
       ) : null}
     </Card>
-  )
-}
-
-// Ask's AI answer: POST ask/answer waits for the model (up to 90 s), so it is a request of its own, not a job. An
-// empty question is not sent.
-function Ask({ srv, open }) {
-  const [q, setQ] = useState('')
-  const [state, setState] = useState({ busy: false, view: null, error: '' })
-  const alive = useRef(true)
-  useEffect(() => {
-    alive.current = true
-    return () => { alive.current = false }
-  }, [])
-  async function submit(e) {
-    e.preventDefault()
-    const body = askBody(q)
-    if (!body || state.busy) return
-    setState({ busy: true, view: null, error: '' })
-    try {
-      const view = answerView(await srv.post('ask/answer', body))
-      if (alive.current) setState({ busy: false, view, error: '' })
-    } catch (err) {
-      if (alive.current) setState({ busy: false, view: null, error: askError(err, t) })
-    }
-  }
-  return (
-    <Card className="dk-run" data-tour="docs-ask">
-      <span className="eyebrow">{t('docs.ask')}</span>
-      <p className="muted small">{t('docs.askHint')}</p>
-      <form className="row" onSubmit={submit}>
-        <input className="cu-input dk-grow" value={q} placeholder={t('docs.askPh')} aria-label={t('docs.askLabel')} onChange={(e) => setQ(e.target.value)} />
-        <Button type="submit" variant="primary" size="sm" disabled={state.busy || !q.trim()}>{t('docs.askGo')}</Button>
-      </form>
-      {state.busy ? <p className="muted small" role="status">{t('docs.asking')}</p> : null}
-      {state.error ? <Aviso tone="error" title={state.error} /> : null}
-      {state.view ? <AnswerView view={state.view} onOpen={open} /> : null}
-    </Card>
-  )
-}
-
-// The answer as text, who wrote it, and its sources as buttons that open the page in the portal.
-export function AnswerView({ view, onOpen }) {
-  if (view.kind === 'none') return <p className="muted">{t('docs.askNone')}</p>
-  return (
-    <div className="dk-out">
-      <p className="dk-answer">{view.text}</p>
-      {view.by ? <p className="muted small">{t('docs.by', { who: view.by })}</p> : null}
-      {view.sources.length ? (
-        <div className="row">
-          <span className="muted small">{t('docs.sources')}</span>
-          {view.sources.map((s) => (
-            <Button key={s.cite} size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${s.cite}`} onClick={() => onOpen(s.hash)}>{s.cite}</Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
   )
 }
