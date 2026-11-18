@@ -22,18 +22,17 @@ from pathlib import Path, PurePosixPath
 from .. import adr_doc, c4edit
 from ..common import CAM_DIR, CTX, ROOT, WORK, load_json, repo_dir, save_json
 from .locks import FileLock, LockBusy
-from ..domain.c4 import anchors, evidence
+from ..domain.c4 import anchors, evidence, verdict
 from ..domain.c4.evidence import relation_key  # noqa: F401  (callers name it freshness.relation_key)
-from ..domain.docs import frontmatter, logical_paths
+from ..domain.docs import cascade, frontmatter, logical_paths
 from ..app import services
 
 FILE = WORK / "fresh.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "fresh.lock"
 COMMENT = re.compile(r"^(//|#|/\*|\*|<!--|-->|--\s|;)")
-OUT_OF_DATE = ("suspect", "stale")
+OUT_OF_DATE = cascade.OUT_OF_DATE
 META_BLOCK = re.compile(rf"\bmetadata\s*\{{(?:{c4edit.STR}|[^{{}}'\"])*\}}")
 FINGERPRINTED = ("lines", "symbol")             # the other anchors are checked for existence only (spec §5.3)
-SECTIONS = ("elements", "relations")
 SKIP_DIRS = frozenset({".git", "node_modules", "target", "build", "dist", ".gradle", ".idea", ".venv", "venv",
                        "__pycache__", ".next", "coverage", "vendor"})     # quickarch.SKIP_DIRS' build and tool folders
 
@@ -341,10 +340,6 @@ def _repos() -> set[str]:
     return set(services.current().workspace.repo_names())
 
 
-def _ref(a: anchors.Anchor) -> str:
-    return f"{a.repo}:{a.path}" + (f"#{a.anchor}" if a.anchor else "")
-
-
 def _reach(a: anchors.Anchor, repos: set[str]) -> str | None:
     """`missing` for a repo workspace.yaml does not list, `unchecked` for one not cloned here, None if readable."""
     if a.repo not in repos:
@@ -369,7 +364,7 @@ def _result(a: anchors.Anchor, fps: dict, repos: set[str]) -> str:
     if why := _reach(a, repos):
         return why
     if a.kind in FINGERPRINTED:
-        return check_source(_ref(a), fps.get(a.raw))
+        return check_source(anchors.ref(a), fps.get(a.raw))
     root, parts = repo_dir(a.repo), PurePosixPath(a.path).parts
     if a.kind == "repo":
         return "fresh"
@@ -380,25 +375,13 @@ def _result(a: anchors.Anchor, fps: dict, repos: set[str]) -> str:
     return "fresh" if _any_file(root, root.joinpath(*parts), a if a.kind == "glob" else None) else "missing"
 
 
-def _c4_of(data: dict) -> dict:
-    """fresh.json's `c4` key, with what is not a dict (a merge resolved by hand) read as no stamp."""
-    c4 = data["c4"] = data["c4"] if isinstance(data.get("c4"), dict) else {}
-    for section in SECTIONS:
-        entries = c4.get(section) if isinstance(c4.get(section), dict) else {}
-        c4[section] = {k: e for k, e in entries.items() if isinstance(e, dict)}
-        for e in c4[section].values():
-            fps = e.get("anchors") if isinstance(e.get("anchors"), dict) else {}
-            e["anchors"] = {raw: fp for raw, fp in fps.items() if fp is None or isinstance(fp, dict) and "h" in fp}
-    return c4
-
-
 def _c4_stamp(block: list[str], got: list, repos: set[str], old: dict, by: str | None) -> dict:
     """An anchor whose repo is not cloned here keeps the fingerprint another machine took (fresh.json is shared)."""
     fps = {}
     for a in (a for a in got if a.kind in FINGERPRINTED):
         why = _reach(a, repos)
         if why is None:
-            fps[a.raw] = fingerprint(_ref(a))
+            fps[a.raw] = fingerprint(anchors.ref(a))
         elif why == "unchecked" and a.raw in old:
             fps[a.raw] = old[a.raw]
     return {"sha": _hash(block), "at": _now(), **({"by": by} if by else {}), "anchors": fps}
@@ -417,11 +400,11 @@ def _apply(c4: dict, items: list, repos: set[str], ack: set[str], by: str | None
                 continue
             first = a.raw not in e["anchors"]
             if first or e["anchors"][a.raw] is None:      # first seen here, or stamped before its code existed
-                fp = fingerprint(_ref(a))
+                fp = fingerprint(anchors.ref(a))
                 if first or fp is not None:
                     e["anchors"][a.raw] = fp
                     n += 1
-    for section in SECTIONS if prune else ():
+    for section in evidence.SECTIONS if prune else ():
         for gone in set(c4[section]) - {key for s, key, *_ in items if s == section}:
             del c4[section][gone]
             n += 1
@@ -433,9 +416,9 @@ def _c4_sync(items: list, repos: set[str], ack: set[str] = frozenset(), by: str 
     """Stamp what is new, was edited or is acknowledged; fingerprint an anchor whose repo is first seen here; with
     `prune`, drop what is gone. Nothing to change: no lock, no write. Returns the stamps, how many changed and why they
     could not be read or saved: then the stamps are this call's own, or, when `strict`, the failure is raised."""
-    c4, error = _c4_of({}), None
+    c4, error = evidence.stamps({}), None
     try:
-        c4 = _c4_of(_load())
+        c4 = evidence.stamps(_load())
     except (OSError, UnicodeDecodeError) as e:
         if strict:
             raise
@@ -445,7 +428,7 @@ def _c4_sync(items: list, repos: set[str], ack: set[str] = frozenset(), by: str 
     try:
         with FileLock(LOCK):
             data = _load()
-            n = _apply(_c4_of(data), items, repos, ack, by, prune)
+            n = _apply(evidence.stamps(data), items, repos, ack, by, prune)
             if n:
                 save_json(FILE, data)
             return data["c4"], n, None
@@ -516,14 +499,16 @@ def states() -> dict[str, dict]:
     out = {}
     for logical, (fm, _) in pages.items():
         srcs = _sources(fm)
-        if srcs:                                     # pages without sources stay out: _settle calls them unverified
+        if srcs:                                     # pages without sources stay out: settle calls them unverified
             stamps = (data.get(logical) or {}).get("sources", {})
             out[logical] = {s: _check_page_source(s, stamps.get(s), logical in decisions, c4) for s in srcs
                             if kind(s) != "doc"}
         flagged = (data.get(logical) or {}).get("flag")
         if flagged:
             out.setdefault(logical, {})[f"flagged: {flagged['reason']} ({flagged.get('by', '?')})"] = "changed"
-    result = _settle(pages, out)
+    cites = {logical: [(s, parse(s)[1][len("docs/"):]) for s in _sources(fm) if kind(s) == "doc"]
+             for logical, (fm, _) in pages.items()}
+    result = cascade.settle(out, cites)
     for st in result.values():
         if held := {s: c4["held"][s] for s in st["changed"] if s in c4["held"]}:
             st["c4"] = held
@@ -547,33 +532,6 @@ def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> 
         if el.get("state") == "broken" or (el.get("state") == "no-evidence" and not el.get("confirmed")):
             c4["held"][s] = el["state"]
             return "changed"
-    return result
-
-
-def _settle(pages: dict, own: dict) -> dict[str, dict]:
-    """L3: a cited page passes on its state. Repeated until nothing changes, so chains and cycles settle."""
-    docs_of = {logical: [s for s in _sources(fm) if kind(s) == "doc"] for logical, (fm, _) in pages.items()}
-    result: dict[str, dict] = {}
-
-    def summarise(logical: str) -> dict:
-        if logical not in own:
-            return {"state": "unverified", "changed": [], "missing": []}
-        res = dict(own[logical])
-        for s in docs_of[logical]:
-            cited = parse(s)[1][len("docs/"):]
-            if cited not in pages:
-                res[s] = "missing"
-            else:
-                res[s] = "changed" if result.get(cited, {}).get("state") in OUT_OF_DATE else "fresh"
-        changed = [s for s, r in res.items() if r == "changed"]
-        missing = [s for s, r in res.items() if r == "missing"]
-        return {"state": "stale" if missing else "suspect" if changed else "fresh", "changed": changed,
-                "missing": missing}
-    for _ in range(len(pages) + 1):
-        new = {logical: summarise(logical) for logical in pages}
-        if new == result:
-            break
-        result = new
     return result
 
 
@@ -607,19 +565,6 @@ def code_paths(refs: list[str]) -> list[str]:
     return out
 
 
-ELEMENT_FIX = {"broken": "is broken: fix its `code`",
-               "no-evidence": "has no evidence: add `code` to it or have a person confirm it"}
-
-
-def element_advice(held: dict) -> str:
-    """What settles a page suspect through its C4 elements (its state's `c4`): their evidence, never `fresh --ack`."""
-    parts = []
-    for state, fix in ELEMENT_FIX.items():
-        if names := ", ".join(s.strip()[3:].strip() for s, got in held.items() if got == state):
-            parts.append(f"its C4 element {names} {fix}")
-    return "; ".join(parts) + " (`camaron arch-verify`)"
-
-
 def gate(logical: str, trust: str, state: dict | None = None) -> tuple[bool, str | None]:
     """Whether an agent may read this page, and the notice to show with it (or instead of it)."""
     st = state or status(logical)
@@ -630,7 +575,7 @@ def gate(logical: str, trust: str, state: dict | None = None) -> tuple[bool, str
         why = ("its code is gone" if st["state"] == "stale" else "its code changed since it was written")
         reasons = [f"{why}. Read the code instead: " + ", ".join(code_paths(what))] if what or not held else []
         notice = (f"{'withheld' if blocking else 'may be out of date'}: {logical} — "
-                  + "; ".join(reasons + ([element_advice(held)] if held else [])) + ("." if held else ""))
+                  + "; ".join(reasons + ([verdict.advice(held)] if held else [])) + ("." if held else ""))
         return (not blocking), notice
     if st["state"] == "unverified" and trust != "confirmed":
         notice = (f"{'withheld' if blocking else 'unreviewed'}: {logical} has no sources to check it against and "

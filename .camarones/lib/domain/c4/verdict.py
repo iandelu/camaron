@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 STATES = ("fresh", "suspect", "broken", "no-evidence", "unchecked")
+FIX = {"broken": "is broken: fix its `code`",
+       "no-evidence": "has no evidence: add `code` to it or have a person confirm it"}
 
 
 def combine(results: list[str]) -> str:
@@ -35,3 +37,13 @@ def serve(state: str, confirmed: bool, policy: str = "block") -> tuple[bool, str
     if state == "unchecked":
         return True, "not checked here."
     return True, None
+
+
+def advice(held: dict) -> str:
+    """What settles a page suspect through its C4 elements ({`c4:` source: state}): their evidence, never
+    `fresh --ack`."""
+    parts = []
+    for state, fix in FIX.items():
+        if names := ", ".join(s.strip()[3:].strip() for s, got in held.items() if got == state):
+            parts.append(f"its C4 element {names} {fix}")
+    return "; ".join(parts) + " (`camaron arch-verify`)"

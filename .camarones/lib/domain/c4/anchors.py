@@ -133,5 +133,10 @@ def covers(a: Anchor, repo: str, path: str) -> bool:
     return path == a.path
 
 
+def ref(a: Anchor) -> str:
+    """The anchor as a source reference (`repo:path#frag`), without the folder's trailing `/`."""
+    return f"{a.repo}:{a.path}" + (f"#{a.anchor}" if a.anchor else "")
+
+
 def specificity(a: Anchor) -> int:
     return SPECIFICITY[a.kind]

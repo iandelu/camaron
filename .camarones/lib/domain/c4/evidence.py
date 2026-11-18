@@ -7,12 +7,26 @@ from collections import Counter
 
 from . import anchors, verdict
 
+SECTIONS = ("elements", "relations")
+
 
 def relation_key(rel: dict, seen: Counter) -> str:
     """`from -> to 'label'`; a repeat, in index order, gets ` [2]`, ` [3]`…"""
     key = f"{rel['from']} -> {rel['to']} '{rel.get('label') or ''}'"
     seen[key] += 1
     return key if seen[key] == 1 else f"{key} [{seen[key]}]"
+
+
+def stamps(data: dict) -> dict:
+    """fresh.json's `c4` key, set on `data`, with what is not a dict (a merge resolved by hand) read as no stamp."""
+    c4 = data["c4"] = data["c4"] if isinstance(data.get("c4"), dict) else {}
+    for section in SECTIONS:
+        entries = c4.get(section) if isinstance(c4.get(section), dict) else {}
+        c4[section] = {k: e for k, e in entries.items() if isinstance(e, dict)}
+        for e in c4[section].values():
+            fps = e.get("anchors") if isinstance(e.get("anchors"), dict) else {}
+            e["anchors"] = {raw: fp for raw, fp in fps.items() if fp is None or isinstance(fp, dict) and "h" in fp}
+    return c4
 
 
 def element_item(fqn: str, elements: dict, files: dict[str, list[str]]) -> tuple | None:

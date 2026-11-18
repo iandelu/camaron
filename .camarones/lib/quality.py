@@ -286,7 +286,8 @@ def check_diagrams(rows: list[dict], strict: bool = False) -> Issues:
 
 def check_fresh(rows: list[dict], strict: bool = False) -> Issues:
     """Pages whose cited code changed or disappeared since they were written (agents are kept off them)."""
-    from .harness.freshness import code_paths, element_advice
+    from .harness.freshness import code_paths
+    from .domain.c4.verdict import advice
     warns = []
     for r in rows:
         st = r.get("freshness") or {}
@@ -295,7 +296,7 @@ def check_fresh(rows: list[dict], strict: bool = False) -> Issues:
             code = [s for s in st.get("changed", []) if s not in held]
             why = [f"its code changed since it was written ({', '.join(code_paths(code))}) — refresh it, or "
                    "`fresh --ack` if it still holds"] if code or not held else []
-            warns.append(f"{r['file']}: " + "; ".join(why + ([element_advice(held)] if held else [])))
+            warns.append(f"{r['file']}: " + "; ".join(why + ([advice(held)] if held else [])))
         elif r.get("fresh") == "stale":
             warns.append(f"{r['file']}: its code is gone ({', '.join(code_paths(st.get('missing', [])))}) — refresh it")
     return ([], warns) if not strict else (warns, [])
