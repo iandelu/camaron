@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
 import { columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
-import { cardAt, childrenOf, fit, gateMessage, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
+import { addChoices, cardAt, childrenOf, fit, gateMessage, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
 import { Failed, Page } from '../parts.jsx'
 import { AddForm, StoryPanel, known, label } from './BoardPanels.jsx'
+import { openPortal } from '../docs.js'
 import { lang, t } from '../i18n.js'
 
 export { AddForm, StoryPanel }
@@ -15,7 +16,7 @@ export { AddForm, StoryPanel }
 // the form for any item.
 const KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Enter', 'Escape']
 
-export default function Board({ srv }) {
+export default function Board({ srv, app }) {
   const [board, setBoard] = useState(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -25,6 +26,7 @@ export default function Board({ srv }) {
   const [over, setOver] = useState(null)
   const [open, setOpen] = useState(null)
   const [adding, setAdding] = useState(null)             // the form's prefill ({} for an empty one), or null when closed
+  const [menu, setMenu] = useState(false)               // the Add menu
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [item, setItem] = useState(null)                 // what GET kanban/item returned for the open card
@@ -63,6 +65,11 @@ export default function Board({ srv }) {
     await load()
   }
   const show = (id) => { setAdding(null); setFormError(''); setDelError(''); setOpen(id) }
+  const choose = (c) => {
+    setMenu(false)
+    if (c.where === 'portal') openPortal(app, location.origin, '#/stories')
+    else openForm({ type: c.type })
+  }
   const openForm = (prefill) => { setOpen(null); setFormError(''); setAdding(prefill) }
   const pick = (id) => { const at = cardAt(cols, id); if (at) setKb(at) }       // a click or a drag starts the keys from that card
   const openCard = (id) => { pick(id); show(id) }
@@ -125,7 +132,7 @@ export default function Board({ srv }) {
   return (
     <Page title={t('nav.board')} full>
       <BoardView board={board} lang={lang()} kb={kb} notice={notice} say={say} open={open} dragging={dragging} over={over} side={side}
-        onMove={move} onOpen={openCard} onAdd={() => openForm({})} onKey={onKey} onInit={init} onDrag={drag} onOver={setOver} />
+        onMove={move} onOpen={openCard} menu={menu} onMenu={setMenu} onChoose={choose} onKey={onKey} onInit={init} onDrag={drag} onOver={setOver} />
     </Page>
   )
 }
@@ -133,8 +140,19 @@ export default function Board({ srv }) {
 // What the board draws, from its data alone (the test renders it): the columns as they are, with a grabbed card
 // where it would land.
 export function BoardView({ board, lang: l, kb, notice = '', say = '', open = null, dragging = null, over = null, side = null,
-  onMove, onOpen, onAdd, onKey, onInit, onDrag, onOver }) {
+  onMove, onOpen, menu = false, onMenu = () => {}, onChoose = () => {}, onKey, onInit, onDrag, onOver }) {
   const writable = !!board.writable
+  const toggle = useRef(null)
+  const list = useRef(null)
+  useEffect(() => {                                    // focus enters the menu on open; Escape or a click outside closes it
+    if (!menu) return undefined
+    list.current?.querySelector('[role="menuitem"]')?.focus()
+    const esc = (e) => { if (e.key === 'Escape') { onMenu(false); toggle.current?.focus() } }
+    const away = (e) => { if (!list.current?.contains(e.target) && !toggle.current?.contains(e.target)) onMenu(false) }
+    document.addEventListener('keydown', esc)
+    document.addEventListener('mousedown', away)
+    return () => { document.removeEventListener('keydown', esc); document.removeEventListener('mousedown', away) }
+  }, [menu, onMenu])
   const readOnly = writable ? null : <Aviso tone="info" title={t('bd.readOnly')} />
   if (!board.enabled) {
     return (
@@ -168,7 +186,19 @@ export function BoardView({ board, lang: l, kb, notice = '', say = '', open = nu
   return (
     <>
       {readOnly}
-      <div className="row dk-bd-bar" data-tour="board-add"><Button variant="primary" disabled={!writable} onClick={onAdd}>{t('bd.add')}</Button></div>
+      <div className="row dk-bd-bar" data-tour="board-add"><div className="dk-bd-add">
+        <Button variant="primary" disabled={!writable} aria-haspopup="menu" aria-expanded={menu} ref={toggle}
+          onClick={() => onMenu(!menu)}>{t('bd.add')}</Button>
+        {menu ? (
+          <div className="dk-bd-menu" role="menu" ref={list}>
+            {addChoices(board.types).map((c) => (
+              <button key={c.type} type="button" role="menuitem" className="dk-bd-menuitem" onClick={() => onChoose(c)}>
+                <b>{known(`bd.type.${c.type}`, c.type)}</b>
+                <span className="muted small">{t(c.where === 'portal' ? 'bd.storyPortal' : 'bd.addForm')}</span>
+              </button>))}
+          </div>
+        ) : null}
+      </div></div>
       {board.problems?.length ? <Aviso tone="warn" title={t('bd.problems')}>{board.problems.map((p) => `${p.path}: ${p.error}`).join(' · ')}</Aviso> : null}
       {notice ? <Aviso tone="error" title={t('bd.moveFailed')} detail={notice} /> : null}
       {!board.cards.length ? <p className="muted">{t('bd.empty')}</p> : null}
