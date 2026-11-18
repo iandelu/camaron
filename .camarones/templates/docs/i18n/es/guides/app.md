@@ -431,10 +431,11 @@ debajo; un problema de token enlaza a **Ajustes › Tokens** para ese servidor.
 - La conversación vive en la memoria de la ventana y no se guarda nada: sobrevive a ir a otro lugar y volver (abre el
   panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía al momento y descarta una respuesta que aún
   se esté escribiendo: la siguiente pregunta puede salir cuando esa respuesta descartada haya terminado (hasta entonces
-  el camarón sigue pensando). Si el servidor del proyecto aún está respondiendo a una pregunta anterior (desde otra
-  ventana del mismo proyecto, por ejemplo), la nueva se rechaza y el panel lo dice. Desaparece al cerrar la ventana o
-  cambiar de proyecto. Sin ningún agente instalado en esta máquina, o con `ask.ai: false` en `workspace.yaml`, el panel
-  lo dice y, en el primer caso, enlaza a **Ajustes**.
+  el camarón sigue pensando). Si el servidor del proyecto aún está respondiendo a una pregunta anterior de la que esta
+  ventana perdió el rastro (se cortó la conexión mientras respondía, o se recargó la ventana), la nueva se rechaza hasta
+  que esa respuesta termine, y el panel lo dice. Desaparece al cerrar o recargar la ventana, o al cambiar de proyecto.
+  Sin ningún agente instalado en esta máquina, o con `ask.ai: false` en `workspace.yaml`, el panel lo dice y, en el
+  primer caso, enlaza a **Ajustes**.
 - **Preguntas sin respuesta** aparece bajo el campo del chat solo cuando hay alguna: las preguntas hechas en esta
   máquina (en la búsqueda o en Preguntar del portal, en este chat, o por un agente) que ninguna página respondió, cada
   una con las veces que se hizo (`×3`). **Añadir a preguntas abiertas** la manda a las preguntas abiertas de la próxima

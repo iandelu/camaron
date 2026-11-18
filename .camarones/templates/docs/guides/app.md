@@ -417,10 +417,10 @@ links to **Settings › Tokens** for that server.
 - The conversation lives in the window's memory, nothing is saved: it survives going to another place and coming back
   (open the panel again), one question runs at a time, and **Clear** empties it at once and throws away an answer still
   being written: the next question can go once that dropped answer has ended (the shrimp keeps thinking until then). If
-  the project's server is still answering an earlier question (from another window of the same project, say), a new
-  one is refused and the panel says so. It is gone when the window is closed or the project is switched. With no agent
-  installed on this machine, or with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to
-  **Settings**.
+  the project's server is still answering an earlier question this window lost track of (the connection dropped while
+  it answered, or the window was reloaded), a new one is refused until that answer ends, and the panel says so. It is
+  gone when the window is closed or reloaded, or the project is switched. With no agent installed on this machine, or
+  with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to **Settings**.
 - **Unanswered questions** appears under the chat's field only when there are some: the questions asked on this machine
   (in the portal's search or Ask, in this chat, or by an agent) that no page answered, each with how many times it was
   asked (`×3`). **Add to open questions** sends it to the open questions of the next interview; **Dismiss** forgets it.
