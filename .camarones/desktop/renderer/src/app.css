@@ -190,6 +190,25 @@ button.dk-hchip:hover { border-color: var(--tone); }
 @keyframes dk-tick-pop { from { opacity: 0; transform: scale(.5); } }
 @keyframes dk-tick-ripple { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
 @keyframes dk-tick-draw { from { stroke-dashoffset: 1; } }
+/* The shrimp (sections/Shrimp.jsx): the favicon's drawing, still but for the one part a state moves, by transform or opacity only. The antennae
+   turn about the head end of their own box. The tail keeps its own origin, the apex of its fan, and repeats its group's translate(…) because a CSS
+   transform replaces that attribute (the favicon's own value: style.test.js checks it). */
+.dk-shrimp-box { display: inline-flex; align-items: flex-end; gap: .25rem; flex: none; }
+.dk-shrimp { width: 2.5rem; height: 2.5rem; flex: none; }
+.dk-shrimp .shrimp-antennae { transform-box: fill-box; transform-origin: 1% 72%; }
+.dk-shrimp .shrimp-tail { transform-origin: 0 0; }
+.dk-shrimp.thinking .shrimp-antennae { animation: dk-shrimp-sway 1.6s ease-in-out infinite; }
+.dk-shrimp.answering .shrimp-tail { animation: dk-shrimp-flick .5s ease-in-out infinite; }
+.dk-shrimp-dots { display: inline-flex; align-items: flex-end; gap: .2rem; padding-bottom: .5rem; }
+.dk-shrimp-dots i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--color-ink-dim); animation: dk-shrimp-dot 1.2s ease-in-out infinite; }
+.dk-shrimp-dots i:nth-child(2) { animation-delay: .15s; }
+.dk-shrimp-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes dk-shrimp-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes dk-shrimp-flick {
+  0%, 100% { transform: translate(31.7px, 48.5px) rotate(-10deg); }
+  50% { transform: translate(31.7px, 48.5px) rotate(10deg); }
+}
+@keyframes dk-shrimp-dot { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-.25rem); } }
 .dk-bump .row { flex-wrap: nowrap; }
 .dk-bump-v { width: 7rem; }
 .dk-advisories { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; white-space: normal; }
@@ -785,6 +804,7 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
   .dk-rv-pane { animation: none; }
   .dk-term.tone-running { animation: none; }
   .dk-tour-ring { transition: none; }
+  .dk-shrimp.thinking .shrimp-antennae, .dk-shrimp.answering .shrimp-tail, .dk-shrimp-dots i { animation: none; }
 }
 
 /* The guide (sections/Guide.jsx): tabs per guide, a search, the chapter index beside the text */

@@ -87,3 +87,40 @@ test('the running wiki card pulses by opacity alone, over a static ring', () => 
   expect(props.length).toBeGreaterThan(0)
   expect(new Set(props)).toEqual(new Set(['opacity']))
 })
+
+// The shrimp (sections/Shrimp.jsx): its three motions move by transform or opacity alone and stand still for who asked
+// for less motion. The tail's group carries a `translate(…)` attribute that a CSS `transform` replaces, so the flick
+// repeats that translate: it must stay the favicon's own.
+const keyframes = (name) => css.match(new RegExp(`@keyframes ${name}\\s*\\{((?:[^{}]|\\{[^}]*\\})*)\\}`))?.[1] ?? ''
+const declared = (body) => [...body.matchAll(/\{([^}]*)\}/g)].flatMap(([, decls]) => [...decls.matchAll(/([\w-]+)\s*:/g)].map((m) => m[1]))
+
+test.each(['dk-shrimp-sway', 'dk-shrimp-flick', 'dk-shrimp-dot'])('%s moves by transform and opacity alone', (name) => {
+  const props = declared(keyframes(name))
+  expect(props.length).toBeGreaterThan(0)
+  expect(props.filter((p) => !['transform', 'opacity'].includes(p))).toEqual([])
+})
+
+test('each shrimp state runs its own motion, and none of them runs for who asked for less', () => {
+  expect(css).toMatch(/\.dk-shrimp\.thinking \.shrimp-antennae\s*\{[^}]*animation:\s*dk-shrimp-sway 1\.6s ease-in-out infinite/)
+  expect(css).toMatch(/\.dk-shrimp\.answering \.shrimp-tail\s*\{[^}]*animation:\s*dk-shrimp-flick \.5s ease-in-out infinite/)
+  expect(css).toMatch(/\.dk-shrimp-dots i\s*\{[^}]*animation:\s*dk-shrimp-dot 1\.2s ease-in-out infinite/)
+  expect(css).not.toMatch(/\.dk-shrimp\.idle[^{]*\{[^}]*animation/)
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
+  expect(reduced).toMatch(
+    /\.dk-shrimp\.thinking \.shrimp-antennae[^{]*\.dk-shrimp\.answering \.shrimp-tail[^{]*\.dk-shrimp-dots i[^{]*\{\s*animation:\s*none/)
+})
+
+test('the tail flicks about the apex of its fan, the translate the favicon gives its group', () => {
+  const favicon = readFileSync(new URL('../../../portal/app/public/favicon.svg', import.meta.url), 'utf-8')
+  const [, x, y] = favicon.match(/class="shrimp-tail"\s+transform="translate\(([\d.]+) ([\d.]+)\)"/)
+  const turns = [...keyframes('dk-shrimp-flick').matchAll(/transform:\s*([^;}]*)/g)].map((m) => m[1].trim())
+  expect(turns.length).toBeGreaterThan(1)
+  for (const t of turns) expect(t).toMatch(new RegExp(`^translate\\(${x}px,\\s*${y}px\\)\\s+rotate\\(`))
+  expect(css).toMatch(/\.shrimp-tail\s*\{[^}]*transform-origin:\s*0 0/)
+})
+
+test('the shrimp is sized in rem and its dots take their colour from the theme', () => {
+  expect(px(rule('.dk-shrimp'), 'width')).toBeGreaterThan(0)
+  expect(px(rule('.dk-shrimp'), 'height')).toBeGreaterThan(0)
+  expect(rule('.dk-shrimp-dots i')).toMatch(/background:\s*var\(--color-ink-dim\)/)
+})

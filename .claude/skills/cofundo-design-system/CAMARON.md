@@ -47,3 +47,10 @@ for the portal.
   A sixth approved exception: the desktop Docs section's state and health icons (`DocsIcon` in
   `desktop/renderer/src/sections/DocsIcons.jsx`), inline SVG, `aria-hidden`, in `currentColor`, always next to their
   word.
+  A seventh approved exception: the desktop Docs chat's shrimp (`Shrimp` in
+  `desktop/renderer/src/sections/Shrimp.jsx`), inline SVG, `aria-hidden`, a picture beside the words that say its state.
+  It is the favicon's own markup inlined (`shrimpMarkup`, with the coral and ink mapped to theme tokens), never a second
+  drawing: the favicon's groups only gained class names (`shrimp-antennae`, `shrimp-tail`, `shrimp-eye`) that change
+  nothing it renders, so the `scripts/icons.py` output is unchanged. It moves with `transform` and `opacity` only
+  (antennae sway while it thinks, the tail flicks while an answer is revealed) and stands still under
+  `prefers-reduced-motion`.
