@@ -78,3 +78,23 @@ def test_the_explorer_is_skipped_without_likec4_chosen(kit, monkeypatch):
     built = fake_c4(kit, monkeypatch, {"exists": True, "stale": True, "model": True})
     monkeypatch.setattr(kit.services.components, "components", lambda: ["graphify"])
     assert kit.services.catchup.rebuild_c4(log=lambda _: None) == "skipped" and not built
+
+def test_stale_graphs_are_reported_for_the_caller_not_rebuilt(kit, tmp_path, monkeypatch):
+    publish(kit, bare(tmp_path))
+    monkeypatch.setattr(kit.services.viewers, "viewers", lambda: {
+        "c4": {"exists": False, "stale": False, "model": False}, "graphs": {"api": {"at": 1, "stale": True}},
+        "graphify": True, "likec4": True})
+    called = []
+    monkeypatch.setattr(kit.services.code, "graph_repo", lambda name: called.append(name) or True, raising=False)
+    r = kit.services.catchup.run(log=lambda _: None)
+    assert r["views"]["graphs"] == ["api"] and not called
+
+def test_a_failing_c4_build_does_not_break_the_catch_up(kit, tmp_path, monkeypatch):
+    publish(kit, bare(tmp_path))
+    fake_c4(kit, monkeypatch, {"exists": True, "stale": True, "model": True})
+    def boom(dest=None, log=print):
+        raise RuntimeError("likec4 crashed")
+    monkeypatch.setattr(kit.services.viewers, "build_c4", boom)
+    r = kit.services.catchup.run(log=lambda _: None)
+    assert r["status"] == "done" and r["views"]["c4"] == "failed"
+    assert kit.services.catchup.last() == r
