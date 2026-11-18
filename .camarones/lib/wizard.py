@@ -158,6 +158,8 @@ T = {
         "cu_conflict": "No he podido traer los cambios del equipo: chocan con los tuyos en {files}. No he tocado nada.",
         "cu_stashed": "He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos: están a salvo en el stash de git (`git stash list`). Revísalos en una terminal.",
         "cu_busy": "Ya se está poniendo al día otro proceso: sigo con lo que hay.",
+        "cu_busy_git": "Hay un rebase o un merge a medias en cam-docs: termínalo o cancélalo en una terminal.",
+        "cu_busy_run": "Hay una ejecución del autopiloto usando los docs: traeré los cambios cuando termine.",
         "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
         "cu_graphs_stale": "{n} grafo(s) de código desactualizado(s): los rehace la app o «{cli} pull».",
         "sh_git_said": "  git: {detail}",
@@ -531,6 +533,8 @@ T = {
         "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
         "cu_stashed": "I brought in the team's changes, but your unsaved changes clashed with them: they are safe in git's stash (`git stash list`). Review them in a terminal.",
         "cu_busy": "Another process is already catching up: carrying on with what's here.",
+        "cu_busy_git": "A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.",
+        "cu_busy_run": "An autopilot run is using the docs: I'll bring in the changes when it ends.",
         "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
         "cu_graphs_stale": "{n} code graph(s) out of date: the app or “{cli} pull” rebuilds them.",
         "sh_git_said": "  git: {detail}",
@@ -2376,8 +2380,10 @@ class W:
             return self.t("cu_conflict", files=", ".join(r.get("files") or []) or r.get("detail", "")), "red"
         if st == "stashed":
             return self.t("cu_stashed"), "yellow"
-        if st == "busy":
-            return self.t("cu_busy"), "grey62"
+        if st == "busy":                                 # by what holds the docs: git half way, or an autopilot run
+            if r.get("detail") == "git":
+                return self.t("cu_busy_git"), "yellow"
+            return self.t("cu_busy_run" if r.get("detail") == "run" else "cu_busy"), "grey62"
         if st == "error":
             reason = (r.get("reason") or "").replace("-", "_")
             if reason in ("network", "not_found"):

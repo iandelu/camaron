@@ -144,3 +144,14 @@ test('the status line counts unsaved work only when there is some, never the fil
   setLang('en')
   expect(syncLine({ ...s, changes: ['docs/a.md', 'docs/b.md'] })).toBe('1 to bring in · 2 to upload · last time never · 2 unsaved')
 })
+
+test('a pull held by a rebase left half way offers a terminal; one held by an autopilot run only waits', () => {
+  const git = SyncResult({ kind: 'pull', result: { status: 'done', pull: { status: 'busy', detail: 'git' } }, remote: REMOTE, srv: {} })
+  expect(renderToStaticMarkup(git)).toContain('Hay un rebase o un merge a medias en cam-docs')
+  expect(renderToStaticMarkup(git)).toContain('cu-aviso--warn')
+  expect(git.props.action.type).toBe(TerminalButton)
+  const run = renderToStaticMarkup(<SyncResult kind="pull" result={{ status: 'done', pull: { status: 'busy', detail: 'run' } }} remote={REMOTE} srv={{}} />)
+  expect(run).toContain('role="status"')
+  expect(run).toContain('traeré los cambios cuando termine')
+  expect(run).not.toContain('cu-aviso')
+})

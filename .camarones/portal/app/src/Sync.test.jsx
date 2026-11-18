@@ -63,3 +63,15 @@ test('a pull whose unsaved changes went to the stash says where they are', () =>
   expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'stashed', files: ['docs/a.md'], commits: 1 }} remote={REMOTE} />))
     .toContain('they are safe in git&#x27;s stash (`git stash list`)')
 })
+
+test('a busy pull says what holds the docs', () => {
+  as('en')
+  const git = renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'git' }} remote={REMOTE} />)
+  expect(git).toContain('A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.')
+  const run = renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'run' }} remote={REMOTE} />)
+  expect(run).toContain('An autopilot run is using the docs')
+  expect(run).toContain('role="status"')
+  as('es')
+  expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'run' }} remote={REMOTE} />))
+    .toContain('Hay una ejecución del autopiloto usando los docs: traeré los cambios cuando termine.')
+})

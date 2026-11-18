@@ -78,7 +78,7 @@ test('the summary speaks only when the catch-up brought something or failed', ()
   expect(catchUpSay({ status: 'done', pull: { status: 'up-to-date' } })).toBe(null)
   expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 4 } })).toEqual({ key: 'cu.pulled', vars: { n: 4 }, tone: 'info' })
   expect(catchUpSay({ status: 'done', pull: { status: 'conflict', files: ['docs/a.md'] } }).tone).toBe('warn')
-  expect(catchUpSay({ status: 'done', pull: { status: 'error', reason: 'not-found' } }).key).toBe('cu.offline')
+  expect(catchUpSay({ status: 'done', pull: { status: 'error', reason: 'not-found' } }).key).toBe('sy.err.not-found')
 })
 
 test('changes the autostash kept are a warning with a terminal, after Traer and on open', () => {
@@ -94,4 +94,25 @@ test('files the kit rewrites on its own never make uploading the primary', () =>
   expect(syncPrimary({ ahead: 0, behind: 0, pending: ['docs/.status.json'], changes: [] })).toBe(null)
   expect(syncPrimary({ ahead: 0, behind: 0, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] })).toBe('push')
   expect(syncPrimary({ ahead: 0, behind: 2, pending: ['docs/.status.json'], changes: [] })).toBe('pull')
+})
+
+test('a busy pull says what holds the docs: a rebase left half way wants a terminal, a run only waits', () => {
+  expect(pullSay({ status: 'busy', detail: 'git' })).toMatchObject({ key: 'sy.pull.busyGit', terminal: true, tone: 'warn' })
+  expect(pullSay({ status: 'busy', detail: 'run' })).toMatchObject({ key: 'sy.pull.busyRun', tone: 'info' })
+  expect(pullSay({ status: 'busy', detail: 'run' }).terminal).toBeUndefined()
+  expect(pullSay({ status: 'busy' }).key).toBe('sy.pull.busy')
+  expect(pullSay({ status: 'conflict', files: [] }).tone).toBe('warn')
+  expect(pullSay({ status: 'error', detail: 'boom' }).tone).toBe('error')
+})
+
+test('on open, each case the person must act on is worded; only an unexplained error falls back to offline', () => {
+  const cu = (pull) => catchUpSay({ status: 'done', pull }, REMOTE)
+  expect(cu({ status: 'busy', detail: 'git' })).toEqual({ key: 'cu.busyGit', vars: {}, tone: 'warn', terminal: true })
+  expect(cu({ status: 'busy', detail: 'run' })).toEqual({ key: 'cu.busyRun', vars: {}, tone: 'info' })
+  expect(cu({ status: 'error', reason: 'network', host: 'git.acme', detail: 'fatal: x' }))
+    .toMatchObject({ key: 'sy.err.network', vars: { host: 'git.acme', url: REMOTE }, tone: 'warn', detail: 'fatal: x' })
+  expect(cu({ status: 'error', reason: 'network', detail: '' }).vars.host).toBe('gitlab-central.example.space')
+  expect(cu({ status: 'error', reason: 'no-token', host: 'git.acme', detail: '' }).token).toBe('git.acme')
+  expect(cu({ status: 'error', reason: 'unknown', detail: 'fatal: odd' })).toEqual({ key: 'cu.offline', vars: {}, tone: 'warn' })
+  expect(cu({ status: 'error', detail: 'boom' }).key).toBe('cu.offline')
 })

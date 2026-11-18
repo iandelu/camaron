@@ -373,6 +373,8 @@ def pulled(status, **kw):
     (pulled("up-to-date"), "cu_up_to_date", {}),
     (pulled("conflict", files=["a.md", "b.md"]), "cu_conflict", {"files": "a.md, b.md"}),
     (pulled("stashed", files=["a.md"]), "cu_stashed", {}),
+    (pulled("busy", detail="git"), "cu_busy_git", {}),
+    (pulled("busy", detail="run"), "cu_busy_run", {}),
     (pulled("error", reason="network", host="h"), "cu_offline", {}),
     ({"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""}, "cu_busy", {}),
 ])

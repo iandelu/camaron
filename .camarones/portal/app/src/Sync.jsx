@@ -76,6 +76,7 @@ export function ShareLine({ action = 'share', result, remote }) {
   const m = t(said.key, said.vars)
   const message = m === said.key ? result.status : m
   if ({ pull: pullOk, push: pushOk, share: shareOk }[action](result)) return <span className="ok" role="status">{message}</span>
+  if (said.tone === 'info') return <span className="muted" role="status">{message}</span>
   return (
     <span className="error" role="alert">{message}{said.token ? ` ${t('sy.tokenHint', { host: said.token })}` : ''}
       {said.detail ? <code className="sy-said">{said.detail}</code> : null}</span>

@@ -76,7 +76,7 @@ export function SyncResult({ kind, result, remote, srv }) {
   const said = SAY[kind](step, remote)
   const m = t(said.key, said.vars)
   const title = m === said.key ? step.status : m
-  if (OK[kind](step)) return <p className="small" role="status">{title}</p>
+  if (OK[kind](step) || said.tone === 'info') return <p className="small" role="status">{title}</p>
   const action = said.token
     ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
     : said.terminal ? <TerminalButton srv={srv} /> : null

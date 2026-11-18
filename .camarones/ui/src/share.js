@@ -46,29 +46,40 @@ export function syncPrimary(s) {
   return mine ? 'push' : null
 }
 
-function stepSay(prefix, r, remote) {
+function stepSay(prefix, r, remote, status = r?.status) {
   if (r?.status === 'error' && REASONS.includes(r.reason)) return reasonSay(r, remote)
-  return { key: `sy.${prefix}.${r?.status}`, vars: { n: r?.commits ?? 0, files: (r?.files || []).join(', '), detail: r?.detail || '' },
+  return { key: `sy.${prefix}.${status}`, vars: { n: r?.commits ?? 0, files: (r?.files || []).join(', '), detail: r?.detail || '' },
     detail: '', token: '' }
 }
 
-// A pull that leaves work for a person in git offers a terminal: a clash, or changes kept in git's stash.
-const needsTerminal = (r) => ['conflict', 'stashed'].includes(r?.status)
+// A busy pull by what holds the docs (app.share.pull's `git`, app.catchup's `run`); a busy catch-up has no detail.
+const BUSY = { git: 'busyGit', run: 'busyRun' }
+const pullKey = (r) => (r?.status === 'busy' ? BUSY[r.detail] || 'busy' : r?.status)
+
+// What a pull leaves the person: work in git for a terminal (a clash, changes kept in git's stash, a rebase or merge
+// left half way), only a wait (an autopilot run holds the docs), or an error.
+const TERMINAL = ['conflict', 'stashed', 'busyGit']
+const pullTone = (key) => (TERMINAL.includes(key) ? 'warn' : key === 'busyRun' ? 'info' : 'error')
 
 export const pullSay = (r, remote = '') => {
-  const said = stepSay('pull', r, remote)
-  return needsTerminal(r) ? { ...said, terminal: true } : said
+  const key = pullKey(r)
+  const said = { ...stepSay('pull', r, remote, key), tone: pullTone(key) }
+  return TERMINAL.includes(key) ? { ...said, terminal: true } : said
 }
 export const pushSay = (r, remote = '') => stepSay('push', r, remote)
 export const pullOk = (r) => !!r && ['up-to-date', 'pulled', 'nothing'].includes(r.status)
 export const pushOk = (r) => !!r && ['pushed', 'nothing'].includes(r.status)
 
-export function catchUpSay(c) {
+// The Summary's line for the last catch-up (null: nothing to say). An error git explained reads as a share's does,
+// with its token to save; only one it did not explain says the team's repo was out of reach.
+export function catchUpSay(c, remote = '') {
   const p = c?.pull
   if (!c || c.status === 'busy' || !p) return null
-  if (p.status === 'pulled') return { key: 'cu.pulled', vars: { n: p.commits }, tone: 'info' }
-  if (p.status === 'conflict') return { key: 'cu.conflict', vars: { files: (p.files || []).join(', ') }, tone: 'warn', terminal: true }
-  if (p.status === 'stashed') return { key: 'cu.stashed', vars: {}, tone: 'warn', terminal: true }
-  if (p.status === 'error') return { key: 'cu.offline', vars: {}, tone: 'warn' }
+  const key = pullKey(p)
+  if (key === 'pulled') return { key: 'cu.pulled', vars: { n: p.commits }, tone: 'info' }
+  if (key === 'conflict') return { key: 'cu.conflict', vars: { files: (p.files || []).join(', ') }, tone: 'warn', terminal: true }
+  if (key === 'stashed' || key === 'busyGit') return { key: `cu.${key}`, vars: {}, tone: 'warn', terminal: true }
+  if (key === 'busyRun') return { key: 'cu.busyRun', vars: {}, tone: 'info' }
+  if (key === 'error') return REASONS.includes(p.reason) ? { ...reasonSay(p, remote), tone: 'warn' } : { key: 'cu.offline', vars: {}, tone: 'warn' }
   return null
 }

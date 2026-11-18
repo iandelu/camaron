@@ -17,11 +17,12 @@ export default function Summary({ srv, jobs }) {
   const [error, setError] = useState('')
   const [firstRun, setFirstRun] = useState(false)
   const [catchUp, setCatchUp] = useState(null)
+  const [remote, setRemote] = useState('')
   const [launch, setLaunch] = useState({ busy: false, note: '', error: '' })
   const a = useAgents(srv)
   const { running } = useStore(jobs)
   const load = () => {
-    srv.get('sync').then((x) => setCatchUp(x?.catch_up ?? null), () => {})
+    srv.get('sync').then((x) => { setCatchUp(x?.catch_up ?? null); setRemote(x?.remote || '') }, () => {})
     return srv.get('app/summary', { lang: lang() }).then((d) => { setData(d); setError('') }, (e) => setError(e.message))
   }
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function Summary({ srv, jobs }) {
   return (
     <Page title={title}>
       {firstRun ? <FirstRunNotice /> : <TourOffer srv={srv} />}
-      <CatchUpNote srv={srv} catchUp={catchUp} />
+      <CatchUpNote srv={srv} catchUp={catchUp} remote={remote} />
       <Card className="dk-next" data-tour="summary-next">
         <span className="eyebrow">{t(step.kind === 'resume' ? 'next.eyebrowResume' : 'next.eyebrow')}</span>
         <h2 className="dk-next-title">{heading}</h2>
@@ -101,14 +102,15 @@ export default function Summary({ srv, jobs }) {
 
 // What the window's catch-up with the team left: a clash or no route to the repo warns (the files, a terminal to
 // resolve it, Team), a pull that brought changes is a quiet line, up to date says nothing.
-export function CatchUpNote({ srv, catchUp }) {
-  const said = catchUpSay(catchUp)
+export function CatchUpNote({ srv, catchUp, remote = '' }) {
+  const said = catchUpSay(catchUp, remote)
   if (!said) return null
   const title = t(said.key, said.vars)
   if (said.tone !== 'warn') return <p className="muted small" role="status">{title}</p>
   return (
-    <Aviso tone="warn" title={title} action={<span className="row">
+    <Aviso tone="warn" title={title} detail={said.detail} action={<span className="row">
       {said.terminal ? <TerminalButton srv={srv} /> : null}
+      {said.token ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button> : null}
       <Button size="sm" href="#/team">{t('nav.team')}</Button></span>} />
   )
 }
