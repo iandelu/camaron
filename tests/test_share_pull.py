@@ -252,6 +252,22 @@ def test_changes_the_autostash_could_not_put_back_are_stashed_not_a_conflict(kit
     assert r["status"] == "stashed" and r["files"] == ["docs/shared.md"]
     assert "stash" in r["detail"]
     assert "autostash" in _stashes(kit)
+    assert "# Mine" in git(kit.root, "stash", "show", "-p", "stash@{0}")
+
+
+def test_changes_kept_in_the_stash_leave_no_markers_for_a_checkpoint_to_commit(kit, tmp_path, monkeypatch):
+    remote = bare(tmp_path); publish(kit, remote)
+    _tracked(kit, "docs/shared.md", "# Base\n")
+    mate_commits(kit, remote, tmp_path, "docs/shared.md", "# Team\n")
+    (kit.root / "docs" / "shared.md").write_text("# Mine\n", encoding="utf-8")
+    (kit.root / "docs" / "own.md").write_text("# Own\n", encoding="utf-8")
+    monkeypatch.setattr(kit.services.share, "_dirty", lambda: {})
+    assert kit.services.share.pull(log=lambda _: None)["status"] == "stashed"
+    assert (kit.root / "docs" / "shared.md").read_text(encoding="utf-8") == "# Team\n"
+    assert not [ln for ln in git(kit.root, "status", "--porcelain").splitlines() if ln[:2] in ("UU", "AA", "DU", "UD")]
+    assert (kit.root / "docs" / "own.md").read_text(encoding="utf-8") == "# Own\n"     # what did not clash stays put
+    kit.services.share.checkpoint_commit("after")
+    assert "<<<<<<<" not in git(kit.root, "show", "HEAD:docs/shared.md")
 
 
 def _spy_fetch(kit, monkeypatch, instead=None):

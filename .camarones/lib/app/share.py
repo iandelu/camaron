@@ -280,8 +280,9 @@ def _autostashes() -> int:
     return sum("autostash" in ln for ln in out(["git", "stash", "list", "--format=%gs"], cwd=ROOT).splitlines())
 
 
-def _reset_derived(path: str, code: str) -> None:
-    """Back to HEAD's copy in the index and the tree, so nothing of it is left staged for the autostash to take."""
+def _back_to_head(path: str, code: str) -> None:
+    """Back to HEAD's copy in the index and the tree (gone when HEAD has none): nothing of it is left staged for the
+    autostash to take, nor unmerged with conflict markers."""
     def git(*args: str):
         return run(["git", *args], cwd=ROOT, check=False, quiet=True)
 
@@ -345,7 +346,8 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
     repair. Local work stays put: a clash leaves HEAD and every file as they were. With `timeout`, the fetch gives up
     after that many seconds (an error, reason network) and ssh never prompts. Returns {"status", "commits",
     "files", "regenerated", "detail"}: up-to-date · pulled · nothing · no-remote · conflict · stashed (brought in, but
-    uncommitted changes that would not re-apply are kept in git's stash) · busy · error."""
+    uncommitted changes that would not re-apply are kept in git's stash; those files are left as the team has them) ·
+    busy · error."""
     result = lambda status, detail="", **kw: {"status": status, "commits": 0, "files": [],   # noqa: E731
                                               "regenerated": [], "detail": detail, **kw}
     url = _clean_origin()
@@ -378,7 +380,7 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
         return result("conflict", theirs, files=human)
     regenerated = sorted(clash)
     for path, code in clash.items():
-        _reset_derived(path, code)
+        _back_to_head(path, code)
 
     log(f"rebasing onto {theirs}…")
     stashes = _autostashes()
@@ -389,10 +391,13 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
             _regenerate()
         return result("conflict", theirs, files=human) if human else {**result("error"), **_failed(failure, url)}
     if _autostashes() > stashes:                                     # the local changes did not re-apply: keep them safe
-        stuck = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U")) or \
-            sorted(_nul_lines("stash", "show", "--name-only", "-z", "stash@{0}"))
+        unmerged = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U"))
+        for path in unmerged:                        # the stash holds them; markers left here a checkpoint would commit
+            _back_to_head(path, "UU")
+        _regenerate()
+        stuck = unmerged or sorted(_nul_lines("stash", "show", "--name-only", "-z", "stash@{0}"))
         return result("stashed", "your uncommitted changes are kept in git's stash (git stash list)", files=stuck,
-                      commits=behind)
+                      commits=behind, regenerated=regenerated)
 
     said: set[str] = set()
 
