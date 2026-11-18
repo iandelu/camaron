@@ -388,9 +388,14 @@ def _apply(c4: dict, items: list, repos: set[str], ack: set[str], by: str | None
             n += 1
             continue
         for a in got:
-            if a.kind in FINGERPRINTED and a.raw not in e["anchors"] and not _reach(a, repos):
-                e["anchors"][a.raw] = fingerprint(_ref(a))
-                n += 1
+            if a.kind not in FINGERPRINTED or _reach(a, repos):
+                continue
+            first = a.raw not in e["anchors"]
+            if first or e["anchors"][a.raw] is None:      # first seen here, or stamped before its code existed
+                fp = fingerprint(_ref(a))
+                if first or fp is not None:
+                    e["anchors"][a.raw] = fp
+                    n += 1
     for section in SECTIONS if prune else ():
         for gone in set(c4[section]) - {key for s, key, *_ in items if s == section}:
             del c4[section][gone]

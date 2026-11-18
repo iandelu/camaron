@@ -139,6 +139,21 @@ def test_an_anchor_first_seen_here_is_fingerprinted_then(c4, kit):
     assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "suspect"
 
 
+def test_an_anchor_stamped_before_its_code_existed_recovers_once_it_does(c4, kit):
+    later = "api:src/main/java/demo/New.java#New.run"
+    model(kit, MODEL.replace(GHOST, GHOST + element("later", later)))
+    c4.c4_stamp_all()                                 # fresh.json is shared: a clone behind the code stamps null
+    assert stamps(c4)["c4"]["elements"]["shop.later"]["anchors"] == {later: None}
+    assert c4.c4_states()["elements"]["shop.later"]["state"] == "broken"
+    (kit.ws / "api" / "src" / "main" / "java" / "demo" / "New.java").write_text(
+        "package demo;\n\npublic class New {\n    void run() {\n        go();\n    }\n}\n", encoding="utf-8",
+        newline="\n")
+    assert c4.c4_states()["elements"]["shop.later"]["state"] == "fresh"
+    assert stamps(c4)["c4"]["elements"]["shop.later"]["anchors"][later] == c4.fingerprint(later)
+    edit(kit, "api", "src/main/java/demo/New.java", "go();", "stop();")
+    assert c4.c4_states()["elements"]["shop.later"]["state"] == "suspect"
+
+
 def test_a_repo_not_in_the_workspace_is_broken(c4, kit):
     model(kit, MODEL.replace(GHOST, GHOST + element("stray", "nope:src/A.java")))
     st = c4.c4_states()["elements"]["shop.stray"]
