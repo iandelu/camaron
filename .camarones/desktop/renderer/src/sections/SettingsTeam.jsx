@@ -10,14 +10,14 @@ export const word = (family, v) => { const k = `${family}.${v}`; const w = t(k);
 
 // What came with the team's repo (agent config, plugins) and this machine has not approved: nothing of it loads
 // until it is. Approving runs `trust --yes` after a dialog that lists it. (The method hooks' switch is Quality's.)
-export function Trust({ srv, jobs, tick = 0 }) {
+export function Trust({ srv, jobs, tick = 0, onChange }) {
   const list = useCmd(srv, jobs, { quiet: true })
   const act = useCmd(srv, jobs)
   const dialog = useRef(null)
   const load = () => { list.run('trust', { json: true }) }
   useEffect(() => { load() }, [tick])
   const rows = list.job?.result?.pending
-  const then = async (p) => { await p; load() }
+  const then = async (p) => { await p; load(); onChange?.() }
   return (
     <Card className="dk-run" data-tour="team-trust">
       <span className="eyebrow">{t('tm.trust')}</span>

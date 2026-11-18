@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { SettingsView } from './sections/Settings.jsx'
+import { Trust } from './sections/SettingsTeam.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => { delete globalThis.location; setLang('es') })
@@ -61,4 +62,15 @@ test('the Trust tab carries the pending count', () => {
 test.each([['skills', 'team-skills'], ['plugins', 'team-plugins'], ['trust', 'team-trust']])('%s renders its card', (view, tour) => {
   const out = render(`#/settings/${view}`)
   expect(out).toContain(`data-tour="${tour}"`)
+})
+
+const find = (el, type) => (Array.isArray(el) ? el.flatMap((x) => find(x, type)) : el?.props ? [...(el.type === type ? [el] : []), ...find(el.props.children, type)] : [])
+
+test('an approval in the Trust card reaches the tab count through onChange', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/settings/trust' }
+  let bumps = 0
+  const tree = SettingsView({ view: 'trust', m: M, pending: 2, fill: { host: '', kind: '' }, srv, jobs: null, app: {}, onSkillsChange: () => { bumps++ } })
+  const [card] = find(tree, Trust)
+  card.props.onChange()
+  expect(bumps).toBe(1)
 })

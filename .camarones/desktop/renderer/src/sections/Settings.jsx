@@ -28,7 +28,7 @@ export function SettingsView({ view, m, error = '', pending = 0, fill, srv, jobs
         </>)
         : view === 'skills' ? <Skills srv={srv} jobs={jobs} onChange={onSkillsChange} />
         : view === 'plugins' ? <Plugins srv={srv} jobs={jobs} />
-        : view === 'trust' ? <Trust srv={srv} jobs={jobs} tick={tick} />
+        : view === 'trust' ? <Trust srv={srv} jobs={jobs} tick={tick} onChange={onSkillsChange} />
         : (<>
           {m ? <Kit {...p} app={app} /> : error ? null : <Skeleton lines={3} />}
           <Uninstall srv={srv} jobs={jobs} app={app} />
