@@ -254,6 +254,20 @@ def _autostashes() -> int:
     return sum("autostash" in ln for ln in out(["git", "stash", "list", "--format=%gs"], cwd=ROOT).splitlines())
 
 
+def _reset_derived(path: str, code: str) -> None:
+    """Back to HEAD's copy in the index and the tree, so nothing of it is left staged for the autostash to take."""
+    def git(*args: str):
+        return run(["git", *args], cwd=ROOT, check=False, quiet=True)
+
+    if code == "??":
+        (ROOT / path).unlink(missing_ok=True)
+    elif git("cat-file", "-e", f"HEAD:{path}").returncode == 0:
+        git("checkout", "HEAD", "--", path)
+    else:                                                            # staged as new: HEAD has no copy to restore
+        git("rm", "--cached", "-q", "--", path)
+        (ROOT / path).unlink(missing_ok=True)
+
+
 def _regenerate() -> None:
     current = services.current()
     current.doc_status.collect()
@@ -295,7 +309,8 @@ def _rebase_onto(theirs: str, ident: list[str]):
 def pull(log: Log = print) -> dict:
     """Bring in the team's work (fetch + rebase onto origin); never pushes and never commits, except the board's own
     repair. Local work stays put: a clash leaves HEAD and every file as they were. Returns {"status", "commits",
-    "files", "regenerated", "detail"}: up-to-date · pulled · nothing · no-remote · conflict · busy · error."""
+    "files", "regenerated", "detail"}: up-to-date · pulled · nothing · no-remote · conflict · stashed (brought in, but
+    uncommitted changes that would not re-apply are kept in git's stash) · busy · error."""
     result = lambda status, detail="", **kw: {"status": status, "commits": 0, "files": [],   # noqa: E731
                                               "regenerated": [], "detail": detail, **kw}
     url = docs_remote()
@@ -327,10 +342,7 @@ def pull(log: Log = print) -> dict:
         return result("conflict", theirs, files=human)
     regenerated = sorted(clash)
     for path, code in clash.items():
-        if code == "??":
-            (ROOT / path).unlink(missing_ok=True)
-        else:
-            run(["git", "checkout", "--", path], cwd=ROOT, check=False, quiet=True)
+        _reset_derived(path, code)
 
     log(f"rebasing onto {theirs}…")
     stashes = _autostashes()
@@ -343,7 +355,8 @@ def pull(log: Log = print) -> dict:
     if _autostashes() > stashes:                                     # the local changes did not re-apply: keep them safe
         stuck = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U")) or \
             sorted(_nul_lines("stash", "show", "--name-only", "-z", "stash@{0}"))
-        return result("conflict", "your uncommitted changes are safe in the stash (autostash)", files=stuck)
+        return result("stashed", "your uncommitted changes are kept in git's stash (git stash list)", files=stuck,
+                      commits=behind)
 
     said: set[str] = set()
 

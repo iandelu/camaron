@@ -156,6 +156,7 @@ T = {
         "cu_pulled": "✔ Traje {n} cambio(s) del equipo.",
         "cu_up_to_date": "✔ Ya tienes lo último del equipo.",
         "cu_conflict": "No he podido traer los cambios del equipo: chocan con los tuyos en {files}. No he tocado nada.",
+        "cu_stashed": "He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos: están a salvo en el stash de git (`git stash list`). Revísalos en una terminal.",
         "cu_busy": "Ya se está poniendo al día otro proceso: sigo con lo que hay.",
         "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
         "sh_git_said": "  git: {detail}",
@@ -527,6 +528,7 @@ T = {
         "cu_pulled": "✔ Brought in {n} change(s) from the team.",
         "cu_up_to_date": "✔ You already have the team's latest.",
         "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
+        "cu_stashed": "I brought in the team's changes, but your unsaved changes clashed with them: they are safe in git's stash (`git stash list`). Review them in a terminal.",
         "cu_busy": "Another process is already catching up: carrying on with what's here.",
         "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
         "sh_git_said": "  git: {detail}",
@@ -2370,6 +2372,8 @@ class W:
             return self.t("cu_up_to_date"), "grey62"
         if st == "conflict":
             return self.t("cu_conflict", files=", ".join(r.get("files") or []) or r.get("detail", "")), "red"
+        if st == "stashed":
+            return self.t("cu_stashed"), "yellow"
         if st == "busy":
             return self.t("cu_busy"), "grey62"
         if st == "error":

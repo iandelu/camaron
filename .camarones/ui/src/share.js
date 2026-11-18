@@ -50,7 +50,13 @@ function stepSay(prefix, r, remote) {
     detail: '', token: '' }
 }
 
-export const pullSay = (r, remote = '') => stepSay('pull', r, remote)
+// A pull that leaves work for a person in git offers a terminal: a clash, or changes kept in git's stash.
+const needsTerminal = (r) => ['conflict', 'stashed'].includes(r?.status)
+
+export const pullSay = (r, remote = '') => {
+  const said = stepSay('pull', r, remote)
+  return needsTerminal(r) ? { ...said, terminal: true } : said
+}
 export const pushSay = (r, remote = '') => stepSay('push', r, remote)
 export const pullOk = (r) => !!r && ['up-to-date', 'pulled', 'nothing'].includes(r.status)
 export const pushOk = (r) => !!r && ['pushed', 'nothing'].includes(r.status)
@@ -59,7 +65,8 @@ export function catchUpSay(c) {
   const p = c?.pull
   if (!c || c.status === 'busy' || !p) return null
   if (p.status === 'pulled') return { key: 'cu.pulled', vars: { n: p.commits }, tone: 'info' }
-  if (p.status === 'conflict') return { key: 'cu.conflict', vars: { files: (p.files || []).join(', ') }, tone: 'warn' }
+  if (p.status === 'conflict') return { key: 'cu.conflict', vars: { files: (p.files || []).join(', ') }, tone: 'warn', terminal: true }
+  if (p.status === 'stashed') return { key: 'cu.stashed', vars: {}, tone: 'warn', terminal: true }
   if (p.status === 'error') return { key: 'cu.offline', vars: {}, tone: 'warn' }
   return null
 }

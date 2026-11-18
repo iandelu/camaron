@@ -108,7 +108,7 @@ export function CatchUpNote({ srv, catchUp }) {
   if (said.tone !== 'warn') return <p className="muted small" role="status">{title}</p>
   return (
     <Aviso tone="warn" title={title} action={<span className="row">
-      {said.key === 'cu.conflict' ? <TerminalButton srv={srv} /> : null}
+      {said.terminal ? <TerminalButton srv={srv} /> : null}
       <Button size="sm" href="#/team">{t('nav.team')}</Button></span>} />
   )
 }

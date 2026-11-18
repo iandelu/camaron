@@ -51,3 +51,15 @@ test('offline warns with a link to Team; pulled is a quiet status line; up to da
   setLang('en')
   expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)).toContain('Brought in 3 change(s) from the team.')
 })
+
+test('changes kept in the stash warn and open a terminal, in both languages', () => {
+  const post = vi.fn().mockResolvedValue({ opened: true })
+  const el = CatchUpNote({ srv: { post }, catchUp: { status: 'done', pull: { status: 'stashed', files: ['docs/a.md'] } } })
+  const out = renderToStaticMarkup(el)
+  expect(out).toContain('están a salvo en el stash de git (`git stash list`)')
+  walk(el).find((b) => b.props.children === 'Abrir una terminal aquí').props.onClick()
+  expect(post).toHaveBeenCalledWith('app/terminal', {})
+  setLang('en')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'stashed', files: [] } }} />))
+    .toContain('they are safe in git&#x27;s stash (`git stash list`). Review them in a terminal.')
+})

@@ -80,3 +80,12 @@ test('the summary speaks only when the catch-up brought something or failed', ()
   expect(catchUpSay({ status: 'done', pull: { status: 'conflict', files: ['docs/a.md'] } }).tone).toBe('warn')
   expect(catchUpSay({ status: 'done', pull: { status: 'error', reason: 'not-found' } }).key).toBe('cu.offline')
 })
+
+test('changes the autostash kept are a warning with a terminal, after Traer and on open', () => {
+  expect(pullSay({ status: 'stashed', commits: 2, files: ['docs/a.md'] }).key).toBe('sy.pull.stashed')
+  expect(pullSay({ status: 'stashed', files: ['docs/a.md'] }).terminal).toBe(true)
+  expect(pullOk({ status: 'stashed' })).toBe(false)
+  expect(catchUpSay({ status: 'done', pull: { status: 'stashed', files: ['docs/a.md'] } }))
+    .toEqual({ key: 'cu.stashed', vars: {}, tone: 'warn', terminal: true })
+  expect(catchUpSay({ status: 'done', pull: { status: 'conflict', files: ['docs/a.md'] } }).terminal).toBe(true)
+})

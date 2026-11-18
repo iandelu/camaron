@@ -74,8 +74,8 @@ export function SyncResult({ kind, result, remote, srv }) {
   if (OK[kind](step)) return <p className="small" role="status">{title}</p>
   const action = said.token
     ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
-    : step.status === 'conflict' ? <TerminalButton srv={srv} /> : null
-  return <Aviso tone={step.status === 'conflict' ? 'warn' : 'error'} title={title} detail={said.detail} action={action} />
+    : said.terminal ? <TerminalButton srv={srv} /> : null
+  return <Aviso tone={said.terminal ? 'warn' : 'error'} title={title} detail={said.detail} action={action} />
 }
 function Repo({ srv, jobs }) {
   const [s, setS] = useState(null)

@@ -189,3 +189,66 @@ def test_push_blocked_by_staged_secrets(kit, tmp_path, monkeypatch):
     monkeypatch.setattr(lib.quality, "staged_secrets", lambda: ["docs/mine.md:1 generic-api-key"])
     (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
     assert kit.services.share.push(log=lambda _: None)["status"] == "blocked"
+
+
+def _tracked(kit, path, text="local\n"):
+    """A derived file committed and pushed, so HEAD and the team both have it."""
+    f = kit.root / path
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(text, encoding="utf-8")
+    git(kit.root, "add", "-f", "--", path); git(kit.root, "commit", "-q", "-m", "derived")
+    git(kit.root, "push", "-q", "origin", "main")
+
+
+def _no_markers(kit, *paths):
+    return all("<<<<<<<" not in (kit.root / p).read_text(encoding="utf-8") for p in paths if (kit.root / p).exists())
+
+
+def test_an_uncommitted_tracked_derived_file_the_team_changed_is_reset_and_regenerated(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    _tracked(kit, "docs/llms.txt", "base\n")
+    mate_commits(kit, remote, tmp_path, "docs/llms.txt", "team\n")
+    (kit.root / "docs" / "llms.txt").write_text("local edit\n", encoding="utf-8")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "pulled" and "docs/llms.txt" in r["regenerated"]
+    assert _stashes(kit) == "" and _no_markers(kit, "docs/llms.txt")
+    assert (kit.root / "docs" / "llms.txt").read_text(encoding="utf-8") != "local edit\n"
+
+
+def test_a_staged_derived_file_the_team_changed_is_reset_from_head_not_stashed(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    _tracked(kit, "docs/.status.json", "{}\n")
+    mate_commits(kit, remote, tmp_path, "docs/.status.json", '{"team": 1}\n')
+    (kit.root / "docs" / ".status.json").write_text('{"mine": 1}\n', encoding="utf-8")
+    git(kit.root, "add", "-f", "--", "docs/.status.json")            # left staged by a checkpoint gitleaks blocked
+    head = git(kit.root, "rev-parse", "HEAD")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "pulled" and "docs/.status.json" in r["regenerated"]
+    assert git(kit.root, "rev-parse", "HEAD") != head
+    assert _stashes(kit) == "" and _no_markers(kit, "docs/.status.json")
+    assert "UU" not in git(kit.root, "status", "--porcelain")
+
+
+def test_a_derived_file_staged_as_new_that_the_team_added_is_dropped_not_stashed(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    git(kit.root, "rm", "-q", "--cached", "--ignore-unmatch", "--", "docs/llms-full.txt")
+    if git(kit.root, "status", "--porcelain"):
+        git(kit.root, "commit", "-q", "-m", "untrack"); git(kit.root, "push", "-q", "origin", "main")
+    mate_commits(kit, remote, tmp_path, "docs/llms-full.txt", "team\n")
+    (kit.root / "docs" / "llms-full.txt").write_text("mine\n", encoding="utf-8")
+    git(kit.root, "add", "-f", "--", "docs/llms-full.txt")
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "pulled" and "docs/llms-full.txt" in r["regenerated"]
+    assert _stashes(kit) == "" and _no_markers(kit, "docs/llms-full.txt")
+
+
+def test_changes_the_autostash_could_not_put_back_are_stashed_not_a_conflict(kit, tmp_path, monkeypatch):
+    remote = bare(tmp_path); publish(kit, remote)
+    _tracked(kit, "docs/shared.md", "# Base\n")
+    mate_commits(kit, remote, tmp_path, "docs/shared.md", "# Team\n")
+    (kit.root / "docs" / "shared.md").write_text("# Mine\n", encoding="utf-8")
+    monkeypatch.setattr(kit.services.share, "_dirty", lambda: {})     # the pre-check misses it: the rebase's autostash clashes
+    r = kit.services.share.pull(log=lambda _: None)
+    assert r["status"] == "stashed" and r["files"] == ["docs/shared.md"]
+    assert "stash" in r["detail"]
+    assert "autostash" in _stashes(kit)

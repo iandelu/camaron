@@ -125,3 +125,13 @@ test('a pull request that fails shows the error, not the busy line; only a busy 
   expect(failed).toContain('El repo del equipo ha respondido: sync/pull: 500')
   expect(failed).not.toContain('Otro trabajo')
 })
+
+test('a pull whose unsaved changes went to the stash warns and offers a terminal', () => {
+  const post = vi.fn().mockResolvedValue({ opened: true })
+  const result = { status: 'done', pull: { status: 'stashed', commits: 1, files: ['docs/a.md'] } }
+  const el = SyncResult({ kind: 'pull', result, remote: REMOTE, srv: { post } })
+  const out = renderToStaticMarkup(el)
+  expect(out).toContain('He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos')
+  expect(out).toContain('cu-aviso--warn')
+  expect(el.props.action.type).toBe(TerminalButton)
+})

@@ -54,3 +54,12 @@ test('a pull and a push each read with their own sentences', () => {
   expect(out).toContain('clash with yours in docs/a.md')
   expect(renderToStaticMarkup(<ShareLine action="push" result={{ status: 'pushed' }} remote={REMOTE} />)).toContain('role="status"')
 })
+
+test('a pull whose unsaved changes went to the stash says where they are', () => {
+  as('es')
+  expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'stashed', files: ['docs/a.md'], commits: 1 }} remote={REMOTE} />))
+    .toContain('están a salvo en el stash de git (`git stash list`)')
+  as('en')
+  expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'stashed', files: ['docs/a.md'], commits: 1 }} remote={REMOTE} />))
+    .toContain('they are safe in git&#x27;s stash (`git stash list`)')
+})
