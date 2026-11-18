@@ -95,8 +95,8 @@ x-owner: ai                  # ai (agent may rewrite) | human (agent never rewri
   use `code` (`evidence` is the legacy form: still read, never write it in new elements). Validate after every edit:
   `CLI arch-validate` (must print `✓ Valid`).
 - **Evidence.** Every element and relation the code can show carries `metadata { code [ 'repo:path', 'repo:path#Lx-Ly',
-  'repo:path#Class.method', 'repo:folder/', 'repo:src/*/*Route.java' ] }` (a string or a list; every entry names its repo).
-  A repo container's `metadata { repo '<repo>' }` is its evidence. Legacy `metadata { evidence '…' }` is still read
+  'repo:path#Class.method', 'repo:folder/', 'repo:src/*/*Route.java' ] }` (a string or a list; every entry names its repo;
+  brackets without `*` or `?` are literal, as in Next.js `web:app/orders/[id]/page.tsx`). A repo container's `metadata { repo '<repo>' }` is its evidence. Legacy `metadata { evidence '…' }` is still read
   (comma-separated; an entry without `repo:` takes the previous one's repo, the first takes the enclosing repo
   container's `metadata { repo }`) and never rewritten by the kit.
 - A relation's evidence is its own `code` anchor or what the code shows between its two ends (graph imports/calls; the

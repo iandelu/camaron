@@ -59,6 +59,22 @@ def test_cover_and_specificity():
     assert anchors.specificity(folder) < anchors.specificity(anchors.parse_code("api:src/A.java")[0][0])
 
 
+def test_a_path_with_brackets_covers_its_own_file_and_folder():
+    """Next.js dynamic routes: `[id]` without `*` or `?` is a folder's name, not a character class."""
+    page, folder, lines, glob, route = anchors.parse_code([
+        "web:app/orders/[id]/page.tsx", "web:app/orders/[id]/", "web:app/orders/[id]/page.tsx#L1-L3",
+        "web:app/orders/[ab]/*.tsx", "web:app/orders/[id]/*.tsx"])[0]
+    assert [a.kind for a in (page, folder, lines, glob, route)] == ["file", "folder", "lines", "glob", "glob"]
+    assert anchors.covers(page, "web", "app/orders/[id]/page.tsx")
+    assert not anchors.covers(page, "web", "app/orders/i/page.tsx")
+    assert anchors.covers(folder, "web", "app/orders/[id]/page.tsx") and anchors.covers(folder, "web", "app/orders/[id]")
+    assert not anchors.covers(folder, "web", "app/orders/[id]x/page.tsx")
+    assert anchors.covers(lines, "web", "app/orders/[id]/page.tsx") and lines.anchor == "L1-L3"
+    assert anchors.covers(glob, "web", "app/orders/a/page.tsx")                 # with a wildcard, still a glob
+    assert anchors.covers(route, "web", "app/orders/[id]/page.tsx")             # and its brackets also read literally
+    assert anchors.specificity(page) > anchors.specificity(folder)
+
+
 def test_cover_of_files_lines_and_repos():
     f, ln = anchors.parse_code(["api:src/A.java", "api:src/A.java#L1-L2"])[0]
     assert anchors.covers(f, "api", "src/A.java") and not anchors.covers(f, "api", "src/B.java")

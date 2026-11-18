@@ -1,7 +1,8 @@
 """Where the code backs a C4 element: the anchors written in its `code` and legacy `evidence` metadata, and which repo
 paths an anchor covers. An anchor is `<repo>:<path>` with an optional `#L3-L9` (lines) or `#Class.method` (symbol)
-suffix; a path ending in `/` is a folder, one with `*`, `?` or `[` a glob. The element's own `repo` metadata is a
-`kind="repo"` anchor with an empty path (`raw` is `<repo>:`). Pure: metadata comes in as data."""
+suffix; a path ending in `/` is a folder, one with `*` or `?` a glob. Brackets alone are literal names (Next.js
+`app/orders/[id]/page.tsx`); in a glob they are a character class or, failing that, literal. The element's own `repo`
+metadata is a `kind="repo"` anchor with an empty path (`raw` is `<repo>:`). Pure: metadata comes in as data."""
 from __future__ import annotations
 
 import re
@@ -9,7 +10,8 @@ from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 
-GLOB_CHARS = ("*", "?", "[")
+WILDCARDS = ("*", "?")
+GLOB_CHARS = (*WILDCARDS, "[")
 LINES = re.compile(r"^L\d+(-L?\d+)?$")
 SPECIFICITY = {"lines": 3, "symbol": 3, "file": 2, "folder": 1, "glob": 1, "repo": 0}
 
@@ -37,7 +39,7 @@ def _anchor(repo: str, rest: str, legacy: bool, raw: str) -> Anchor | None:
     if not repo or "/" in repo or not path.strip("/") or p.is_absolute() or ".." in p.parts:
         return None
     clean = p.as_posix()
-    if any(c in clean for c in GLOB_CHARS):
+    if any(c in clean for c in WILDCARDS):
         kind = "glob"
     elif folder:
         kind = "folder"
@@ -125,7 +127,7 @@ def covers(a: Anchor, repo: str, path: str) -> bool:
     if a.kind == "repo":
         return True
     if a.kind == "glob":
-        return fnmatchcase(path, a.path)
+        return fnmatchcase(path, a.path) or "[" in a.path and fnmatchcase(path, a.path.replace("[", "[[]"))
     if a.kind == "folder":
         return path == a.path or path.startswith(a.path + "/")
     return path == a.path

@@ -231,6 +231,22 @@ def test_folder_and_glob_anchors_match_posix_paths(c4, kit):
     assert st["shop.hollow"]["state"] == "broken" and st["shop.stray"]["state"] == "broken"
 
 
+def test_anchors_on_a_dynamic_route_resolve(c4, kit):
+    route = kit.ws / "web" / "app" / "orders" / "[id]"
+    route.mkdir(parents=True)
+    (route / "page.tsx").write_text("export default function Order() { return null }\n", encoding="utf-8",
+                                    newline="\n")
+    model(kit, MODEL.replace(GHOST, GHOST + element("order", "web:app/orders/[id]/page.tsx")
+                             + element("orders", "web:app/orders/[id]/")
+                             + element("lines", "web:app/orders/[id]/page.tsx#L1")
+                             + element("pattern", "web:app/orders/[id]/*.tsx")
+                             + element("gone", "web:app/orders/[slug]/page.tsx")))
+    st = c4.c4_states()["elements"]
+    assert [st[f"shop.{n}"]["state"] for n in ("order", "orders", "lines", "pattern")] == ["fresh"] * 4
+    assert st["shop.gone"]["state"] == "broken"
+    assert stamps(c4)["c4"]["elements"]["shop.lines"]["anchors"]["web:app/orders/[id]/page.tsx#L1"] is not None
+
+
 def test_a_model_that_does_not_parse_leaves_no_states_and_one_error(c4, kit, monkeypatch):
     c4.c4_stamp_all()
     model(kit, MODEL + "  oops {\n")
