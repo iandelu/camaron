@@ -353,3 +353,26 @@ def test_c4_elements_are_those_whose_anchors_cover_the_touched_file_most_specifi
 }
 """)
     assert [e["fqn"] for e in adr_pack.build(state)["c4"]] == ["shop.orders", "shop.api"]
+
+
+def test_a_c4_element_takes_its_container_repo_and_none_is_not_printed(pack_world):
+    kit, adr_pack, state = pack_world
+    write_doc(kit, "architecture/model.c4", """model {
+  shop = system 'Shop' {
+    api = service 'Api' {
+      metadata { repo 'api' }
+      orders = component 'Orders' {
+        metadata { code ['api:api-core/src/main/java/demo/shop/orders/'] }
+      }
+    }
+    loose = service 'Loose' {
+      metadata { code ['api:api-core/src/main/java/demo/shop/'] }
+    }
+  }
+}
+""")
+    p = adr_pack.build(state)
+    assert [(e["fqn"], e["repo"]) for e in p["c4"]] == [("shop.api.orders", "api"), ("shop.loose", None),
+                                                          ("shop.api", "api")]
+    md = adr_pack.render(p)
+    assert "`shop.api.orders` — Orders, repo `api`" in md and "None" not in md

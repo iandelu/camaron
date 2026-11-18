@@ -19,6 +19,7 @@ from pathlib import Path, PurePosixPath
 from . import adr, adr_doc, c4edit, history, inventory, quickarch
 from .common import DOCS, repo_dir
 from .kanban import index
+from .domain.c4 import anchors
 from .domain.docs import frontmatter, page_outline, trust_levels
 from .app import c4_lookup, services
 
@@ -140,7 +141,7 @@ def _c4(touches: list[str]) -> list[dict]:
     for fqn in dict.fromkeys(fqns):
         el = els[fqn]
         found.append({"fqn": fqn, "title": el.get("title") or fqn, "technology": el.get("technology") or "",
-                      "repo": (el.get("metadata") or {}).get("repo")})
+                      "repo": anchors.container_repo(fqn, els)})
     return found[:C4]
 
 
@@ -197,7 +198,7 @@ def _lines(pack: dict) -> dict[str, list[str]]:
         "Decisions": [f"- {a['id']} — {a['title']} ({a['status']}), `{a['path']}`" for a in pack["adrs"]],
         "Commits": [commit(c) for c in pack["commits"]],
         "C4 elements": [f"- `{e['fqn']}` — {e['title']}" + (f" ({e['technology']})" if e["technology"] else "")
-                        + f", repo `{e['repo']}`" for e in pack["c4"]],
+                        + (f", repo `{e['repo']}`" if e["repo"] else "") for e in pack["c4"]],
         "Libraries": [f"- `{x['repo']}` {x['name']} {x['version']}".rstrip() + (f" ({x['category']})" if x["category"] else "")
                       + (f", `{x['manifest']}`" if x["manifest"] else "") for x in pack["libraries"]],
         "Open questions": [f"- {q}" for q in pack["questions"]]}
