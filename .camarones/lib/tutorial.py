@@ -39,8 +39,8 @@ PAGES = {
                  "La IA guarda checkpoints mientras trabaja: si cierras la terminal o el portátil, la próxima vez aparece "
                  "«▶ Continuar» y retoma desde el último checkpoint; «💬 Reabrir la conversación de esta unidad» vuelve a esa misma "
                  "conversación, o te avisa si no puede. Al terminar cada unidad se hace un commit local en "
-                 "cam-docs para que nada se pierda; «🤝 Compartir con el equipo» (o `camaron share`) trae el trabajo del "
-                 "equipo y publica el tuyo cuando tú decides. ¿Queréis otro plan? En `.camarones/pipeline.yaml` podéis "
+                 "cam-docs para que nada se pierda; «🤝 Equipo: traer, subir o sincronizar» (`camaron pull`, `camaron push`, `camaron share`) trae el trabajo del "
+                 "equipo o sube el tuyo cuando tú decides; al abrir el proyecto se trae solo, sin subir nada. ¿Queréis otro plan? En `.camarones/pipeline.yaml` podéis "
                  "quitar, añadir o reordenar unidades sin tocar el kit (la guía de comandos trae ejemplos). Las entrevistas "
                  "no te frenan: lo que depende de ellas se escribe antes como borrador y se afina cuando las haces. ¿Con prisa? "
                  "`camaron run` hace varias unidades a la vez, cada una en su propia copia de cam-docs, y `camaron kpis` "
@@ -52,7 +52,7 @@ PAGES = {
    Que hacemos?
    > Siguiente paso (sesion con IA)   <- el cursor ya esta en lo recomendado
      Revisar y verificar paginas (3)
-     Portal  /  Wikis  /  Actualizar  /  Compartir
+     Portal  /  Wikis  /  Actualizar  /  Equipo
 
      Plan y documentacion  >   plan, estado, rehacer, diagrama, stack
      Equipo                >   cuestionario, estadisticas, CI
@@ -235,7 +235,7 @@ PAGES = {
                  "terminal en la que le escribes al agente: F6 sale de ella, Cerrar deja la unidad en pausa y la "
                  "actualización de la doc va en Sesiones sueltas; mientras corre el piloto, Tomar el control abre en el "
                  "nodo la conversación de una unidad en marcha para corregirla, y Devolver al piloto se la devuelve; "
-                 "debajo, lo que lleva costado el plan), Entrevistas, Equipo (compartir, aprobar lo que llegó con el repo del equipo, "
+                 "debajo, lo que lleva costado el plan), Entrevistas, Equipo (traer, subir o sincronizar, aprobar lo que llegó con el repo del equipo, "
                  "plugins), Calidad (la salud del proyecto: máquina, documentación y código, repo a repo; el escaneo de "
                  "secretos y los hooks del método; y su vista Librerías: buscar vulnerabilidades repo a repo, con su "
                  "barra, Parar y un tick al acabar; en qué repos está cada una, primero donde tiene avisos; y "
@@ -525,7 +525,7 @@ PAGES = {
    3. Portal (camaron up)    -> leer, editar, confirmar o pedir cambios
    4. Wikis                  -> crear o refrescar la wiki de un repo
    5. Actualizar             -> cuando cambie el codigo
-   6. Compartir              -> traer lo del equipo y publicar lo tuyo""",
+   6. Equipo                 -> traer lo del equipo, subir lo tuyo o sincronizar""",
          "text": "Con esto basta, y todo está en la parte de arriba del menú. Puedes parar cuando quieras: el progreso "
                  "se guarda solo. Esc siempre vuelve atrás.\n\n"
                  "¿Hay un Camarón nuevo? «Ajustes › ⬆️ Actualizar Camarón» (o `camaron self-update`) mira el kit "
@@ -575,8 +575,8 @@ PAGES = {
                  "Every “🦐 Next step” opens a session that does ONE unit. The AI saves checkpoints while it works: if you "
                  "close the terminal or the laptop, next time you get “▶ Continue” and it resumes from the last checkpoint; "
                  "“💬 Reopen this unit's conversation” goes back to that same conversation, or tells you when it can't. "
-                 "Each finished unit is committed locally in cam-docs so nothing is lost; “🤝 Share with the team” (or "
-                 "`camaron share`) pulls the team's work and publishes yours when you decide. Want a different plan? "
+                 "Each finished unit is committed locally in cam-docs so nothing is lost; “🤝 Team: bring in, upload or sync with the team” (`camaron pull`, "
+                 "`camaron push`, `camaron share`) brings in the team's work or uploads yours when you decide; opening the project brings it in by itself, never uploading. Want a different plan? "
                  "`.camarones/pipeline.yaml` lets you drop, add or rewire units without touching the kit (the command "
                  "guide has examples). The interviews don't hold you up: what depends on them is drafted first and "
                  "refined once you have them. In a hurry? `camaron run` does several units at once, each in its own copy of "
@@ -589,7 +589,7 @@ PAGES = {
    What shall we do?
    > Next step (AI session)           <- the cursor is already on the recommended one
      Review & verify pages (3)
-     Portal  /  Wikis  /  Update  /  Share
+     Portal  /  Wikis  /  Update  /  Team
 
      Plan & docs           >   plan, status, redo, diagram, stack
      Team                  >   questionnaire, stats, CI
@@ -771,7 +771,7 @@ PAGES = {
                  "working unit's conversation in its node for you to correct it, and Hand back to the pilot returns it; "
                  "below, what the plan has cost so far), "
                  "Interviews, "
-                 "Team (share, approve what came with the team's repo, plugins), Quality (the project's health: "
+                 "Team (bring in, upload or sync, approve what came with the team's repo, plugins), Quality (the project's health: "
                  "machine, docs and code, repo by repo; the secret scan and the method hooks; and its Libraries view: scan for vulnerabilities repo by repo, with its bar, Stop and a tick when it ends; which repos "
                  "each one is in, the flagged ones first; and Update on a new branch, a Maven module whose parent pom "
                  "sets the version included) and "
@@ -1058,7 +1058,7 @@ PAGES = {
    3. Portal (camaron up)    -> read, edit, confirm or request changes
    4. Wikis                  -> create or refresh a repo's wiki
    5. Update                 -> when the code changes
-   6. Share                  -> pull the team's work and publish yours""",
+   6. Team                   -> bring in the team's work, upload yours or sync""",
          "text": "That's all, and it is all on the top part of the menu. Stop whenever you like: progress saves itself. "
                  "Esc always goes back.\n\n"
                  "Is there a new Camarón? “Settings › ⬆️ Update Camarón” (or `camaron self-update`) checks the official "

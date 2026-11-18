@@ -76,7 +76,7 @@ until you approve it on your machine: **Team › What came with the team's repo*
 3. **Or do several at once** — **Plan › Run the ready ones** (`camaron run --parallel 2`): each unit in its own copy of
    `cam-docs`, merged when it ends. **Autopilot** (`camaron autopilot`) goes one by one, unattended.
 4. **Read and review** what it wrote — **View portal**, then Review.
-5. **Share** — **Team › Share now** or `camaron share`.
+5. **Upload** — **Team › Upload changes** or `camaron push` (or **Sync with the team**, `camaron share`, to bring in and upload).
 
 Each unit ends with a local commit in `cam-docs` and a handoff note, so the next session — yours or a colleague's —
 knows what was checked, what was not and what comes next.
@@ -99,14 +99,26 @@ From a terminal: `camaron confirm <page> --by <name>`, `camaron feedback <page> 
 
 <!-- portal:#/review -->
 
-## Sharing with the team
+## Working with the team
 
-`cam-docs` is a normal git repo. By default checkpoints stay local and publishing is a step you take: **Team › Share
-now**, **Plan › Sync** in the portal, or `camaron share` — a checkpoint, the team's work rebased in, yours pushed. **Share
-every time progress is saved** (`camaron share --auto on`) does it after every checkpoint, on this machine only. A
-conflict is undone and nothing is touched; something that looks like a secret is never pushed.
+`cam-docs` is a normal git repo. Opening a project — the desktop app's window or the terminal wizard — brings in the
+team's work by itself and never uploads. If the team's changes clash with yours it changes nothing and names the files;
+offline, the project still opens and says you are working with the latest you brought in. After a bring-in the C4
+explorer rebuilds itself if it is stale, and the code graphs of repos whose HEAD moved rebuild in the background.
 
-No team repo yet? Paste its URL in **Team › The team's repo** (`camaron remote <url>`); your first share publishes it.
+Checkpoints stay local and uploading is a step you take, with three actions in **Team** (the app), **Plan › Sync** (the
+portal) and **🤝 Team: bring in, upload or sync with the team** (the terminal wizard):
+
+- **Bring in changes** (`camaron pull`) — the team's work rebased in; yours is not uploaded.
+- **Upload changes** (`camaron push`) — a checkpoint, then yours pushed. It refuses when the team has new changes: bring
+  them in first, or sync with the team.
+- **Sync with the team** (`camaron share`) — bring in, then upload.
+
+A line says how far apart you are (n to bring in · m to upload · last time …) and the useful action is the primary
+button. **Upload on save** (`camaron share --auto on`) uploads after every checkpoint, on this machine only. A conflict is
+undone and nothing is touched; something that looks like a secret is never pushed.
+
+No team repo yet? Paste its URL in **Team › The team's repo** (`camaron remote <url>`); your first upload publishes it.
 
 ## The board and stories
 

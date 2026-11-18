@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.89.0-ff875f?style=flat-square" alt="Versión 4.89.0">
+  <img src="https://img.shields.io/badge/version-4.90.0-ff875f?style=flat-square" alt="Versión 4.90.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -208,7 +208,7 @@ lo que había).
 Al crear un proyecto puedes darle la URL del repo `cam-docs` del equipo (en la app, **Unirme a la documentación de mi
 equipo**; en la terminal, `camaron join <url>` o `camaron new <nombre> --from <url>`). Si el repo ya tiene un proyecto,
 lo clona (o reutiliza el que ya tienes) y solo prepara tu máquina: repos, stack, arquitectura y plan ya los decidió el
-equipo. Si está vacío, tu primer «Compartir» lo publica. Sin URL, el repo es local y el remoto se añade después con
+equipo. Si está vacío, tu primera subida lo publica. Sin URL, el repo es local y el remoto se añade después con
 `camaron remote <url>`. Si git no tiene acceso, la app pide un token y lo guarda en el llavero del sistema, nunca en el
 proyecto.
 
@@ -217,9 +217,13 @@ escribió el kit solo se cargan cuando los apruebas en tu máquina (**Equipo** e
 aprobaciones viven en `~/.camarones/trust/`, fuera del repo. Un enlace simbólico que llega en el repo se aprueba como
 un solo elemento, y el kit nunca lee ni escribe a través de él. Si en la carpeta del workspace ya tenías tu propio
 `.claude/` o tu `CLAUDE.md`, `setup` y `repair` no los reemplazan: enlazan dentro lo del kit y añaden a tu `CLAUDE.md`
-dos líneas que importan sus reglas (`@AGENTS.md`); `uninstall` las quita y deja lo tuyo. Publicar es un paso explícito:
-**Equipo › Compartir ahora**, **Plan › Sincronizar** en el portal o `camaron share` (checkpoint, rebase sobre el trabajo
-del equipo y push); con `camaron share --auto on` cada checkpoint se comparte solo, en esta máquina. Un conflicto se
+dos líneas que importan sus reglas (`@AGENTS.md`); `uninstall` las quita y deja lo tuyo. Al abrir un proyecto (la ventana de la app o el
+asistente de la terminal) se trae solo el trabajo del equipo y nunca se sube: si choca con el tuyo no toca nada y dice
+qué ficheros; sin conexión se abre igual. Tras traer, el explorador C4 se reconstruye si estaba desactualizado y los
+grafos de los repos cuyo HEAD se movió, en segundo plano. Subir es un paso explícito, con tres acciones en
+**Equipo**, **Plan › Sincronizar** en el portal y el menú de la terminal: **Traer cambios** (`camaron pull`),
+**Subir cambios** (`camaron push`, se niega si el equipo tiene cambios nuevos) y **Sincronizar** (`camaron share`, traer
+y subir); con `camaron share --auto on` (**Subir al guardar**) cada checkpoint se sube solo, en esta máquina. Un conflicto se
 deshace sin tocar nada, y algo que parece un secreto no se publica. Si no llega al servidor del equipo o le faltan
 credenciales, te dice por qué (la VPN o el proxy, el token de ese servidor) y debajo lo que respondió git.
 
@@ -231,7 +235,7 @@ credenciales, te dice por qué (la VPN o el proxy, el token de ese servidor) y d
 | 2. Documentar una unidad con tu agente | **Empezar con Claude Code** (se abre como una terminal en el lienzo del Plan, donde le escribes al agente; si la cierras, **Seguir** la retoma) | el asistente → 🦐 Siguiente paso |
 | 3. O varias a la vez | **Plan › Ejecutar las listas**, o el **Piloto automático** | `camaron run --parallel 2`, `camaron autopilot` |
 | 4. Revisar y confirmar | **Ver portal** → Revisión | `camaron confirm`, `camaron feedback` |
-| 5. Compartir | **Equipo › Compartir ahora** | `camaron share` |
+| 5. Subir | **Equipo › Subir cambios** | `camaron push` (o `camaron share`) |
 
 Cada unidad termina con un commit local en `cam-docs` y una nota de relevo (`docs/.work/handoff.md`): qué comprobó con
 pruebas, qué no, los comandos que ejecutó y la siguiente acción. Si una sesión se interrumpe, la siguiente sigue desde
@@ -315,7 +319,7 @@ escribirías en la terminal.
 | 📜 **Decisiones** (`g a`) | Los ADR sin IA: plantear una decisión (nueva o retroactiva) o partir de una **candidata** que el código ya tomó, reunir su **evidencia**, revisarla parte por parte y punto por punto, y **aceptarla** o rechazarla |
 | 🗺️ **Plan** (`g p`) | Ejecutar las unidades listas en paralelo o con el piloto automático (se saltan una unidad con su sesión abierta), cada unidad con su botón (aprobar, reintentar, seguir, rehacer), por estado, por fases o en el **lienzo**: el grafo del plan, donde cada unidad que trabaja una ejecución es una terminal en vivo, y **Empezar** o **Seguir** una unidad y la actualización de la doc (**Mantenerla al día**) abren una terminal en la que le escribes al agente (<kbd>F6</kbd> sale de ella; **Cerrar** deja la unidad en pausa, **Quitar** retira una que acabó con error y la actualización va en **Sesiones sueltas**; `camaron config set sessions window` las abre en una ventana). Mientras corre el piloto, **Tomar el control** abre en su nodo la conversación de una unidad en marcha para corregir al agente sin parar las demás, **Devolver al piloto** se la devuelve y sigue con ella, y **Parar** la saca de esa ejecución; lo que lleva costado el plan (debajo de las unidades) y empezar la documentación otra vez |
 | 🎙️ **Entrevistas** (`g i`) | Cuestionario del equipo o en vivo, exportar e importar respuestas, cerrar la ronda |
-| 🤝 **Equipo** (`g t`) | El repo del equipo y compartir, aprobar lo que llegó con él (también sus hooks) y plugins |
+| 🤝 **Equipo** (`g t`) | El repo del equipo (traer, subir, sincronizar), aprobar lo que llegó con él (también sus hooks) y plugins |
 | ✅ **Calidad** (`g q`) | La salud del proyecto sin IA: máquina, documentación y código, repo a repo (SonarQube, cobertura, vulnerabilidades, deuda); el **escaneo de secretos** (gitleaks, `camaron check --secrets`) y los **hooks del método** de Claude Code (el interruptor y lo que han visto) como filas del panel; y la vista **Librerías** (`#/quality/libs`; `#/libs` sigue abriéndola): una línea por librería con la versión que usan los repos y la última estable (**Buscar versiones nuevas**), sus vulnerabilidades (el escaneo va repo a repo con su barra, se puede parar y acaba con un tick con lo que encontró) y **Actualizar ▾** con esa versión ya puesta, en una rama nueva, sin commit. La misma pantalla que la del portal |
 | 📖 **Docs** (`g d`) | Abrir el portal, construir el explorador C4, generar la wiki de cada repo y preguntar con IA |
 | 🧰 **Máquina** (`g m`) | Preparar la máquina (dice «Lista», cuándo y con qué kit, una vez hecho), idioma y modelos, dónde se abren las sesiones (en el lienzo del plan o en una ventana de terminal), tokens, repos, el kit y desinstalar |
@@ -445,7 +449,7 @@ Cada función es un comando `camaron`; `camaron catalog` dice dónde vive cada u
 
 | Para… | Comandos |
 |---|---|
-| Proyectos y equipo | `app`, `new`, `join`, `switch`, `projects`, `remote`, `share`, `trust`, `repair`, `migrate`, `unlink`, `uninstall` |
+| Proyectos y equipo | `app`, `new`, `join`, `switch`, `projects`, `remote`, `pull`, `push`, `share`, `trust`, `repair`, `migrate`, `unlink`, `uninstall` |
 | Preparar la máquina | `setup`, `doctor`, `config`, `sync`, `detect`, `stack`, `profile`, `self-update`, `upgrade`, `version` |
 | El plan | `plan` (`next`, `start`, `note`, `done`, `redo`, `approve`, `sync`, `cost`), `run`, `autopilot`, `runs`, `pipeline`, `prompt`, `interview`, `docs reset` |
 | Leer y revisar | `up`, `down`, `portal`, `status`, `confirm`, `feedback`, `review`, `fresh`, `translated`, `llms` |

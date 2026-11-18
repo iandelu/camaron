@@ -147,6 +147,10 @@ pelar». Su botón depende de qué paso sea:
 | Construir el portal (`portal`), o no queda nada | **Leer la documentación** |
 | Cualquier otra cosa | **Ver el plan** |
 
+Al abrir la ventana, el Resumen trae solo el trabajo del equipo (nunca sube) y muestra el resultado en una línea; si los
+cambios del equipo chocan con los tuyos, no toca nada, nombra los ficheros y ofrece **Abrir una terminal aquí**. Sin
+conexión, dice que trabajas con lo último que trajiste.
+
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en
@@ -355,11 +359,12 @@ El repo `cam-docs` del equipo y lo que llegó con él (`#/team`, <kbd>g</kbd> <k
 <!-- go:team -->
 <!-- tour:team -->
 
-**Repo del equipo.** Pega su URL y **Guardar** (`camaron remote`). Con remoto, tres cifras —por enviar, por traer, sin
-guardar— y **Compartir ahora** (un checkpoint, después tu trabajo rebasado sobre el del equipo y subido),
-**Comprobar** (pregunta al remoto qué hay de nuevo) y **Compartir cada vez que se guarda el progreso**
-(`camaron share --auto on|off`, solo en esta máquina). Un conflicto se deshace sin tocar nada; algo que parece un
-secreto no se publica. Un compartir o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o
+**Repo del equipo.** Pega su URL y **Guardar** (`camaron remote`). Con remoto, una línea —n por traer · m por subir · última vez …— y tres acciones, la útil como botón principal:
+**Traer cambios** (`camaron pull`, el trabajo del equipo rebasado dentro), **Subir cambios** (`camaron push`, un
+checkpoint y después lo tuyo subido; se niega si el equipo tiene cambios nuevos, así que tráelos primero) y
+**Sincronizar** (`camaron share`, traer y después subir). **Comprobar** pregunta al remoto qué hay de nuevo y **Subir al
+guardar** (`camaron share --auto on|off`) sube tras cada checkpoint, solo en esta máquina. Un conflicto se deshace sin
+tocar nada; algo que parece un secreto no se publica. Una acción o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o
 proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de git debajo; un problema de token enlaza a
 **Máquina › Tokens** para ese servidor.
 
@@ -526,7 +531,7 @@ instalación global. Es el banco para cambiar el kit:
 | «No he podido arrancar el servidor del proyecto» | El cuadro trae el error del servidor; `camaron doctor` en esa carpeta suele decir qué falta |
 | En el portal del navegador no está el botón que esperabas | Es a propósito: el portal del navegador no ejecuta nada en tu máquina. Hazlo aquí |
 | Quieres que vuelva a descargar Electron | Borra `~/.camarones/desktop` y lanza `camaron app` |
-| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Compartir ahora** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a compartir |
+| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Traer cambios**, **Subir cambios** o **Sincronizar** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a intentarlo |
 
 En Linux con los *user namespaces* restringidos (Ubuntu 24.04 y posteriores) el kit abre la app con `--no-sandbox`;
 sus ventanas solo cargan el servidor local de tu proyecto.

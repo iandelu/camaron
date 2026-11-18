@@ -197,10 +197,12 @@ aquí —lo que se dedujo del código con su evidencia, las opciones, «Otra» y
 el formulario sin conexión, así que las dos vías se mezclan, y quien vuelve ve sus respuestas para cambiarlas. Arriba:
 quién ha respondido, qué no ha respondido nadie y dónde no hay acuerdo.
 
-**Sincronizar** (`#/sync`, en vivo): este `cam-docs` frente al repo del equipo —tus commits sin compartir, los suyos que
-no tienes, cuándo compartió esta máquina por última vez y los ficheros aún sin guardar—. **Sincronizar con el equipo**
-hace lo mismo que `camaron share` (un checkpoint, entra el trabajo del equipo, sale el tuyo); **Comprobar si hay
-novedades** pregunta al remoto. Un conflicto se deshace; un posible secreto bloquea el push. Un fallo dice por qué (no
+**Sincronizar** (`#/sync`, en vivo): este `cam-docs` frente al repo del equipo —n por traer, m por subir, cuándo lo
+hizo esta máquina por última vez y los ficheros aún sin guardar—. **Traer cambios** (`camaron pull`) rebasa dentro el
+trabajo del equipo; **Subir cambios** (`camaron push`) hace un checkpoint y sube lo tuyo, y se niega si el equipo tiene
+cambios nuevos; **Sincronizar con el equipo** hace lo mismo que `camaron share` (traer y después subir). La acción útil
+es el botón principal; **Comprobar si hay novedades** pregunta al remoto. Un conflicto se deshace; un posible secreto
+bloquea el push. Un fallo dice por qué (no
 llega al servidor: conexión, VPN o proxy; falta un token o lo rechaza; el repo no está) con la línea de git debajo; los
 tokens se guardan en la app de escritorio.
 
