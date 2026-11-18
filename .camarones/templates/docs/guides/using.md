@@ -150,7 +150,16 @@ When the code moves, the docs follow:
   acknowledges one, **Add a unit that refreshes them** queues the work.
 - In CI, `camaron ci` writes a job per service repo that comments on each pull request which pages it leaves out of
   date, without AI; `camaron pr propose <url>` lets an agent propose the doc changes in a PR of `cam-docs`.
-- `camaron check` is the gate: broken links, diagrams that do not render, secrets, structure.
+- `camaron arch-verify` checks the C4 model against the code: each element's and relation's evidence state (`fresh`,
+  `suspect`, `broken`, `no-evidence`, `unchecked`) and the drift. A relation is backed by its own `code` anchor or by
+  what the code shows between its two ends: the code graph (`camaron graph`) between the components of a repo, the
+  `arch-draft` scan between containers. It lists what is in the code but not in the model, files two sibling elements
+  both cover, and the folders no element covers, offered as candidate components. A repo with no graph is not compared
+  (the relations between its components stay `unchecked`), and a graph built at another commit is named. `--ack FQN… --by NAME` takes today's
+  code as an element's reference; a name the model does not have exits 1.
+- `camaron check` is the gate: broken links, diagrams that do not render, secrets, structure, and the C4 findings of
+  `arch-verify` as warnings. `check --strict` makes `broken`, `no-evidence`, drift and unreadable `evidence` entries
+  errors; `suspect`, `unchecked` and a missing or stale graph stay warnings.
 
 ## Coding with Camarón
 

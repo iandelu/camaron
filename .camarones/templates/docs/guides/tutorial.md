@@ -167,7 +167,7 @@ translations it reports:
 | Possible secret in `docs/` or a wiki (file and line only, never the value) | ERROR; also blocks checkpoint commits and `camaron portal` | gitleaks |
 | A word from the glossary's **Avoid** column | warning (ERROR with `--strict`) | an Avoid column in `docs/domain/glossary.md` |
 | Generated block edited by hand or behind the code (`camaron blocks`) | warning (ERROR with `--strict`) | — |
-| C4 element or relation with no evidence, whose code changed or is gone (`camaron arch-verify`) | warning (ERROR with `--strict`; `unchecked` stays a warning) | — |
+| C4 element or relation with no evidence, whose code changed or is gone, or a dependency in the code the model does not draw (`camaron arch-verify`) | warning (ERROR with `--strict`; `suspect`, `unchecked` and a missing or stale code graph stay warnings) | the code graph (`camaron graph`) to compare components |
 | Page structure: TL;DR under the title, the sections of its skeleton in `.camarones/skeletons/`, size budget, vague references | warning (ERROR with `--strict`) | — |
 
 mermaid-cli and gitleaks come with the full install (the `quality` component; mermaid-cli downloads a headless Chromium

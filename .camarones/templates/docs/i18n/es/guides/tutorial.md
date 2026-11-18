@@ -178,7 +178,7 @@ la confianza y las traducciones, revisa:
 | Posible secreto en `docs/` o en una wiki (solo fichero y línea, nunca el valor) | ERROR; además bloquea los commits de checkpoint y `camaron portal` | gitleaks |
 | Una palabra de la columna **Avoid** del glosario | aviso (ERROR con `--strict`) | una columna Avoid en `docs/domain/glossary.md` |
 | Bloque generado editado a mano o desfasado respecto al código (`camaron blocks`) | aviso (ERROR con `--strict`) | — |
-| Elemento o relación del C4 sin evidencia, con código cambiado o desaparecido (`camaron arch-verify`) | aviso (ERROR con `--strict`; `unchecked` sigue siendo aviso) | — |
+| Elemento o relación del C4 sin evidencia, con código cambiado o desaparecido, o una dependencia del código que el modelo no dibuja (`camaron arch-verify`) | aviso (ERROR con `--strict`; `suspect`, `unchecked` y un grafo de código ausente o desfasado siguen siendo avisos) | el grafo de código (`camaron graph`) para comparar componentes |
 | Estructura de la página: TL;DR bajo el título, las secciones de su plantilla en `.camarones/skeletons/`, tamaño máximo, referencias vagas | aviso (ERROR con `--strict`) | — |
 
 mermaid-cli y gitleaks vienen con la instalación completa (el componente `quality`; mermaid-cli descarga una vez un

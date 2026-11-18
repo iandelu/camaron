@@ -9,6 +9,7 @@ import json, re
 from lib import c4edit
 from lib.app import services
 from lib.common import out, repo_dir
+from lib.domain.c4.drift import NOT_SOURCE, TEST_FILE
 from lib.domain.docs import directives, frontmatter, page_outline, synonyms
 from lib.harness import freshness
 
@@ -21,14 +22,11 @@ SECTION_CHARS = 1400
 C4_TOP = 3
 NODES_TOP = 6
 UNVERIFIED = {"state": "unverified", "changed": [], "missing": []}
-# a test's long name matches many words of a prompt; tests show only when the prompt is about tests
 # words that say what to do, not where: left out of name matching (C4, graph), kept for the docs search
 REQUEST_WORDS = set("change changes add fix make update remove delete create new want need please why not does doesn "
                     "don also just like still into about".split()) | set(
     "cambiar cambia cambio añadir añade arreglar arregla quitar quita borrar crear crea nuevo nueva quiero hacer haz "
     "porque cuando también solo".split())
-NOT_SOURCE = re.compile(r"(^|/)(node_modules|vendor|dist|build|target|\.venv|[\w.-]+-build)/")
-TEST_FILE = re.compile(r"(^|/)(tests?|__tests__|spec)/|(^|/)test_[^/]*$|_test\.\w+$|Tests?\.\w+$|\.(test|spec)\.\w+$")
 HEADER = ("Camarón — docs for this prompt, from cam-docs (no model call). `confirmed` is the source of truth; `draft` "
           "must be checked against the code; withheld pages are out of date or unreviewed. More: read_doc(path, "
           "section), ask, repo_graph.")
