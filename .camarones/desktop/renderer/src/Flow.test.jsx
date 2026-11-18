@@ -23,3 +23,8 @@ test('the Plan view marks the Plan tab', () => {
   expect(out.match(/<h1/g)).toHaveLength(1)
   expect(current(out)).toEqual(['Plan'])
 })
+
+// Summary and Plan are titled by their tab: inside the place their own title is not said twice.
+test('neither view repeats its tab as a heading', () => {
+  for (const hash of ['#/flow', '#/flow/plan']) expect(render(hash), hash).not.toContain('dk-page-h')
+})

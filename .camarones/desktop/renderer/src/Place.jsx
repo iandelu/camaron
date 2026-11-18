@@ -20,7 +20,7 @@ export function Place({ section, view, head = null, wide = false, full = false, 
     <Page title={t('nav.' + section)} wide={wide} full={full}>
       {head}
       <PlaceTabs section={section} view={view} badges={badges} />
-      <PlaceContext.Provider value>{children}</PlaceContext.Provider>
+      <PlaceContext.Provider value={[t('nav.' + section), t('nav.' + view)]}>{children}</PlaceContext.Provider>
     </Page>
   )
 }

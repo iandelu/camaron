@@ -10,11 +10,18 @@ import { lang, t } from './i18n.js'
 
 // `wide` widens the page; `full` takes the whole window, however wide, and its height (the Board's columns). `actions`
 // sit beside the title (Decisiones: Candidatas, Nuevo ADR).
-// Inside a Place the page's title and width are the place's: a page then renders only its actions and body.
-export const PlaceContext = createContext(false)
+// Inside a Place the h1 and the width are the place's. Its value is what the place already says (its name, the tab's):
+// the page's own title becomes a heading under the tabs, beside its actions (an ADR's number and title, Present),
+// unless it would only say that again (Resumen, Plan).
+export const PlaceContext = createContext(null)
 
 export const Page = ({ title, actions = null, children, wide = false, full = false }) => {
-  if (useContext(PlaceContext)) return <>{actions && <div className="row dk-page-acts">{actions}</div>}{children}</>
+  const said = useContext(PlaceContext)
+  if (said) {
+    const h2 = title && !said.includes(title) ? <h2 className="dk-page-h">{title}</h2> : null
+    const acts = actions ? <div className="row dk-page-acts">{actions}</div> : null
+    return <>{h2 || acts ? <div className="dk-page-head">{h2}{acts}</div> : null}{children}</>
+  }
   const h1 = <h1 className="t-impact">{title}</h1>
   return (
     <div className={'dk-page' + (wide ? ' wide' : '') + (full ? ' full' : '')}>

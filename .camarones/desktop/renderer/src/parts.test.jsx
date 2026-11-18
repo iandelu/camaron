@@ -41,11 +41,19 @@ test('a page with actions sets them beside its title; one without keeps the bare
   expect(renderToStaticMarkup(<Page title="Plan" />)).toBe('<div class="dk-page"><h1 class="t-impact">Plan</h1></div>')
 })
 
-test('inside a place a page keeps only its actions and body', () => {
-  const out = renderToStaticMarkup(<PlaceContext.Provider value={true}><Page title="X" actions={<b>act</b>}><p>body</p></Page></PlaceContext.Provider>)
-  expect(out).toContain('<b>act</b>')
-  expect(out).toContain('<p>body</p>')
-  expect(out).not.toContain('<h1')
+// Inside a place the place owns the h1 and the width: a page's own title is a heading under the tabs with its actions
+// beside it (an ADR's number and title, Present), unless it only repeats the place's name or the tab's (Plan, Decisiones).
+test('inside a place a page titles itself under the tabs, beside its actions, unless the place already says it', () => {
+  setLang('es')
+  const inPlace = (node) => renderToStaticMarkup(<Place section="docs" view="decisions">{node}</Place>)
+  const out = inPlace(<Page title="0012 · Sesiones" wide actions={<b>act</b>}><p>body</p></Page>)
+  expect(out.match(/<h1/g)).toHaveLength(1)
+  expect(out).toContain('<div class="dk-page-head"><h2 class="dk-page-h">0012 · Sesiones</h2><div class="row dk-page-acts"><b>act</b></div></div><p>body</p>')
+  expect(out).toMatch(/^<div class="dk-page">/)                 // the place's width, not the page's
+  for (const said of ['Decisiones', 'Docs']) expect(inPlace(<Page title={said}><p>body</p></Page>)).not.toContain('<h2')
+  expect(inPlace(<Page title="Docs" actions={<b>act</b>} />)).toContain('<div class="dk-page-head"><div class="row dk-page-acts"><b>act</b>')
+  const bare = renderToStaticMarkup(<PlaceContext.Provider value={['Docs']}><Page title="Nuevo ADR"><p>body</p></Page></PlaceContext.Provider>)
+  expect(bare).toBe('<div class="dk-page-head"><h2 class="dk-page-h">Nuevo ADR</h2></div><p>body</p>')
   expect(renderToStaticMarkup(<Page title="X" />)).toContain('<h1 class="t-impact">X</h1>')
 })
 

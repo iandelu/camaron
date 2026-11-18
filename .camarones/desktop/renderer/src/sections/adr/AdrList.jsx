@@ -83,7 +83,7 @@ export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candi
     {create}
   </>)
   return (
-    <Page title={t('nav.decisions')} actions={actions}>
+    <Page title={t('adr.list')} actions={actions}>
       <div className="dk-adr-bar">
         <div className="dk-adr-filters" role="group" aria-label={t('adr.filters')}>
           {FILTERS.map((f) => (

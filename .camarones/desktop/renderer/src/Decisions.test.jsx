@@ -8,6 +8,8 @@ import { EMPTY, check, toBody } from './sections/adr/NewForm.jsx'
 import { blocks } from './sections/adr/Prose.jsx'
 import { Stepper } from './sections/adr/Read.jsx'
 import { TouchSearchView } from './sections/adr/TouchSearch.jsx'
+import Docs from './sections/Docs.jsx'
+import { Place } from './Place.jsx'
 import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -318,4 +320,48 @@ test('no candidates says why and where to go', () => {
   const out = html(<CandidatesView rows={[]} onPick={noop} />)
   expect(out).toContain('Ninguna decisión del código está sin ADR')
   expect(out).toContain('href="#/quality/libs"')
+})
+
+// ---------- inside Docs ----------
+// Decisions lives in Docs, which owns the h1: every ADR screen still says which ADR it is, under the tabs, with its own
+// actions beside that heading; the list's actions sit beside one too.
+const inDocs = (node, lang) => html(<Place section="docs" view="decisions">{node}</Place>, lang)
+const heading = (out) => (out.match(/<div class="dk-page-head"><h2 class="dk-page-h">([^<]*)<\/h2>(?:<div class="row dk-page-acts">(.*?)<\/div>)?<\/div>/) || [])
+
+test('inside Docs each ADR screen is headed by its number and title', () => {
+  const adr = { id: '0012', title: 'Sesiones en Redis', chip: 'review', state: { phase: 'review', mode: 'manual' },
+    parts: [{ id: 'context', status: 'pending' }], sections: { context: 'Hoy' } }
+  const review = inDocs(<ReviewView adr={adr} current="context" onUi={noop} onPresent={noop} />)
+  expect(review.match(/<h1/g)).toHaveLength(1)
+  expect(heading(review)[1]).toBe('0012 · Sesiones en Redis')
+  expect(heading(review)[2]).toContain('Presentar')                        // Present sits beside the title
+  const ev = inDocs(<EvidenceView adr={{ ...adr, state: { phase: 'evidence', mode: 'manual' } }} pack={null} onPack={noop} onWrite={noop} />)
+  expect(heading(ev)[1]).toBe('0012 · Sesiones en Redis')
+  const old = inDocs(<LegacyView adr={{ id: '0003', title: 'JPA', status: 'proposed', legacy: true, sections: {} }} onReview={noop} />)
+  expect(heading(old)[1]).toBe('0003 · JPA')
+  expect(heading(inDocs(<NewFormView fields={EMPTY} errors={{}} onChange={noop} onSubmit={noop} search={async () => []} />))[1]).toBe('Nuevo ADR')
+  expect(heading(inDocs(<CandidatesView rows={[]} onPick={noop} />))[1]).toBe('Candidatas')
+})
+
+test("inside Docs the list's actions sit beside a heading that does not repeat the tab", () => {
+  const out = inDocs(<AdrListView rows={[row()]} filter="all" q="" onFilter={noop} onQ={noop} candidates={[{}]} />)
+  const [, title, acts] = heading(out)
+  expect(title).toBe('Decisiones del proyecto')
+  expect(acts).toContain('Candidatas · 1')
+  expect(acts).toContain('Nuevo ADR')
+  expect(heading(inDocs(<AdrListView rows={[row()]} filter="all" q="" onFilter={noop} onQ={noop} />, 'en'))[1]).toBe('Project decisions')
+})
+
+// The review's two columns need the wide page: Docs widens while one ADR is open, and keeps its width for the list.
+test('Docs widens for an open ADR, not for the list', () => {
+  const waiting = () => new Promise(() => {})
+  const srv = { get: waiting, post: waiting }
+  const docs = (hash) => { globalThis.location = { origin: 'http://127.0.0.1:5000', hash }; return html(<Docs srv={srv} jobs={null} app={{}} index={null} />) }
+  try {
+    const one = docs('#/docs/decisions/0012')
+    expect(one).toMatch(/^<div class="dk-page wide">/)
+    expect(one).toContain('<h2 class="dk-page-h">ADR 0012</h2>')
+    expect(docs('#/docs/decisions')).toMatch(/^<div class="dk-page">/)
+    expect(docs('#/docs')).toMatch(/^<div class="dk-page">/)
+  } finally { delete globalThis.location }
 })

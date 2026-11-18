@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card } from '@camaron/ui'
+import { route as adrRoute } from '../adr.js'
 import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiBlocks, wikiBusyWith,
   wikiError, wikisRead } from '../docs.js'
 import { useHash, useJob, useStore } from '../hooks.js'
@@ -19,11 +20,13 @@ import { t } from '../i18n.js'
 // time: while one runs (the jobs store), Generate is closed on the other repos.
 const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
+// One ADR open (its review's two columns, its evidence's two cards) takes the wide page.
 export default function Docs({ srv, jobs, app, index }) {
-  const view = viewOf(useHash(), 'docs')
-  const open = (hash) => openPortal(app, location.origin, hash)
+  const hash = useHash()
+  const view = viewOf(hash, 'docs')
+  const open = (to) => openPortal(app, location.origin, to)
   return (
-    <Place section="docs" view={view} head={<TeamStrip srv={srv} jobs={jobs} />}>
+    <Place section="docs" view={view} wide={view === 'decisions' && adrRoute(hash).view === 'adr'} head={<TeamStrip srv={srv} jobs={jobs} />}>
       {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} open={open} index={index} />
         : view === 'decisions' ? <Decisions srv={srv} />
         : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
