@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { answerView, askBody, askError, buildFailed, c4Card, citeHash, openPortal, portalUrl, startBuild, startWiki, wikiBlocks,
-  wikiBusyWith, wikiError, wikiRepos, wikisRead } from './docs.js'
+  stripState, wikiBusyWith, wikiError, wikiRepos, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -197,4 +197,13 @@ test('a failed read of the wikis keeps the last good rows and says it failed', (
   expect(wikisRead(start, { error: true })).toEqual({ rows: null, loading: false, failed: true })
   expect(wikisRead(read, { error: true })).toEqual({ rows, loading: false, failed: true })
   expect(wikisRead({ rows, loading: false, failed: true }, { rows: [] })).toEqual({ rows: [], loading: false, failed: false })
+})
+
+test('the team strip says where the team repo stands, one state at a time', () => {
+  expect(stripState(null)).toEqual({ key: 'ts.reading', tone: 'none' })
+  expect(stripState({ error: 'x' })).toEqual({ key: 'ts.failed', tone: 'warn' })
+  expect(stripState({ remote: '' })).toEqual({ key: 'ts.never', tone: 'none' })
+  expect(stripState({ remote: 'r', behind: 2, ahead: 0, pending: [] })).toEqual({ key: 'ts.behind', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['a'] })).toEqual({ key: 'ts.ahead', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'ts.upToDate', tone: 'ok' })
 })

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { Skeleton } from '@camaron/ui'
-import { route, screen, stale, startScreen, viewOf } from '../adr.js'
+import { ADR_BASE, route, screen, stale, startScreen, viewOf } from '../adr.js'
 import { useHash } from '../hooks.js'
 import { Failed, Page } from '../parts.jsx'
 import { lang, t } from '../i18n.js'
@@ -50,13 +50,13 @@ export default function Decisions({ srv }) {
       const a = await srv.post('app/adr/new', toBody(form))
       fresh.current = a.id
       setForm(EMPTY); setPrefilled(false)
-      go(`#/decisions/${a.id}`)
+      go(`${ADR_BASE}/${a.id}`)
     } catch (e) { setFormError(e.message) } finally { setCreating(false) }
   }
-  const pick = (c) => { setForm({ ...EMPTY, ...candidateFields(c, lang()) }); setPrefilled(true); setErrors({}); setFormError(''); go('#/decisions/new') }
-  const cancel = () => { setForm(EMPTY); setPrefilled(false); setErrors({}); setFormError(''); go('#/decisions') }
+  const pick = (c) => { setForm({ ...EMPTY, ...candidateFields(c, lang()) }); setPrefilled(true); setErrors({}); setFormError(''); go(`${ADR_BASE}/new`) }
+  const cancel = () => { setForm(EMPTY); setPrefilled(false); setErrors({}); setFormError(''); go(ADR_BASE) }
   const takeFresh = (id) => { const yes = fresh.current === id; if (yes) fresh.current = ''; return yes }
-  const moved = (to, notice) => { setCarry({ id: to, notice }); go(`#/decisions/${to}`) }
+  const moved = (to, notice) => { setCarry({ id: to, notice }); go(`${ADR_BASE}/${to}`) }
 
   if (r.view === 'adr') {
     return <AdrScreen key={r.id} id={r.id} srv={srv} notice={carry?.id === r.id ? carry.notice : null} fresh={takeFresh} onMoved={moved} />

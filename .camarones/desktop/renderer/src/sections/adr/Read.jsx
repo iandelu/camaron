@@ -1,5 +1,5 @@
 import { Aviso, Button, Chip } from '@camaron/ui'
-import { stepper } from '../../adr.js'
+import { ADR_BASE, stepper } from '../../adr.js'
 import { t } from '../../i18n.js'
 import { Page } from '../../parts.jsx'
 import { Prose } from './Prose.jsx'
@@ -68,7 +68,7 @@ export function StatusNote({ adr, children = null }) {
         <dl className="dk-adr-dl">
           {rows.map(([k, x]) => <div key={k} className="dk-adr-dlrow"><dt>{k}</dt><dd><Prose text={x} /></dd></div>)}
         </dl>) : null}
-      {by ? <a href={`#/decisions/${by}`}>{t('adr.review.supersededBy', { id: by })}</a> : null}
+      {by ? <a href={`${ADR_BASE}/${by}`}>{t('adr.review.supersededBy', { id: by })}</a> : null}
       {children}
     </div>
   )
@@ -98,7 +98,7 @@ export function LegacyView({ adr, busy = false, error = '', notice = '', onRevie
       <AdrHead adr={adr} />
       {open ? null : (
         <StatusNote adr={adr}>
-          <p className="muted small">{t('adr.review.closed')} <a href="#/decisions/new">{t('adr.new')}</a></p>
+          <p className="muted small">{t('adr.review.closed')} <a href={`${ADR_BASE}/new`}>{t('adr.new')}</a></p>
         </StatusNote>)}
       {notice ? <Aviso tone="info" title={notice} /> : null}
       {open ? (

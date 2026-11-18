@@ -10,13 +10,14 @@ const index = { repos: ['api', 'web', 'ui'], docs: [{ path: 'repos/api/index.md'
   { path: 'index.md', space: 'docs' }] }
 const render = (idx = index) => renderToStaticMarkup(<Docs srv={srv} jobs={null} app={{ openExternal: () => {} }} index={idx} />)
 
-afterEach(() => { delete globalThis.location; setLang('es') })
+let HASH = '#/docs'
+afterEach(() => { delete globalThis.location; setLang('es'); HASH = '#/docs' })
 
 // Reading is the portal's, in the system browser: buttons that call app.openExternal, never a link the window follows.
 test('Docs opens the portal through the browser and offers the C4 build', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
-  expect(out).not.toMatch(/<a [^>]*href=/)
+  expect(out.replace(/<nav [\s\S]*?<\/nav>/, '')).not.toMatch(/<a [^>]*href=/)   // only the tabs are links
   for (const label of ['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar']) expect(out).toContain(label)
   expect(out).toContain('Construir el explorador C4')
   expect(out).toMatch(/aria-label="Construir: Construir el explorador C4"/)
@@ -25,7 +26,7 @@ test('Docs opens the portal through the browser and offers the C4 build', () => 
 // One block per repo, with or without a wiki: Generate on each (it chooses the repo and writes the starter brief), the
 // graph build only where there are pages to graph.
 test('one wiki block per repo of the project, each with its own Generate button', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   for (const repo of ['api', 'web', 'ui']) {
     expect(out).toContain(`Wiki · ${repo}`)
@@ -38,19 +39,21 @@ test('one wiki block per repo of the project, each with its own Generate button'
   expect(out).not.toContain('Grafo del wiki · web')           // …and not before the first generation
   expect(out).toMatch(/aria-label="Ver: Wiki · api"/)
   expect(out).not.toMatch(/aria-label="Ver: Wiki · web"/)
-  expect(out.match(/cu-btn--primary/g)).toHaveLength(1 + 3 + 1)   // Leer + a Generate per repo + Preguntar: one per card
+  expect(out.match(/cu-btn--primary/g)).toHaveLength(3)   // a Generate per repo: one per card
 })
 
-test('with no repos there is no wiki block; the Ask card is still there', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+test('with no repos there is no wiki block; Read still has the C4 and Ask cards', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render({ repos: [], docs: [] })
   expect(out).not.toContain('Generar la wiki')
   expect(out).toContain('Construir el explorador C4')
   expect(out).toContain('Preguntar con IA')
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
+  expect(render({ repos: [], docs: [] })).not.toContain('Generar la wiki')
 })
 
 test('Ask has a question field and a Preguntar button', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   expect(out).toContain('Preguntar con IA')
   expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
@@ -58,12 +61,14 @@ test('Ask has a question field and a Preguntar button', () => {
 })
 
 test('the strings exist in English', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   setLang('en')
-  const out = render()
+  let out = render()
   expect(out).toContain('Wiki · api')
   expect(out).toContain('Generate the wiki')
   expect(out).toContain('Picks this repo for a wiki and writes a starter brief without AI if it has none')
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  out = render()
   expect(out).toContain('Ask with AI')
   expect(out).toMatch(/aria-label="Question"/)
   expect(out).toMatch(/>Ask<\/button>/)
@@ -144,7 +149,7 @@ test("Generate is closed while another repo's wiki runs, and says whose", () => 
 })
 
 test('Docs reads the running wiki from the jobs store and closes Generate on the other repos', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const jobs = { get: () => ({ running: [{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }], recent: [], error: '' }),
     subscribe: () => () => {}, refresh: () => {} }
   const out = renderToStaticMarkup(<Docs srv={srv} jobs={jobs} app={{ openExternal: () => {} }} index={index} />)
@@ -162,4 +167,28 @@ test('a failed read of the wikis offers Retry, in Spanish and English', () => {
   setLang('en')
   expect(renderToStaticMarkup(<WikisUnread kept onRetry={() => {}} />)).toContain('state again: what you see may be out of date.')
   expect(renderToStaticMarkup(<WikisUnread kept={false} onRetry={() => {}} />)).toMatch(/>Try again<\/button>/)
+})
+
+test('the tabs follow the address: Read is current at #/docs, Wikis at #/docs/wikis', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  expect(render()).toMatch(/aria-current="page"[^>]*>Leer</)
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis' }
+  const wikisOut = render()
+  expect(wikisOut).toMatch(/aria-current="page"[^>]*>Wikis</)
+  expect(wikisOut).toContain('data-tour="docs-wikis"')
+  for (const label of ['Leer la documentación', 'Construir el explorador C4', 'Preguntar con IA']) expect(wikisOut).not.toContain(label)
+})
+
+test('Read has the tour targets and the team strip; Wikis has its own', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  for (const tour of ['docs-team', 'docs-portal', 'docs-c4', 'docs-ask']) expect(out).toContain(`data-tour="${tour}"`)
+  expect(out).not.toContain('data-tour="docs-wikis"')
+})
+
+test('at #/docs/interviews the Entrevistas tab is current and the Read buttons are absent', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/interviews' }
+  const out = render()
+  expect(out).toMatch(/aria-current="page"[^>]*>Entrevistas</)
+  expect(out).not.toContain('Leer la documentación')
 })

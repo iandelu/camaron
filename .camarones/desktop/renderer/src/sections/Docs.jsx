@@ -2,9 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card } from '@camaron/ui'
 import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiBlocks, wikiBusyWith,
   wikiError, wikisRead } from '../docs.js'
-import { useJob, useStore } from '../hooks.js'
+import { useHash, useJob, useStore } from '../hooks.js'
 import { errorLine } from '../onboarding.js'
-import { JobOutput, Page } from '../parts.jsx'
+import { JobOutput } from '../parts.jsx'
+import { viewOf } from '../nav.js'
+import { Place } from '../Place.jsx'
+import Commands from './Commands.jsx'
+import Decisions from './Decisions.jsx'
+import Interviews from './Interviews.jsx'
+import TeamStrip from './TeamStrip.jsx'
 import { t } from '../i18n.js'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
@@ -14,25 +20,45 @@ import { t } from '../i18n.js'
 const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
 export default function Docs({ srv, jobs, app, index }) {
+  const view = viewOf(useHash(), 'docs')
   const open = (hash) => openPortal(app, location.origin, hash)
-  const { rows, loading, failed, reload } = useWikis(srv)
-  const { running } = useStore(jobs || NO_JOBS)
   return (
-    <Page title={t('nav.docs')}>
+    <Place section="docs" view={view} head={<TeamStrip srv={srv} jobs={jobs} />}>
+      {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} open={open} index={index} />
+        : view === 'decisions' ? <Decisions srv={srv} />
+        : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
+        : <ReadView srv={srv} jobs={jobs} open={open} />}
+    </Place>
+  )
+}
+
+function ReadView({ srv, jobs, open }) {
+  return (
+    <>
       <div className="row" data-tour="docs-portal">
         <Button variant="primary" onClick={() => open('#/')}>{t('docs.read')}</Button>
         <Button onClick={() => open('#/review')}>{t('docs.review')}</Button>
         <Button variant="ghost" onClick={() => open('#/search')}>{t('docs.search')}</Button>
       </div>
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
+      <Ask srv={srv} open={open} />
+      <Commands srv={srv} jobs={jobs} section="docs" />
+    </>
+  )
+}
+
+function WikisView({ srv, jobs, open, index }) {
+  const { rows, loading, failed, reload } = useWikis(srv)
+  const { running } = useStore(jobs || NO_JOBS)
+  return (
+    <>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
       <div className="dk-stack" data-tour="docs-wikis">
         {wikiBlocks(index, rows).map((b) => (             // a failed read is said once, above: the blocks do not repeat it
           <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
             onView={() => open(b.hash)} onDone={reload} />))}
       </div>
-      <Ask srv={srv} open={open} />
-    </Page>
+    </>
   )
 }
 

@@ -1,5 +1,5 @@
 import { Button, EmptyState, fmtAgo, uiText } from '@camaron/ui'
-import { counts, FILTERS, filterRows } from '../../adr.js'
+import { ADR_BASE, counts, filterRows, FILTERS } from '../../adr.js'
 import { lang, t } from '../../i18n.js'
 import { Page } from '../../parts.jsx'
 import { StatusChip, chipOf, kindWord } from './Read.jsx'
@@ -30,7 +30,7 @@ function Row({ r, now }) {
   const chip = chipOf(r)
   return (
     <li>
-      <a className={'dk-adr-row' + (EDGE.includes(chip) ? ` is-${chip}` : '')} href={`#/decisions/${r.id}`}>
+      <a className={'dk-adr-row' + (EDGE.includes(chip) ? ` is-${chip}` : '')} href={`${ADR_BASE}/${r.id}`}>
         <span className="dk-adr-id">{r.id}</span>
         <span className="dk-adr-main">
           <span className="dk-adr-title">{r.title || r.id}</span>
@@ -49,7 +49,7 @@ function Strip({ list }) {
     <div className="dk-adr-strip">
       <p><strong>{t(list.length === 1 ? 'adr.cand.one' : 'adr.cand.many', { n: list.length })}</strong>
         {named ? <span className="muted">{` — ${named}`}</span> : null}</p>
-      <Button size="sm" href="#/decisions/candidates">{t('adr.cand.review')}</Button>
+      <Button size="sm" href={`${ADR_BASE}/candidates`}>{t('adr.cand.review')}</Button>
     </div>
   )
 }
@@ -69,7 +69,7 @@ export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candi
   const all = rows || []
   const cands = Array.isArray(candidates) ? candidates : null
   const strip = cands?.length ? <Strip list={cands} /> : null
-  const create = <Button variant="primary" href="#/decisions/new"><span aria-hidden="true">+</span> {t('adr.new')}</Button>
+  const create = <Button variant="primary" href={`${ADR_BASE}/new`}><span aria-hidden="true">+</span> {t('adr.new')}</Button>
   if (!all.length) return (
     <Page title={t('nav.decisions')}>
       <EmptyState title={t('adr.empty.title')} action={create}>{t('adr.empty.body')}</EmptyState>
@@ -79,7 +79,7 @@ export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candi
   const n = counts(all)
   const shown = filterRows(all, filter, q)
   const actions = (<>
-    <Button href="#/decisions/candidates">{cands ? t('adr.cand.button', { n: cands.length }) : t('adr.cand.title')}</Button>
+    <Button href={`${ADR_BASE}/candidates`}>{cands ? t('adr.cand.button', { n: cands.length }) : t('adr.cand.title')}</Button>
     {create}
   </>)
   return (

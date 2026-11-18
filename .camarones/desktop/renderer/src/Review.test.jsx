@@ -278,7 +278,7 @@ test('an accepted ADR reads with its status and who decided, and nothing to chan
   for (const s of ['Accepted (2026-10-21)', '2026-10-21 · LA, MP', 'A · Redis', 'Elegida', 'Aceptada']) expect(out).toContain(s)
   for (const s of ['>Aprobar<', '>Editar<', 'Elegir y seguir', 'Aceptar ADR', '>Rechazar<', 'Añadir punto', 'Añadir asistente', '<textarea', '<input'])
     expect(out, s).not.toContain(s)
-  expect(out).toContain('href="#/decisions/new"')
+  expect(out).toContain('href="#/docs/decisions/new"')
 })
 
 test('a rejected ADR says why; a superseded one, by what', () => {

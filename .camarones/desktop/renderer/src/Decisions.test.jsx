@@ -53,7 +53,7 @@ test('a decided legacy ADR reads as closed, with no way back into a review', () 
     const out = legacy({ adr: { id: '0003', title: 'JPA', chip, legacy: true, sections: { status: 'Accepted (2024-03-01)' } } })
     expect(out).not.toContain('Revisar en sesión')
     expect(out).toContain('Esta decisión está cerrada')
-    expect(out).toContain('href="#/decisions/new"')
+    expect(out).toContain('href="#/docs/decisions/new"')
   }
   expect(legacy({ adr: { id: '0003', chip: 'accepted', legacy: true, sections: {} } }, 'en')).toContain('This decision is closed')
   expect(legacy({ adr: { id: '0003', chip: 'unknown', legacy: true, sections: {} } })).toContain('Revisar en sesión')
@@ -80,7 +80,7 @@ test('the evidence step offers writing without AI and no research button in S1',
 // ---------- the list ----------
 test('each row links to its ADR and says its kind, repos and points', () => {
   const out = list({ rows: [row()], candidates: [] })
-  expect(out).toContain('href="#/decisions/0012"')
+  expect(out).toContain('href="#/docs/decisions/0012"')
   expect(out).toContain('Nueva · api · puntos decididos: 1/3')
   expect(list({ rows: [row({ kind: 'retro', repos: ['api', 'vets'], points: { total: 0, decided: 0 } })], candidates: [] }))
     .toContain('Retro · api, vets')
@@ -115,9 +115,9 @@ test('a search that finds nothing says so and how to get out', () => {
 
 test('the header offers the candidates with their number and a new ADR', () => {
   const out = list({ rows: [row()], candidates: [{}, {}, {}] })
-  expect(out).toContain('href="#/decisions/candidates"')
+  expect(out).toContain('href="#/docs/decisions/candidates"')
   expect(out).toContain('Candidatas · 3')
-  expect(out).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/decisions\/new">/)
+  expect(out).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/docs\/decisions\/new">/)
   expect(list({ rows: [row()], candidates: null })).not.toContain('Candidatas ·')     // still being read
   expect(list({ rows: [row()], candidates: [] })).not.toContain('dk-adr-strip')
 })
@@ -126,7 +126,7 @@ test('the strip names the first candidates, and the empty list keeps it', () => 
   const four = ['postgresql', 'kafka', 'redis', 'helm'].map((label) => ({ key: `x:${label}`, label }))
   expect(list({ rows: [row()], candidates: four })).toContain('postgresql, kafka, redis…')
   const empty = list({ rows: [], candidates: four })
-  expect(empty).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/decisions\/new">/)
+  expect(empty).toMatch(/<a class="cu-btn cu-btn--primary" href="#\/docs\/decisions\/new">/)
   expect(empty).toContain('4 decisiones en el código sin ADR')
 })
 
@@ -194,8 +194,8 @@ test('every place of the section draws before its data comes', () => {
   const waiting = () => new Promise(() => {})
   const srv = { get: waiting, post: waiting }
   try {
-    for (const [hash, shown] of [['#/decisions', 'cu-skel'], ['#/decisions/0012', 'ADR 0012'], ['#/decisions/candidates', 'Candidatas'],
-      ['#/decisions/new', 'Crear y reunir la evidencia']]) {
+    for (const [hash, shown] of [['#/docs/decisions', 'cu-skel'], ['#/docs/decisions/0012', 'ADR 0012'], ['#/docs/decisions/candidates', 'Candidatas'],
+      ['#/docs/decisions/new', 'Crear y reunir la evidencia']]) {
       globalThis.location = { hash }
       expect(html(<Decisions srv={srv} />), hash).toContain(shown)
     }
@@ -245,7 +245,7 @@ test('a legacy ADR already decided says what its file says about it', () => {
   const out = legacy({ adr: { id: '0009', title: 'EhCache', status: 'superseded', legacy: true,
     sections: { status: 'Superseded by [0010](0010-redis.md)' } } })
   expect(out).toContain('Superseded by')
-  expect(out).toContain('href="#/decisions/0010"')
+  expect(out).toContain('href="#/docs/decisions/0010"')
   expect(legacy({ adr: { id: '0003', status: 'proposed', legacy: true, sections: { status: 'Propuesto <!-- x -->' } } })).not.toContain('Propuesto')
 })
 
