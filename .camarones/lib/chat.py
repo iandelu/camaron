@@ -1,11 +1,12 @@
-"""The Docs chat's picker: every runner installed on this machine with the models it can be asked for, and the choice
-the panel opens with. It installs and configures nothing (H21): it only lists what the machine already has. An empty
-model id means no `--model`: the CLI or its own config decides."""
+"""The Docs chat: every runner installed on this machine with the models it can be asked for, the choice the panel
+opens with, and one turn — a question with the recent history, answered from the docs by Ask's core
+(answers.ask_docs) on the runner and model the person picked. It installs and configures nothing (H21): it only lists
+what the machine already has. An empty model id means no `--model`: the CLI or its own config decides."""
 from __future__ import annotations
 
 import re
 
-from . import agents, answers
+from . import agents, answers, usage
 from .app import services
 from .core import process
 from .core.fsutil import load_json, save_json
@@ -16,6 +17,8 @@ CLAUDE_MODELS = ("haiku", "sonnet", "opus")      # no unset entry: Claude's own 
 MODEL_SHAPE = re.compile(r"^[A-Za-z0-9_][\w.:/@-]*$")      # an argv element, never a shell word; match with fullmatch
 DEFAULT = "default"
 OLLAMA_TIMEOUT = 5                               # seconds `ollama list` may take: an unreachable OLLAMA_HOST hangs it
+HISTORY_TURNS, HISTORY_CHARS = 6, 4000           # context re-sent each turn: a bounded model's room beside the excerpts
+ROLES = ("user", "assistant")
 
 
 def ai_enabled() -> bool:
@@ -115,3 +118,50 @@ def default_choice(offered: list[dict] | None = None) -> dict | None:
     if not offered:
         return None
     return remembered(offered) or _asks(offered) or _cheapest(offered[0])
+
+
+def clean_history(history) -> list[dict]:
+    """The last HISTORY_TURNS non-empty turns as {role, text}, the oldest dropped until they fit in HISTORY_CHARS; a
+    single turn longer than that is cut to fit."""
+    if not isinstance(history, list):
+        raise ValueError("history: a list of {role, text}")
+    for h in history:
+        if not isinstance(h, dict) or h.get("role") not in ROLES or not isinstance(h.get("text"), str):
+            raise ValueError("history: each turn is {role: user|assistant, text}")
+    kept = [{"role": h["role"], "text": h["text"]} for h in history if h["text"].strip()][-HISTORY_TURNS:]
+    while len(kept) > 1 and sum(len(h["text"]) for h in kept) > HISTORY_CHARS:
+        kept.pop(0)
+    if kept:
+        kept[0]["text"] = kept[0]["text"][:HISTORY_CHARS]
+    return kept
+
+
+def check(body: dict) -> tuple[str, str | None, str, list[dict]]:
+    """(runner, model or None, question, history) from a turn's body, before any job starts. ValueError: a body the
+    app would never send; RuntimeError: no AI answer on this machine (the app words it from its prefix)."""
+    if not ai_enabled():
+        raise RuntimeError("no AI answer here: ask.ai is false in workspace.yaml")
+    offered = models()
+    if not offered:
+        raise RuntimeError("no AI answer here: no runner is installed on this machine")
+    q, runner, model = body.get("q"), body.get("runner"), body.get("model")
+    if not isinstance(q, str) or not q.strip():
+        raise ValueError("q: the question is empty")
+    if runner not in [r["runner"] for r in offered]:
+        raise ValueError(f"runner: {runner!r} is not installed on this machine")
+    if model is None:
+        model = ""
+    if not isinstance(model, str) or (model and not MODEL_SHAPE.fullmatch(model)):
+        raise ValueError(f"model: {model!r} is not a model name")
+    return runner, model or None, q.strip(), clean_history(body.get("history", []))
+
+
+def turn(runner: str, model: str | None, q: str, history: list[dict], log) -> dict:
+    """One answer, as a job: the log gets the answer's text (never the JSON the prompt asks for), the job's result
+    everything else. Nothing found is an answer of None, not a failure; a timeout raises Ask's error."""
+    got = answers.ask_docs(q, runner, model, tuple(history))
+    for line in (got["answer"] or "").splitlines():
+        log(line)
+    remember(runner, model)
+    usage.record("app:chat", channel="human", hit=bool(got["answer"]))
+    return {"rc": 0, "result": got}

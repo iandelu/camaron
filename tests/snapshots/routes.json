@@ -80,6 +80,11 @@
     "access": "app"
   },
   {
+    "method": "POST",
+    "path": "/api/app/chat",
+    "access": "app"
+  },
+  {
     "method": "GET",
     "path": "/api/app/chat/models",
     "access": "app"
