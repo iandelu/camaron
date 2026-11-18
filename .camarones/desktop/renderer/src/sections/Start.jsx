@@ -408,14 +408,19 @@ function Arch({ srv, jobs, app, state, setState, onSkip }) {
 }
 
 // ---------- 6. Ready: the first run closes (firstrun.json done, a checkpoint commit); the window goes to the Summary ----------
-function Intro({ srv, app, closed: already }) {
+// The window skipped its catch-up on open while the first run was ahead, so closing it brings in the team's work now
+// (the C4 explorer included). A failed catch-up is the Summary's to say, never a failed close.
+export const closeFirstRun = (srv, jobs) => srv.post('app/onboard/done', {})
+  .then(() => srv.post('app/catch-up', {}).then(() => { jobs?.refresh() }, () => {}))
+
+function Intro({ srv, jobs, app, closed: already }) {
   const [error, setError] = useState('')
   const closed = useRef(already)                      // a first run finished earlier is not closed (and committed) again
   const close = () => {
     closed.current = true
     setError('')
     // refused with `done`: the CLI closed it meanwhile, which is what was asked
-    srv.post('app/onboard/done', {}).catch((e) => { if (alreadyDone(e)) return; closed.current = false; setError(say(e)) })
+    closeFirstRun(srv, jobs).catch((e) => { if (alreadyDone(e)) return; closed.current = false; setError(say(e)) })
   }
   useEffect(() => { if (!closed.current) close() }, [])
   return (

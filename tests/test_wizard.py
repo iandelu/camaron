@@ -418,3 +418,23 @@ def test_a_sync_conflict_says_the_sh_line_and_does_not_raise(kit, fake_wizard, m
     w = fake_wizard(["share", True])
     w.do_share()
     assert w.t("sh_conflict", detail="origin/main") in said
+
+
+def test_a_finished_first_run_catches_up_before_the_menu(kit, fake_wizard, monkeypatch):
+    order = []
+    monkeypatch.setattr(kit.wizard.onboard, "mode", lambda saved: "join")
+    monkeypatch.setattr(kit.wizard.W, "first_run", lambda self, start=0, mode="new": order.append("first_run") or True)
+    monkeypatch.setattr(kit.wizard.W, "catch_up", lambda self: order.append("catch_up"))
+    monkeypatch.setattr(kit.wizard.W, "dashboard", lambda self: order.append("menu"))
+    kit.plan.sync()
+    fake_wizard(["exit"])._run()
+    assert order[:3] == ["first_run", "catch_up", "menu"]
+
+
+def test_an_unfinished_first_run_does_not_catch_up(kit, fake_wizard, monkeypatch):
+    order = []
+    monkeypatch.setattr(kit.wizard.onboard, "mode", lambda saved: "join")
+    monkeypatch.setattr(kit.wizard.W, "first_run", lambda self, start=0, mode="new": order.append("first_run") and False)
+    monkeypatch.setattr(kit.wizard.W, "catch_up", lambda self: order.append("catch_up"))
+    fake_wizard([])._run()
+    assert order == ["first_run"]

@@ -1029,6 +1029,7 @@ class W:
         if mode != "done":
             if not self.first_run(resume_step(state), mode=mode):
                 return
+            self.catch_up()
         else:
             self.catch_up()
             self.usage_notice()
