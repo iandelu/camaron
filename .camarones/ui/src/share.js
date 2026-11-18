@@ -33,3 +33,33 @@ export function fetchSay(fetched, remote = '') {
   if (REASONS.includes(fetched.reason)) return reasonSay(fetched, remote)
   return { key: '', vars: {}, detail: fetched.detail || '', token: '' }
 }
+
+const n0 = (v) => v || 0
+
+export function syncPrimary(s) {
+  const behind = n0(s?.behind) > 0
+  const mine = n0(s?.ahead) > 0 || (s?.pending || []).length > 0
+  if (behind && mine) return 'share'
+  if (behind) return 'pull'
+  return mine ? 'push' : null
+}
+
+function stepSay(prefix, r, remote) {
+  if (r?.status === 'error' && REASONS.includes(r.reason)) return reasonSay(r, remote)
+  return { key: `sy.${prefix}.${r?.status}`, vars: { n: r?.commits ?? 0, files: (r?.files || []).join(', '), detail: r?.detail || '' },
+    detail: '', token: '' }
+}
+
+export const pullSay = (r, remote = '') => stepSay('pull', r, remote)
+export const pushSay = (r, remote = '') => stepSay('push', r, remote)
+export const pullOk = (r) => !!r && ['up-to-date', 'pulled', 'nothing'].includes(r.status)
+export const pushOk = (r) => !!r && ['pushed', 'nothing'].includes(r.status)
+
+export function catchUpSay(c) {
+  const p = c?.pull
+  if (!c || c.status === 'busy' || !p) return null
+  if (p.status === 'pulled') return { key: 'cu.pulled', vars: { n: p.commits }, tone: 'info' }
+  if (p.status === 'conflict') return { key: 'cu.conflict', vars: { files: (p.files || []).join(', ') }, tone: 'warn' }
+  if (p.status === 'error') return { key: 'cu.offline', vars: {}, tone: 'warn' }
+  return null
+}

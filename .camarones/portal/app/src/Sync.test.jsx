@@ -47,3 +47,10 @@ test('a failed check for news says why instead of a bare code', () => {
   expect(odd).toContain('fatal: odd')
   expect(renderToStaticMarkup(<FetchLine fetched={{ ok: true, reason: '' }} remote={REMOTE} />)).toBe('')
 })
+
+test('a pull and a push each read with their own sentences', () => {
+  as('en')
+  const out = renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'conflict', files: ['docs/a.md'], commits: 0 }} remote={REMOTE} />)
+  expect(out).toContain('clash with yours in docs/a.md')
+  expect(renderToStaticMarkup(<ShareLine action="push" result={{ status: 'pushed' }} remote={REMOTE} />)).toContain('role="status"')
+})

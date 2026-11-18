@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { fetchSay, shareOk, shareSay } from './share.js'
+import { catchUpSay, fetchSay, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from './share.js'
 
 const REMOTE = 'https://gitlab-central.example.space/team/docs.git'
 const fatal = "fatal: unable to access 'https://gitlab-central.example.space/team/docs.git/': Could not resolve host: gitlab-central.example.space"
@@ -45,4 +45,38 @@ test('a failed check for news reads like a failed share; a good one, or none, sa
   expect(fetchSay({ ok: false, reason: 'unknown', detail: 'fatal: odd' }, REMOTE)).toEqual({ key: '', vars: {}, detail: 'fatal: odd', token: '' })
   expect(fetchSay({ ok: true, reason: '' }, REMOTE)).toBeNull()
   expect(fetchSay(null, REMOTE)).toBeNull()
+})
+
+test('the useful action is the primary one', () => {
+  expect(syncPrimary({ ahead: 0, behind: 3, pending: [] })).toBe('pull')
+  expect(syncPrimary({ ahead: 1, behind: 0, pending: [] })).toBe('push')
+  expect(syncPrimary({ ahead: 0, behind: 0, pending: ['docs/a.md'] })).toBe('push')
+  expect(syncPrimary({ ahead: 1, behind: 2, pending: [] })).toBe('share')
+  expect(syncPrimary({ ahead: null, behind: null, pending: [] })).toBe(null)
+})
+
+test('a pull names how many changes came in, or the files that clash', () => {
+  expect(pullSay({ status: 'pulled', commits: 2, files: [] }).key).toBe('sy.pull.pulled')
+  expect(pullSay({ status: 'pulled', commits: 2, files: [] }).vars.n).toBe(2)
+  expect(pullSay({ status: 'conflict', commits: 0, files: ['docs/a.md', 'docs/b.md'] }).vars.files).toBe('docs/a.md, docs/b.md')
+  expect(pullSay({ status: 'error', reason: 'network', host: 'git.acme', detail: 'fatal: x' }, 'https://git.acme/d.git').key).toBe('sy.err.network')
+})
+
+test('a push has its own keys and the same success rule shape', () => {
+  expect(pushSay({ status: 'behind' }).key).toBe('sy.push.behind')
+  expect(pushSay({ status: 'error', reason: 'auth', host: 'git.acme' }, REMOTE).token).toBe('git.acme')
+  expect(['up-to-date', 'pulled', 'nothing'].every((status) => pullOk({ status }))).toBe(true)
+  expect(['conflict', 'busy', 'error', 'no-remote'].some((status) => pullOk({ status }))).toBe(false)
+  expect(['pushed', 'nothing'].every((status) => pushOk({ status }))).toBe(true)
+  expect(['behind', 'blocked', 'error', 'no-remote'].some((status) => pushOk({ status }))).toBe(false)
+  expect(pullOk(null) || pushOk(null)).toBe(false)
+})
+
+test('the summary speaks only when the catch-up brought something or failed', () => {
+  expect(catchUpSay(null)).toBe(null)
+  expect(catchUpSay({ status: 'busy', pull: null })).toBe(null)
+  expect(catchUpSay({ status: 'done', pull: { status: 'up-to-date' } })).toBe(null)
+  expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 4 } })).toEqual({ key: 'cu.pulled', vars: { n: 4 }, tone: 'info' })
+  expect(catchUpSay({ status: 'done', pull: { status: 'conflict', files: ['docs/a.md'] } }).tone).toBe('warn')
+  expect(catchUpSay({ status: 'done', pull: { status: 'error', reason: 'not-found' } }).key).toBe('cu.offline')
 })
