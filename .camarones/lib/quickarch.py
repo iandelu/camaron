@@ -298,6 +298,16 @@ def scan() -> dict:
     return model
 
 
+def _code_pair(anchors) -> dict:
+    top = sorted(anchors or ())[:3]
+    return {"code": "[" + ", ".join(_quote(a) for a in top) + "]"} if top else {}
+
+
+def _meta_block(pairs: dict, pad: str) -> str:
+    """One `metadata { ... }` line holding every pair (a second block would hide the first from the C4 reader)."""
+    return f"{pad}metadata {{ " + " ".join(f"{k} {v}" for k, v in pairs.items()) + " }"
+
+
 def _code_meta(anchors, pad: str) -> list[str]:
     """`metadata { code [...] }` (up to 3 anchors, sorted) as the lines an element block carries; none without any."""
     top = sorted(anchors or ())[:3]
@@ -318,8 +328,9 @@ def render_c4(model: dict, project: str) -> dict[str, str]:
              "model {", "  user = actor 'User' 'Uses the system' { #ai-draft }", "", f"  {sys_id} = system '{q(project)}' {{"]
     for n, r in model["repos"].items():
         lines += [f"    {ids[n]} = {kind_map.get(r['kind'], 'service')} '{q(n)}' {{", "      #ai-draft",
-                  f"      technology '{q(r['tech'])}'", f"      metadata {{ repo '{q(r.get('repo', n))}' }}",
-                  *_code_meta((model.get("repo_evidence") or {}).get(n), "      "), "    }"]
+                  f"      technology '{q(r['tech'])}'",
+                  _meta_block({"repo": f"'{q(r.get('repo', n))}'", **_code_pair((model.get("repo_evidence") or {}).get(n))}, "      "),
+                  "    }"]
     ext_ids = {}
     for key, d in model["dbs"].items():
         i = ident(f"db {d['label']} {d['name']}")

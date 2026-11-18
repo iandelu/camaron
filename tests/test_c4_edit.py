@@ -358,3 +358,27 @@ def test_relation_without_block_has_no_metadata(arch):
     from lib import c4edit
     (arch / "model.c4").write_text(MODEL, encoding="utf-8", newline="\n")
     assert all(r["metadata"] == {} and r["tags"] == [] for r in c4edit.index()["relations"])
+
+
+TWO_BLOCKS = """model {
+  shop = system 'Shop' {
+    api = service 'Api' {
+      #ai-draft
+      metadata { repo 'api' }
+      metadata { code ['api:pom.xml'] }
+    }
+  }
+}
+"""
+
+
+def test_repeated_metadata_blocks_are_read_as_one_and_a_confirm_leaves_one_block(arch):
+    from lib import c4edit
+    (arch / "repos" / "orders.c4").unlink()
+    (arch / "model.c4").write_text(TWO_BLOCKS, encoding="utf-8", newline="\n")
+    assert c4edit.index()["elements"]["shop.api"]["metadata"] == {"repo": "api", "code": ["api:pom.xml"]}
+    c4edit.confirm(["shop.api"], by="ana", today="2026-10-23")
+    text = (arch / "model.c4").read_text(encoding="utf-8")
+    assert text.count("metadata") == 1
+    assert c4edit.index()["elements"]["shop.api"]["metadata"] == {
+        "repo": "api", "code": ["api:pom.xml"], "confirmed-by": "ana", "confirmed-at": "2026-10-23"}

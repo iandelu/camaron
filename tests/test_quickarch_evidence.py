@@ -17,7 +17,9 @@ def test_elements_carry_full_anchors_and_the_scan_is_a_port(kit):
     scan = quickarch.scan()
     assert scan["repo_evidence"]["api"] == ["api:pom.xml"]
     model = quickarch.render_c4(scan, "demo")["model.c4"]
-    assert "metadata { code ['api:pom.xml'] }" in model
+    assert model.count("metadata") >= 1 and "metadata { repo 'api' code ['api:pom.xml'] }" in model
+    block = model[model.index("api = service"):].split("    }", 1)[0]
+    assert block.count("metadata") == 1
     assert kit.services.arch_scan.scan is quickarch.scan
 
 
@@ -25,7 +27,7 @@ def test_an_element_names_at_most_three_sorted_anchors(kit):
     from lib import quickarch
     model = {"repos": {"api": {"kind": "service", "tech": "Java"}}, "dbs": {}, "brokers": set(), "idps": set(),
              "edges": [], "caches": set(), "repo_evidence": {"api": ["api:d", "api:b", "api:a", "api:c"]}}
-    assert "metadata { code ['api:a', 'api:b', 'api:c'] }" in quickarch.render_c4(model, "demo")["model.c4"]
+    assert "metadata { repo 'api' code ['api:a', 'api:b', 'api:c'] }" in quickarch.render_c4(model, "demo")["model.c4"]
 
 
 def test_a_path_with_a_quote_is_written_exactly_as_it_is(kit):
@@ -34,7 +36,7 @@ def test_a_path_with_a_quote_is_written_exactly_as_it_is(kit):
              "brokers": set(), "idps": set(), "caches": set(), "edges": [("api", "w", "sync", "calls (HTTP)")],
              "repo_evidence": {"api": ["api:it's/pom.xml"]}, "edge_evidence": {("api", "w", "calls (HTTP)"): "api:it's/A.java#L2"}}
     text = quickarch.render_c4(model, "demo")["model.c4"]
-    assert "metadata { code [\"api:it's/pom.xml\"] }" in text
+    assert "metadata { repo 'api' code [\"api:it's/pom.xml\"] }" in text
     assert "{ metadata { code \"api:it's/A.java#L2\" } }" in text
 
 
@@ -68,3 +70,10 @@ def test_a_saved_draft_leaves_no_repo_or_relation_without_evidence(kit, monkeypa
     assert repos and "no-evidence" not in repos.values()
     call = next(r for r in states["relations"].values() if r["label"] == "calls (HTTP)")
     assert call["own"] == "fresh"
+
+
+def test_a_drafted_repo_reads_back_with_its_repo_and_its_code(kit, monkeypatch):
+    from lib import c4edit, quickarch
+    monkeypatch.setattr(quickarch, "which", lambda name: None)
+    quickarch.save(quickarch.draft(log=lambda _: None))
+    assert c4edit.index()["elements"]["demo.api"]["metadata"] == {"repo": "api", "code": ["api:pom.xml"]}

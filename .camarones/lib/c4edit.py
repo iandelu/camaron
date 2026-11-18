@@ -56,9 +56,9 @@ def _inline_body(line: str) -> str:
 
 
 def _inline_meta(text: str) -> dict:
-    if not (m := re.search(r"\bmetadata\s*\{([^}]*)\}", text)):
+    if "metadata" not in text:
         return {}
-    return {n: _meta_value(v) for n, v in META_PAIR.findall(m.group(1))}
+    return {n: _meta_value(v) for m in re.finditer(r"\bmetadata\s*\{([^}]*)\}", text) for n, v in META_PAIR.findall(m.group(1))}
 
 
 def _block_meta(lines: list[str], depths: list[int], i: int, j: int) -> dict:
@@ -66,7 +66,7 @@ def _block_meta(lines: list[str], depths: list[int], i: int, j: int) -> dict:
     for k in range(i, j + 1):
         if re.match(r"^\s*metadata\s*\{", lines[k]):
             e = _end(lines, k, depths)
-            meta = {n: _meta_value(v) for n, v in META_PAIR.findall(" ".join(lines[k:e + 1]).split("{", 1)[1])}
+            meta |= {n: _meta_value(v) for n, v in META_PAIR.findall(" ".join(lines[k:e + 1]).split("{", 1)[1])}
     return meta
 
 
@@ -191,7 +191,7 @@ def _details(texts: dict[str, str], el: dict) -> dict:
         if m := PROP.match(lines[i]):
             props[m.group(1)] = unquote(m.group(2))
         elif re.match(r"^\s*metadata\s*\{", lines[i]):
-            meta = _block_meta(lines, depths, i, i)
+            meta |= _block_meta(lines, depths, i, i)
     el = {**el, "tags": tags, "technology": props.get("technology", ""), "metadata": meta}
     if not el["headerDescription"] and "description" in props:
         el["description"] = props["description"]
@@ -336,9 +336,12 @@ def _set_meta(lines: list[str], el: dict, meta: dict) -> list[str]:
     own = _own(lines, el, depths)
     ind = el["indent"] + "  "
     block = [f"{ind}metadata {{", *(f"{ind}  {k} {_meta_text(v)}" for k, v in meta.items()), f"{ind}}}"]
-    at = next((i for i in own if re.match(r"^\s*metadata\s*\{", lines[i])), None)
-    if at is not None:
-        return lines[:at] + block + lines[_end(lines, at, depths) + 1:]
+    blocks = [i for i in own if re.match(r"^\s*metadata\s*\{", lines[i])]
+    if blocks:
+        gone = {j for i in blocks for j in range(i, _end(lines, i, depths) + 1)}
+        out = [l for j, l in enumerate(lines) if j not in gone or j == blocks[0]]
+        at = blocks[0] - sum(1 for j in gone if j < blocks[0])
+        return out[:at] + block + out[at + 1:]
     after = el["start"]
     for i in own:
         if not (lines[i].strip().startswith("#") or PROP.match(lines[i])):

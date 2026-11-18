@@ -85,7 +85,7 @@ def test_the_c4_draft_is_valid_and_readable(firebase, kit, monkeypatch):
     assert "worker = mobileApp 'worker'" in c4
     assert "-[sync]-> enjoy.webCloudFunctions 'calls'" in c4
     block = c4.split("webCloudFunctions = service")[1].split("\n    }")[0]
-    assert "metadata { repo 'web' }" in block and "Cloud Functions · Node.js" in block
+    assert "metadata { repo 'web' code" in block and "Cloud Functions · Node.js" in block
 
 
 @needs("likec4")
