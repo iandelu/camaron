@@ -32,6 +32,12 @@ export const movedRoute = (hash) => {
   return `#/${MOVED[name]}${rest}`
 }
 
+// The place a guide's go: marker names (old names follow their moves), or null when it names nothing known.
+export const goPlace = (target) => {
+  const place = (movedRoute(`#/${target}`) || `#/${target}`).slice(2).split('?')[0]
+  return PLACES.includes(place) ? place : null
+}
+
 const current = (hash) => movedRoute(hash) || String(hash || '')
 
 export function sectionOf(hash, flags) {

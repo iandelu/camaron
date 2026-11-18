@@ -8,7 +8,7 @@ import { TourOffer } from './sections/Summary.jsx'
 import { SettingsView } from './sections/Settings.jsx'
 import { entries } from './palette.js'
 import { tourAlias, tourIds, TOURS } from './tour.js'
-import { MACHINE, PLACES, PROJECT, placeOf } from './nav.js'
+import { MACHINE, PROJECT, goPlace } from './nav.js'
 import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -42,7 +42,12 @@ test('the first step has no Back, the last says Done, a missing target says so',
 
 test('every Show me in the guides starts a tour that exists, every Go to names a place (old names follow their moves)', () => {
   for (const [f, id] of markers('tour')) expect(tourIds(), `${f}: tour:${id}`).toContain(tourAlias(id))
-  for (const [f, s] of markers('go')) expect(PLACES, `${f}: go:${s}`).toContain(placeOf(`#/${s}`, { kitdev: true }))
+  for (const [f, s] of markers('go')) expect(goPlace(s), `${f}: go:${s}`).not.toBeNull()
+})
+
+test('a go: marker naming nothing is not a place', () => {
+  for (const bad of ['bogus', 'quality/nope', 'docs/nope']) expect(goPlace(bad), bad).toBeNull()
+  expect(['plan', 'machine', 'libs', 'decisions', 'team', 'kitdev'].map(goPlace)).toEqual(['flow/plan', 'settings', 'quality/libs', 'docs/decisions', 'docs', 'kitdev'])
 })
 
 test('every step points at something the app marks with data-tour', () => {

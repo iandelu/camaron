@@ -4,7 +4,7 @@ import { chapters, guideAt, guideHref, inline, linkTarget, parse, searchGuides }
 import { inPanel, sectionFor } from '../catalog.js'
 import { portalUrl } from '../docs.js'
 import { useHash } from '../hooks.js'
-import { PLACES, movedRoute } from '../nav.js'
+import { goPlace } from '../nav.js'
 import { Failed, Page } from '../parts.jsx'
 import { catalog } from './Commands.jsx'
 import { lang, t } from '../i18n.js'
@@ -27,8 +27,8 @@ const remember = (v) => { try { localStorage.setItem(KEY, v) } catch { /* a priv
 // command the catalog does not list or has not sent yet, a tour that does not exist).
 export function markerAction({ kind, target }, { sections = [], commands = [], tours = [] }) {
   if (kind === 'go') {                                 // a place, or a view of one (go:docs/decisions); old names follow their moves
-    const place = (movedRoute(`#/${target}`) || `#/${target}`).slice(2)
-    return PLACES.includes(place) && sections.includes(place.split('/')[0])
+    const place = goPlace(target)
+    return place && sections.includes(place.split('/')[0])
       ? { label: t('gd.go', { s: t('nav.' + place.split('/').pop()) }), href: `#/${place}` } : null
   }
   if (kind === 'cmd') {
