@@ -106,6 +106,17 @@ def test_decisions_come_accepted_first_and_by_citation_then_by_code(ctx_world):
     assert c4_lookup.decisions_about("shop.billing") == []
 
 
+def test_short_names_as_pages_wrote_them_before_name_their_element(ctx_world):
+    from lib.app import c4_lookup
+    docs = ctx_world.root / "docs"
+    (docs / "decisions" / "0001-retries.md").write_text(DECISION.replace("c4:shop.payments", "c4:payments"),
+                                                        encoding="utf-8", newline="\n")
+    (docs / "flows" / "charges.md").write_text(PAGE.replace("api:src/main/java/demo/Api.java", "c4:payments"),
+                                               encoding="utf-8", newline="\n")
+    assert [d["path"] for d in c4_lookup.decisions_about("shop.payments")] == ["decisions/0001-retries.md"]
+    assert c4_lookup.lookup("shop.payments")["elements"][0]["pages"] == ["flows/charges.md"]
+
+
 def test_covering_is_most_specific_first_and_ends_with_the_repo_container(ctx_world):
     from lib.app import c4_lookup
     write_model(ctx_world, """model {

@@ -283,6 +283,30 @@ def test_c4_sources_resolve_through_fragments(c4):
     assert not c4.c4_exists("shop.nope") and not c4.c4_exists("  ")
 
 
+def test_short_names_as_pages_wrote_them_before_still_resolve(c4, kit):
+    """Before v2 a `c4:` source was found by name in the .c4 files: `c4:orders` and `c4:api.orders` keep naming
+    shop.api.orders, follow its element and are no orphan source for `check`."""
+    page(kit, "flows/a.md", ["c4:orders"])
+    page(kit, "flows/b.md", ["c4:api.orders"])
+    page(kit, "flows/c.md", ["c4:db"])                                   # no evidence, not confirmed → suspect
+    assert c4.c4_exists("orders") and c4.c4_exists("api.orders") and not c4.c4_exists("nope")
+    assert c4.fingerprint("c4:orders") == c4.fingerprint("c4:api.orders") == c4.fingerprint("c4:shop.api.orders")
+    c4.stamp_all()
+    assert [c4.status(p)["state"] for p in ("flows/a.md", "flows/b.md", "flows/c.md")] == ["fresh", "fresh", "suspect"]
+    errors, _ = kit.services.doc_status.check()
+    assert not any("sources no longer exist" in e for e in errors)
+    model(kit, FRAGMENT.replace("'Orders'", "'Order intake'"), "repos/api.c4")
+    assert c4.status("flows/a.md")["state"] == "suspect"
+
+
+def test_a_short_name_more_than_one_element_ends_with_is_found_as_before(c4, kit):
+    model(kit, MODEL.replace(GHOST, GHOST + "    web = service 'Web' {\n      orders = component 'Web orders'\n"
+                                            "    }\n"))
+    assert c4.c4_element("orders") == "shop.web.orders"                  # model.c4 sorts first, as v1 read them
+    assert c4.c4_element("api.orders") == "shop.api.orders" and c4.c4_element("nope") is None
+    assert c4.fingerprint("c4:orders") == c4.fingerprint("c4:shop.web.orders")
+
+
 def test_stamps_from_the_current_kit_migrate(c4, kit, monkeypatch):
     """A fresh.json written before v2 (no "v" in a c4 stamp): unchanged elements are re-stamped silently, once."""
     from lib.common import save_json
@@ -455,6 +479,14 @@ def test_old_stamps_wait_for_a_machine_that_has_the_model(c4, kit):
     (arch / "model.c4").write_text(MODEL, encoding="utf-8", newline="\n")
     (arch / "repos" / "api.c4").write_text(FRAGMENT, encoding="utf-8", newline="\n")
     assert [c4.status(p)["state"] for p in written] == ["fresh", "fresh"]
+
+
+def test_a_short_name_the_kit_stamped_before_v2_migrates(c4, kit):
+    old = c4._c4_lines("orders")
+    v1 = {"h": c4._hash(c4._norm(old)), "n": len(c4._norm(old)), "k": "c4"}
+    old_stamps(c4, kit, {"flows/a.md": {"c4:orders": v1}})
+    assert c4.status("flows/a.md")["state"] == "fresh"
+    assert stamps(c4)["pages"]["flows/a.md"]["sources"]["c4:orders"] == c4.fingerprint("c4:shop.api.orders")
 
 
 def test_a_model_that_does_not_parse_marks_no_old_stamp(c4, kit, monkeypatch):

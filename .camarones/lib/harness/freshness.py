@@ -124,9 +124,35 @@ def _c4_text(block: list[str]) -> list[str]:
     return _norm("".join(p if i % 2 else re.sub(r"#[\w-]+|[{}]", " ", p) for i, p in enumerate(parts)).split("\n"))
 
 
+def _c4_find(name: str, model) -> tuple[str | None, list[str] | None]:
+    """The element a `c4:` source names and its lines: by FQN, by a dotted suffix one FQN alone ends with (`orders`,
+    `api.orders`, as pages wrote them before v2), else where the v1 lookup finds it first (files in _model()'s order,
+    as v1 read them); the FQN is None when the index has no element there (a model c4edit cannot read)."""
+    files, idx, _ = model
+    els, name = idx["elements"], name.strip()
+    fqn = c4edit._resolve(name, None, els)
+    if fqn is None and name:
+        from .symbols import locate
+        rel, found = next(((r, f) for r in files if (f := locate(files[r], name, ".c4"))), (None, None))
+        if found is None:
+            return None, None
+        fqn = next((f for f, el in els.items() if (el["file"], el["start"]) == (rel, found[0])), None)
+        if fqn is None:
+            return None, files[rel][found[0]:found[1] + 1]
+    if fqn is None:
+        return None, None
+    el = els[fqn]
+    return fqn, files[el["file"]][el["start"]:el["end"] + 1]
+
+
+def c4_element(name: str, model=None) -> str | None:
+    """The FQN of the element a `c4:<name>` source names (see _c4_find)."""
+    return _c4_find(name, model or _model())[0]
+
+
 def c4_exists(element: str, model=None) -> bool:
     """`c4:<element>` names an element the C4 model still has (fragments and `extend` included)."""
-    return element.strip() in (model or _model())[1]["elements"]
+    return _c4_find(element, model or _model())[1] is not None
 
 
 def _block(ref: str, read=None) -> list[str] | None:
@@ -156,11 +182,10 @@ def fingerprint(ref: str, read=None, model=None) -> dict | None:
     if k == "doc":
         return {"k": "doc"}                         # L3: a cited page counts through its own state, not its text
     if k == "c4":
-        files, idx, _ = model or _model()
-        el = idx["elements"].get(str(ref).strip()[3:].strip())
-        if el is None:
+        block = _c4_find(str(ref).strip()[3:], model or _model())[1]
+        if block is None:
             return None
-        text = _c4_text(files[el["file"]][el["start"]:el["end"] + 1])
+        text = _c4_text(block)
         return {"h": _hash(text), "n": len(text), "k": "c4", "v": 2}
     if k == "symbol":
         block = _block(ref, read)
@@ -484,7 +509,8 @@ def states() -> dict[str, dict]:
     model = _model() if any(cited.values()) else None
     stamp_all(pages, model)
     data = _load()["pages"]
-    c4 = {"model": model, "cited": {f for logical, fqns in cited.items() if logical not in decisions for f in fqns}}
+    c4 = {"model": model, "cited": {c4_element(n, model) for logical, names in cited.items() if logical not in decisions
+                                    for n in names} - {None}}
     out = {}
     for logical, (fm, _) in pages.items():
         srcs = _sources(fm)
@@ -504,14 +530,14 @@ def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> 
     the cited elements and, once first needed, their states."""
     if kind(s) != "c4":
         return check_source(s, stamp)
-    fqn = s.strip()[3:].strip()
+    name = s.strip()[3:]
     if decision:
-        return "fresh" if c4_exists(fqn, c4["model"]) else "missing"
+        return "fresh" if c4_exists(name, c4["model"]) else "missing"
     result = check_source(s, stamp, model=c4["model"])
     if result == "fresh":
         if "elements" not in c4:
             c4["elements"] = _cited_states(c4["model"], c4["cited"])
-        el = c4["elements"].get(fqn) or {}
+        el = c4["elements"].get(c4_element(name, c4["model"])) or {}
         if el.get("state") == "broken" or (el.get("state") == "no-evidence" and not el.get("confirmed")):
             return "changed"
     return result

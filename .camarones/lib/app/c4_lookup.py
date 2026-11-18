@@ -43,6 +43,11 @@ def covering(repo: str, rel: str, elements: dict | None = None) -> list[str]:
     return [fqn for _, fqn in sorted(found)]
 
 
+def _named(name: str, els: dict) -> str:
+    """The element a `c4:` source names: its FQN, or a short name one FQN alone ends with (as pages wrote it before)."""
+    return c4edit._resolve(name, None, els) or name
+
+
 def _code_of(source: str) -> tuple[str, str] | None:
     if source.startswith("c4:"):
         return None
@@ -79,7 +84,7 @@ def decisions_about(fqn: str, limit: int = 2, elements: dict | None = None, page
     mine = _code_anchors(fqn, els)
     ranked = []
     for p in decision_pages() if pages is None else pages:
-        if any(fqn == c or fqn.startswith(c + ".") for c in p["c4"]):
+        if any(fqn == c or fqn.startswith(c + ".") for c in (_named(n, els) for n in p["c4"])):
             group = 0
         elif any(anchors.covers(a, repo, path) for a in mine for repo, path in p["code"]):
             group = 1
@@ -167,7 +172,8 @@ def lookup(target: str) -> dict:
             into, outgoing = _relations(fqn, rep, policy)
             item.update(title=el.get("title", ""), kind=el.get("kind", ""), description=el.get("description", ""),
                         anchors=shown(st["anchors"]), relations_in=into, relations_out=outgoing,
-                        decisions=decisions_about(fqn, 5, els, decisions), pages=cited.get(fqn, []))
+                        decisions=decisions_about(fqn, 5, els, decisions),
+                        pages=list(dict.fromkeys(p for n, ps in cited.items() if _named(n, els) == fqn for p in ps)))
         out["elements"].append(item)
     return out
 
