@@ -66,8 +66,8 @@ export function TerminalButton({ srv }) {
 export function SyncResult({ kind, result, remote, srv }) {
   if (kind === 'share') return <ShareResult result={result} remote={remote} srv={srv} />
   if (!result) return null
-  const step = kind === 'pull' ? result.pull : result
-  if (kind === 'pull' && !step) return <p className="small" role="status">{t('sy.pull.busy')}</p>
+  const step = kind === 'pull' ? result.pull ?? (result.status === 'busy' ? null : result) : result
+  if (!step) return <p className="small" role="status">{t('sy.pull.busy')}</p>
   const said = SAY[kind](step, remote)
   const m = t(said.key, said.vars)
   const title = m === said.key ? step.status : m

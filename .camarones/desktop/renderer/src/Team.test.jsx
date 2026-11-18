@@ -91,7 +91,7 @@ test('behind the team, bringing in is the primary button and clicking it asks fo
   expect(primary[0].props.children).toBe('Traer cambios')
   primary[0].props.onClick()
   expect(calls).toEqual(['pull'])
-  expect(bs.map((b) => b.props.children)).toEqual(['Traer cambios', 'Subir cambios', 'Sincronizar con el equipo', 'Comprobar'])
+  expect(bs.map((b) => b.props.children)).toEqual(['Traer cambios', 'Subir cambios', 'Sincronizar', 'Comprobar'])
   setLang('en')
   expect(buttons(SyncActions({ s, busy: '', onRun: () => {}, onCheck: () => {} })).map((b) => b.props.children)[2]).toBe('Sync with the team')
 })
@@ -118,4 +118,10 @@ test('a push posts sync/push; a pull conflict names the files and offers a termi
   expect(term.type).toBe(TerminalButton)
   term.type(term.props).props.onClick()
   expect(post).toHaveBeenLastCalledWith('app/terminal', {})
+})
+
+test('a pull request that fails shows the error, not the busy line; only a busy run says another job has the docs', () => {
+  const failed = renderToStaticMarkup(<SyncResult kind="pull" result={{ status: 'error', detail: 'sync/pull: 500' }} remote={REMOTE} srv={{}} />)
+  expect(failed).toContain('El repo del equipo ha respondido: sync/pull: 500')
+  expect(failed).not.toContain('Otro trabajo')
 })

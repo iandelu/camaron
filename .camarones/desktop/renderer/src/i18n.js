@@ -95,7 +95,7 @@ export const S = {
     'iv.noForm': 'El cuestionario aún no está listo: lo prepara la unidad questionnaire.', 'iv.units': 'Entrevistas con un agente',
     'tm.board': 'Ver el tablero', 'tm.ci': 'Ver la CI', 'tm.repo': 'Repo del equipo', 'tm.save': 'Guardar',
     'tm.noRemote': 'Aún no hay repo del equipo: pega su URL.', 'tm.ahead': 'Por enviar', 'tm.behind': 'Por traer',
-    'tm.pending': 'Sin guardar', 'tm.pull': 'Traer cambios', 'tm.push': 'Subir cambios', 'tm.sync': 'Sincronizar con el equipo', 'tm.pulling': 'Trayendo…', 'tm.pushing': 'Subiendo…', 'tm.working': 'Trabajando con el equipo…', 'tm.line': '{behind} por traer · {ahead} por subir · última vez {when}', 'tm.never': 'nunca', 'tm.terminal': 'Abrir una terminal aquí', 'tm.check': 'Comprobar', 'tm.auto': 'Subir al guardar',
+    'tm.pending': 'Sin guardar', 'tm.pull': 'Traer cambios', 'tm.push': 'Subir cambios', 'tm.sync': 'Sincronizar', 'tm.pulling': 'Trayendo…', 'tm.pushing': 'Subiendo…', 'tm.working': 'Trabajando con el equipo…', 'tm.line': '{behind} por traer · {ahead} por subir · última vez {when}', 'tm.never': 'nunca', 'tm.terminal': 'Abrir una terminal aquí', 'tm.check': 'Comprobar', 'tm.auto': 'Subir al guardar',
     'tm.fetchFailed': 'No he podido mirar el repo del equipo', 'tm.trust': 'Lo que llegó con el repo del equipo',
     'tm.approve': 'Aprobar ({n})', 'tm.approveTitle': '¿Aprobar en esta máquina?',
     'tm.approveText': 'Se cargará en esta máquina lo que llegó con el repo del equipo:', 'tm.approveGo': 'Sí, aprobar',
