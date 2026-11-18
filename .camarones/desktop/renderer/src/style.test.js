@@ -195,3 +195,24 @@ test('the chat panel is sized and placed by the main pane, docked and as a drawe
   expect(drawer).not.toMatch(/(?:^|[\s;])(?:position|position-anchor|inset|top|right|bottom|height):/)   // the pane's rectangle, as docked
   expect(drawer).toMatch(/margin:\s*0/)
 })
+
+// The review lives inside Docs: presenting takes the Docs page (the one that holds the review) to the whole height and
+// hides its title, the team strip and the tabs, so only the review stays on screen; the review's parts keep their gap.
+test('presenting a review hides the Docs chrome around it and keeps the height chain', () => {
+  const exact = (sel) => css.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\>]/g, '\\$&') + '\\s*\\{([^}]*)\\}'))?.[1] ?? ''
+  const page = exact('.dk-page:has(.dk-present)')
+  expect(page).toMatch(/flex:\s*1/)
+  expect(page).toMatch(/min-height:\s*0/)
+  const hidden = css.match(/\.dk-page:has\(\.dk-present\)\s*>\s*:is\(([^)]*(?:\([^)]*\))?[^)]*)\)\s*\{([^}]*)\}/)
+  expect(hidden?.[2]).toMatch(/display:\s*none/)
+  for (const sel of ['h1', '[data-tour="docs-team"]', '.dk-guide-tabs']) expect(hidden?.[1]).toContain(sel)
+  expect(css).not.toMatch(/\.dk-present \.dk-page\b/)
+  expect(rule('.dk-rv-screen')).toMatch(/display:\s*flex[\s\S]*flex-direction:\s*column/)
+})
+
+// Docs holds the review and the chat: presenting steps the chat's grid aside, so the page is again the pane's own flex child
+// and the height chain above holds, and the panel goes with the rest of the app around the review.
+test('presenting a review passes through the chat\'s grid and hides the panel', () => {
+  expect(css).toMatch(/\.dk-docs:has\(\.dk-present\)\s*\{[^}]*display:\s*contents/)
+  expect(css).toMatch(/\.dk:has\(\.dk-present\) \.dk-chat\s*\{[^}]*display:\s*none/)
+})

@@ -1,6 +1,7 @@
 import { Button, EmptyState } from '@camaron/ui'
 import { S, t } from '../../i18n.js'
 import { Page } from '../../parts.jsx'
+import { ADR_BASE } from '../../adr.js'
 
 // Candidatas (spec §4.4): the decisions the code already took that no ADR names (GET app/adr/candidates), grouped by
 // what they are. Each one opens the new-ADR form as a retroactive ADR, its title a question and Toca its manifests.
@@ -34,7 +35,7 @@ export function CandidatesView({ rows, onPick }) {
   if (!list.length) return (
     <Page title={t('adr.cand.title')}>
       <EmptyState title={t('adr.cand.none')} action={
-        <div className="row"><Button variant="primary" href="#/decisions/new">{t('adr.new')}</Button><Button href="#/quality/libs">{t('adr.cand.libs')}</Button></div>}>
+        <div className="row"><Button variant="primary" href={`${ADR_BASE}/new`}>{t('adr.new')}</Button><Button href="#/quality/libs">{t('adr.cand.libs')}</Button></div>}>
         {t('adr.cand.noneBody')}
       </EmptyState>
     </Page>

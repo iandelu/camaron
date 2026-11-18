@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Chip, Keys } from '@camaron/ui'
-import { acceptBlock, addAttendees, blockedPart, choiceBody, decided, firstOpen, keyEffect, newPointBody, nextPart, outrun, partKind, pickOf,
-  pointOf, reviewKey, reviewParts, todoSections, typedDraft } from '../../adr.js'
+import { ADR_BASE, acceptBlock, addAttendees, blockedPart, choiceBody, decided, firstOpen, keyEffect, newPointBody, nextPart, outrun, partKind, pickOf, pointOf, reviewKey, reviewParts, todoSections, typedDraft } from '../../adr.js'
 import { t } from '../../i18n.js'
 import { initials } from '../../nav.js'
 import { chord, GO, typing } from '../../palette.js'
@@ -166,7 +165,7 @@ export function ReviewView({ adr, current, present = false, ui = {}, busy = fals
         <Stepper phase={adr.state?.phase} mode={adr.state?.mode} />
         {closed ? (
           <StatusNote adr={adr}>
-            <p className="muted small">{t('adr.review.closed')} <a href="#/decisions/new">{t('adr.new')}</a></p>
+            <p className="muted small">{t('adr.review.closed')} <a href={`${ADR_BASE}/new`}>{t('adr.new')}</a></p>
           </StatusNote>) : null}
         {notice ? <Aviso tone="info" title={notice} /> : null}
         <div className="dk-rv" aria-busy={busy || undefined}>

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
 import { DocsIcon } from './DocsIcons.jsx'
 
-const NAMES = ['none', 'generating', 'fresh', 'stale', 'old', 'failed', 'blocked', 'docs', 'wikis', 'c4', 'read', 'review', 'search']
+const NAMES = ['none', 'generating', 'fresh', 'stale', 'old', 'failed', 'blocked', 'docs', 'wikis', 'c4', 'read', 'review', 'search', 'ci']
 const draw = (name) => renderToStaticMarkup(<DocsIcon name={name} />)
 
 test.each(NAMES)('%s is one inline svg, hidden from readers, in the text colour', (name) => {

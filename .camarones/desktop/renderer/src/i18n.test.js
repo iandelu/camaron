@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
 import { machineLang, S, setLang, t } from './i18n.js'
+import { MACHINE, PROJECT, VIEWS } from './nav.js'
 
 test('every key a component names exists', () => {
   const src = fileURLToPath(new URL('.', import.meta.url))
@@ -10,7 +11,7 @@ test('every key a component names exists', () => {
   const used = new Set(files.flatMap((f) => [...readFileSync(join(src, f), 'utf-8').matchAll(/\bt\('([\w.-]+)'\s*[,)]/g)].map((m) => m[1])))
   expect([...used].filter((k) => !(k in S.es))).toEqual([])
   const families = { grp: ['awaiting', 'blocked', 'doing', 'ready', 'waiting', 'done'], job: ['running', 'done', 'failed', 'stopped'],
-    nav: ['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine', 'kitdev'], fr: ['suspect', 'stale'],
+    nav: [...PROJECT, ...MACHINE, ...Object.values(VIEWS).flat()], fr: ['suspect', 'stale'],         // nav.js: every place and tab
     bl: ['created', 'updated', 'edited', 'human'],
     tk: ['mcp', 'hook', 'setting', 'codex', 'skill', 'file', 'plugin'], ts: ['new', 'changed'],      // lib/trust.py
     pk: ['checks', 'exporters', 'hooks', 'mcp', 'pipelines', 'prompts', 'runners', 'skills', 'types'],     // harness/plugins.py KINDS

@@ -1,66 +1,102 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
-import { buildFailed, c4Card, docsHealth, lastMiss, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
+import { route as adrRoute } from '../adr.js'
+import { buildFailed, c4Card, docsHealth, lastMiss, openPortal, readViewers, seeksStale, startBuild, startWiki, viewersRead, wikiAction,
   wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
-import { useJob, useStore } from '../hooks.js'
+import { useHash, useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
-import { JobOutput, Page } from '../parts.jsx'
+import { JobOutput } from '../parts.jsx'
+import { viewOf } from '../nav.js'
+import { Place } from '../Place.jsx'
 import { t } from '../i18n.js'
+import Commands from './Commands.jsx'
+import Decisions from './Decisions.jsx'
 import { AskEntry, DocsChat } from './DocsChat.jsx'
-import { DocsHealth } from './DocsHealth.jsx'
+import { DocsHealth, scrollToStale } from './DocsHealth.jsx'
 import { DocsIcon } from './DocsIcons.jsx'
 import { DocsMisses } from './DocsMisses.jsx'
+import Interviews from './Interviews.jsx'
+import TeamStrip from './TeamStrip.jsx'
 
 export { AnswerView } from './DocsChat.jsx'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
 // href the window would follow). The portal has no app token (only the board's), so what it shows but cannot run is
 // run here: the C4 explorer, each repo's wiki (generate it, build its graph) and the docs chat, on the window's chat
-// store, in a panel beside the page. One wiki runs at a time: while one runs (the jobs store), Generate is closed on
-// the other repos. The models are read on mount, so the picker is ready when the panel opens; closing it gives the
-// focus back to what opened it.
+// store. One wiki runs at a time: while one runs (the jobs store), Generate is closed on the other repos.
 const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
 const QUIET = { messages: [], running: false, runners: null, choice: null, ai: true, loadError: '' }
 const NO_CHAT = { ...NO_JOBS, get: () => QUIET, load: () => {}, send: () => {}, pick: () => {}, clear: () => {} }
+
+// The chat panel is the place's, not a tab's: it stays beside every tab while open, in the grid column the wrapper keeps for
+// it. The models are read on mount, so the picker is ready when it opens; closing it gives the focus back to what opened it,
+// or to the page when that went with its tab.
 export default function Docs({ srv, jobs, chat, app, index }) {
-  const open = (hash) => openPortal(app, location.origin, hash)
-  const wikis = useWikis(srv)
-  const { viewers, reload: reloadViewers } = useViewers(srv)
-  const { running } = useStore(jobs || NO_JOBS)
-  const runs = wikiRuns(running)
-  const seenRuns = useRef(runs)
-  useEffect(() => {                                 // a run that ended, whoever started it: its card and the header catch up
-    if (wikiRunsEnded(seenRuns.current, runs).length) wikis.reload()
-    seenRuns.current = runs
-  }, [runs.join('\n')])
+  const hash = useHash()
+  const view = viewOf(hash, 'docs')
+  const open = (to) => openPortal(app, location.origin, to)
   const talk = chat || NO_CHAT
-  const missed = lastMiss(useStore(talk).messages)
   const [chatting, setChatting] = useState(false)
   const opener = useRef(null)
   useEffect(() => { talk.load() }, [])
   const ask = () => { opener.current = document.activeElement; setChatting(true) }
-  const close = () => { setChatting(false); opener.current?.focus() }
-  const drafts = index?.summary?.draft || 0
+  const close = () => {
+    setChatting(false)
+    const back = opener.current?.isConnected ? opener.current : document.getElementById('main')
+    back?.focus()
+  }
+  // the wiki grid fills the wide page; so does one ADR open (its review's two columns, its evidence's two cards)
+  const wide = view === 'wikis' || (view === 'decisions' && adrRoute(hash).view === 'adr')
   return (
     <div className={chatting ? 'dk-docs with-chat' : 'dk-docs'}>
-      <Page title={t('nav.docs')} wide>
-        <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
-        <div className="row" data-tour="docs-portal">
-          <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
-          <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
-          <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
-        </div>
-        <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
-          onDone={reloadViewers} /></div>
-        <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
-        <DocsMisses srv={srv} version={missed} />
-        <AskEntry chat={talk} onAsk={ask} />
-      </Page>
+      <Place section="docs" view={view} wide={wide} head={<TeamStrip srv={srv} jobs={jobs} />}>
+        {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} index={index} open={open} seek={seeksStale(hash)} />
+          : view === 'decisions' ? <Decisions srv={srv} />
+          : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
+          : <ReadView srv={srv} jobs={jobs} chat={talk} index={index} open={open} onAsk={ask} />}
+      </Place>
       {chatting ? <DocsChat chat={talk} onClose={close} onOpen={open} /> : null}
     </div>
   )
+}
+
+// The health header, the portal's buttons (Review with its draft count), the C4 card, the chat's entry and, once a question
+// found nothing, the questions nobody answered (re-read after the chat's newest reply that found nothing).
+function ReadView({ srv, jobs, chat, index, open, onAsk }) {
+  const wikis = useWikis(srv, jobs)
+  const { viewers, reload: reloadViewers } = useViewers(srv)
+  const missed = lastMiss(useStore(chat).messages)
+  const drafts = index?.summary?.draft || 0
+  return (
+    <>
+      <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
+      <div className="row" data-tour="docs-portal">
+        <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
+        <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
+        <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
+        <Button variant="ghost" onClick={() => open('#/ci')}><DocsIcon name="ci" />{t('docs.ci')}</Button>
+      </div>
+      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
+        onDone={reloadViewers} /></div>
+      <AskEntry chat={chat} onAsk={onAsk} />
+      <DocsMisses srv={srv} version={missed} />
+      <Commands srv={srv} jobs={jobs} section="docs" />
+    </>
+  )
+}
+
+// The wiki cards. `seek`: the address asks for the first stale card (the health header's chip), looked for once the cards are read.
+function WikisView({ srv, jobs, index, open, seek }) {
+  const wikis = useWikis(srv, jobs)
+  const sought = useRef(!seek)
+  useEffect(() => {
+    if (sought.current || !wikis.rows) return
+    sought.current = true
+    scrollToStale()
+  }, [wikis.rows])
+  return <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={wikis.running} open={open} />
 }
 
 // The wiki cards and, once a read failed, the one notice above them (the cards do not repeat it). `wikis` is useWikis' state.
@@ -79,8 +115,9 @@ export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, rel
 
 // Each repo's wiki state (GET wikis, read-only: cloned, chosen, brief, pages, whether it can be generated), read once and
 // again after a run or a Retry; rows null while loading or when the first read failed (the blocks then keep Generate
-// closed). A failed re-read keeps the last good rows (wikisRead); `failed` brings the Retry.
-function useWikis(srv) {
+// closed). A failed re-read keeps the last good rows (wikisRead); `failed` brings the Retry. A run that ends, whoever started
+// it (the jobs store's `running`), reads them again, so its card and the header catch up.
+function useWikis(srv, jobs) {
   const [state, setState] = useState({ rows: null, loading: true, failed: false })
   const alive = useRef(true)
   const reload = () => srv.get('wikis').then((rows) => { if (alive.current) setState((s) => wikisRead(s, { rows })) },
@@ -90,7 +127,14 @@ function useWikis(srv) {
     reload()
     return () => { alive.current = false }
   }, [])
-  return { ...state, reload }
+  const { running } = useStore(jobs || NO_JOBS)
+  const runs = wikiRuns(running)
+  const seen = useRef(runs)
+  useEffect(() => {
+    if (wikiRunsEnded(seen.current, runs).length) reload()
+    seen.current = runs
+  }, [runs.join('\n')])
+  return { ...state, reload, running }
 }
 
 // GET viewers, read once and again after the C4 build (`reload`); null until read and when the first read failed, so the header

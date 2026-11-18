@@ -106,14 +106,15 @@ test('the header has Clear and Close; Clear is closed with nothing to clear', ()
   expect(panel()).toMatch(/>Close<\/button>/)
 })
 
-test('no agent on this machine: the way out is Machine, the composer is closed, there is no picker', () => {
+test('no agent on this machine: the way out is Settings, the composer is closed, there is no picker', () => {
   const out = panel({ runners: [], choice: null })
   expect(out).toContain('No hay ningún agente instalado en esta máquina que pueda responder.')
-  expect(out).toMatch(/<a [^>]*href="#\/machine"[^>]*>Prepararla en Máquina<\/a>/)
+  expect(out).toMatch(/<a [^>]*href="#\/settings"[^>]*>Prepararla en Ajustes<\/a>/)
   expect(field(out)).toContain('disabled')
   expect(select(out)).toBe('')
   setLang('en')
   expect(panel({ runners: [], choice: null })).toContain('No agent that can answer is installed on this machine.')
+  expect(panel({ runners: [], choice: null })).toMatch(/>Set it up in Settings<\/a>/)
 })
 
 test('ask.ai off: the existing sentence, the composer closed, and the picker shown but off', () => {

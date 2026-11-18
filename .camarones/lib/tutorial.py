@@ -95,12 +95,12 @@ PAGES = {
 
    repo-a/openwiki  -->  enlace a cam-docs/wikis/repo-a (sin versionar en el repo)
 
-   generar o actualizar:  app > Docs > tarjeta del repo  |  asistente > Wikis  |  camaron wiki repo-a
+   generar o actualizar:  app > Docs > Wikis > tarjeta del repo  |  asistente > Wikis  |  camaron wiki repo-a
    leerla:  portal (navegador) > Docs > Wikis""",
          "text": "OpenWiki escribe una wiki estándar de cada repo donde cada afirmación está anclada a un fichero y línea "
                  "del código: la IA no se inventa cosas y cualquiera puede comprobarlas. La wiki se guarda en "
                  "cam-docs/wikis/<repo>, así que el repo de servicio queda limpio. La generas o actualizas desde la "
-                 "app (Docs, en la tarjeta del repo: «Generar la wiki», o «Actualizar» cuando el código ha cambiado, con el log en directo), desde el asistente (📚 Wikis) o con "
+                 "app (Docs › Wikis, en la tarjeta del repo: «Generar la wiki», o «Actualizar» cuando el código ha cambiado, con el log en directo), desde el asistente (📚 Wikis) o con "
                  "«camaron wiki <repo>» en una terminal; la lees en el portal del navegador (Docs › Wikis), donde sus páginas "
                  "aparecen en wikis/<repo>/. Cada wiki es una sesión de agente completa, así que solo la llevan los repos "
                  "que elijas (asistente > Wikis > elegir), y la primera espera al repo-brief, que le da el rol y el glosario "
@@ -210,43 +210,40 @@ PAGES = {
                  "Sincronizar), Calidad (Salud, Librerías, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o "
                  "lleva la pregunta a Preguntar, que da las secciones que responden con su cita, sin IA. El portal "
                  "nunca ejecuta nada en tu máquina: lanzar el plan, generar wikis, construir el explorador C4 o "
-                 "responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Máquina › Guía) o "
+                 "responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Guía) o "
                  "en docs/guides/portal.md."},
         {"icon": "🖥", "title": "La app de escritorio, por tareas",
          "art": r"""
    +----------------------------------------------------------------------------+
-   | camarón  bench > Resumen                    [ Buscar o ir a…  Ctrl K ]     |
-   | [BE] Resumen      SIGUIENTE PASO                                           |
+   | camarón  bench > Flujo                      [ Buscar o ir a…  Ctrl K ]     |
+   | [BE] Flujo        SIGUIENTE PASO                                           |
    | [CL] Tablero      Descubrimiento de api                                    |
-   | [+ ] Plan         [Claude Code v]  ( Empezar con Claude Code )             |
-   |      Entrevistas                                                           |
-   |      Equipo       A esta máquina le falta algo: gitleaks   ( Verlo )       |
-   |      Calidad                                                               |
+   | [+ ] Calidad      [Claude Code v]  ( Empezar con Claude Code )             |
    |      Docs                                                                  |
-   |      Máquina      TRABAJOS  Hecho  doctor  ahora              Historial    |
+   |                   A esta máquina le falta algo: gitleaks   ( Verlo )       |
+   |      Ajustes      TRABAJOS  Hecho  doctor  ahora              Historial    |
    |      Guía                                                                  |
    +----------------------------------------------------------------------------+""",
          "text": "`camaron app` (o asistente → 🖥️ App de escritorio) abre la app donde se opera el proyecto, una "
-                 "ventana por proyecto: a la izquierda el raíl con tus proyectos y las secciones, por tareas. Resumen "
-                 "(el siguiente paso con un solo botón, el mismo que propone este asistente), Tablero, Decisiones (los ADR: plantear una decisión, reunir su evidencia sin IA, revisarla por partes y aceptarla; ver «Decisiones: los ADR»), Plan (ejecutar "
+                 "ventana por proyecto: a la izquierda el raíl con tus proyectos y los lugares, por tareas. Flujo: Resumen "
+                 "(el siguiente paso con un solo botón, el mismo que propone este asistente) y su pestaña Plan (ejecutar "
                  "las unidades listas o el piloto automático, que se saltan una unidad con su sesión abierta; cada "
                  "unidad con el botón que la mueve, por estado, por fases o en el lienzo, donde cada unidad que trabaja "
                  "una ejecución se abre como una terminal en vivo, y Empezar, Seguir o Mantenerla al día abren una "
                  "terminal en la que le escribes al agente: F6 sale de ella, Cerrar deja la unidad en pausa y la "
                  "actualización de la doc va en Sesiones sueltas; mientras corre el piloto, Tomar el control abre en el "
                  "nodo la conversación de una unidad en marcha para corregirla, y Devolver al piloto se la devuelve; "
-                 "debajo, lo que lleva costado el plan), Entrevistas, Equipo (compartir, aprobar lo que llegó con el repo del equipo, "
-                 "plugins), Calidad (la salud del proyecto: máquina, documentación y código, repo a repo; el escaneo de "
+                 "debajo, lo que lleva costado el plan); Tablero (su menú Añadir: Historia abre las Historias del portal en el navegador); Calidad (la salud del proyecto: máquina, documentación y código, repo a repo; el escaneo de "
                  "secretos y los hooks del método; y su vista Librerías: buscar vulnerabilidades repo a repo, con su "
                  "barra, Parar y un tick al acabar; en qué repos está cada una, primero donde tiene avisos; y "
-                 "Actualizar en una rama nueva, también un módulo Maven cuya versión fija el pom padre) y Docs (abre el portal en tu navegador, construye "
-                 "el explorador C4, genera las wikis y responde con IA); debajo, Máquina (setup, que dice «Lista» cuando "
+                 "Actualizar en una rama nueva, también un módulo Maven cuya versión fija el pom padre) y Docs (una franja del equipo para compartir encima de sus pestañas: Leer abre el portal en tu navegador, construye "
+                 "el explorador C4 y responde con IA; Wikis genera las wikis; Decisiones, los ADR: plantear una decisión, reunir su evidencia sin IA, revisarla por partes y aceptarla, ver «Decisiones: los ADR»; y Entrevistas); debajo, Ajustes (General: setup, que dice «Lista» cuando "
                  "ya corrió en esta máquina, idioma y modelos, "
-                 "dónde se abren las sesiones, tokens, repos, el kit y desinstalar) y Guía: todo esto explicado a fondo, con botones que te llevan "
+                 "dónde se abren las sesiones y repos; Tokens; Skills; Plugins; Confianza, para aprobar lo que llegó con el repo del equipo; y Kit, con el kit y desinstalar) y Guía: todo esto explicado a fondo, con botones que te llevan "
                  "a cada sitio y un recorrido que señala cada control. Cada botón ejecuta un comando de la CLI y su "
                  "salida queda en el panel de trabajos; «Todos los comandos» tiene el resto, con su formulario. Ctrl K "
                  "/ ⌘K va a una sección, a otro proyecto, a un comando o a un capítulo de la guía, y g y una letra "
-                 "salta de sección (g s, g a, g p, g q, g l, g h…). El portal no ejecuta nada en tu máquina: por eso esos "
+                 "salta de sección (g f, g b, g q, g d, g m, g h; las letras de antes siguen valiendo). El portal no ejecuta nada en tu máquina: por eso esos "
                  "botones solo están aquí. La primera vez instala Electron en ~/.camarones/desktop (necesita Node.js); "
                  "sin él, la CLI y este asistente funcionan igual."},
         {"icon": "📦", "title": "Instalar y abrir la app de escritorio",
@@ -270,9 +267,9 @@ PAGES = {
                  "es la barra de la ventana (arrástrala para moverla) y tus proyectos están en el raíl de la izquierda: otro "
                  "se abre en la misma ventana, que vuelve a salir donde la dejaste. Ctrl o Cmd + Shift + O (o el + del raíl) vuelve a la "
                  "pantalla de inicio, «Ver portal» abre el portal en tu navegador y el botón ⋯ de la barra abre el menú de la app, "
-                 "con «Abrir en el navegador». Abre en el Resumen, o en el asistente de primer arranque si el proyecto aún no está "
+                 "con «Abrir en el navegador». Abre en Flujo, o en el asistente de primer arranque si el proyecto aún no está "
                  "preparado; lo que hay en cada sección está en la página anterior. Un buen primer paso: "
-                 "Máquina › Guía y «Hacer el recorrido», y después Calidad › Requisitos y herramientas para ver qué falta. Si algo "
+                 "Ajustes › General y «Hacer el recorrido», y después Calidad › Requisitos y herramientas para ver qué falta. Si algo "
                  "falla, el aviso dice qué; borrar ~/.camarones/desktop fuerza a descargar Electron otra vez."},
         {"icon": "🚀", "title": "El primer arranque en la app",
          "art": r"""
@@ -433,7 +430,7 @@ PAGES = {
                  "Tu gambita de prácticas ya ha colgado los post-its en su sitio: tú solo los mueves."},
         {"icon": "📜", "title": "Decisiones: los ADR, con la evidencia delante",
          "art": r"""
-   Decisiones (g a)                       docs/decisions/0007-why-jpa.md
+   Docs › Decisiones (g d)                docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Aceptada   Why spring... |     type: decision      x-owner: human
    | 0008  En revision  Cache de... |     ## Status   Accepted (2026-10-28)
@@ -442,8 +439,8 @@ PAGES = {
 
    problema -> evidencia -> revision -> aceptado
    camaron adr candidates | new | pack | write | accept | reject""",
-         "text": "Un ADR deja por escrito por qué el código es como es. La sección «Decisiones» de la app de escritorio "
-                 "(`g a`) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente "
+         "text": "Un ADR deja por escrito por qué el código es como es. La pestaña «Decisiones» de Docs en la app de escritorio "
+                 "(`g d` y la pestaña; `g a` sigue valiendo) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente "
                  "instalado. El ADR vive en `docs/decisions/NNNN-titulo.md` y lo que la revisión va decidiendo, en "
                  "`docs/.work/adr/NNNN.yaml`.\n\n"
                  "Plantear. «Nuevo ADR» pide un título y de qué va: nuevo (algo que el código aún no hace) o retroactivo "
@@ -631,11 +628,11 @@ PAGES = {
 
    repo-a/openwiki  -->  link to cam-docs/wikis/repo-a (not versioned in the repo)
 
-   generate or update:  app > Docs > the repo's card  |  wizard > Wikis  |  camaron wiki repo-a
+   generate or update:  app > Docs > Wikis > the repo's card  |  wizard > Wikis  |  camaron wiki repo-a
    read it:  portal (browser) > Docs > Wikis""",
          "text": "OpenWiki writes a standard wiki for each repo where every claim is anchored to a file and line of code, "
                  "so the AI can't make things up and anyone can check. The wiki is stored in cam-docs/wikis/<repo>, so "
-                 "the service repo stays clean. Generate or update it from the app (Docs, on the repo's card: “Generate the wiki”, or “Update” once the code has changed, with a live log), from "
+                 "the service repo stays clean. Generate or update it from the app (Docs › Wikis, on the repo's card: “Generate the wiki”, or “Update” once the code has changed, with a live log), from "
                  "the wizard (📚 Wikis) or with “camaron wiki <repo>” in a terminal; you read it in the browser portal "
                  "(Docs › Wikis), where its pages show up as wikis/<repo>/. "
                  "Each wiki is a full agent run, so only the repos you choose get one (wizard > Wikis > choose), and the "
@@ -746,43 +743,39 @@ PAGES = {
                  "any page or view, or takes the question to Ask, which gives the sections that answer with their "
                  "citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, "
                  "building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the "
-                 "app (Machine › Guide) or in docs/guides/portal.md."},
+                 "app (Guide) or in docs/guides/portal.md."},
         {"icon": "🖥", "title": "The desktop app, by task",
          "art": r"""
    +----------------------------------------------------------------------------+
-   | camarón  bench > Summary                    [ Search or go to…  Ctrl K ]   |
-   | [BE] Summary      NEXT STEP                                                |
+   | camarón  bench > Flow                       [ Search or go to…  Ctrl K ]   |
+   | [BE] Flow         NEXT STEP                                                |
    | [CL] Board        Discovery of api                                         |
-   | [+ ] Plan         [Claude Code v]  ( Start with Claude Code )              |
-   |      Interviews                                                            |
-   |      Team         This machine is missing something: gitleaks  ( See )     |
-   |      Quality                                                               |
+   | [+ ] Quality      [Claude Code v]  ( Start with Claude Code )              |
    |      Docs                                                                  |
-   |      Machine      JOBS  Done  doctor  just now                 History     |
+   |                   This machine is missing something: gitleaks  ( See )     |
+   |      Settings     JOBS  Done  doctor  just now                 History     |
    |      Guide                                                                 |
    +----------------------------------------------------------------------------+""",
          "text": "`camaron app` (or wizard → 🖥️ Desktop app) opens the app where you operate the project, one window "
-                 "per project: at the left, the rail with your projects and the sections, by task. Summary (the next "
-                 "step with one button, the one this wizard suggests), Board, Decisions (the ADRs: frame a decision, gather its evidence without AI, review it part by part and accept it; see “Decisions: the ADRs”), Plan (run the ready units or the "
+                 "per project: at the left, the rail with your projects and the places, by task. Flow: Summary (the next "
+                 "step with one button, the one this wizard suggests) and its Plan tab (run the ready units or the "
                  "autopilot, which skip a unit whose session is open; each unit with the button that moves it, by "
                  "state, by phase or on the canvas, where each unit a run works on opens as a live terminal, and Start, "
                  "Continue or Keep it current open a terminal you type to the agent in: F6 leaves it, Close pauses the "
                  "unit and the docs update sits under Loose sessions; while the autopilot runs, Take control opens a "
                  "working unit's conversation in its node for you to correct it, and Hand back to the pilot returns it; "
-                 "below, what the plan has cost so far), "
-                 "Interviews, "
-                 "Team (share, approve what came with the team's repo, plugins), Quality (the project's health: "
+                 "below, what the plan has cost so far); Board (its Add menu: Story opens the portal's Stories in the browser); Quality (the project's health: "
                  "machine, docs and code, repo by repo; the secret scan and the method hooks; and its Libraries view: scan for vulnerabilities repo by repo, with its bar, Stop and a tick when it ends; which repos "
                  "each one is in, the flagged ones first; and Update on a new branch, a Maven module whose parent pom "
                  "sets the version included) and "
-                 "Docs (opens the portal in your browser, builds the C4 explorer, generates the wikis and answers with "
-                 "AI); below, Machine (setup, which says \"Ready\" once it has run on this machine, language and models, "
-                 "where sessions open, tokens, repos, the kit and uninstall) and Guide: "
+                 "Docs (a team strip for sharing above its tabs: Read opens the portal in your browser, builds the C4 explorer and answers with "
+                 "AI; Wikis generates the wikis; Decisions, the ADRs: frame a decision, gather its evidence without AI, review it part by part and accept it, see “Decisions: the ADRs”; and Interviews); below, Settings (General: setup, which says \"Ready\" once it has run on this machine, language and models, "
+                 "where sessions open and repos; Tokens; Skills; Plugins; Trust, to approve what came with the team's repo; and Kit, with the kit and uninstall) and Guide: "
                  "all of this explained in depth, with buttons that take you to each place and a tour that points at "
                  "every control. Every button runs a CLI command and its output lands in the jobs panel; “All "
                  "commands” has the rest, each with its form. Ctrl K / ⌘K goes to a section, another project, a "
-                 "command or a chapter of the guide, and g then a letter jumps between sections (g s, g a, g p, g q, g l, g "
-                 "h…). The portal runs nothing on your machine: that is why those buttons are only here. The first "
+                 "command or a chapter of the guide, and g then a letter jumps between sections (g f, g b, g q, g d, g m, g "
+                 "h; the old letters still work). The portal runs nothing on your machine: that is why those buttons are only here. The first "
                  "time it installs Electron into ~/.camarones/desktop (needs Node.js); without it the CLI and this "
                  "wizard work the same."},
         {"icon": "📦", "title": "Installing and opening the desktop app",
@@ -792,7 +785,7 @@ PAGES = {
    | 2  Node.js 22 or newer         node --version                              |
    |                                if missing: camaron doctor --install node   |
    | 3  open the app                camaron app                                 |
-   |                                (the first time it downloads Electron, ~100 MB) |
+   |                                (first time: downloads Electron, ~100 MB)   |
    |                                                                            |
    |    inside a project       ->  opens that project                           |
    |    in any other folder    ->  start: pick a folder · join · recent         |
@@ -805,9 +798,9 @@ PAGES = {
                  "start screen (next page). Inside, the header is the window's title bar (drag it to move the window) and your projects sit on the "
                  "rail at the left: another one opens in the same window, which comes back where you left it. Ctrl or Cmd + "
                  "Shift + O (or the rail's +) goes back to the start screen, \"View portal\" opens the portal in your browser "
-                 "and the bar's ⋯ button opens the app menu, with \"Open in the browser\". It opens on the Summary, or on "
+                 "and the bar's ⋯ button opens the app menu, with \"Open in the browser\". It opens on Flow, or on "
                  "the first-run wizard if the project is not set up yet; what each section holds is on the page before. A good "
-                 "first step: Machine › Guide and “Take the tour”, then Quality › Requirements and tools to see what is missing. If something fails, the notice says "
+                 "first step: Settings › General and “Take the tour”, then Quality › Requirements and tools to see what is missing. If something fails, the notice says "
                  "what; deleting ~/.camarones/desktop makes it download "
                  "Electron again."},
         {"icon": "🚀", "title": "First run in the app",
@@ -968,7 +961,7 @@ PAGES = {
                  "Your intern shrimp has pinned the sticky notes up already: all you do is move them."},
         {"icon": "📜", "title": "Decisions: the ADRs, with the evidence in front of you",
          "art": r"""
-   Decisions (g a)                        docs/decisions/0007-why-jpa.md
+   Docs › Decisions (g d)                 docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Accepted   Why spring... |     type: decision      x-owner: human
    | 0008  In review  Cache de...   |     ## Status   Accepted (2026-10-28)
@@ -977,7 +970,7 @@ PAGES = {
 
    problem -> evidence -> review -> accepted
    camaron adr candidates | new | pack | write | accept | reject""",
-         "text": "An ADR writes down why the code is the way it is. The “Decisions” section of the desktop app (`g a`) "
+         "text": "An ADR writes down why the code is the way it is. The “Decisions” tab of Docs in the desktop app (`g d`, then the tab; `g a` still works) "
                  "helps you make the decision with the evidence in front of you and works entirely without AI, with no "
                  "agent installed. The ADR lives in `docs/decisions/NNNN-title.md` and what the review decides along "
                  "the way, in `docs/.work/adr/NNNN.yaml`.\n\n"

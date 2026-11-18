@@ -151,7 +151,7 @@ are cleaned up, confirmed pages are never silently rewritten. CI can run the sam
 
 **Project health.** `camaron health` prints, without AI, a verdict and three areas (machine, docs, code) with the next
 action for each, and a table per repo: whether it uses SonarQube (its quality gate when a token is saved), coverage, vulnerabilities and the
-tech debt recorded in `docs/quality/`. Coverage comes from SonarQube when a SonarQube token is saved on the machine (Machine >
+tech debt recorded in `docs/quality/`. Coverage comes from SonarQube when a SonarQube token is saved on the machine (Settings >
 Tokens) and the project can be read; otherwise from the reports the build leaves locally. `--refresh` rebuilds it first
 (the only moment it asks the SonarQube server) and `--json` prints the snapshot. The desktop app's Quality and the portal's
 Health view (read-only) show the same snapshot.
@@ -178,8 +178,8 @@ Two faces over the same project. The **portal** (in your browser) is where the t
 the board and stories, the plan's live state, quality and review. The **desktop app** (`camaron app`) is where you
 operate: run the plan, interviews, sharing, health and libraries, wikis and the C4 explorer, setup. The portal never
 runs anything on your machine, so a button you miss there is in the app. Both are explained screen by screen in their
-own guides — [the portal](portal.md) and [the desktop app](app.md) — and the app shows every guide in **Machine ›
-Guide**, with a guided tour. [How Camarón works](internals.md) covers the server, the APIs and the MCP.
+own guides — [the portal](portal.md) and [the desktop app](app.md) — and the app shows every guide in its **Guide**
+(`g h`), with a guided tour. [How Camarón works](internals.md) covers the server, the APIs and the MCP.
 
 | | Command | What it is |
 |---|---|---|
@@ -192,8 +192,8 @@ The export is plain static files (nginx image, GitLab/GitHub Pages) and works wi
 image CI pushed: `docker run -d -p 8080:80 <registry>/<group>/cam-docs/portal:latest`.
 
 The portal's sidebar has seven zones — Docs, Board, Stories, Architecture, Plan, Quality and Review — and Ctrl K / ⌘K
-jumps to any page or view. The app's sections are Summary, Board, Decisions, Plan, Interviews, Team, Quality and Docs (Libraries is a view of Quality),
-plus Machine and Guide; `g` then a letter jumps between them.
+jumps to any page or view. The app's places are Flow (Summary and Plan), Board, Quality (Libraries is a view), Docs (Decisions and Interviews are tabs),
+plus Settings and Guide; `g` then a letter jumps between them.
 
 In the app, **Start** or **Continue** on a unit and the docs update (**Plan › Keep it current**) open the agent as a
 terminal on the Plan's canvas, where you type to it as in any terminal: F6 leaves the terminal (Fn+F6 on a Mac laptop),
@@ -391,7 +391,7 @@ rewritten by an agent are in `CONVENTIONS.md` section 6.
 
 ## 7. OpenWiki: one wiki per repo
 
-App → **Docs** → the repo's card (**Generate the wiki**, or **Update** once the code has changed; live log), wizard → **📚 Wikis**, or `camaron wiki <repo>` in a terminal. The wiki
+App → **Docs** → **Wikis** → the repo's card (**Generate the wiki**, or **Update** once the code has changed; live log), wizard → **📚 Wikis**, or `camaron wiki <repo>` in a terminal. The wiki
 is stored in `cam-docs/wikis/<repo>/` (the repo sees an unversioned `openwiki/` link); you read it in the browser portal
 (**Docs** → **Wikis**), where its pages show as `wikis/<repo>/…`. It uses the OpenWiki provider if one is configured (`openwiki auth configure <provider>`), otherwise
 Claude Code or Codex. The files OpenWiki adds to the repo itself (`AGENTS.md`, `CLAUDE.md`, `.github/`) are removed when
@@ -401,13 +401,13 @@ Each wiki is a full agent run, so only the repos you choose get one: wizard → 
 wiki** (stored as `wiki: true` in `.camarones/workspace.yaml`). Pick the services with logic, not libraries or CI repos.
 A first wiki waits for the repo's brief (`wikis/<repo>/INSTRUCTIONS.md`, written by the repo-brief unit) so it uses your
 glossary; `camaron wiki <repo> --force` skips that check, and the command neither chooses the repo nor writes a brief:
-it needs the repo cloned and an engine. In the app's **Docs**, each repo's card shows its wiki's state with one action; with no pages yet it
-is **Generate the wiki**: for a repo not chosen yet it chooses it, and without a brief it first writes a starter one
-from the static scan (no AI), which the repo-brief unit replaces later. **Update** and **Expand** run
-the same OpenWiki on a wiki that already has pages. **Try again** appears after a failed run: after a failed first run
-(no pages yet) it repeats the initial generation. The action stays closed, with the reason, when the repo is not
-cloned (clone it from **Machine**) or no wiki engine is installed. Runs go one at a time (while one repo's runs, the
-others wait), and a batch stops as soon as the
+it needs the repo cloned and an engine. In the app's **Docs › Wikis**, each repo's card shows its wiki's state with one
+action; with no pages yet it is **Generate the wiki**: for a repo not chosen yet it chooses it, and without a brief it
+first writes a starter one from the static scan (no AI), which the repo-brief unit replaces later. **Update** and
+**Expand** run the same OpenWiki on a wiki that already has pages. **Try again** appears after a failed run: after a
+failed first run (no pages yet) it repeats the initial generation. The action stays closed, with the reason, when the
+repo is not cloned (clone it from **Settings**) or no wiki engine is installed. Runs go one at a time (while one repo's
+runs, the others wait), and a batch stops as soon as the
 engine is out of quota or logged out instead of failing every remaining repo.
 
 ## 8. CI

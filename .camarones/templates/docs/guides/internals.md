@@ -333,7 +333,7 @@ which copies it into `cam-docs/.camarones/plugins/` and pins version, origin and
 
 The kit works out whether a plugin runs code instead of trusting its manifest. Anything that runs code or steers agents
 and arrived with the team's repo — plugins, hooks, MCP servers, settings, skills — is not loaded until you approve it on
-your machine (`camaron trust`, or Team in the app). The approval covers every file, so any change asks again. What the
+your machine (`camaron trust`, or Settings › Trust in the app). The approval covers every file, so any change asks again. What the
 kit itself installed is recognised without asking, and `camaron repair` restores it if someone edits or deletes it.
 A link committed to the repo (a symlink or junction: `.claude`, a settings file, `.mcp.json`…) is one item, shown with
 where it points: the kit never reads what is behind it or writes through it, and where it writes a file of its own
@@ -353,7 +353,7 @@ Optional skill packs come from `lib/skills_catalog.yaml`: each pinned to a commi
 and of cam-docs; the kit remembers the rules it wrote (`.camarones/.cache/skills-denied.json`) and never removes yours.
 Trust asks nothing about deny rules: they only take access away.
 
-<!-- go:team -->
+<!-- go:settings/skills -->
 
 ## Pages written without AI
 

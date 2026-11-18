@@ -93,6 +93,14 @@ export function docsHealth(index, wikis, viewers) {
   return out
 }
 
+// The header sits on Read and the cards on Wikis: its stale-wikis chip opens this address, which asks the Wikis tab for its
+// first stale card.
+export const STALE_WIKIS = '#/docs/wikis?show=stale'
+export const seeksStale = (hash) => {
+  const [route, query = ''] = String(hash || '').split('?')
+  return route === '#/docs/wikis' && new URLSearchParams(query).get('show') === 'stale'
+}
+
 // GET wikis read again ({rows} or {error}): a failure keeps the last good rows (none after a failed first read) and
 // sets `failed`, for which the section offers a Retry.
 export const wikisRead = (prev, got) => (got.error
@@ -187,4 +195,16 @@ export function askError(e, t) {
   const none = /^(\S+) gave no answer:/.exec(msg)
   if (none) return t('docs.chat.gaveNothing', { who: none[1] })
   return errorLine(e, t)
+}
+
+// The team strip's one sentence from GET sync: `null` while unread, { error } when it failed, no remote when nothing is
+// shared yet; `n` of ahead counts what is committed and what is not saved yet.
+export function stripState(sync) {
+  if (!sync) return { key: 'strip.reading', tone: 'none' }
+  if (sync.error) return { key: 'strip.failed', tone: 'warn' }
+  if (!sync.remote) return { key: 'strip.never', tone: 'none' }
+  if (sync.behind > 0) return { key: 'strip.behind', vars: { n: sync.behind }, tone: 'warn' }
+  const n = (sync.ahead || 0) + (sync.pending?.length || 0)
+  if (n > 0) return { key: 'strip.ahead', vars: { n }, tone: 'warn' }
+  return { key: 'strip.upToDate', tone: 'ok' }
 }

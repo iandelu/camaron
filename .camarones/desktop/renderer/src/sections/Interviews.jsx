@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Button, Card, Skeleton } from '@camaron/ui'
 import { useAgents, useCmd } from '../hooks.js'
 import { AgentPicker, Failed, JobOutput, ModeChoice, Page, UnitRow } from '../parts.jsx'
-import Commands from './Commands.jsx'
 import { lang, t } from '../i18n.js'
 
 // The interviews by task: how they run (the team questionnaire or live with an agent, asked first while nobody chose
@@ -86,7 +85,6 @@ export default function Interviews({ srv, jobs, app }) {
           <ul className="dk-units">{agentUnits.map((u) => <UnitRow key={u.id} u={u} all={all} srv={srv} a={a} plan={{ interviews: d.mode }} onChanged={load} />)}</ul>
         </section>
       ) : null}
-      <Commands srv={srv} jobs={jobs} section="interviews" />
     </Page>
   )
 }

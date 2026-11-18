@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest'
 import { actOnMiss, answerView, askError, buildFailed, c4Card, citeHash, docsHealth, lastMiss, missAction, missesOf, openPortal, portalUrl, readMisses,
-  readViewers, startBuild, startWiki, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiRunning, wikiRuns,
+  readViewers, seeksStale, STALE_WIKIS, startBuild, startWiki, stripState, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiRunning, wikiRuns,
   wikiRunsEnded, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
@@ -455,4 +455,24 @@ test('an action on a question gives the server\'s new list, or the rejection in 
   expect(await actOnMiss(refused, 'who owns billing', 'question', say)).toEqual({ error: 'said: not in the list: who owns billing' })
   expect(say).toHaveBeenCalledTimes(1)
   expect(await actOnMiss({ post: () => Promise.resolve({}) }, 'x', 'dismiss', say)).toEqual({ misses: null })      // no list: the card keeps its own
+})
+
+test('the team strip says where the team repo stands, one state at a time', () => {
+  expect(stripState(null)).toEqual({ key: 'strip.reading', tone: 'none' })
+  expect(stripState({ error: 'x' })).toEqual({ key: 'strip.failed', tone: 'warn' })
+  expect(stripState({ remote: '' })).toEqual({ key: 'strip.never', tone: 'none' })
+  expect(stripState({ remote: 'r', behind: 2, ahead: 0, pending: [] })).toEqual({ key: 'strip.behind', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['a'] })).toEqual({ key: 'strip.ahead', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
+})
+
+// The health header lives on Read and the wiki cards on Wikis: the stale-wikis chip opens the Wikis tab with this address, and only
+// that tab's address asking for `show=stale` makes the tab look for its first stale card.
+test('the address that asks the Wikis tab for its first stale card', () => {
+  expect(STALE_WIKIS).toBe('#/docs/wikis?show=stale')
+  expect(seeksStale(STALE_WIKIS)).toBe(true)
+  expect(seeksStale('#/docs/wikis?repo=api&show=stale')).toBe(true)
+  for (const h of ['#/docs/wikis', '#/docs?show=stale', '#/docs/wikis?show=fresh', '#/docs/wikisx?show=stale', '', undefined, null]) {
+    expect(seeksStale(h), String(h)).toBe(false)
+  }
 })

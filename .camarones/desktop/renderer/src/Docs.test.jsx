@@ -18,39 +18,43 @@ const index = { repos: ['api', 'web', 'ui'], docs: [{ path: 'repos/api/index.md'
   { path: 'index.md', space: 'docs' }] }
 const render = (idx = index) => renderToStaticMarkup(<Docs srv={srv} jobs={null} app={{ openExternal: () => {} }} index={idx} />)
 
-afterEach(() => { delete globalThis.location; stub.job = null; setLang('es') })
+let HASH = '#/docs'
+afterEach(() => { delete globalThis.location; stub.job = null; setLang('es'); HASH = '#/docs' })
 
-// The Docs tour points at five things and each must be on the page, or its bubble would have nothing to show; it walks them in
-// the page's order, top to bottom, and each step's title is about its own target.
-test('every step of the Docs tour points at something the page renders, in the page\'s order', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
-  const out = render()
-  const targets = TOURS.docs.map((s) => s.target)
-  expect(targets).toEqual(['docs-health', 'docs-portal', 'docs-c4', 'docs-wikis', 'docs-chat'])
-  for (const target of targets) expect(out, target).toContain(`data-tour="${target}"`)
-  const at = targets.map((target) => out.indexOf(`data-tour="${target}"`))
-  expect(at).toEqual([...at].sort((a, b) => a - b))
-  expect([1, 2].map((n) => S.es[`tour.docs.${n}.t`])).toEqual(['Estado de la documentación', 'Leer'])
-  expect([1, 2].map((n) => S.en[`tour.docs.${n}.t`])).toEqual(['Documentation status', 'Reading'])
+// The Docs tour points at seven things, each in the tab its step opens, or its bubble would have nothing to show; within a tab it
+// walks them in the page's order, top to bottom, and each of the screen's own steps has a title about its target.
+test('every step of the Docs tour points at something its tab renders, in the page\'s order', () => {
+  const pages = {}
+  for (const { section, target } of TOURS.docs) {
+    globalThis.location = { origin: 'http://127.0.0.1:5000', hash: `#/${section}` }
+    pages[section] ??= { out: render(), at: [] }
+    expect(pages[section].out, `${section}: ${target}`).toContain(`data-tour="${target}"`)
+    pages[section].at.push(pages[section].out.indexOf(`data-tour="${target}"`))
+  }
+  expect(Object.keys(pages)).toEqual(['docs', 'docs/wikis'])
+  for (const { at } of Object.values(pages)) expect(at).toEqual([...at].sort((a, b) => a - b))
+  expect([3, 4, 6, 7].map((n) => S.es[`tour.docs.${n}.t`])).toEqual(['Estado de la documentación', 'Leer', 'Wikis', 'Preguntar con IA'])
+  expect([3, 4, 6, 7].map((n) => S.en[`tour.docs.${n}.t`])).toEqual(['Documentation status', 'Reading', 'Wikis', 'Ask with AI'])
 })
 
 // Reading is the portal's, in the system browser: buttons that call app.openExternal, never a link the window follows.
 test('Docs opens the portal through the browser and offers the C4 build', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
-  expect(out).not.toMatch(/<a [^>]*href=/)
-  for (const label of ['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar']) expect(out).toContain(label)
+  expect(out.replace(/<nav [\s\S]*?<\/nav>/, '')).not.toMatch(/<a [^>]*href=/)   // only the tabs are links
+  for (const label of ['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar', 'Ver la CI']) expect(out).toContain(label)
+  expect(out).not.toContain('tablero')                                       // the app has its own Board
   expect(out).toContain('Construir el explorador C4')
   expect(out).toMatch(/aria-label="Construir: Construir el explorador C4"/)
 })
 
-// The health header is the first thing under the title, above the read actions. Nothing is read yet in a static render, so it
+// The health header is the first thing of the Read tab, under the tabs and above the read actions. Nothing is read yet in a static render, so it
 // is the skeleton: no chip, and above all no C4 chip with a zero or a guess while GET viewers has not answered.
 test('the health header sits above the read actions, a skeleton until the wikis are read, with no C4 chip', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render({ ...index, summary: { draft: 4 }, feedback: 2 })
   expect(out).toMatch(/<div[^>]*role="status"[^>]*data-tour="docs-health"|<div[^>]*data-tour="docs-health"[^>]*role="status"/)
-  expect(out.indexOf('data-tour="docs-health"')).toBeGreaterThan(out.indexOf('<h1'))
+  expect(out.indexOf('data-tour="docs-health"')).toBeGreaterThan(out.indexOf('data-tour="tabs-docs"'))
   expect(out.indexOf('data-tour="docs-health"')).toBeLessThan(out.indexOf('data-tour="docs-portal"'))
   expect(out.slice(out.indexOf('data-tour="docs-health"'), out.indexOf('data-tour="docs-portal"'))).toContain('cu-skel')
   expect(out).not.toContain('dk-hchip')
@@ -68,12 +72,12 @@ test('Review carries the draft count; at zero or without a summary there is no b
   expect(render({ ...index, summary: { draft: 12 } })).toMatch(/<\/svg>Review drafts · 12<\/button>/)
 })
 
-test('each read action has its icon before its words', () => {
+test('each read action has its icon before its words, the CI one too', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const row = render().match(/data-tour="docs-portal">(.*?)<\/div>/)[1]
   const buttons = row.match(/<button.*?<\/button>/g)
-  expect(buttons).toHaveLength(3)
-  buttons.forEach((b, i) => expect(b).toMatch(new RegExp(`^<button[^>]*><svg[^>]*class="dk-ico".*?</svg>${['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar'][i]}</button>$`)))
+  expect(buttons).toHaveLength(4)
+  buttons.forEach((b, i) => expect(b).toMatch(new RegExp(`^<button[^>]*><svg[^>]*class="dk-ico".*?</svg>${['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar', 'Ver la CI'][i]}</button>$`)))
 })
 
 // The header's C4 chip is read once, so the C4 card tells the section when its build ends: only a build that ends `done` does
@@ -104,10 +108,10 @@ test('the C4 card still builds and views, and runs without a listener', async ()
   await expect(Build({ srv, jobs: null, card: c4Card, title: 'C4', hint: 'h', onView: () => {} }).props.onBuild()).resolves.toBeUndefined()
 })
 
-// One block per repo, with or without a wiki. Nothing is read yet here (the wikis load after the first render), so every
+// One block per repo, on the Wikis tab, with or without a wiki. Nothing is read yet here (the wikis load after the first render), so every
 // card is the quiet one: its Generate closed, no state word, no figures and no graph row; View only where the tree knows pages.
 test('one wiki block per repo of the project, each quiet until the wikis are read', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   for (const repo of ['api', 'web', 'ui']) {
     expect(out).toContain(`Wiki · ${repo}`)
@@ -118,29 +122,38 @@ test('one wiki block per repo of the project, each quiet until the wikis are rea
   expect(out).not.toContain('Grafo del wiki')                        // no graph row until a read says the graph is missing
   expect(out).toMatch(/aria-label="Ver: Wiki · api"/)
   expect(out).not.toMatch(/aria-label="Ver: Wiki · web"/)
-  expect(out.match(/cu-btn--primary/g)).toHaveLength(1 + 3)       // Leer + one action per card; the chat's entry is not primary
+  expect(out.match(/cu-btn--primary/g)).toHaveLength(3)          // one action per card
 })
 
-// The wiki blocks sit in their own grid, not in the .dk-stack of Machine's stack input (a 14rem column).
-test('the wiki blocks are laid out by the wikis grid, not by .dk-stack', () => {
+// Read keeps Leer as its one primary action: the chat's entry is not primary.
+test('on Read the only primary action is Leer, not the chat\'s entry', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  expect(out.match(/<button[^>]*cu-btn--primary[^>]*>.*?<\/button>/g)).toEqual([expect.stringMatching(/Leer la documentación<\/button>$/)])
+})
+
+// The wiki blocks sit in their own grid, not in the .dk-stack of Machine's stack input (a 14rem column), on the wide page.
+test('the wiki blocks are laid out by the wikis grid, not by .dk-stack', () => {
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   expect(out).toContain('class="dk-page wide"')
   expect(out).toContain('class="dk-wikis"')
   expect(out).not.toContain('dk-stack')
 })
 
-test('with no repos there is no wiki block; the chat\'s entry is still there', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+test('with no repos there is no wiki block; Read still has the C4 card and the chat\'s entry', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render({ repos: [], docs: [] })
   expect(out).not.toContain('Generar la wiki')
   expect(out).toContain('Construir el explorador C4')
   expect(out).toContain('data-tour="docs-chat"')
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
+  expect(render({ repos: [], docs: [] })).not.toContain('Generar la wiki')
 })
 
-// The Ask card (a field that answered once and forgot) is gone: the page has the chat's entry, and the panel opens beside it.
+// The Ask card (a field that answered once and forgot) is gone: Read has the chat's entry, and the panel opens beside the place.
 test('the page has the chat\'s entry, not the old Ask card, and the panel starts closed', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
   expect(out).toMatch(/>Preguntar<\/button>/)
@@ -149,7 +162,7 @@ test('the page has the chat\'s entry, not the old Ask card, and the panel starts
   expect(out).not.toMatch(/<aside/)
   expect(out).not.toContain('Responde solo con lo que dice la documentación')
   expect(out).not.toContain('dk-chat')
-  expect(out).toMatch(/^<div class="dk-docs"><div class="dk-page wide">/)
+  expect(out).toMatch(/^<div class="dk-docs"><div class="dk-page">/)
 })
 
 test('Docs takes the window\'s chat store and still renders without one', () => {
@@ -163,12 +176,16 @@ test('Docs takes the window\'s chat store and still renders without one', () => 
 })
 
 test('the strings exist in English', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   setLang('en')
-  const out = render()
+  let out = render()
   expect(out).toContain('Wiki · api')
   expect(out).toContain('Generate the wiki')
   expect(out).not.toContain('Picks this repo for a wiki')
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  out = render()
+  expect(out).toContain('Ask with AI')
+  expect(out).toContain('>See CI</button>')
   expect(out).toMatch(/aria-label="Question"/)
   expect(out).toMatch(/>Ask<\/button>/)
 })
@@ -219,7 +236,7 @@ test('Generate is enabled for a cloned repo with an engine, closed with its reas
   const uncloned = block(1)
   expect(generate(uncloned)).toContain('disabled')
   expect(uncloned).toContain('Este repo aún no está clonado')
-  expect(uncloned).toContain('Máquina')
+  expect(uncloned).toContain('Ajustes')
   const noEngine = block(2)
   expect(generate(noEngine)).toContain('disabled')
   expect(noEngine).toContain('No hay ningún motor de wiki instalado')
@@ -250,7 +267,7 @@ test("Generate is closed while another repo's wiki runs, and says whose", () => 
 })
 
 test('Docs reads the running wiki from the jobs store and closes Generate on the other repos', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const jobs = { get: () => ({ running: [{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }], recent: [], error: '' }),
     subscribe: () => () => {}, refresh: () => {} }
   const out = renderToStaticMarkup(<Docs srv={srv} jobs={jobs} app={{ openExternal: () => {} }} index={index} />)
@@ -260,7 +277,7 @@ test('Docs reads the running wiki from the jobs store and closes Generate on the
 // A run started before Docs was left (or in another window) is the jobs store's, not the card's own useJob: on return its card is
 // generating all the same, with the closed "Generating…" primary, never its old state word with its action open.
 test('a wiki run the jobs store lists shows its own card as generating', () => {
-  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const jobs = { get: () => ({ running: [{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }], recent: [], error: '' }),
     subscribe: () => () => {}, refresh: () => {} }
   const out = renderToStaticMarkup(<Docs srv={srv} jobs={jobs} app={{ openExternal: () => {} }} index={index} />)
@@ -519,4 +536,43 @@ test('the card repeats the unread reason only when nobody said it above', () => 
   expect(primary(out)).not.toContain('disabled')
   const wired = renderToStaticMarkup(<WikiBlock srv={srv} jobs={null} block={unread} failed onView={() => {}} onDone={() => {}} />)
   expect(wired).not.toContain('No he podido leer')
+})
+
+test('the tabs follow the address: Read is current at #/docs, Wikis at #/docs/wikis', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  expect(render()).toMatch(/aria-current="page"[^>]*>Leer</)
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis' }
+  const wikisOut = render()
+  expect(wikisOut).toMatch(/aria-current="page"[^>]*>Wikis</)
+  expect(wikisOut).toContain('data-tour="docs-wikis"')
+  for (const label of ['Leer la documentación', 'Construir el explorador C4', 'Preguntar con IA']) expect(wikisOut).not.toContain(label)
+})
+
+test('Read has the tour targets and the team strip; Wikis has its own', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  for (const tour of ['docs-team', 'docs-health', 'docs-portal', 'docs-c4', 'docs-chat']) expect(out).toContain(`data-tour="${tour}"`)
+  expect(out).not.toContain('data-tour="docs-wikis"')
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis' }
+  const wikisOut = render()
+  expect(wikisOut).toContain('data-tour="docs-team"')
+  for (const tour of ['docs-health', 'docs-portal', 'docs-c4', 'docs-chat']) expect(wikisOut).not.toContain(`data-tour="${tour}"`)
+})
+
+test('at #/docs/interviews the Entrevistas tab is current and the Read buttons are absent', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/interviews' }
+  const out = render()
+  expect(out).toMatch(/aria-current="page"[^>]*>Entrevistas</)
+  expect(out).not.toContain('Leer la documentación')
+})
+
+// The chat belongs to the place, not to a tab: every tab is inside the one grid that keeps the panel's column, so an open panel
+// stays where it is as the tabs change. Wikis takes the wide page for its grid of cards; the other tabs keep the place's width
+// (an open ADR widens it too: Decisions.test.jsx).
+test('every tab sits in the chat\'s grid, and Wikis is the wide page', () => {
+  for (const [hash, page] of [['#/docs', 'dk-page'], ['#/docs/wikis', 'dk-page wide'], ['#/docs/decisions', 'dk-page'],
+    ['#/docs/interviews', 'dk-page']]) {
+    globalThis.location = { origin: 'http://127.0.0.1:5000', hash }
+    expect(render(), hash).toMatch(new RegExp(`^<div class="dk-docs"><div class="${page}">`))
+  }
 })

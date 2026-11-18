@@ -108,10 +108,10 @@ const landing = async (post, go) => {
       const said = refusal(e)
       throw said ? Object.assign(new Error(said), { status: e.status, data: e.data }) : e
     }
-    go(`#/plan?term=${id}`)
+    go(`#/flow/plan?term=${id}`)
     return { already: true, terminal: { id } }
   }
-  if (res?.terminal) go(`#/plan?term=${res.terminal.id}`)
+  if (res?.terminal) go(`#/flow/plan?term=${res.terminal.id}`)
   return res
 }
 

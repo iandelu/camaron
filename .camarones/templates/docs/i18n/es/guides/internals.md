@@ -349,7 +349,7 @@ uno a mano.
 
 El kit calcula si un plugin ejecuta código en lugar de fiarse de su manifiesto. Todo lo que ejecuta código o guía a los
 agentes y llegó con el repo del equipo —plugins, hooks, servidores MCP, ajustes, skills— no se carga hasta que lo
-apruebas en tu máquina (`camaron trust`, o Equipo en la app). La aprobación cubre todos los ficheros, así que cualquier
+apruebas en tu máquina (`camaron trust`, o Ajustes › Confianza en la app). La aprobación cubre todos los ficheros, así que cualquier
 cambio vuelve a preguntar. Lo que instaló el propio kit se reconoce sin preguntar, y `camaron repair` lo devuelve a su
 sitio si alguien lo edita o lo borra. Un enlace que llega en el repo (un symlink o una junction: `.claude`, un fichero
 de ajustes, `.mcp.json`…) es un solo elemento, con el sitio al que apunta: el kit nunca lee lo que hay detrás ni escribe
@@ -372,7 +372,7 @@ máquina es `skills_off` en `~/.camarones.json`, escrito como reglas `Skill(<nom
 (`.camarones/.cache/skills-denied.json`) y nunca quita las tuyas. Trust no pregunta por las reglas de denegación: solo
 quitan acceso.
 
-<!-- go:team -->
+<!-- go:settings/skills -->
 
 ## Páginas escritas sin IA
 

@@ -55,14 +55,14 @@ export default function Summary({ srv, jobs }) {
         <h2 className="dk-next-title">{heading}</h2>
         {step.unit && <code className="muted small">{step.unit.id}</code>}
         {next.kind === 'agent' && a.agents && !a.agents.length
-          ? <Aviso tone="warn" title={t('next.noAgent')}><Button href="#/machine">{t('next.machine')}</Button></Aviso>
+          ? <Aviso tone="warn" title={t('next.noAgent')}><Button href="#/settings">{t('next.machine')}</Button></Aviso>
           : (
             <div className="row">
               {next.kind === 'agent' && <AgentPicker a={a} />}
               {next.kind === 'agent'
                 ? <Button variant="primary" disabled={!a.agent || launch.busy} onClick={start}>{t(next.label, { agent: a.label(a.agent) })}</Button>
                 : <Button variant="primary" href={next.href}>{t(next.label)}</Button>}
-              {next.href !== '#/plan' && <Button variant="ghost" href="#/plan">{t('next.plan')}</Button>}
+              {next.href !== '#/flow/plan' && <Button variant="ghost" href="#/flow/plan">{t('next.plan')}</Button>}
             </div>
           )}
         {launch.note && <p className="muted small" role="status">{launch.note}</p>}

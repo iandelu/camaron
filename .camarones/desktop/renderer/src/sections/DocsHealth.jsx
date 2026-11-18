@@ -1,4 +1,5 @@
 import { Skeleton } from '@camaron/ui'
+import { STALE_WIKIS } from '../docs.js'
 import { t } from '../i18n.js'
 import { DocsIcon } from './DocsIcons.jsx'
 
@@ -8,8 +9,15 @@ const ICONS = { drafts: 'review', reconfirm: 'review', orphans: 'docs', untransl
   c4None: 'c4', c4NoModel: 'c4', c4Stale: 'c4', c4Fresh: 'c4' }
 export const chipIcon = (key) => ICONS[key]
 
-// The stale-wikis chip points at the first card in that state (WikiCard's data-wiki-state); with none in the page it does nothing.
-export const showStale = () => document.querySelector('[data-wiki-state="stale"]')?.scrollIntoView?.({ block: 'nearest' })
+// The stale-wikis chip points at the first card in that state (WikiCard's data-wiki-state). The cards live on the Wikis tab, so
+// with none in the page it opens that tab asking for it (`go`: how the address changes); the tab scrolls once its cards are read.
+export function scrollToStale() {
+  const card = document.querySelector('[data-wiki-state="stale"]')
+  card?.scrollIntoView?.({ block: 'nearest' })
+  return !!card
+}
+const goTo = (hash) => { location.hash = hash }
+export const showStale = (go = goTo) => { if (!scrollToStale()) go(STALE_WIKIS) }
 
 // The state of the docs at a glance: `chips` are docsHealth's, `loading` the first read of the wikis (a skeleton, not chips that
 // would then jump). Only the stale-wikis chip does something, so only it is a button.
@@ -27,6 +35,6 @@ function HealthChip({ chip }) {
   const body = <><DocsIcon name={chipIcon(chip.key)} />{t(chip.text, { n: chip.n })}</>
   const cls = `dk-hchip is-${chip.tone}`
   return chip.key === 'wikiStale'
-    ? <button type="button" className={cls} onClick={showStale}>{body}</button>
+    ? <button type="button" className={cls} onClick={() => showStale()}>{body}</button>
     : <span className={cls}>{body}</span>
 }

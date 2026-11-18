@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test, vi } from 'vitest'
-import { DocsHealth, chipIcon, showStale } from './DocsHealth.jsx'
+import { DocsHealth, chipIcon, scrollToStale, showStale } from './DocsHealth.jsx'
 import { DocsIcon } from './DocsIcons.jsx'
-import { docsHealth } from '../docs.js'
+import { STALE_WIKIS, docsHealth } from '../docs.js'
 import { setLang, t } from '../i18n.js'
 
 const chip = (key, tone, n = null) => ({ key, tone, n, text: `docs.h.${key}` })
@@ -83,18 +83,31 @@ test('the stale-wikis chip is a button; the others are plain text', () => {
   expect(out).toMatch(/<span class="dk-hchip is-warn">(<svg[^>]*>.*?<\/svg>)Borradores: 4<\/span>/)
 })
 
-test('the stale chip scrolls to the first stale card', () => {
+test('the stale chip scrolls to the first stale card when the page has one, and stays on the page', () => {
   const scrollIntoView = vi.fn()
   const querySelector = vi.fn(() => ({ scrollIntoView }))
   globalThis.document = { querySelector }
-  showStale()
+  const go = vi.fn()
+  showStale(go)
   expect(querySelector).toHaveBeenCalledWith('[data-wiki-state="stale"]')
   expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  expect(go).not.toHaveBeenCalled()
 })
 
-test('with no stale card in the page, or one that cannot scroll, the chip does nothing', () => {
+// The cards are on the Wikis tab, not on Read where the header is: with none in the page the chip opens that tab, asking for it.
+test('with no stale card in the page the chip opens the Wikis tab asking for the first one', () => {
   globalThis.document = { querySelector: () => null }
-  expect(() => showStale()).not.toThrow()
+  const go = vi.fn()
+  expect(() => showStale(go)).not.toThrow()
+  expect(go).toHaveBeenCalledWith(STALE_WIKIS)
+})
+
+test('a stale card that cannot scroll is still found, and nothing throws', () => {
   globalThis.document = { querySelector: () => ({}) }
-  expect(() => showStale()).not.toThrow()
+  const go = vi.fn()
+  expect(scrollToStale()).toBe(true)
+  expect(() => showStale(go)).not.toThrow()
+  expect(go).not.toHaveBeenCalled()
+  globalThis.document = { querySelector: () => null }
+  expect(scrollToStale()).toBe(false)
 })

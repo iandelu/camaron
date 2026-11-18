@@ -424,7 +424,7 @@ function Intro({ srv, app, closed: already }) {
       <h2>{t('obDoneTitle')}</h2>
       <p className="dk-lede">{t('obDoneLead')}</p>
       <div className="row">
-        <Button variant="primary" onClick={() => { location.hash = '#/summary' }}>{t('obGoNext')}</Button>
+        <Button variant="primary" onClick={() => { location.hash = '#/flow' }}>{t('obGoNext')}</Button>
         <Button onClick={() => app.openExternal?.(portalUrl(location.origin, '#/'))}>{t('obViewPortal')} <ExternalIcon /></Button>
       </div>
       {error ? <Failed title={t('obDoneFailed')} detail={error} onRetry={close} /> : null}

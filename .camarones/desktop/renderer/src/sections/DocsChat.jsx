@@ -171,7 +171,7 @@ function Notices({ state, onRetry }) {
     <>
       {state.loadError ? <Unread onRetry={onRetry} /> : null}
       {none
-        ? <Aviso tone="warn" title={t('docs.chat.noAgent')} action={<Button size="sm" href="#/machine">{t('docs.chat.toMachine')}</Button>} />
+        ? <Aviso tone="warn" title={t('docs.chat.noAgent')} action={<Button size="sm" href="#/settings">{t('docs.chat.toMachine')}</Button>} />
         : state.ai === false ? <Aviso tone="info" title={t('docs.askNoAi')} /> : null}
     </>
   )

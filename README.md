@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.90.0-ff875f?style=flat-square" alt="Versión 4.90.0">
+  <img src="https://img.shields.io/badge/version-4.91.0-ff875f?style=flat-square" alt="Versión 4.91.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -137,7 +137,7 @@ Clona el kit oficial en una ruta fija (`~/.camarones/kit`; en Windows `%LOCALAPP
 el comando `camaron` en tu PATH (`camarones` sigue como alias). Con el repo ya clonado, `sh install-global.sh` o
 `.\install-global.cmd` hacen lo mismo; `CAMARONES_KIT_URL` instala desde un fork o una copia local.
 
-**Actualizar:** en la app, **Máquina › Actualizar el kit**; en el asistente, **⚙️ Ajustes › ⬆️ Actualizar Camarón**; en la
+**Actualizar:** en la app, **Ajustes › Kit › Actualizar el kit**; en el asistente, **⚙️ Ajustes › ⬆️ Actualizar Camarón**; en la
 terminal, `camaron self-update`. Actualiza a la vez todos los proyectos de la máquina.
 
 <details>
@@ -213,12 +213,12 @@ equipo. Si está vacío, tu primer «Compartir» lo publica. Sin URL, el repo es
 proyecto.
 
 Lo que llega con el repo del equipo no se ejecuta a ciegas: los hooks, servidores MCP, ajustes, skills y plugins que no
-escribió el kit solo se cargan cuando los apruebas en tu máquina (**Equipo** en la app, o `camaron trust`); las
+escribió el kit solo se cargan cuando los apruebas en tu máquina (**Ajustes › Confianza** en la app, o `camaron trust`); las
 aprobaciones viven en `~/.camarones/trust/`, fuera del repo. Un enlace simbólico que llega en el repo se aprueba como
 un solo elemento, y el kit nunca lee ni escribe a través de él. Si en la carpeta del workspace ya tenías tu propio
 `.claude/` o tu `CLAUDE.md`, `setup` y `repair` no los reemplazan: enlazan dentro lo del kit y añaden a tu `CLAUDE.md`
 dos líneas que importan sus reglas (`@AGENTS.md`); `uninstall` las quita y deja lo tuyo. Publicar es un paso explícito:
-**Equipo › Compartir ahora**, **Plan › Sincronizar** en el portal o `camaron share` (checkpoint, rebase sobre el trabajo
+**Docs › Compartir ahora**, **Plan › Sincronizar** en el portal o `camaron share` (checkpoint, rebase sobre el trabajo
 del equipo y push); con `camaron share --auto on` cada checkpoint se comparte solo, en esta máquina. Un conflicto se
 deshace sin tocar nada, y algo que parece un secreto no se publica. Si no llega al servidor del equipo o le faltan
 credenciales, te dice por qué (la VPN o el proxy, el token de ese servidor) y debajo lo que respondió git.
@@ -231,7 +231,7 @@ credenciales, te dice por qué (la VPN o el proxy, el token de ese servidor) y d
 | 2. Documentar una unidad con tu agente | **Empezar con Claude Code** (se abre como una terminal en el lienzo del Plan, donde le escribes al agente; si la cierras, **Seguir** la retoma) | el asistente → 🦐 Siguiente paso |
 | 3. O varias a la vez | **Plan › Ejecutar las listas**, o el **Piloto automático** | `camaron run --parallel 2`, `camaron autopilot` |
 | 4. Revisar y confirmar | **Ver portal** → Revisión | `camaron confirm`, `camaron feedback` |
-| 5. Compartir | **Equipo › Compartir ahora** | `camaron share` |
+| 5. Compartir | **Docs › Compartir ahora** | `camaron share` |
 
 Cada unidad termina con un commit local en `cam-docs` y una nota de relevo (`docs/.work/handoff.md`): qué comprobó con
 pruebas, qué no, los comandos que ejecutó y la siguiente acción. Si una sesión se interrumpe, la siguiente sigue desde
@@ -276,7 +276,7 @@ opcionales** de skills de terceros, apagados hasta que alguien los añade: `cama
 pequeño que resuelve la tarea, más revisión y auditoría; MIT) y `camaron skills add impeccable` (diseño frontend;
 Apache-2.0; su lanzador descarga un binario verificado la primera vez que se usa). Se descargan en el commit que fija
 el kit, se copian con su licencia en `.camarones/skills/`, quedan anotados en `.camarones/skills.lock` y cada máquina
-los aprueba en `camaron trust`; `camaron skills remove PACK` los quita. En la app, **Equipo › Skills** muestra cada
+los aprueba en `camaron trust`; `camaron skills remove PACK` los quita. En la app, **Ajustes › Skills** muestra cada
 skill con su icono y sus dos interruptores, y los packs que se pueden añadir.
 
 `camaron change` lleva las cuentas del cambio, sin IA, con su registro en esta máquina
@@ -304,28 +304,24 @@ adelante.
   <img src=".github/media/app-quality.png" alt="Calidad: la salud del proyecto, con máquina, documentación y código." width="49%">
 </p>
 
-Cada proyecto se abre en su ventana: a la izquierda el raíl con tus proyectos y las secciones, en medio la tarea y,
+Cada proyecto se abre en su ventana: a la izquierda el raíl con tus proyectos y los lugares (Flujo, Tablero, Calidad, Docs y, aparte, Ajustes y Guía), en medio la tarea y,
 abajo, el panel de **trabajos** con lo que corre, su salida y **Parar**. Cada botón ejecuta el mismo comando que
 escribirías en la terminal.
 
-| Sección | Qué haces ahí |
+| Lugar | Qué haces ahí |
 |---|---|
-| 🏠 **Resumen** (`g s`) | El siguiente paso con un solo botón, avisos de la máquina y cómo van el plan, la revisión y los trabajos |
-| 📋 **Tablero** (`g b`) | El Kanban del proyecto: seis columnas de Backlog a Bloqueado, mover con ratón o teclado, abrir, añadir, eliminar |
-| 📜 **Decisiones** (`g a`) | Los ADR sin IA: plantear una decisión (nueva o retroactiva) o partir de una **candidata** que el código ya tomó, reunir su **evidencia**, revisarla parte por parte y punto por punto, y **aceptarla** o rechazarla |
-| 🗺️ **Plan** (`g p`) | Ejecutar las unidades listas en paralelo o con el piloto automático (se saltan una unidad con su sesión abierta), cada unidad con su botón (aprobar, reintentar, seguir, rehacer), por estado, por fases o en el **lienzo**: el grafo del plan, donde cada unidad que trabaja una ejecución es una terminal en vivo, y **Empezar** o **Seguir** una unidad y la actualización de la doc (**Mantenerla al día**) abren una terminal en la que le escribes al agente (<kbd>F6</kbd> sale de ella; **Cerrar** deja la unidad en pausa, **Quitar** retira una que acabó con error y la actualización va en **Sesiones sueltas**; `camaron config set sessions window` las abre en una ventana). Mientras corre el piloto, **Tomar el control** abre en su nodo la conversación de una unidad en marcha para corregir al agente sin parar las demás, **Devolver al piloto** se la devuelve y sigue con ella, y **Parar** la saca de esa ejecución; lo que lleva costado el plan (debajo de las unidades) y empezar la documentación otra vez |
-| 🎙️ **Entrevistas** (`g i`) | Cuestionario del equipo o en vivo, exportar e importar respuestas, cerrar la ronda |
-| 🤝 **Equipo** (`g t`) | El repo del equipo y compartir, aprobar lo que llegó con él (también sus hooks) y plugins |
+| 🏠 **Flujo** (`g f`) | Pestaña **Resumen**: el siguiente paso con un solo botón, avisos de la máquina y cómo van el plan, la revisión y los trabajos. Pestaña **Plan** (`#/flow/plan`, `g p`): ejecutar las unidades listas en paralelo o con el piloto automático (se saltan una unidad con su sesión abierta), cada unidad con su botón (aprobar, reintentar, seguir, rehacer), por estado, por fases o en el **lienzo**: el grafo del plan, donde cada unidad que trabaja una ejecución es una terminal en vivo, y **Empezar** o **Seguir** una unidad y la actualización de la doc (**Mantenerla al día**) abren una terminal en la que le escribes al agente (<kbd>F6</kbd> sale de ella; **Cerrar** deja la unidad en pausa, **Quitar** retira una que acabó con error y la actualización va en **Sesiones sueltas**; `camaron config set sessions window` las abre en una ventana). Mientras corre el piloto, **Tomar el control** abre en su nodo la conversación de una unidad en marcha para corregir al agente sin parar las demás, **Devolver al piloto** se la devuelve y sigue con ella, y **Parar** la saca de esa ejecución; lo que lleva costado el plan (debajo de las unidades) y empezar la documentación otra vez |
+| 📋 **Tablero** (`g b`) | El Kanban del proyecto: seis columnas de Backlog a Bloqueado, mover con ratón o teclado, abrir, añadir, eliminar; el menú **Añadir ▾** abre las Historias del portal en el navegador (**Historia**) o el formulario de la app (**Tarea**, **Bug**) |
 | ✅ **Calidad** (`g q`) | La salud del proyecto sin IA: máquina, documentación y código, repo a repo (SonarQube, cobertura, vulnerabilidades, deuda); el **escaneo de secretos** (gitleaks, `camaron check --secrets`) y los **hooks del método** de Claude Code (el interruptor y lo que han visto) como filas del panel; y la vista **Librerías** (`#/quality/libs`; `#/libs` sigue abriéndola): una línea por librería con la versión que usan los repos y la última estable (**Buscar versiones nuevas**), sus vulnerabilidades (el escaneo va repo a repo con su barra, se puede parar y acaba con un tick con lo que encontró) y **Actualizar ▾** con esa versión ya puesta, en una rama nueva, sin commit. La misma pantalla que la del portal |
-| 📖 **Docs** (`g d`) | El estado de la documentación de un vistazo, sin IA (borradores, wikis, C4); abrir el portal (**Revisar borradores** con su contador); construir el explorador C4; una tarjeta por repo con el estado de su wiki y una sola acción (generar, actualizar, ampliar, reintentar o ver); las preguntas sin respuesta, para llevarlas a las preguntas abiertas o descartarlas; y **Preguntar con IA**, un chat en un panel a la derecha que responde solo con la documentación y cita sus fuentes, con el agente y el modelo a elegir entre los instalados en la máquina (la conversación no se guarda) |
-| 🧰 **Máquina** (`g m`) | Preparar la máquina (dice «Lista», cuándo y con qué kit, una vez hecho), idioma y modelos, dónde se abren las sesiones (en el lienzo del plan o en una ventana de terminal), tokens, repos, el kit y desinstalar |
+| 📖 **Docs** (`g d`) | Encima de sus pestañas, la franja del equipo: estado de compartir, cuándo se compartió por última vez, **Compartir ahora** y el repo del equipo. **Leer**: el estado de la documentación de un vistazo, sin IA (borradores, wikis, C4); abrir el portal (**Revisar borradores** con su contador, ver la CI); construir el explorador C4; **Preguntar con IA**, un chat en un panel a la derecha que sigue abierto en todas las pestañas de Docs, responde solo con la documentación y cita sus fuentes, con el agente y el modelo a elegir entre los instalados en la máquina (la conversación no se guarda); las preguntas sin respuesta, para llevarlas a las preguntas abiertas o descartarlas; y `Todos los comandos`. **Wikis**: una tarjeta por repo con el estado de su wiki y una sola acción (generar, actualizar, ampliar, reintentar o ver). **Decisiones** (su pestaña; `g a`, el atajo antiguo, sigue valiendo): los ADR sin IA: plantear una decisión (nueva o retroactiva) o partir de una **candidata** que el código ya tomó, reunir su **evidencia**, revisarla parte por parte y punto por punto, y **aceptarla** o rechazarla; y **Entrevistas** (`g i`): cuestionario del equipo o en vivo, exportar e importar respuestas, cerrar la ronda |
+| ⚙️ **Ajustes** (`g m`) | **General**: preparar la máquina (dice «Lista», cuándo y con qué kit, una vez hecho), idioma y modelos, dónde se abren las sesiones (en el lienzo del plan o en una ventana de terminal) y repos. **Tokens** (`#/settings/tokens`). **Skills** y **Plugins** del equipo. **Confianza**: aprobar lo que llegó con el repo del equipo (también sus hooks), con la cuenta en la pestaña. **Kit**: actualizarlo, reparar sus archivos y desinstalar |
 | 📘 **Guía** (`g h`) | Toda la documentación de Camarón dentro de la app, con botones que te llevan a cada sitio y un **recorrido guiado** |
 
 <kbd>⌘K</kbd>/<kbd>Ctrl K</kbd> va a una sección, a otro proyecto, a cualquier comando o a un capítulo de la guía. Plan,
-Equipo, Calidad y Máquina terminan con **Todos los comandos**: el resto de comandos de su zona, cada uno con un
+Calidad, Docs (Leer) y Ajustes (General) terminan con **Todos los comandos**: el resto de comandos de su zona, cada uno con un
 formulario que sale del propio parser; lo que borra o mueve datos va aparte y pregunta antes. Cada pantalla, botón a
 botón, en la guía [La app de escritorio](.camarones/templates/docs/i18n/es/guides/app.md), que también está en la app,
-en **Máquina › Guía**.
+en **Guía** (`g h`).
 
 <details>
 <summary><strong>🛟 Instalación y problemas de la app</strong></summary>
@@ -424,8 +420,8 @@ ejecuta solo el escaneo de secretos.
 
 ## Las guías
 
-La documentación completa de Camarón vive en cuatro guías, en español e inglés. Se leen en la app (**Máquina ›
-Guía**, con buscador, botones a cada sección y un recorrido guiado), en el portal de cada proyecto (se copian en
+La documentación completa de Camarón vive en cuatro guías, en español e inglés. Se leen en la app (**Ajustes ›
+General**, con buscador, botones a cada sección y un recorrido guiado), en el portal de cada proyecto (se copian en
 `docs/guides/`) y aquí:
 
 | Guía | Español | English |
@@ -538,7 +534,7 @@ gestor de paquetes (npm, pnpm, yarn, uv, poetry, go) o reescribiendo el manifies
 como estaba. Es lo único con lo que el kit escribe en un repo de servicio, y solo cuando se lo pides.
 
 `camaron health [--refresh] [--json]` es la salud del proyecto (veredicto, máquina, documentación, código y la tabla
-por repo). Con un token de SonarQube guardado (**Máquina › Tokens**, solo por https) lee de su servidor la cobertura,
+por repo). Con un token de SonarQube guardado (**Ajustes › Tokens**, solo por https) lee de su servidor la cobertura,
 bugs, vulnerabilidades, puntos críticos, code smells, deuda, las notas A–E y la puerta de calidad; si la lectura falla,
 conserva los últimos valores con su fecha. El servidor sale del `sonar.host.url` del repo, de SonarCloud, o de
 `sonar: {host: …}` en `workspace.yaml`.
@@ -646,7 +642,7 @@ y el plan vuelve a empezar, conservando `workspace.yaml`, las entrevistas, las p
 confirmó, el tablero y los comentarios. `--templates` devuelve PLAYBOOK, CONVENTIONS y las plantillas a las del kit
 (guarda la vuestra como `<nombre>.before-reset-<fecha>`). Los dos aceptan `--dry-run`; en la app, al final de **Plan**.
 
-`camaron uninstall` (o **Máquina › Desinstalar este proyecto**, que primero enseña qué borraría con las opciones marcadas y vuelve a
+`camaron uninstall` (o **Ajustes › Kit › Desinstalar este proyecto**, que primero enseña qué borraría con las opciones marcadas y vuelve a
 pedirlo si las cambias) detiene el portal,
 guarda una copia `.zip` de `cam-docs/` en la carpeta temporal del sistema, quita de cada repo lo que añadió el kit,
 elimina los enlaces de la carpeta del workspace (también los que puso dentro de tu propio `.claude/` y las líneas que
@@ -696,7 +692,7 @@ repos cambiaron. `camaron hooks report` dice cuántas sesiones consultaron la do
 <details>
 <summary><strong>Decisiones (ADR)</strong></summary>
 
-Un ADR deja por escrito por qué el código es como es, y casi siempre se escribe tarde o no se escribe. La sección **Decisiones** (`g a`) de la app de escritorio ayuda a *tomar* la decisión con la evidencia delante y a dejarla escrita, y **funciona entera sin IA**: no hace falta ningún agente instalado. El ADR vive en `docs/decisions/<NNNN>-<título>.md`, y lo que la revisión va decidiendo (partes, puntos, asistentes) queda aparte en `docs/.work/adr/<NNNN>.yaml`, que va a git.
+Un ADR deja por escrito por qué el código es como es, y casi siempre se escribe tarde o no se escribe. La pestaña **Decisiones** de Docs (`g d` y la pestaña; `g a` sigue valiendo) en la app de escritorio ayuda a *tomar* la decisión con la evidencia delante y a dejarla escrita, y **funciona entera sin IA**: no hace falta ningún agente instalado. El ADR vive en `docs/decisions/<NNNN>-<título>.md`, y lo que la revisión va decidiendo (partes, puntos, asistentes) queda aparte en `docs/.work/adr/<NNNN>.yaml`, que va a git.
 
 1. **Plantea.** **Nuevo ADR** pide un título y de qué va: *nuevo* (algo que el código aún no hace) o *retroactivo* (algo que el código ya hace y nadie dejó escrito). Opcionalmente, el problema, los drivers, las restricciones, las opciones candidatas y a qué ADR sustituye. En **Toca** buscas los ficheros, los grupos del mapa del código y las páginas de documentación que afecta, con el mismo buscador que Historias. El número se reserva al crearlo; si un pull trae otro ADR con ese número, se usa el siguiente libre al escribir el fichero y la app lo dice.
 2. **Candidatas.** Las decisiones que el código ya tomó y que ningún ADR nombra, sin IA: las librerías de datos, caché, mensajería, seguridad y frameworks del inventario (solo las de runtime), las tecnologías del C4 y los ficheros de despliegue (Docker Compose, Helm). **Crear ADR retro** abre el formulario con el título y lo que toca ya puestos. Sin inventario ni modelo C4 solo salen los ficheros de despliegue (Docker Compose, Helm); `camaron inventory` añade las librerías. Una lista vacía no es un error.

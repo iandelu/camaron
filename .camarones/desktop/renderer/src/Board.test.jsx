@@ -131,9 +131,9 @@ test('the add form is in the language and blocks a second submit while it saves'
 })
 
 test('the header button adds an item; a read-only board disables it', () => {
-  expect(view(sample)).toMatch(/<button [^>]*>Añadir<\/button>/)
-  expect(view(sample, 'en')).toMatch(/<button [^>]*>Add<\/button>/)
-  expect(view(board([card({})], { writable: false }))).toMatch(/<button [^>]*disabled=""[^>]*>Añadir<\/button>/)
+  expect(view(sample)).toMatch(/<button [^>]*>Añadir ▾<\/button>/)
+  expect(view(sample, 'en')).toMatch(/<button [^>]*>Add ▾<\/button>/)
+  expect(view(board([card({})], { writable: false }))).toMatch(/<button [^>]*disabled=""[^>]*>Añadir ▾<\/button>/)
 })
 
 test('the side panel sits beside the columns', () => {
@@ -178,4 +178,18 @@ test('a picked card can be deleted (archived) from its panel; a read-only window
 test('a delete the server refused is shown in the panel as an alert', () => {
   const out = html(<StoryPanel item={story} tasks={[]} lang="en" writable deleteError="locked" onAddTask={() => {}} onOpen={() => {}} onDelete={() => {}} />, 'en')
   expect(out).toMatch(/role="alert".*locked/)
+})
+
+test('the Add button opens a menu; open, its first item is the story, written in the portal', () => {
+  const b = board([], { types: ['story', 'task', 'bug'] })
+  const closed = view(b)
+  expect(closed).toContain('aria-haspopup="menu"')
+  expect(closed).toContain('aria-expanded="false"')
+  expect(closed).not.toContain('role="menu"')
+  const out = view(b, 'es', { menu: true })
+  expect(out).toContain('aria-expanded="true"')
+  expect(out).toMatch(/role="menu"[^]*role="menuitem"[^]*Historia[^]*Se escribe en el portal, en Historias/)
+  expect(out.match(/role="menuitem"/g)).toHaveLength(3)
+  expect(out).toContain('Formulario aquí')
+  expect(view(b, 'en', { menu: true })).toContain('Written in the portal, in Stories')
 })
