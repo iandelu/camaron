@@ -43,8 +43,25 @@ def test_a_path_with_a_quote_is_written_exactly_as_it_is(kit):
 def test_a_match_on_a_header_line_gives_no_anchor_and_a_later_line_is_numbered():
     from lib import quickarch
     blob = "\n### src/worker/Api.java\nint a;\n// worker\n"
-    assert quickarch._anchor("api", blob, blob.index("worker/Api")) is None
-    assert quickarch._anchor("api", blob, blob.index("// worker")) == "api:src/worker/Api.java#L2"
+    paths = {"src/worker/Api.java"}
+    assert quickarch._anchor("api", blob, blob.index("worker/Api"), paths) is None
+    assert quickarch._anchor("api", blob, blob.index("// worker"), paths) == "api:src/worker/Api.java#L2"
+
+
+def test_a_header_like_line_inside_a_scanned_file_is_not_a_file():
+    from lib import quickarch
+    blob = "\n### cache.properties\n### Cache\nclient=jedis\n"
+    at = blob.index("jedis")
+    assert quickarch._source(blob, at, {"cache.properties"}) == "cache.properties"
+    assert quickarch._anchor("api", blob, at, {"cache.properties"}) == "api:cache.properties#L2"
+
+
+def test_the_scan_cites_the_file_a_header_like_line_sits_in(kit):
+    from lib import quickarch
+    (kit.ws / "api" / "cache.properties").write_text("### Cache\nclient=jedis\n", encoding="utf-8", newline="\n")
+    scan = quickarch.scan()
+    assert "api:cache.properties#L2" in scan["evidence"]["cache"]
+    assert not any(a.startswith("api:Cache") for found in scan["evidence"].values() for a in found)
 
 
 def test_a_relation_takes_the_earliest_line_numerically(kit):

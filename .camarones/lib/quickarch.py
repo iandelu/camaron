@@ -105,36 +105,52 @@ def stack(repo: Path, blob: str) -> str:
     return " · ".join(dict.fromkeys(t)) or "?"
 
 
-def repo_blob(repo: Path) -> str:
-    """Every scanned file of a repo, each behind a `### <path>` header (what the detectors search)."""
-    texts = []
+def _blob(repo: Path) -> tuple[str, frozenset[str]]:
+    """repo_blob, and the paths whose headers it wrote."""
+    texts, paths = [], set()
     for f in files(repo):
+        rel = f.relative_to(repo).as_posix()
         try:
-            texts.append(f"\n### {f.relative_to(repo).as_posix()}\n" + f.read_text(encoding="utf-8", errors="ignore"))
+            texts.append(f"\n### {rel}\n" + f.read_text(encoding="utf-8", errors="ignore"))
+            paths.add(rel)
         except OSError:
             pass
-    return "".join(texts)
+    return "".join(texts), frozenset(paths)
+
+
+def repo_blob(repo: Path) -> str:
+    """Every scanned file of a repo, each behind a `### <path>` header (what the detectors search)."""
+    return _blob(repo)[0]
 
 
 MANIFESTS = ("pom.xml", "build.gradle", "build.gradle.kts", "package.json", "pyproject.toml", "requirements.txt",
              "go.mod", "pubspec.yaml")
 
 
-def _source(blob: str, at: int) -> str | None:
-    """The file a match comes from: the nearest `### <path>` header before it (see repo_blob)."""
-    i = blob.rfind("\n### ", 0, max(at, 0) + 1)
-    return blob[i + 5:blob.index("\n", i + 1)] if i >= 0 else None
+def _header(blob: str, at: int, paths) -> tuple[int, int] | None:
+    """Where the `### <path>` header of the file a match sits in starts and ends: the nearest one before it that
+    repo_blob wrote (`paths`), so a `### ` line inside a scanned file is not taken for one."""
+    i = max(at, 0) + 1
+    while (i := blob.rfind("\n### ", 0, i)) >= 0:
+        end = blob.find("\n", i + 1)
+        end = len(blob) if end < 0 else end
+        if blob[i + 5:end] in paths:
+            return i, end
+    return None
 
 
-def _anchor(repo: str, blob: str, at: int) -> str | None:
+def _source(blob: str, at: int, paths) -> str | None:
+    """The file a match comes from (see repo_blob)."""
+    found = _header(blob, at, paths)
+    return blob[found[0] + 5:found[1]] if found else None
+
+
+def _anchor(repo: str, blob: str, at: int, paths) -> str | None:
     """`repo:path#Ln` for the line a match sits on (spec §5.1), counted from its file's `### <path>` header."""
-    i = blob.rfind("\n### ", 0, max(at, 0) + 1)
-    if at < 0 or i < 0:
+    found = _header(blob, at, paths) if at >= 0 else None
+    if not found or at <= found[1]:                        # a match on the header line is not a line of the file
         return None
-    end = blob.index("\n", i + 1)
-    if at <= end:                                          # a match on the header line is not a line of the file
-        return None
-    return f"{repo}:{blob[i + 5:end]}#L{blob.count(chr(10), i + 1, at)}"
+    return f"{repo}:{blob[found[0] + 5:found[1]]}#L{blob.count(chr(10), found[0] + 1, at)}"
 
 
 def _line(anchor: str) -> int:
@@ -172,11 +188,15 @@ def _firebase_project(repo: Path, blob: str) -> str | None:
     return (m.group(1) or m.group(2)) if m else None
 
 
-def _split(blob: str, prefix: str) -> tuple[str, str]:
-    """(the blob without the files under `prefix`, those files) — repo_blob's `### <path>` sections."""
+def _split(blob: str, prefix: str, paths) -> tuple[str, str]:
+    """(the blob without the files under `prefix`, those files) — repo_blob's `### <path>` sections; a `### ` line
+    inside a file stays with it."""
     keep, moved = [], []
+    into = keep
     for part in re.split(r"(?=\n### )", blob):
-        (moved if part.startswith(f"\n### {prefix}/") else keep).append(part)
+        if (head := part[5:].split("\n", 1)[0]) in paths:
+            into = moved if head.startswith(f"{prefix}/") else keep
+        into.append(part)
     return "".join(keep), "".join(moved)
 
 
@@ -192,17 +212,18 @@ def scan() -> dict:
     proof: dict[str, set] = {}                      # datastore key / broker / idp label / "cache" -> anchors
     repo_proof: dict[str, set] = {}                 # repo or functions container -> anchors
     by_user: dict[tuple, set] = {}                  # (datastore key, repo) -> that repo's anchors
-    blobs = {}
+    blobs, scanned = {}, {}
     for n in names:
         repo = repo_dir(n)
-        blob = repo_blob(repo)
+        blob, scanned[n] = _blob(repo)
         blobs[n] = blob
         model["sources"] |= {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         model["repos"][n] = {"kind": kinds.get(n, "service"), "tech": fixed.get(n) or stack(repo, blob)}
         repo_proof[n] = {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         if src := _functions_dir(repo):                    # Cloud Functions: a container of their own
             fn = f"{n} Cloud Functions"
-            blobs[n], blobs[fn] = _split(blob, src)
+            blobs[n], blobs[fn] = _split(blob, src, scanned[n])
+            scanned[fn] = scanned[n]
             lang = "TypeScript" if (repo / src / "tsconfig.json").is_file() else "Node.js"
             model["repos"][fn] = {"kind": "service", "tech": f"Cloud Functions · {lang}", "repo": n}
             repo_proof[fn] = {f"{n}:{src}/package.json"}
@@ -214,10 +235,10 @@ def scan() -> dict:
         low = blob.lower()
 
         def cite(at: int, node: str | None = None, source: bool = True, n=n, blob=blob) -> str | None:
-            if at >= 0 and (path := _source(blob, at)):
+            if at >= 0 and (path := _source(blob, at, scanned[n])):
                 if source:
                     model["sources"].add(f"{owner[n]}:{path}")
-                anchor = _anchor(owner[n], blob, at)
+                anchor = _anchor(owner[n], blob, at, scanned[n])
                 if anchor and node:
                     proof.setdefault(node, set()).add(anchor)
                     by_user.setdefault((node, n), set()).add(anchor)
@@ -286,7 +307,7 @@ def scan() -> dict:
             for fn in [f for f in functions if owner[f] == n] or functions:
                 model["edges"].append((n, fn, "sync", "calls"))
                 hint = min(low.find(h) for h in FUNCTION_CALLS if h in low)
-                model["edge_evidence"][(n, fn, "calls")] = _anchor(owner[n], blobs[n], hint)
+                model["edge_evidence"][(n, fn, "calls")] = _anchor(owner[n], blobs[n], hint, scanned[n])
     for key, d in model["dbs"].items():
         for u in sorted(d["users"]):
             model["edges"].append((u, key, "sync", "reads/writes"))
