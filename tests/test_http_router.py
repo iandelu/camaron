@@ -75,6 +75,7 @@ AREA: dict[tuple[str, str], str] = {
     **dict.fromkeys([
         ("GET", "/api/app/catalog"), ("POST", "/api/app/cmd"), ("GET", "/api/app/info"),
     ], "app_cmd"),
+    **dict.fromkeys([("GET", "/api/app/chat/models")], "chat"),
     **dict.fromkeys([
         ("POST", "/api/app/jobs/j1/cancel"), ("GET", "/api/app/jobs/j1/events"), ("GET", "/api/jobs"),
         ("GET", "/api/jobs/j1"),
