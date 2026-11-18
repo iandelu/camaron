@@ -15,6 +15,7 @@ from .harness import routing
 CLAUDE_MODELS = ("haiku", "sonnet", "opus")      # no unset entry: Claude's own default can cost far more than haiku
 MODEL_SHAPE = re.compile(r"^[A-Za-z0-9_][\w.:/@-]*$")      # an argv element, never a shell word; match with fullmatch
 DEFAULT = "default"
+OLLAMA_TIMEOUT = 5                               # seconds `ollama list` may take: an unreachable OLLAMA_HOST hangs it
 
 
 def ai_enabled() -> bool:
@@ -26,13 +27,13 @@ def _model(id: str, label: str, local: bool = False) -> dict:
 
 
 def _ollama_tags() -> list[str]:
-    """The tags `ollama list` reports, only when OpenCode can reach them. A binary that fails, hangs or prints another
-    shape leaves none."""
+    """The tags `ollama list` reports, only when OpenCode can reach them. A binary that fails, outlasts OLLAMA_TIMEOUT
+    (it is killed) or prints another shape leaves none."""
     if not (process.which("ollama") and process.which("opencode")):
         return []
     try:
-        lines = process.out(["ollama", "list"]).splitlines()
-    except Exception:                       # a blocked or broken binary must not take the whole picker down with it
+        lines = process.out(["ollama", "list"], timeout=OLLAMA_TIMEOUT).splitlines()
+    except Exception:                       # a blocked, slow or broken binary must not take the whole picker with it
         return []
     if not lines or lines[0].split()[:1] != ["NAME"]:
         return []
@@ -46,7 +47,8 @@ def _models_of(runner: str, prefs: dict) -> list[dict]:
     if runner == "opencode":
         tags = _ollama_tags()
         return [_model(f"ollama/{t}", t, True) for t in tags] if tags else [_model("", DEFAULT)]
-    return [_model(str(agents.model_for(runner, prefs) or ""), DEFAULT)]
+    configured = str(agents.model_for(runner, prefs) or "")        # hand-edited: one the turn refuses is not offered
+    return [_model(configured if MODEL_SHAPE.fullmatch(configured) else "", DEFAULT)]
 
 
 def models() -> list[dict]:
@@ -61,8 +63,9 @@ def _only_default(entries: list[dict]) -> bool:
 
 def remembered(offered: list[dict] | None = None) -> dict | None:
     """The last pick, kept in `~/.camarones.json` under `chat`, while its runner and model are still offered. A runner
-    whose only entry is its default stays valid and answers with that entry's current id: a configured model may
-    have changed since."""
+    whose only entry is a configured default (Codex's) stays valid and answers with that entry's current id: the
+    configured model may have changed since. An unset default (the CLI decides) matches only an unset pick, so a
+    local pick whose tags are all gone does not fall to whatever the CLI would run."""
     saved = load_json(PREFS, {}).get("chat")
     if not isinstance(saved, dict) or not all(isinstance(saved.get(k), str) for k in ("runner", "model")):
         return None
@@ -70,7 +73,7 @@ def remembered(offered: list[dict] | None = None) -> dict | None:
     entries = next((r["models"] for r in offered if r["runner"] == saved["runner"]), None)
     if not entries:
         return None
-    if _only_default(entries):
+    if _only_default(entries) and (entries[0]["id"] or not saved["model"]):
         return {"runner": saved["runner"], "model": entries[0]["id"]}
     if saved["model"] not in {m["id"] for m in entries}:
         return None
@@ -90,7 +93,10 @@ def _asks(offered: list[dict]) -> dict | None:
     """What Ask would use today, so a first chat costs what Ask costs: its routed runner for bounded work and its
     model (`ask.model`, the route's own, or the runner's cheap one). A model the picker does not offer (Ask leaves
     Codex's to its CLI) becomes that runner's cheapest entry: the panel never opens on a model it cannot show."""
-    target = answers.runner()
+    try:
+        target = answers.runner()
+    except ValueError:                      # a routing tier the config misspells: the picker still opens
+        return None
     if not target:
         return None
     route = routing.parse(target)
