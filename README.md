@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.89.0-ff875f?style=flat-square" alt="Versión 4.89.0">
+  <img src="https://img.shields.io/badge/version-4.90.0-ff875f?style=flat-square" alt="Versión 4.90.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -317,7 +317,7 @@ escribirías en la terminal.
 | 🎙️ **Entrevistas** (`g i`) | Cuestionario del equipo o en vivo, exportar e importar respuestas, cerrar la ronda |
 | 🤝 **Equipo** (`g t`) | El repo del equipo y compartir, aprobar lo que llegó con él (también sus hooks) y plugins |
 | ✅ **Calidad** (`g q`) | La salud del proyecto sin IA: máquina, documentación y código, repo a repo (SonarQube, cobertura, vulnerabilidades, deuda); el **escaneo de secretos** (gitleaks, `camaron check --secrets`) y los **hooks del método** de Claude Code (el interruptor y lo que han visto) como filas del panel; y la vista **Librerías** (`#/quality/libs`; `#/libs` sigue abriéndola): una línea por librería con la versión que usan los repos y la última estable (**Buscar versiones nuevas**), sus vulnerabilidades (el escaneo va repo a repo con su barra, se puede parar y acaba con un tick con lo que encontró) y **Actualizar ▾** con esa versión ya puesta, en una rama nueva, sin commit. La misma pantalla que la del portal |
-| 📖 **Docs** (`g d`) | Abrir el portal, construir el explorador C4, generar la wiki de cada repo y preguntar con IA |
+| 📖 **Docs** (`g d`) | El estado de la documentación de un vistazo, sin IA (borradores, wikis, C4); abrir el portal (**Revisar borradores** con su contador); construir el explorador C4; una tarjeta por repo con el estado de su wiki y una sola acción (generar, actualizar, ampliar, reintentar o ver); las preguntas sin respuesta, para llevarlas a las preguntas abiertas o descartarlas; y preguntar con IA |
 | 🧰 **Máquina** (`g m`) | Preparar la máquina (dice «Lista», cuándo y con qué kit, una vez hecho), idioma y modelos, dónde se abren las sesiones (en el lienzo del plan o en una ventana de terminal), tokens, repos, el kit y desinstalar |
 | 📘 **Guía** (`g h`) | Toda la documentación de Camarón dentro de la app, con botones que te llevan a cada sitio y un **recorrido guiado** |
 

@@ -429,17 +429,39 @@ Every repo's dependencies, read from its manifests and lockfiles without AI: Qua
 
 ## Docs
 
-Reading is the portal's; this section opens it and does the work it cannot (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>).
+Reading is the portal's; this section shows the state of the docs and does the work the portal cannot (`#/docs`,
+<kbd>g</kbd> <kbd>d</kbd>). The status, the counters and the unanswered questions are read from what the project already
+knows, with no model; writing a wiki and **Ask with AI** use this machine's agent.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
-- **Read the docs**, **Review drafts** and **Search or ask** open the portal in your browser.
+- **Documentation status**, the row of chips under the title, counts what the project already knows: drafts, pages to
+  reconfirm, pages that cite deleted code, translations pending and feedback pending; how many wikis are up to date,
+  out of date, written under an earlier scope or missing; and the C4 (up to date, out of date, not built yet, or no
+  model to build yet). A count at zero is left out, and a line says so when no chip applies. While the wikis are being
+  read it shows a placeholder. **Wikis out of date** is a button: it scrolls to the first such card. The C4 chip
+  is read again when a C4 build ends.
+- **Read the docs**, **Review drafts** and **Search or ask** open the portal in your browser. **Review drafts** shows
+  how many drafts there are (`Review drafts · 4`) and no number when there are none.
 - **Build the C4 explorer** builds the interactive LikeC4 map the portal shows under Architecture; **View** opens it.
-- **One block per repo**: **Generate the wiki** writes that repo's OpenWiki. When the repo was not chosen for a wiki,
-  it chooses it; when it has no brief yet, it writes a starter brief without AI first. It is off, with the reason,
-  when the repo is not cloned, no wiki engine is installed, or another repo's wiki is being generated (one at a time).
-  Once the wiki has pages: **View** and **Wiki graph · {repo}** (build its graph).
+- **One card per repo**, in a grid that fills the window. Each card shows its state with an icon and a word, the figures
+  the repo has (its pages, when the wiki was written, and whether its brief is the AI's or the starter one) and **one**
+  primary action that follows the state: **Generate the wiki** with no pages yet, **Update** when the code has changed
+  since the pages were written, **Expand** when the wiki was written under an earlier scope, **Try again** when the last
+  run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
+- **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
+  has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
+  the pages already there. While a wiki is being written its button reads **Generating…** with the seconds it has
+  taken, and the card pulses (not when your system asks for reduced motion). One wiki runs at a time.
+- The action that writes pages is off, with the reason, when the repo is not cloned, no wiki engine is installed, or
+  another repo's wiki is being generated; **View** never is. The **Wiki graph · {repo}** row (**Build the graph** or
+  **Rebuild the graph**) appears when the graph is missing or older than the wiki's pages, and stays to show that build.
+  If the wikis cannot be read, one notice with **Try again** says so and the actions stay off; if only a second read
+  fails, the cards keep what was read and the notice says it may be out of date.
+- **Unanswered questions** appears only when there are some: the questions asked on this machine (in the portal's search
+  or Ask, or by an agent) that no page answered, each with how many times it was asked (`×3`). **Add to open
+  questions** sends it to the open questions of the next interview; **Dismiss** forgets it.
 - **Ask with AI** answers a question only from the docs, through this machine's agent, and lists its sources as
   buttons to the portal. It waits up to 90 seconds; `ask.ai: false` in `workspace.yaml` turns it off and `ask.model`
   picks the model.

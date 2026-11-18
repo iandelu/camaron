@@ -109,7 +109,7 @@ Lo que puedes hacer en ella, en vivo:
 
 `#/wikis`: una tarjeta por repo —páginas y cuándo se actualizó, o «aún sin wiki» / «sin clonar»— con **Grafo** (el
 grafo de páginas conectadas de OpenWiki) y **Leer las páginas** (dentro del portal, con su propio menú y «Enlazada
-desde»). Generar o actualizar una wiki es **Docs › Generar la wiki** en la app de escritorio.
+desde»). Generar o actualizar una wiki se hace en **Docs**, en la tarjeta del repo (**Generar la wiki** o **Actualizar**), en la app de escritorio.
 
 <!-- portal:#/wikis -->
 

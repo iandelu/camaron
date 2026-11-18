@@ -443,18 +443,42 @@ Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la
 
 ## Docs
 
-Leer es cosa del portal; esta sección lo abre y hace el trabajo que él no puede (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>).
+Leer es cosa del portal; esta sección enseña el estado de la documentación y hace el trabajo que el portal no puede
+(`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). El estado, los contadores y las preguntas sin respuesta se leen de lo que el
+proyecto ya sabe, sin modelo; escribir una wiki y **Preguntar con IA** usan el agente de esta máquina.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
+- **Estado de la documentación**, la fila de chips bajo el título, cuenta lo que el proyecto ya sabe: borradores, páginas
+  por reconfirmar, páginas que citan código borrado, traducciones pendientes y comentarios pendientes; cuántas wikis
+  están al día, desfasadas, escritas con un alcance anterior o sin hacer; y el C4 (al día, desfasado, aún sin construir
+  o aún sin modelo que construir). Una cuenta a cero no se muestra, y una línea lo dice cuando no hay ningún
+  chip. Mientras se leen las wikis, enseña un marcador. **Wikis desfasadas** es un botón: te lleva a la primera
+  tarjeta en ese estado. El chip del C4 se vuelve a leer cuando acaba una construcción del C4.
 - **Leer la documentación**, **Revisar borradores** y **Buscar o preguntar** abren el portal en tu navegador.
+  **Revisar borradores** muestra cuántos borradores hay (`Revisar borradores · 4`) y ningún número cuando no hay.
 - **Construir el explorador C4** construye el mapa interactivo de LikeC4 que el portal enseña en Arquitectura; **Ver**
   lo abre.
-- **Un bloque por repo**: **Generar la wiki** escribe la wiki OpenWiki de ese repo. Si el repo no estaba elegido para
-  tener wiki, lo elige; si aún no tiene brief, antes escribe uno inicial sin IA. Está desactivado, con el motivo, si el
-  repo no está clonado, no hay ningún motor de wiki instalado o se está generando la wiki de otro repo (una a la vez).
-  Cuando la wiki tiene páginas: **Ver** y **Grafo del wiki · {repo}** (construir su grafo).
+- **Una tarjeta por repo**, en una cuadrícula que llena la ventana. Cada tarjeta muestra su estado con un icono y una
+  palabra, las cifras que tiene el repo (sus páginas, cuándo se escribió la wiki y si su brief es el de la IA o el
+  inicial) y **una** acción principal que sigue al estado: **Generar la wiki** si aún no tiene páginas, **Actualizar**
+  si el código ha cambiado desde que se escribieron las páginas, **Ampliar** si la wiki se escribió con un alcance
+  anterior, **Reintentar** si la última generación falló y **Ver** cuando está al día. Cuando una wiki tiene páginas,
+  **Ver** la abre en el portal junto a la acción.
+- **Generar la wiki** escribe la wiki OpenWiki de ese repo; si el repo no estaba elegido para tener wiki, lo elige, y si
+  aún no tiene brief, antes escribe uno inicial sin IA. **Actualizar** y **Ampliar** lanzan OpenWiki en modo
+  actualización sobre las páginas que ya existen. Mientras se escribe una wiki, su botón dice **Generando…** con los
+  segundos que lleva, y la tarjeta late (no si tu sistema pide menos movimiento). Se escribe una wiki a la vez.
+- La acción que escribe páginas está desactivada, con el motivo, si el repo no está clonado, no hay ningún motor de
+  wiki instalado o se está generando la wiki de otro repo; **Ver** nunca lo está. La fila **Grafo del wiki · {repo}**
+  (**Construir el grafo** o **Reconstruir el grafo**) aparece cuando falta el grafo o es anterior a las páginas de la
+  wiki, y se queda para enseñar esa construcción. Si no se pueden leer las wikis, un único aviso con **Reintentar** lo
+  dice y las acciones siguen desactivadas; si falla solo una segunda lectura, las tarjetas conservan lo leído y el aviso
+  dice que puede estar desactualizado.
+- **Preguntas sin respuesta** aparece solo cuando hay alguna: las preguntas hechas en esta máquina (en la búsqueda o en
+  Preguntar del portal, o por un agente) que ninguna página respondió, cada una con las veces que se hizo (`×3`).
+  **Añadir a preguntas abiertas** la manda a las preguntas abiertas de la próxima entrevista; **Descartar** la olvida.
 - **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza
   sus fuentes en el portal. Espera hasta 90 segundos; `ask.ai: false` en `workspace.yaml` lo apaga y `ask.model` elige
   el modelo.

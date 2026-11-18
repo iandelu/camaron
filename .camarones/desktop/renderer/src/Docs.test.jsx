@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import Docs, { AnswerView, Build, BuildCard, WikiBlock, WikiCard, WikiGrid, WikisUnread } from './sections/Docs.jsx'
 import { c4Card, wikiBlocks } from './docs.js'
 import { setLang } from './i18n.js'
+import { TOURS } from './tour.js'
 
 // A test can stand in for useJob (the hooks need a renderer with effects, which static markup is not); the rest of the module is real.
 const stub = vi.hoisted(() => ({ job: null }))
@@ -18,6 +19,15 @@ const index = { repos: ['api', 'web', 'ui'], docs: [{ path: 'repos/api/index.md'
 const render = (idx = index) => renderToStaticMarkup(<Docs srv={srv} jobs={null} app={{ openExternal: () => {} }} index={idx} />)
 
 afterEach(() => { delete globalThis.location; stub.job = null; setLang('es') })
+
+// The Docs tour points at five things and each must be on the page, or its bubble would have nothing to show.
+test('every step of the Docs tour points at something the page renders', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  const targets = TOURS.docs.map((s) => s.target)
+  expect(targets).toEqual(['docs-portal', 'docs-health', 'docs-c4', 'docs-wikis', 'docs-ask'])
+  for (const target of targets) expect(out, target).toContain(`data-tour="${target}"`)
+})
 
 // Reading is the portal's, in the system browser: buttons that call app.openExternal, never a link the window follows.
 test('Docs opens the portal through the browser and offers the C4 build', () => {

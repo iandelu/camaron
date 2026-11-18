@@ -104,7 +104,7 @@ What you can do on it, live:
 
 `#/wikis`: one card per repo — pages and when it was updated, or "no wiki yet" / "not cloned" — with **Graph** (the
 OpenWiki graph of connected pages) and **Read the pages** (inside the portal, with its own menu and "Linked from").
-Generating or updating a wiki is the desktop app's **Docs › Generate the wiki**.
+Generating or updating a wiki is the desktop app's **Docs**, on the repo's card (**Generate the wiki** or **Update**).
 
 <!-- portal:#/wikis -->
 
