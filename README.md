@@ -444,7 +444,7 @@ restApi -> platformData 'direct:{operationId}-base' {
 }
 ```
 
-`arch-draft` escribe esas anclas solo (también en los modelos nuevos de `--save`); los modelos existentes no se
+`arch-draft` escribe esas anclas por sí mismo (también en los modelos nuevos de `--save`); los modelos existentes no se
 reescriben. `camaron arch-verify` da a cada elemento y relación un estado, y de él dependen lo que reciben los agentes
 y lo que dice `check`:
 
@@ -469,10 +469,11 @@ camaron check --strict                   # broken, no-evidence, deriva y evidenc
 ```
 
 **Cómo falla CI.** El `docs.yml` de cam-docs ejecuta `camaron check` en cada pull request a cam-docs, tras clonar los
-repos de servicio; los hallazgos del C4 salen como avisos y CI sigue en verde. Un equipo que quiera frenar un elemento o
-una relación sin evidencia cambia esa línea a `camaron check --strict` (que también convierte en error los otros avisos
-de `check`). Sin `REPOS_TOKEN` los repos no se clonan: el C4 queda `unchecked`, CI lo dice y no falla. `suspect` y
-`unchecked` nunca fallan.
+repos de servicio; los hallazgos del C4 salen como avisos y CI sigue en verde: es lo que trae por defecto el `docs.yml`
+generado, y los pull requests de código en los repos de servicio no fallan por nada de esto. Un equipo que quiera
+frenar un elemento o una relación sin evidencia cambia esa línea a `camaron check --strict` (que también convierte en
+error los otros avisos de `check`). Sin `REPOS_TOKEN` los repos no se clonan: el C4 queda `unchecked`, CI lo dice y no
+falla. `suspect` y `unchecked` nunca fallan.
 
 Los agentes ven solo lo que el código respalda: el hook de prompt, la herramienta `architecture` del MCP y el freno
 antes de la primera edición sirven los elementos `fresh`, `suspect` y `unchecked` con su estado, retienen el resto
@@ -550,7 +551,7 @@ también `docs/architecture/messaging.md`. `camaron history` escribe `docs/overv
 commits, quién trabaja dónde, ficheros que cambian juntos, tickets entre repos). `radar` deja el stack y las
 herramientas en `docs/overview/tooling.md` y `stack` corrige uno mal detectado. `schemas` lee tablas y colecciones de
 migraciones (Flyway, Liquibase), entidades (JPA, SQLAlchemy, Django, TypeORM, Prisma), Mongo y Firestore.
-`arch-draft` propone un borrador C4 (entiende proyectos Firebase) y escribe en cada elemento y relación que respalda el código su ancla `metadata { code [...] }` (`repo:ruta#Ln`); el actor `user` y un repo sin manifiesto siguen apareciendo como `no-evidence`. Cómo se comprueba y qué hace CI: [El C4 respaldado por el código](#el-c4-respaldado-por-el-código).
+`arch-draft` propone un borrador C4 (entiende proyectos Firebase) y escribe en cada elemento y relación que respalda el código su ancla `metadata { code [...] }` (`repo:ruta#Ln`); un borrador nuevo deja como `no-evidence` el actor `user`, el elemento del sistema y la relación `user -> …`, así que `check --strict` falla tras un `arch-draft --save` recién hecho hasta que una persona los confirma (`#confirmed`, por ejemplo desde el editor C4 del portal); `arch-verify --ack` no basta, solo vuelve a sellar. Cómo se comprueba y qué hace CI: [El C4 respaldado por el código](#el-c4-respaldado-por-el-código).
 
 **El C4 en un repo.** Si un repo de servicio ya tiene su propio modelo LikeC4, `cam-docs` no hace otro: `project.architecture: <repo>:<ruta>` en `.camarones/workspace.yaml` (por ejemplo `api:docs/architecture`) lo convierte en el modelo del proyecto. El portal lista sus vistas, el explorador C4 se construye desde él, el editor de Arquitectura cambia sus `.c4` (que commiteas en ese repo), `check` comprueba las fuentes `c4:` contra él, el MCP `likec4` lo lee y `arch-draft` no escribe un borrador aparte. `check` avisa si la clave nombra un repo que no existe o una carpeta que aún no está; sin la clave, todo sigue en `docs/architecture/`.
 
