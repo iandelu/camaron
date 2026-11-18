@@ -44,3 +44,6 @@ for the portal.
   Skills card (`SkillsList` in `desktop/renderer/src/sections/Team.jsx`) shows each skill's and each optional pack's
   icon, an emoji from `lib/skills_catalog.yaml` (🧩 when it has none), aria-hidden, in `.dk-skill-icon`, always next
   to the skill's name. Emoji only there; they never stand in for a word.
+  A sixth approved exception: the desktop Docs section's state and health icons (`DocsIcon` in
+  `desktop/renderer/src/sections/DocsIcons.jsx`), inline SVG, `aria-hidden`, in `currentColor`, always next to their
+  word.
