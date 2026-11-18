@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Skeleton, fetchSay, shareOk, shareSay } from '@camaron/ui'
+import { Aviso, Button, Card, Skeleton, fetchSay, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from '@camaron/ui'
 import { useCmd } from '../hooks.js'
 import { Failed, JobOutput, Page } from '../parts.jsx'
 import Commands from './Commands.jsx'
+import { ago } from '../jobs.js'
 import { lang, t } from '../i18n.js'
 import { skillsView, switchArgs } from '../skills.js'
 
-// The team by task: the team's cam-docs repo and sharing with it (where it stands, share now), the agent config and
+// The team by task: the team's cam-docs repo and syncing with it (where it stands, bring in, upload), the agent config and
 // hooks that came with it and this machine has not approved, the agents' skills and the plugins. The board and CI are
 // the portal's.
 // A kind or a state the CLI names in English (trust, plugins), in the user's words; an unknown one as it comes.
@@ -29,8 +30,53 @@ export default function Team({ srv, jobs }) {
   )
 }
 
-// The team's repo (remote) and sharing (app.share.sync_status / app.share.share): sharing is the team action —
-// checkpoint, bring in the team's work, push; a clash is undone and reported, never forced.
+// The team's repo (remote): bring in, upload, or both in one go (sync/pull, sync/push, sync/share); the one that fits
+// where it stands is the primary. A clash is undone and reported, never forced.
+const SAY = { pull: pullSay, push: pushSay, share: shareSay }
+const OK = { pull: pullOk, push: pushOk, share: shareOk }
+const BUSY = { pull: 'tm.pulling', push: 'tm.pushing', share: 'tm.working' }
+
+export async function runSync(srv, kind) {
+  const r = await srv.post(`sync/${kind}`, {})
+  return { result: r.result, sync: r.sync }
+}
+
+const when = (iso) => {
+  const at = Date.parse(iso || '')
+  return Number.isNaN(at) ? t('tm.never') : ago(at / 1000, Date.now() / 1000, t)
+}
+
+export function SyncActions({ s, busy, onRun, onCheck }) {
+  const primary = syncPrimary(s)
+  const btn = (kind, label) => (
+    <Button size="sm" variant={primary === kind ? 'primary' : undefined} disabled={!!busy} onClick={() => onRun(kind)}>
+      {busy === kind ? t(BUSY[kind]) : t(label)}</Button>)
+  return (<>
+    {btn('pull', 'tm.pull')}
+    {btn('push', 'tm.push')}
+    {btn('share', 'tm.sync')}
+    <Button size="sm" variant="ghost" disabled={!!busy} onClick={onCheck}>{t('tm.check')}</Button>
+  </>)
+}
+
+export function TerminalButton({ srv }) {
+  return <Button size="sm" variant="ghost" onClick={() => srv.post('app/terminal', {}).catch(() => {})}>{t('tm.terminal')}</Button>
+}
+
+export function SyncResult({ kind, result, remote, srv }) {
+  if (kind === 'share') return <ShareResult result={result} remote={remote} srv={srv} />
+  if (!result) return null
+  const step = kind === 'pull' ? result.pull : result
+  if (kind === 'pull' && !step) return <p className="small" role="status">{t('sy.pull.busy')}</p>
+  const said = SAY[kind](step, remote)
+  const m = t(said.key, said.vars)
+  const title = m === said.key ? step.status : m
+  if (OK[kind](step)) return <p className="small" role="status">{title}</p>
+  const action = said.token
+    ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
+    : step.status === 'conflict' ? <TerminalButton srv={srv} /> : null
+  return <Aviso tone={step.status === 'conflict' ? 'warn' : 'error'} title={title} detail={said.detail} action={action} />
+}
 function Repo({ srv, jobs }) {
   const [s, setS] = useState(null)
   const [url, setUrl] = useState('')
@@ -42,10 +88,10 @@ function Repo({ srv, jobs }) {
     .then((x) => { setS(x); setUrl(x.remote || ''); setError('') }, (e) => setError(e.message))
   useEffect(() => { load(false) }, [])
   const cmd = async (name, args) => { await c.run(name, args); load(false) }
-  async function share() {
-    setBusy('share')
+  async function sync(kind) {
+    setBusy(kind)
     setResult(null)
-    try { const r = await srv.post('sync/share', {}); setResult(r.result); setS(r.sync) } catch (e) { setResult({ status: 'error', detail: e.message }) } finally { setBusy('') }
+    try { const r = await runSync(srv, kind); setResult({ kind, result: r.result }); setS(r.sync) } catch (e) { setResult({ kind, result: { status: 'error', detail: e.message } }) } finally { setBusy('') }
   }
   async function check() { setBusy('check'); try { await load(true) } finally { setBusy('') } }
   const clean = url.trim()
@@ -60,20 +106,15 @@ function Repo({ srv, jobs }) {
       </div>
       {error ? <Failed title={t('tm.failed')} detail={error} onRetry={() => { setError(''); load(false) }} />
         : !s ? <Skeleton lines={2} /> : !s.remote ? <p className="muted small">{t('tm.noRemote')}</p> : (<>
-        <div className="dk-stats dk-stats-sm">
-          <div><span className="eyebrow">{t('tm.ahead')}</span><b className="dk-stat-sm">{s.ahead ?? '—'}</b></div>
-          <div><span className="eyebrow">{t('tm.behind')}</span><b className="dk-stat-sm">{s.behind ?? '—'}</b></div>
-          <div><span className="eyebrow">{t('tm.pending')}</span><b className="dk-stat-sm">{s.pending.length}</b></div>
-        </div>
+        <p className="small">{t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(s.last_share) })}</p>
         <div className="row">
-          <Button size="sm" variant="primary" disabled={!!busy} onClick={share}>{t('tm.share')}</Button>
-          <Button size="sm" variant="ghost" disabled={!!busy} onClick={check}>{t('tm.check')}</Button>
+          <SyncActions s={s} busy={busy} onRun={sync} onCheck={check} />
           <label className="dk-check"><input type="checkbox" checked={!!s.auto} disabled={c.running}
             onChange={() => cmd('share', { auto: s.auto ? 'off' : 'on' })} />{t('tm.auto')}</label>
         </div>
       </>)}
       <FetchNote fetched={s?.fetched} remote={s?.remote} />
-      <ShareResult result={result} remote={s?.remote} />
+      {result ? <SyncResult kind={result.kind} result={result.result} remote={s?.remote} srv={srv} /> : null}
       <JobOutput c={c} />
     </Card>
   )
@@ -81,7 +122,7 @@ function Repo({ srv, jobs }) {
 
 // A share's outcome. A failure git explained (no route to the host, no token…) says so in words, git's line beneath,
 // and a refused token links to the Tokens card for that host.
-export function ShareResult({ result, remote }) {
+export function ShareResult({ result, remote, srv }) {
   if (!result) return null
   const said = shareSay(result, remote)
   const m = t(said.key, said.vars)
@@ -89,7 +130,7 @@ export function ShareResult({ result, remote }) {
   if (shareOk(result)) return <p className="small" role="status">{title}</p>
   const token = said.token
     ? <Button size="sm" variant="ghost" href={`#/machine?host=${encodeURIComponent(said.token)}`}>{t('sy.token', { host: said.token })}</Button>
-    : null
+    : result.status === 'conflict' && srv ? <TerminalButton srv={srv} /> : null
   return <Aviso tone="error" title={title} detail={said.detail} action={token} />
 }
 

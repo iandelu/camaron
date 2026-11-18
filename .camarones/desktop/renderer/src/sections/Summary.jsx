@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Skeleton } from '@camaron/ui'
+import { Aviso, Button, Card, Skeleton, catchUpSay } from '@camaron/ui'
 import { action, doctorNote } from '../summary.js'
 import { openSession, sessionNote } from '../plan.js'
 import { useAgents, useStore } from '../hooks.js'
 import { firstRunPending } from '../nav.js'
 import { AgentPicker, Failed, Page } from '../parts.jsx'
+import { TerminalButton } from './Team.jsx'
 import { useTour } from '../Tour.jsx'
 import { lang, t } from '../i18n.js'
 
@@ -15,10 +16,14 @@ export default function Summary({ srv, jobs }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [firstRun, setFirstRun] = useState(false)
+  const [catchUp, setCatchUp] = useState(null)
   const [launch, setLaunch] = useState({ busy: false, note: '', error: '' })
   const a = useAgents(srv)
   const { running } = useStore(jobs)
-  const load = () => srv.get('app/summary', { lang: lang() }).then((d) => { setData(d); setError('') }, (e) => setError(e.message))
+  const load = () => {
+    srv.get('sync').then((x) => setCatchUp(x?.catch_up ?? null), () => {})
+    return srv.get('app/summary', { lang: lang() }).then((d) => { setData(d); setError('') }, (e) => setError(e.message))
+  }
   useEffect(() => {
     load()
     srv.get('app/onboard/state').then((s) => setFirstRun(firstRunPending(s)), () => setFirstRun(false))
@@ -50,6 +55,7 @@ export default function Summary({ srv, jobs }) {
   return (
     <Page title={title}>
       {firstRun ? <FirstRunNotice /> : <TourOffer srv={srv} />}
+      <CatchUpNote srv={srv} catchUp={catchUp} />
       <Card className="dk-next" data-tour="summary-next">
         <span className="eyebrow">{t(step.kind === 'resume' ? 'next.eyebrowResume' : 'next.eyebrow')}</span>
         <h2 className="dk-next-title">{heading}</h2>
@@ -90,6 +96,20 @@ export default function Summary({ srv, jobs }) {
         </Card>
       </div>
     </Page>
+  )
+}
+
+// What the window's catch-up with the team left: a clash or no route to the repo warns (the files, a terminal to
+// resolve it, Team), a pull that brought changes is a quiet line, up to date says nothing.
+export function CatchUpNote({ srv, catchUp }) {
+  const said = catchUpSay(catchUp)
+  if (!said) return null
+  const title = t(said.key, said.vars)
+  if (said.tone !== 'warn') return <p className="muted small" role="status">{title}</p>
+  return (
+    <Aviso tone="warn" title={title} action={<span className="row">
+      {said.key === 'cu.conflict' ? <TerminalButton srv={srv} /> : null}
+      <Button size="sm" href="#/team">{t('nav.team')}</Button></span>} />
   )
 }
 

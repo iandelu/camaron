@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PROJECT, qualityView, sectionOf, sections, termOf, tokenPrefill } from './nav.js'
+import { catchUpOnOpen, firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PROJECT, qualityView, sectionOf, sections, termOf, tokenPrefill } from './nav.js'
 
 test('a project has its sections; this machine has its own, Kit dev only in a kit checkout', () => {
   expect(PROJECT).toEqual(['summary', 'board', 'decisions', 'plan', 'interviews', 'team', 'quality', 'docs'])
@@ -120,4 +120,11 @@ test('a place is the section, but quality\'s libraries are a place of their own 
   expect(placeOf('#/libs', {})).toBe(LIBS)
   expect(placeOf('#/quality', {})).toBe('quality')
   expect(placeOf('#/plan/unit-x', {})).toBe('plan')
+})
+
+test('the window catches up on open unless the first run is still ahead', () => {
+  expect(catchUpOnOpen({ mode: 'done', done: true }, '#/summary')).toBe(true)
+  expect(catchUpOnOpen(null, '#/summary')).toBe(true)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/summary')).toBe(false)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/start')).toBe(false)
 })

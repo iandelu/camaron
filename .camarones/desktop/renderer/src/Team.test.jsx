@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, expect, test } from 'vitest'
-import { FetchNote, ShareResult, SkillsList } from './sections/Team.jsx'
+import { afterEach, expect, test, vi } from 'vitest'
+import { Button } from '@camaron/ui'
+import { FetchNote, ShareResult, SkillsList, SyncActions, SyncResult, TerminalButton, runSync } from './sections/Team.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -71,4 +72,50 @@ test('the skills card shows each skill with its icon, both switches and the pack
   const en = renderToStaticMarkup(<SkillsList data={SKILLS} />)
   expect(en).toContain('Frontend design')
   expect(en).toContain('awaits approval')
+})
+
+const find = (node, pred, out = []) => {
+  if (!node || typeof node !== 'object') return out
+  if (Array.isArray(node)) { node.forEach((n) => find(n, pred, out)); return out }
+  if (pred(node)) out.push(node)
+  return find(node.props?.children, pred, out)
+}
+const buttons = (el) => find(el, (n) => n.type === Button)
+
+test('behind the team, bringing in is the primary button and clicking it asks for a pull', () => {
+  const calls = []
+  const s = { remote: 'x', ahead: 0, behind: 2, pending: [] }
+  const bs = buttons(SyncActions({ s, busy: '', onRun: (k) => calls.push(k), onCheck: () => {} }))
+  const primary = bs.filter((b) => b.props.variant === 'primary')
+  expect(primary).toHaveLength(1)
+  expect(primary[0].props.children).toBe('Traer cambios')
+  primary[0].props.onClick()
+  expect(calls).toEqual(['pull'])
+  expect(bs.map((b) => b.props.children)).toEqual(['Traer cambios', 'Subir cambios', 'Sincronizar con el equipo', 'Comprobar'])
+  setLang('en')
+  expect(buttons(SyncActions({ s, busy: '', onRun: () => {}, onCheck: () => {} })).map((b) => b.props.children)[2]).toBe('Sync with the team')
+})
+
+test('running a pull posts sync/pull and words the run\'s pull; a busy run says another job has the docs', async () => {
+  const post = vi.fn().mockResolvedValue({ result: { status: 'done', pull: { status: 'pulled', commits: 2, files: [] } }, sync: { behind: 0 } })
+  const r = await runSync({ post }, 'pull')
+  expect(post).toHaveBeenCalledWith('sync/pull', {})
+  expect(r.sync).toEqual({ behind: 0 })
+  const ok = renderToStaticMarkup(<SyncResult kind="pull" result={r.result} remote={REMOTE} srv={{}} />)
+  expect(ok).toContain('He traído 2 cambios del equipo.')
+  const busy = renderToStaticMarkup(<SyncResult kind="pull" result={{ status: 'busy', pull: null }} remote={REMOTE} srv={{}} />)
+  expect(busy).toContain('Otro trabajo está usando estos docs')
+})
+
+test('a push posts sync/push; a pull conflict names the files and offers a terminal', async () => {
+  const post = vi.fn().mockResolvedValue({ result: { status: 'pushed' }, sync: {} })
+  await runSync({ post }, 'push')
+  expect(post).toHaveBeenCalledWith('sync/push', {})
+  const result = { status: 'done', pull: { status: 'conflict', commits: 0, files: ['docs/a.md'] } }
+  const el = SyncResult({ kind: 'pull', result, remote: REMOTE, srv: { post } })
+  expect(renderToStaticMarkup(el)).toContain('docs/a.md')
+  const term = el.props.action
+  expect(term.type).toBe(TerminalButton)
+  term.type(term.props).props.onClick()
+  expect(post).toHaveBeenLastCalledWith('app/terminal', {})
 })

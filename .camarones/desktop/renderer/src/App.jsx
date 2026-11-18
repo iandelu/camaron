@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Brand, Breadcrumbs, Button, EmptyState, Keys, Skeleton, SkipLink } from '@camaron/ui'
-import { START, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
+import { START, catchUpOnOpen, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
 import { jobsStore } from './jobs.js'
 import { chord, entries, keyFor, typing } from './palette.js'
 import { crumb } from './adr.js'
@@ -62,6 +62,7 @@ function Project({ app }) {
   const srv = useMemo(() => server(app.token), [])
   const jobs = useMemo(() => jobsStore(srv.get), [])           // one for the window: it outlasts the sections
   const { running } = useStore(jobs)
+  const caughtUp = useRef(false)
   const projects = useProjects(app, srv, index?.project, setStatus)
   // The index and where the first run stands, read side by side; the section mounts only after both, so a first run
   // left unfinished opens straight on the wizard (#/start) and the summary never fires its reads first. Without the
@@ -76,6 +77,10 @@ function Project({ app }) {
       }
       setIndex(idx.x)
       setError('')
+      if (!caughtUp.current && catchUpOnOpen(s, location.hash)) {
+        caughtUp.current = true
+        srv.post('app/catch-up', {}).then(() => jobs.refresh(), () => {})
+      }
     })
   useEffect(() => {
     open()

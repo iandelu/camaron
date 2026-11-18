@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, expect, test } from 'vitest'
-import { FirstRunNotice } from './sections/Summary.jsx'
+import { afterEach, expect, test, vi } from 'vitest'
+import { Button } from '@camaron/ui'
+import { CatchUpNote, FirstRunNotice } from './sections/Summary.jsx'
+import { TerminalButton } from './sections/Team.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -14,4 +16,38 @@ test('an unfinished first run gets a notice with a button back to the wizard', (
   const en = renderToStaticMarkup(<FirstRunNotice />)
   expect(en).toContain('first run is not finished.')
   expect(en).toMatch(/>Continue setting it up<\/a>/)
+})
+
+const walk = (node, out = []) => {
+  if (!node || typeof node !== 'object') return out
+  if (Array.isArray(node)) { node.forEach((n) => walk(n, out)); return out }
+  if (node.type === Button) out.push(node)
+  else if (node.type === TerminalButton) out.push(node.type(node.props))
+  walk(node.props?.children, out)
+  walk(node.props?.action, out)
+  return out
+}
+
+test('a catch-up that hit a conflict warns, names the files and opens a terminal', () => {
+  const post = vi.fn().mockResolvedValue({ opened: true })
+  const el = CatchUpNote({ srv: { post }, catchUp: { status: 'done', pull: { status: 'conflict', files: ['docs/a.md', 'docs/b.md'] } } })
+  const out = renderToStaticMarkup(el)
+  expect(out).toContain('chocan con los tuyos en docs/a.md, docs/b.md')
+  expect(out).toContain('href="#/team"')
+  const term = walk(el).find((b) => b.props.children === 'Abrir una terminal aquí')
+  term.props.onClick()
+  expect(post).toHaveBeenCalledWith('app/terminal', {})
+})
+
+test('offline warns with a link to Team; pulled is a quiet status line; up to date shows nothing', () => {
+  const offline = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'error', reason: 'network' } }} />)
+  expect(offline).toContain('No llego al repo del equipo')
+  expect(offline).not.toContain('Abrir una terminal')
+  const pulled = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)
+  expect(pulled).toContain('role="status"')
+  expect(pulled).toContain('He traído 3 cambio(s) del equipo.')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'up-to-date' } }} />)).toBe('')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={null} />)).toBe('')
+  setLang('en')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)).toContain('Brought in 3 change(s) from the team.')
 })
