@@ -3,7 +3,7 @@ import { Brand, Breadcrumbs, Button, EmptyState, Keys, Skeleton, SkipLink } from
 import { START, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
 import { jobsStore } from './jobs.js'
 import { chord, entries, keyFor, typing } from './palette.js'
-import { crumb } from './adr.js'
+import { crumbs } from './crumbs.js'
 import { portalUrl } from './docs.js'
 import { guideEntries } from './guide.js'
 import { server } from './server.js'
@@ -15,18 +15,14 @@ import JobsPanel from './JobsPanel.jsx'
 import Palette from './Palette.jsx'
 import { TourProvider, useTour } from './Tour.jsx'
 import Board from './sections/Board.jsx'
-import Decisions from './sections/Decisions.jsx'
 import { catalog } from './sections/Commands.jsx'
 import Docs from './sections/Docs.jsx'
+import Flow from './sections/Flow.jsx'
 import Guide, { loadGuides } from './sections/Guide.jsx'
-import Interviews from './sections/Interviews.jsx'
 import KitDev from './sections/KitDev.jsx'
-import Machine from './sections/Machine.jsx'
-import Plan from './sections/Plan.jsx'
 import Quality from './sections/Quality.jsx'
+import Settings from './sections/Settings.jsx'
 import Start from './sections/Start.jsx'
-import Summary from './sections/Summary.jsx'
-import Team from './sections/Team.jsx'
 import { lang, t } from './i18n.js'
 
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -64,7 +60,7 @@ function Project({ app }) {
   const { running } = useStore(jobs)
   const projects = useProjects(app, srv, index?.project, setStatus)
   // The index and where the first run stands, read side by side; the section mounts only after both, so a first run
-  // left unfinished opens straight on the wizard (#/start) and the summary never fires its reads first. Without the
+  // left unfinished opens straight on the wizard (#/start) and Flow never fires its reads first. Without the
   // state (that read failed) the window stays as it is.
   const open = () => Promise.all([srv.get('tree').then((x) => ({ x }), (e) => ({ e })), srv.get('app/onboard/state').catch(() => null)])
     .then(([idx, s]) => {
@@ -86,7 +82,6 @@ function Project({ app }) {
   const here = sectionOf(hash, { kitdev })
   useEffect(() => { const to = movedRoute(hash); if (to) location.replace(to) }, [hash])    // an old address of a place that moved
   const full = here === START                           // the first-run wizard: no rail, no section nav
-  const sub = here === 'decisions' ? crumb(hash, t) : null     // a place inside a section: its own crumb, the section a link
   const { project, machine } = sections({ kitdev })
   const all = [...project, ...machine]
   useEffect(() => {                                     // ⌘K / Ctrl K anywhere; g + a letter outside fields and dialogs
@@ -121,9 +116,8 @@ function Project({ app }) {
     <div className={full ? 'dk dk-full' : 'dk'}>
       <SkipLink target="main">{t('skip')}</SkipLink>
       <header className="dk-top">
-        <Brand project={index?.project} href="#/summary" />
-        <Breadcrumbs items={[{ label: index?.project || '…', href: '#/summary' }, { label: t('nav.' + here), href: sub ? `#/${here}` : undefined },
-          ...(sub ? [{ label: sub }] : [])]} />
+        <Brand project={index?.project} href="#/flow" />
+        <Breadcrumbs items={crumbs({ hash, project: index?.project, t, flags: { kitdev } })} />
         <span className="dk-grow"></span>
         {/* the portal is the reader, with no token: it opens in the system browser, never in this window */}
         <Button size="sm" variant="ghost" data-tour="portal" onClick={() => app.openExternal?.(portalUrl(location.origin, '#/'))}>{t('portal.open')}</Button>
@@ -209,7 +203,7 @@ function Rail({ app, projects: { list, busy, open } }) {
   return (
     <nav className="dk-rail" aria-label={t('rail')} data-tour="rail">
       {list.map((p) => (p.current
-        ? <a key={p.path || p.name} className="dk-proj on" href="#/summary" aria-current="true" title={p.name}>{initials(p.name)}</a>
+        ? <a key={p.path || p.name} className="dk-proj on" href="#/flow" aria-current="true" title={p.name}>{initials(p.name)}</a>
         : <button key={p.path} type="button" className="dk-proj" disabled={!p.exists || busy} onClick={() => open(p)}
             title={p.exists ? p.name : `${p.name}: ${t('rail.missing')}`}>{initials(p.name)}</button>))}
       <button type="button" className="dk-proj add" aria-label={t('rail.add')} title={t('rail.add')} onClick={() => app.hub?.()}>+</button>
@@ -217,8 +211,7 @@ function Rail({ app, projects: { list, busy, open } }) {
   )
 }
 
-const SECTIONS = { summary: Summary, board: Board, decisions: Decisions, plan: Plan, interviews: Interviews, team: Team, quality: Quality, docs: Docs, machine: Machine,
-  guide: Guide, kitdev: KitDev, start: Start }
+const SECTIONS = { flow: Flow, board: Board, quality: Quality, docs: Docs, settings: Settings, guide: Guide, kitdev: KitDev, start: Start }
 function Section({ here, ...props }) {
   const View = SECTIONS[here]
   return <View key={here} {...props} />
