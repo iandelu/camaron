@@ -36,7 +36,6 @@ FINGERPRINTED = ("lines", "symbol")             # the other anchors are checked 
 SECTIONS = ("elements", "relations")
 SKIP_DIRS = frozenset({".git", "node_modules", "target", "build", "dist", ".gradle", ".idea", ".venv", "venv",
                        "__pycache__", ".next", "coverage", "vendor"})     # quickarch.SKIP_DIRS' build and tool folders
-NO_MODEL = {"elements": {}, "relations": []}
 
 
 def _now() -> str:
@@ -103,7 +102,7 @@ def _parsed(texts: tuple[tuple[str, str], ...]) -> tuple[dict, str | None]:
     try:
         return c4edit.index(dict(texts)), None
     except Exception as e:                       # a model c4edit cannot read: no states, and why
-        return NO_MODEL, str(e) or type(e).__name__
+        return {"elements": {}, "relations": []}, str(e) or type(e).__name__
 
 
 def _model() -> tuple[dict[str, list[str]], dict, str | None]:
@@ -114,7 +113,7 @@ def _model() -> tuple[dict[str, list[str]], dict, str | None]:
         texts = tuple((f.relative_to(arch).as_posix(), f.read_text(encoding="utf-8", errors="replace"))
                       for f in (sorted(arch.rglob("*.c4")) if arch.is_dir() else []))
     except OSError as e:
-        return {}, NO_MODEL, f"C4 model not read: {e}"
+        return {}, {"elements": {}, "relations": []}, f"C4 model not read: {e}"
     return {rel: text.split("\n") for rel, text in texts}, *_parsed(texts)
 
 
@@ -175,8 +174,8 @@ def fingerprint(ref: str, read=None, model=None) -> dict | None:
 
 
 def check_source(ref: str, stamp: dict | None, read=None, model=None) -> str:
-    """fresh | changed | missing, for one source against its fingerprint."""
-    if not isinstance(stamp, dict):
+    """fresh | changed | missing, for one source against its fingerprint; no stamp, or one without a hash: missing."""
+    if not isinstance(stamp, dict) or "h" not in stamp:
         return "missing"
     k = kind(ref)
     if k in ("symbol", "c4") and stamp.get("k"):
@@ -193,7 +192,7 @@ def check_source(ref: str, stamp: dict | None, read=None, model=None) -> str:
     if now and now["h"] == stamp["h"]:
         return "fresh"
     if span:                                    # the same code moved inside the file (lines added above it)
-        norm, n = _norm(lines), stamp["n"]
+        norm, n = _norm(lines), stamp.get("n")
         if n and any(_hash(norm[i:i + n]) == stamp["h"] for i in range(0, len(norm) - n + 1)):
             return "fresh"
         if span[1] > len(lines):
@@ -229,23 +228,27 @@ def _stamp(entry_for: dict, logical: str, fm: dict, sha: str, by: str | None = N
                           "sources": {s: fingerprint(s, model=model) for s in _sources(fm)}}
 
 
-def _migrate_c4(entry: dict, model=None) -> int:
+def _unmigrated(entry: dict) -> list[str]:
+    """The `c4:` sources of a page stamp written before v2: no `v`, or null."""
+    sources = entry.get("sources") if isinstance(entry, dict) else None
+    return [s for s, st in (sources.items() if isinstance(sources, dict) else ())
+            if kind(s) == "c4" and (st is None or isinstance(st, dict) and "v" not in st)]
+
+
+def _migrate_c4(entry: dict, model) -> int:
     """A `c4:` source stamped before v2 takes the v2 fingerprint when its element did not change since (the v1 hash
     still matches), or, for a null stamp (v1 never found an element declared through `extend`), when the model has
     the element now. Otherwise it is marked `v: 1` (still `changed`, or `missing`), so it is looked at only once."""
-    sources = entry.get("sources") if isinstance(entry, dict) else None
-    n = 0
-    for s, st in (sources.items() if isinstance(sources, dict) else ()):
-        if kind(s) != "c4" or not (st is None or isinstance(st, dict) and "v" not in st):
-            continue
+    sources = entry["sources"]
+    for s in (todo := _unmigrated(entry)):
+        st = sources[s]
         if st is None:
             now = fingerprint(s, model=model)
         else:
             old = _c4_lines(str(s).strip()[3:])
             now = fingerprint(s, model=model) if old is not None and _hash(_norm(old)) == st.get("h") else None
         sources[s] = now or {**(st or {"h": "", "n": 0, "k": "c4"}), "v": 1}
-        n += 1
-    return n
+    return len(todo)
 
 
 def stamp_all(pages: dict | None = None, model=None) -> int:
@@ -254,7 +257,11 @@ def stamp_all(pages: dict | None = None, model=None) -> int:
     pages = pages if pages is not None else _pages()
     with FileLock(LOCK):
         data = _load()
-        n = sum(_migrate_c4(e, model) for e in data["pages"].values())
+        todo = [e for e in data["pages"].values() if _unmigrated(e)]
+        model = (model or _model()) if todo else model
+        n = 0
+        if todo and not model[2] and model[1]["elements"]:   # no model here: leave them to a machine that has one
+            n = sum(_migrate_c4(e, model) for e in todo)
         for old in [k for k in data["pages"] if k not in pages]:       # a wiki page's pre-4.81 path: keep its stamp
             new = docs_alias(old, pages)
             if new != old and new not in data["pages"]:
@@ -356,7 +363,7 @@ def _c4_of(data: dict) -> dict:
         c4[section] = {k: e for k, e in entries.items() if isinstance(e, dict)}
         for e in c4[section].values():
             fps = e.get("anchors") if isinstance(e.get("anchors"), dict) else {}
-            e["anchors"] = {raw: fp for raw, fp in fps.items() if fp is None or isinstance(fp, dict)}
+            e["anchors"] = {raw: fp for raw, fp in fps.items() if fp is None or isinstance(fp, dict) and "h" in fp}
     return c4
 
 
@@ -392,14 +399,16 @@ def _apply(c4: dict, items: list, repos: set[str], ack: set[str], by: str | None
 
 
 def _c4_sync(items: list, repos: set[str], ack: set[str] = frozenset(), by: str | None = None,
-             prune: bool = False) -> tuple[dict, int, str | None]:
+             prune: bool = False, strict: bool = False) -> tuple[dict, int, str | None]:
     """Stamp what is new, was edited or is acknowledged; fingerprint an anchor whose repo is first seen here; with
     `prune`, drop what is gone. Nothing to change: no lock, no write. Returns the stamps, how many changed and why they
-    could not be read or saved (then the stamps are this call's own)."""
+    could not be read or saved: then the stamps are this call's own, or, when `strict`, the failure is raised."""
     c4, error = _c4_of({}), None
     try:
         c4 = _c4_of(_load())
-    except OSError as e:
+    except (OSError, UnicodeDecodeError) as e:
+        if strict:
+            raise
         error = f"C4 stamps not read: {e}"
     if not items or not _apply(c4, items, repos, ack, by, prune) or error:
         return c4, 0, error
@@ -410,7 +419,9 @@ def _c4_sync(items: list, repos: set[str], ack: set[str] = frozenset(), by: str 
             if n:
                 save_json(FILE, data)
             return data["c4"], n, None
-    except (OSError, LockBusy) as e:
+    except (OSError, UnicodeDecodeError, LockBusy) as e:
+        if strict:
+            raise
         return c4, 0, f"C4 stamps not saved: {e}"
 
 
@@ -425,7 +436,7 @@ def _evaluate(items: list, repos: set[str], prune: bool = False) -> dict:
 
 def c4_stamp_all() -> int:
     """Stamp the C4 elements and relations that are new or whose block changed; drop the stamps of the gone ones."""
-    return _c4_sync(_c4_items(), _repos(), prune=True)[1]
+    return _c4_sync(_c4_items(), _repos(), prune=True, strict=True)[1]
 
 
 def c4_ack(fqns: list[str], by: str) -> list[str]:
@@ -433,7 +444,7 @@ def c4_ack(fqns: list[str], by: str) -> list[str]:
     reference."""
     items = [i for i in _c4_items() if i[1] in fqns]
     done = {i[1] for i in items}
-    _c4_sync(items, _repos(), done, by)
+    _c4_sync(items, _repos(), done, by, strict=True)
     return [f for f in fqns if f in done]
 
 

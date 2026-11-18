@@ -410,3 +410,72 @@ def test_a_model_file_that_cannot_be_read_is_an_error_not_a_crash(c4, kit, monke
     st = c4.c4_states()
     assert st["elements"] == {} and "denied" in st["error"]
     assert c4.status("flows/a.md")["state"] == "stale"
+
+
+# ---------- no model here, strict writers, more mangled stamps ----------
+def old_stamps(c4, kit, sources):
+    """fresh.json as the kit before v2 wrote it, for pages citing `sources` ({page: {source: stamp}})."""
+    from lib.common import save_json
+    for p, cited in sources.items():
+        page(kit, p, list(cited))
+    shas = {p: sha for p, (_, sha) in c4._pages().items()}
+    save_json(c4.FILE, {"v": 1, "pages": {p: {"body_sha": shas[p], "at": "2026-11-01T10:00:00", "sources": cited}
+                                          for p, cited in sources.items()}})
+
+
+def test_old_stamps_wait_for_a_machine_that_has_the_model(c4, kit):
+    """The model lives in a repo not cloned here: the migration marks nothing, since fresh.json is shared."""
+    old = c4._c4_lines("shop.api")
+    v1 = {"h": c4._hash(c4._norm(old)), "n": len(c4._norm(old)), "k": "c4"}
+    written = {"flows/a.md": {"c4:shop.api": v1}, "flows/b.md": {"c4:shop.api.orders": None}}
+    old_stamps(c4, kit, written)
+    ws = kit.services.workspace.workspace()
+    ws["repos"].append({"name": "arch", "kind": "service", "branch": "main"})
+    ws["project"]["architecture"] = "arch:c4"
+    kit.services.workspace.save_workspace(ws)
+    c4.states()
+    assert {p: e["sources"] for p, e in stamps(c4)["pages"].items()} == written
+    arch = kit.ws / "arch" / "c4"                                       # the repo is cloned here now
+    (arch / "repos").mkdir(parents=True)
+    (arch / "model.c4").write_text(MODEL, encoding="utf-8", newline="\n")
+    (arch / "repos" / "api.c4").write_text(FRAGMENT, encoding="utf-8", newline="\n")
+    assert [c4.status(p)["state"] for p in written] == ["fresh", "fresh"]
+
+
+def test_a_model_that_does_not_parse_marks_no_old_stamp(c4, kit, monkeypatch):
+    old_stamps(c4, kit, {"flows/a.md": {"c4:shop.api.orders": None}})
+    monkeypatch.setattr(importlib.import_module("lib.c4edit"), "index", lambda *a, **k: 1 / 0)
+    c4.states()
+    assert stamps(c4)["pages"]["flows/a.md"]["sources"] == {"c4:shop.api.orders": None}
+
+
+def test_ack_and_stamp_all_say_when_stamps_cannot_be_saved(c4, monkeypatch):
+    def refuse(*_a, **_k):
+        raise PermissionError("read-only")
+    monkeypatch.setattr(c4, "save_json", refuse)
+    with pytest.raises(PermissionError):
+        c4.c4_stamp_all()
+    with pytest.raises(PermissionError):
+        c4.c4_ack(["shop.api.orders"], by="ana")
+
+
+def test_a_stamp_file_that_is_not_utf8(c4):
+    c4.FILE.parent.mkdir(parents=True, exist_ok=True)
+    c4.FILE.write_bytes(b"\xff\xfe not json")
+    st = c4.c4_states()
+    assert st["elements"]["shop.api.orders"]["state"] == "fresh" and "not read" in st["error"]
+    with pytest.raises(UnicodeDecodeError):
+        c4.c4_stamp_all()
+
+
+def test_a_fingerprint_without_its_hash_counts_as_none(c4, kit):
+    from lib.common import save_json
+    page(kit, "flows/a.md", [f"api:{API}#L3-L5"])
+    c4.stamp_all()
+    c4.c4_stamp_all()
+    data = stamps(c4)
+    data["pages"]["flows/a.md"]["sources"][f"api:{API}#L3-L5"] = {}
+    data["c4"]["elements"]["shop.api.orders"]["anchors"][f"api:{API}#Api"] = {}
+    save_json(c4.FILE, data)
+    assert c4.status("flows/a.md")["state"] == "stale"                  # as a page stamped when its code was gone
+    assert c4.c4_states()["elements"]["shop.api.orders"]["state"] == "fresh"     # fingerprinted again, first seen
