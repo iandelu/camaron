@@ -423,6 +423,12 @@ def test_a_sync_conflict_says_the_sh_line_and_does_not_raise(kit, fake_wizard, m
     assert w.t("sh_conflict", detail="origin/main") in said
 
 
+def test_the_busy_run_line_promises_no_automatic_catch_up(kit):
+    T = kit.wizard.T
+    assert T["es"]["cu_busy_run"] == "Hay una ejecución del autopiloto usando los docs: trae los cambios del equipo cuando termine."
+    assert T["en"]["cu_busy_run"] == "An autopilot run is using the docs: bring in the team's changes once it ends."
+
+
 def test_a_finished_first_run_catches_up_before_the_menu(kit, fake_wizard, monkeypatch):
     order = []
     monkeypatch.setattr(kit.wizard.onboard, "mode", lambda saved: "join")

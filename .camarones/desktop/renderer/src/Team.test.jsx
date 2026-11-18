@@ -152,7 +152,7 @@ test('a pull held by a rebase left half way offers a terminal; one held by an au
   expect(git.props.action.type).toBe(TerminalButton)
   const run = renderToStaticMarkup(<SyncResult kind="pull" result={{ status: 'done', pull: { status: 'busy', detail: 'run' } }} remote={REMOTE} srv={{}} />)
   expect(run).toContain('role="status"')
-  expect(run).toContain('traeré los cambios cuando termine')
+  expect(run).toContain('trae los cambios del equipo cuando termine')
   expect(run).not.toContain('cu-aviso')
 })
 

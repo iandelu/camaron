@@ -71,11 +71,11 @@ test('a busy pull says what holds the docs', () => {
   const git = renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'git' }} remote={REMOTE} />)
   expect(git).toContain('A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.')
   const run = renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'run' }} remote={REMOTE} />)
-  expect(run).toContain('An autopilot run is using the docs')
+  expect(run).toContain('An autopilot run is using the docs: bring in the team&#x27;s changes once it ends.')
   expect(run).toContain('role="status"')
   as('es')
   expect(renderToStaticMarkup(<ShareLine action="pull" result={{ status: 'busy', detail: 'run' }} remote={REMOTE} />))
-    .toContain('Hay una ejecución del autopiloto usando los docs: traeré los cambios cuando termine.')
+    .toContain('Hay una ejecución del autopiloto usando los docs: trae los cambios del equipo cuando termine.')
 })
 
 test('each team action says what it is doing while it runs', () => {
