@@ -319,3 +319,42 @@ def test_relation_metadata_and_tags_are_read(arch):
     (arch / "model.c4").write_text(text, encoding="utf-8", newline="\n")
     rel = next(r for r in c4edit.index()["relations"] if r["to"] == "shop.billing")
     assert rel["metadata"] == {"code": "orders:src/Pay.java#L3"} and rel["tags"] == ["confirmed"]
+
+
+def _with_orders_meta(arch, body):
+    from lib import c4edit
+    text = MODEL.replace("      metadata { repo 'orders' }", f"      metadata {{ {body} }}")
+    (arch / "model.c4").write_text(text, encoding="utf-8", newline="\n")
+    return c4edit.index()
+
+
+def test_list_metadata_trailing_comma_and_apostrophe(arch):
+    meta = _with_orders_meta(arch, "code ['a', 'b',]")["elements"]["shop.orders"]["metadata"]
+    assert meta["code"] == ["a", "b"]
+    meta = _with_orders_meta(arch, 'code ["it\'s here"]')["elements"]["shop.orders"]["metadata"]
+    assert meta["code"] == ["it's here"]
+
+
+def _relation(arch, replacement):
+    from lib import c4edit
+    text = MODEL.replace("      -> billing 'charges'\n", replacement)
+    (arch / "model.c4").write_text(text, encoding="utf-8", newline="\n")
+    return next(r for r in c4edit.index()["relations"] if r["to"] == "shop.billing")
+
+
+def test_relation_list_metadata_is_read(arch):
+    rel = _relation(arch, "      -> billing 'charges' {\n        metadata {\n          code ['a:x', 'b:y']\n        }\n      }\n")
+    assert rel["metadata"] == {"code": ["a:x", "b:y"]}
+
+
+def test_one_line_relation_block_is_read(arch):
+    rel = _relation(arch, "      -> billing 'charges' { metadata { code 'api:src/A.java#L4' } }\n")
+    assert rel["metadata"] == {"code": "api:src/A.java#L4"} and rel["tags"] == []
+    rel = _relation(arch, "      -> billing 'charges' { #confirmed }\n")
+    assert rel["tags"] == ["confirmed"] and rel["metadata"] == {}
+
+
+def test_relation_without_block_has_no_metadata(arch):
+    from lib import c4edit
+    (arch / "model.c4").write_text(MODEL, encoding="utf-8", newline="\n")
+    assert all(r["metadata"] == {} and r["tags"] == [] for r in c4edit.index()["relations"])

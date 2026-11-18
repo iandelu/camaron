@@ -47,6 +47,20 @@ def _meta_value(raw: str) -> str | list[str]:
     return unquote(raw)
 
 
+def _tags_of(lines: list[str]) -> list[str]:
+    return [t for line in lines if line.strip().startswith("#") for t in re.findall(r"#([\w-]+)", _strip(line))]
+
+
+def _inline_body(line: str) -> str:
+    return line[line.index("{") + 1:line.rindex("}")] if "{" in line and "}" in line else ""
+
+
+def _inline_meta(text: str) -> dict:
+    if not (m := re.search(r"\bmetadata\s*\{([^}]*)\}", text)):
+        return {}
+    return {n: _meta_value(v) for n, v in META_PAIR.findall(m.group(1))}
+
+
 def _block_meta(lines: list[str], depths: list[int], i: int, j: int) -> dict:
     meta = {}
     for k in range(i, j + 1):
@@ -148,11 +162,14 @@ def _parse_file(rel: str, text: str, elements: dict, relations: list, kinds: set
                 stack.append(("element", fqn, d))
         elif m := RELATION.match(line):
             end = _end(lines, i, depths)
-            body = lines[i + 1:end] if opens else []
-            tags = [t for l in body if l.strip().startswith("#") for t in re.findall(r"#([\w-]+)", _strip(l))]
+            if opens:
+                tags, meta = _tags_of(lines[i + 1:end]), _block_meta(lines, depths, i + 1, end)
+            else:
+                inline = _inline_body(line)
+                tags, meta = re.findall(r"#([\w-]+)", _strip(re.sub(r"metadata\s*\{[^}]*\}", "", inline))), _inline_meta(inline)
             relations.append({"from": m.group(1) or scope, "rawTo": m.group(3), "label": unquote(m.group(4)),
                               "kind": m.group(2), "file": rel, "start": i, "end": end, "scope": scope,
-                              "tags": tags, "metadata": _block_meta(lines, depths, i + 1, end) if opens else {}})
+                              "tags": tags, "metadata": meta})
             if opens:
                 stack.append(("other", None, d))
         elif opens:
@@ -168,7 +185,7 @@ def _details(texts: dict[str, str], el: dict) -> dict:
         head = lines[el["start"]]
         inline = head[head.index("{") + 1:head.rindex("}")] if "}" in head else ""
     body = [lines[i] for i in own] + [inline]
-    tags = [t for line in body if line.strip().startswith("#") for t in re.findall(r"#([\w-]+)", _strip(line))]
+    tags = _tags_of(body)
     props, meta = {}, {}
     for i in own:
         if m := PROP.match(lines[i]):
