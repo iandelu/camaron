@@ -126,11 +126,16 @@ def repo_boxes(els: dict) -> dict[str, list[str]]:
             for repo, found in named.items()}
 
 
+def _word(word: str, text: str) -> bool:
+    """`word` as whole words of `text` (`Redis` is not in "Redistribution")."""
+    return bool(word) and re.search(rf"(?<!\w){re.escape(word)}(?!\w)", text) is not None
+
+
 def matcher(scan: dict, els: dict) -> Callable[[str], str | None]:
     """A name of the arch-draft scan → the element that stands for it, or None when no element or more than one fits.
     A repo: the outermost element whose `metadata.repo` names it, by title when several do (an app and its Cloud
-    Functions). A datastore, broker or identity provider: an element whose technology or title holds its label (a
-    datastore's name breaks a tie), never a person, nor an element in or around a repo container."""
+    Functions). A datastore, broker or identity provider: an element whose technology or title holds its label as
+    whole words (a datastore's name breaks a tie), never a person, nor an element in or around a repo container."""
     boxes = repo_boxes(els)
     inside = [f for found in boxes.values() for f in found]
     loose = [f for f, el in els.items() if el.get("kind") not in PEOPLE and container_repo(f, els) is None
@@ -148,8 +153,8 @@ def matcher(scan: dict, els: dict) -> Callable[[str], str | None]:
         scored = {}
         for f in loose:
             tech, title = str(els[f].get("technology") or "").lower(), str(els[f].get("title") or "").lower()
-            if label and (label in tech or label in title):
-                scored[f] = 1 + bool(extra and extra in title)
+            if _word(label, tech) or _word(label, title):
+                scored[f] = 1 + _word(extra, title)
         top = max(scored.values(), default=0)
         best = [f for f, score in scored.items() if score == top]
         return best[0] if len(best) == 1 else None

@@ -152,6 +152,14 @@ def test_two_datastores_alike_tie_unless_the_name_tells_them_apart():
     assert drift.matcher(SCAN, els)("PostgreSQL:orders") == "s.b"
 
 
+def test_a_label_and_a_name_match_whole_words_only():
+    scan = {"dbs": {"Redis": {"label": "Redis"}, "PostgreSQL:orders": {"label": "PostgreSQL", "name": "orders"}}}
+    els = {"s.rd": el("service", "Redistribution"), "s.cache": el("database", "Cache", "Redis 7"),
+           "s.pre": el("database", "Preorders", "PostgreSQL"), "s.led": el("database", "Ledger", "PostgreSQL")}
+    match = drift.matcher(scan, els)
+    assert match("Redis") == "s.cache" and match("PostgreSQL:orders") is None
+
+
 def test_a_repo_goes_to_its_outermost_element_then_to_its_title():
     els = {"s.api": el("service", "Api", repo="api"), "s.api.inner": el("component", "Inner", repo="api"),
            "s.app": el("mobileApp", "app", repo="app"), "s.fn": el("service", "app Cloud Functions", repo="app")}
