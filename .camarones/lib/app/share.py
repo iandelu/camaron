@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+import subprocess
 import sys
 
 from lib.app import services
@@ -141,6 +142,15 @@ def _ident() -> list[str]:
                                                                       "-c", "user.email=camarones@localhost"]
 
 
+def _failed(r: subprocess.CompletedProcess, url: str) -> dict:
+    from lib import creds
+    host = _remote_host(url)
+    reason = git_failure(r.stderr or r.stdout or "")
+    if reason == "auth" and host and not creds.get(host):
+        reason = "no-token"
+    return {"status": "error", "reason": reason, "host": host, "detail": _git_said(r)}
+
+
 def share(log: Log = print) -> dict:
     """Checkpoint, bring in the team's work (rebase onto origin) and push. Returns {"status", "detail"}:
     pushed · up-to-date · no-remote · nothing · blocked (secrets staged) · conflict (rebase undone) · error."""
@@ -153,20 +163,9 @@ def share(log: Log = print) -> dict:
         url = clean_remote(url)
         run(["git", "remote", "set-url", "origin", url], cwd=ROOT, check=False, quiet=True)
     auth = creds.git_env(url)
-    host = _remote_host(url)
 
     def git(*args: str, env: dict | None = None):
         return run(["git", *args], cwd=ROOT, check=False, quiet=True, env=env)
-
-    def last(r) -> str:
-        lines = (r.stderr or r.stdout or "").strip().splitlines()
-        return lines[-1] if lines else ""
-
-    def failed(r) -> dict:
-        reason = git_failure(r.stderr or r.stdout or "")
-        if reason == "auth" and host and not creds.get(host):
-            reason = "no-token"
-        return {"status": "error", "reason": reason, "host": host, "detail": _git_said(r)}
 
     said: set[str] = set()
 
@@ -191,7 +190,7 @@ def share(log: Log = print) -> dict:
     log(f"fetching {url}…")
     r = git("fetch", "--quiet", "origin", env=auth)
     if r.returncode:
-        return failed(r)
+        return _failed(r, url)
     theirs = f"origin/{branch}"
     if git("rev-parse", "--verify", "--quiet", theirs).returncode == 0:
         log(f"rebasing onto {theirs}…")
@@ -212,9 +211,123 @@ def share(log: Log = print) -> dict:
     log(f"pushing {branch}…")
     r = git("push", "--quiet", "-u", "origin", branch, env=auth)
     if r.returncode:
-        return failed(r)
+        return _failed(r, url)
     _shared()
     return {"status": "pushed", "detail": branch}
+
+
+# Rebuilt from the pages, so a clash in them is never worth a person's time: the team's copy is taken and rewritten.
+DERIVED: tuple[str, ...] = ("docs/.status.json", "docs/llms.txt", "docs/llms-full.txt")
+
+
+def _lines(*args: str) -> list[str]:
+    return [ln for ln in out(["git", *args], cwd=ROOT).splitlines() if ln]
+
+
+def _in_progress() -> bool:
+    git_dir = ROOT / ".git"
+    return any((git_dir / n).exists() for n in ("rebase-merge", "rebase-apply", "MERGE_HEAD"))
+
+
+def _dirty() -> dict[str, str]:
+    status = run(["git", "status", "--porcelain", "-uall"], cwd=ROOT, check=False, capture=True).stdout or ""
+    return {ln[3:].strip().strip('"').split(" -> ")[-1]: ln[:2] for ln in status.splitlines() if len(ln) > 3}
+
+
+def _rebase_onto(theirs: str, ident: list[str]) -> tuple[list[str], list[str]]:
+    """Rebase onto the team's branch, resolving clashes in derived files by taking the team's side. Returns the
+    derived paths resolved and the paths that need a person (rebase undone then)."""
+    def git(*args: str, env: dict | None = None):
+        return run(["git", *args], cwd=ROOT, check=False, quiet=True, env=env)
+
+    resolved: list[str] = []
+    r = git(*ident, "rebase", "--quiet", "--autostash", theirs)
+    for _ in range(200):                                             # a guard: every pass settles one local commit
+        if not (r.returncode and _in_progress()):
+            break
+        clashing = sorted(_lines("diff", "--name-only", "--diff-filter=U"))
+        human = [p for p in clashing if p not in DERIVED]
+        if human:
+            git("rebase", "--abort")
+            return resolved, human
+        if clashing:
+            git("checkout", "--ours", "--", *clashing)               # mid-rebase "ours" is the team's side
+            git("add", "--", *clashing)
+            resolved += clashing
+        if git("diff", "--cached", "--quiet").returncode == 0:      # the local commit only held derived files
+            r = git(*ident, "rebase", "--skip")
+        else:
+            r = git(*ident, "rebase", "--continue", env={"GIT_EDITOR": "true"})
+    if r.returncode:
+        git("rebase", "--abort")
+        return resolved, []
+    return sorted(set(resolved)), []
+
+
+def pull(log: Log = print) -> dict:
+    """Bring in the team's work (fetch + rebase onto origin); never pushes and never commits, except the board's own
+    repair. Local work stays put: a clash leaves HEAD and every file as they were. Returns {"status", "commits",
+    "files", "regenerated", "detail"}: up-to-date · pulled · nothing · no-remote · conflict · busy · error."""
+    result = lambda status, detail="", **kw: {"status": status, "commits": 0, "files": [],   # noqa: E731
+                                              "regenerated": [], "detail": detail, **kw}
+    url = docs_remote()
+    if not url:
+        return result("no-remote")
+    if _in_progress():
+        return result("busy", "git")
+    if run(["git", "rev-parse", "--verify", "--quiet", "HEAD"], cwd=ROOT, check=False, quiet=True).returncode != 0:
+        return result("nothing")
+    branch = out(["git", "symbolic-ref", "--short", "HEAD"], cwd=ROOT)
+    if not branch:
+        return result("error", "detached HEAD: check out a branch first")
+    from lib import creds
+    log(f"fetching {url}…")
+    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=creds.git_env(url))
+    if r.returncode:
+        return {**result("error"), **_failed(r, url)}
+    theirs = f"origin/{branch}"
+    if run(["git", "rev-parse", "--verify", "--quiet", theirs], cwd=ROOT, check=False, quiet=True).returncode != 0:
+        return result("nothing")
+    behind = int(out(["git", "rev-list", "--count", f"HEAD..{theirs}"], cwd=ROOT) or 0)
+    if behind == 0:
+        return result("up-to-date", branch)
+
+    changed_by_team = set(_lines("diff", "--name-only", f"HEAD...{theirs}"))
+    clash = {p: code for p, code in _dirty().items() if p in changed_by_team}
+    human = sorted(p for p in clash if p not in DERIVED)
+    if human:
+        return result("conflict", theirs, files=human)
+    regenerated = sorted(clash)
+    for path, code in clash.items():
+        if code == "??":
+            (ROOT / path).unlink(missing_ok=True)
+        else:
+            run(["git", "checkout", "--", path], cwd=ROOT, check=False, quiet=True)
+
+    log(f"rebasing onto {theirs}…")
+    resolved, human = _rebase_onto(theirs, _ident())
+    if human:
+        return result("conflict", theirs, files=human)
+    regenerated = sorted(set(regenerated) | set(resolved))
+
+    said: set[str] = set()
+
+    def warn(line: str) -> None:
+        if line not in said:
+            said.add(line)
+            log(line)
+
+    if board_repair(warn):
+        global _sharing
+        _sharing = True
+        try:
+            checkpoint_commit("board repaired after sync", warn=warn)
+        finally:
+            _sharing = False
+    current = services.current()
+    current.doc_status.collect()
+    current.llms.llms()
+    return result("pulled", branch, commits=behind, regenerated=regenerated)
 
 
 def _shared() -> None:
