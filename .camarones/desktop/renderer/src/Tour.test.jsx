@@ -7,8 +7,8 @@ import { TourBubble } from './Tour.jsx'
 import { TourOffer } from './sections/Summary.jsx'
 import { SettingsView } from './sections/Settings.jsx'
 import { entries } from './palette.js'
-import { tourIds, TOURS } from './tour.js'
-import { LIBS, MACHINE, PROJECT } from './nav.js'
+import { tourAlias, tourIds, TOURS } from './tour.js'
+import { MACHINE, PLACES, PROJECT, placeOf } from './nav.js'
 import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -40,17 +40,19 @@ test('the first step has no Back, the last says Done, a missing target says so',
   expect(renderToStaticMarkup(<TourBubble title="a" body="b" n={2} m={3} missing />)).toContain(t('tour.missing'))
 })
 
-test('every Show me in the guides starts a tour that exists, every Go to names a section', () => {
-  for (const [f, id] of markers('tour')) expect(tourIds(), `${f}: tour:${id}`).toContain(id)
-  for (const [f, s] of markers('go')) expect([...PROJECT, ...MACHINE, LIBS], `${f}: go:${s}`).toContain(s)
+test('every Show me in the guides starts a tour that exists, every Go to names a place (old names follow their moves)', () => {
+  for (const [f, id] of markers('tour')) expect(tourIds(), `${f}: tour:${id}`).toContain(tourAlias(id))
+  for (const [f, s] of markers('go')) expect(PLACES, `${f}: go:${s}`).toContain(placeOf(`#/${s}`, { kitdev: true }))
 })
 
 test('every step points at something the app marks with data-tour', () => {
   const code = [...sources(HERE), ...sources(join(KIT, 'ui', 'src'))].join('\n')
   const marked = new Set([...code.matchAll(/data-tour="([\w-]+)"/g)].map((m) => m[1]))
   const navMarked = /data-tour=\{`nav-\$\{s\}`\}/.test(code)
+  const tabsMarked = /data-tour=\{`tabs-\$\{section\}`\}/.test(code)
   for (const id of tourIds()) for (const s of TOURS[id]) {
     if (s.target.startsWith('nav-')) expect(navMarked && [...PROJECT, ...MACHINE].includes(s.target.slice(4)), s.target).toBe(true)
+    else if (/^tabs-/.test(s.target)) expect(tabsMarked && PROJECT.concat(MACHINE).includes(s.target.slice(5)), s.target).toBe(true)
     else expect(marked, `${id}: ${s.target}`).toContain(s.target)
   }
 })
