@@ -481,6 +481,40 @@ def test_ask_still_counts_as_ask_only_when_its_model_was_asked(kit, answerer):  
     assert events(kit).count("portal:ask-ai") == 1 and "app:chat" not in events(kit)
 
 
+@pytest.fixture
+def silent(answerer, tmp_path):  # noqa: F811
+    """The fake runner now fails the way a CLI that is not signed in or lacks the model does: exit 1, no stdout."""
+    script = tmp_path / "silent.py"
+    script.write_text("import sys\nsys.exit(1)\n", encoding="utf-8")
+    from lib.common import PREFS, save_json
+    from lib.core.fsutil import load_json
+    save_json(PREFS, {**load_json(PREFS, {}),
+                      "runners": {"fake": {"argv": [sys.executable, str(script), "{prompt}", "{model}"]}}})
+    return PREFS
+
+
+def test_a_runner_that_gives_nothing_fails_the_turn_and_is_not_remembered(kit, silent):
+    from lib import chat
+    from lib.core.fsutil import load_json
+    lines = []
+    with pytest.raises(RuntimeError, match=r"^fake:m gave no answer: is it signed in, and does it have that model\?"):
+        chat.turn("fake", "m", PAYMENTS, [], lines.append)
+    with pytest.raises(RuntimeError, match="^fake gave no answer"):
+        chat.turn("fake", None, PAYMENTS, [], lines.append)
+    assert lines == [] and "chat" not in load_json(silent, {}) and "app:chat" not in events(kit)
+
+
+def test_the_picked_runner_and_model_win_over_routing_and_ask_model(kit, answerer, turn):  # noqa: F811
+    from lib.common import PREFS, save_json
+    from lib.core.fsutil import load_json
+    save_json(PREFS, {**load_json(PREFS, {}), "routing": {"bounded": ["claude"]}})
+    ws = kit.services.workspace.workspace(); ws["ask"] = {"model": "X"}; kit.services.workspace.save_workspace(ws)
+    r, _ = turn(PAYMENTS, model="m")
+    assert runner_call(answerer)[1] == ["m"] and (r["runner"], r["model"]) == ("fake", "m")
+    turn(PAYMENTS)
+    assert runner_call(answerer)[1] == [""]                                         # ask.model is Ask's, not the chat's
+
+
 def test_a_slow_turn_fails_with_asks_error_and_remembers_nothing(answerer, monkeypatch):  # noqa: F811
     from lib import answers, chat
     from lib.core.fsutil import load_json
@@ -536,6 +570,13 @@ def test_check_refuses_a_malformed_history(machine, chat, history):
     machine.install("claude")
     with pytest.raises(ValueError):
         chat.check(body(history=history))
+
+
+@pytest.mark.parametrize("sent", [[], "x", None, 5])
+def test_check_refuses_a_body_that_is_not_an_object(machine, chat, sent):
+    machine.install("claude")
+    with pytest.raises(ValueError, match="^the request body must be a JSON object"):
+        chat.check(sent)
 
 
 def test_check_says_there_is_no_ai_answer_here(machine, chat):
@@ -596,9 +637,33 @@ def test_the_turn_route_refuses_a_bad_turn_with_400(kit, answerer, app_server): 
     assert code == 400 and "ghost" in r["error"]
     assert call(url, {"q": PAYMENTS, "runner": "fake", "model": "--x"}, token=TOKEN)[0] == 400
     assert call(url, {"q": " ", "runner": "fake"}, token=TOKEN)[0] == 400
+    for sent in (b"[]", b'"x"', b"null"):
+        assert raw_post(url, sent) == (400, {"error": "the request body must be a JSON object"})
     ws = kit.services.workspace.workspace(); ws["ask"] = {"ai": False}; kit.services.workspace.save_workspace(ws)
     code, r = call(url, {"q": PAYMENTS, "runner": "fake"}, token=TOKEN)
     assert code == 400 and r["error"].startswith("no AI answer here")
+
+
+def raw_post(url, data):
+    """A body as given, with the app token (`call` sends a None body as a GET)."""
+    import urllib.error
+    import urllib.request
+    req = urllib.request.Request(url, data=data, method="POST", headers={
+        "Content-Type": "application/json", "X-Camarones": "1", "X-Camaron-Token": TOKEN})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        with e:
+            return e.code, json.loads(e.read() or b"{}")
+
+
+def test_a_runner_that_gives_nothing_fails_its_job_with_the_reason(kit, silent, app_server):  # noqa: F811
+    from lib.core.fsutil import load_json
+    code, job = call(app_server + "/api/app/chat", {"q": PAYMENTS, "runner": "fake", "model": "m"}, token=TOKEN)
+    end = finished(app_server, job["id"])
+    assert code == 200 and end["status"] == "failed" and "fake:m gave no answer" in end["log"][-1]
+    assert "chat" not in load_json(silent, {}) and "app:chat" not in events(kit)
 
 
 def test_the_turn_route_starts_a_quiet_job_that_ends_with_its_result(answerer, app_server):  # noqa: F811

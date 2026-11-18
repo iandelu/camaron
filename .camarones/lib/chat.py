@@ -139,6 +139,8 @@ def clean_history(history) -> list[dict]:
 def check(body: dict) -> tuple[str, str | None, str, list[dict]]:
     """(runner, model or None, question, history) from a turn's body, before any job starts. ValueError: a body the
     app would never send; RuntimeError: no AI answer on this machine (the app words it from its prefix)."""
+    if not isinstance(body, dict):
+        raise ValueError("the request body must be a JSON object")
     if not ai_enabled():
         raise RuntimeError("no AI answer here: ask.ai is false in workspace.yaml")
     offered = models()
@@ -158,8 +160,13 @@ def check(body: dict) -> tuple[str, str | None, str, list[dict]]:
 
 def turn(runner: str, model: str | None, q: str, history: list[dict], log) -> dict:
     """One answer, as a job: the log gets the answer's text (never the JSON the prompt asks for), the job's result
-    everything else. Nothing found is an answer of None, not a failure; a timeout raises Ask's error."""
+    everything else. Nothing found is an answer of None, not a failure; a timeout raises Ask's error, and a runner that
+    was asked and gave nothing usable (not signed in, a model it lacks: its stderr is not kept) fails the turn, so the
+    person sees why and the pick is not remembered."""
     got = answers.ask_docs(q, runner, model, tuple(history))
+    if got["answer"] is None and "seconds" in got:
+        who = f"{runner}:{model}" if model else runner
+        raise RuntimeError(f"{who} gave no answer: is it signed in, and does it have that model?")
     for line in (got["answer"] or "").splitlines():
         log(line)
     remember(runner, model)

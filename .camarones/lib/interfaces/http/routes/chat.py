@@ -14,8 +14,8 @@ def get_models(req: Request) -> Response:
     return json_response({"runners": offered, "choice": chat.default_choice(offered), "ai": chat.ai_enabled()})
 
 
-@route("POST", "/api/app/chat", access=Access.APP)
-def post_chat(req: Request) -> Response:
+@route("POST", "/api/app/chat", access=Access.APP, by=False)
+def post_chat(req: Request) -> Response:                # writes nothing, so no `by`: any JSON body reaches check
     from lib import chat
     try:
         runner, model, q, history = chat.check(req.body)        # refused here, before a job exists
