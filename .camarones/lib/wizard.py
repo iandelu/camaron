@@ -484,7 +484,7 @@ T = {
         "m_ci": "⚙️  CI (GitLab / GitHub)",
         "m_extra": "➕ Extra reviews (security, architecture) — beta",
         "m_update": "🔄 Update docs after changes (AI session)",
-        "m_share": "🤝 Team: bring in, upload or sync",
+        "m_share": "🤝 Team: bring in, upload or sync with the team",
         "sh_url": "URL of the team's cam-docs repo (GitHub/GitLab; empty to go back):",
         "sh_confirm": "I'll pull the team's latest and publish your work to {url}. Go ahead?",
         "sh_pushed": "✔ Published to {url} ({detail}). Your team can reel it in now.",
@@ -522,8 +522,8 @@ T = {
         "sh_pick": "What shall we do with the team?",
         "sh_do_pull": "⬇ Bring in their changes",
         "sh_do_push": "⬆ Upload mine",
-        "sh_do_share": "⇅ Sync (bring in and upload)",
-        "sh_behind": "The team has new changes: bring them in first, or sync.",
+        "sh_do_share": "⇅ Sync with the team (bring in and upload)",
+        "sh_behind": "The team has new changes: bring them in first, or sync with the team.",
         "cu_pulled": "✔ Brought in {n} change(s) from the team.",
         "cu_up_to_date": "✔ You already have the team's latest.",
         "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
@@ -2364,11 +2364,11 @@ class W:
     def _pull_line(self, r: dict, url: str = "") -> tuple[str, str] | None:
         st = r.get("status")
         if st == "pulled":
-            return self.t("cu_pulled", n=r["commits"]), "green"
+            return self.t("cu_pulled", n=r.get("commits", 0)), "green"
         if st == "up-to-date":
             return self.t("cu_up_to_date"), "grey62"
         if st == "conflict":
-            return self.t("cu_conflict", files=", ".join(r["files"]) or r["detail"]), "red"
+            return self.t("cu_conflict", files=", ".join(r.get("files") or []) or r.get("detail", "")), "red"
         if st == "busy":
             return self.t("cu_busy"), "grey62"
         if st == "error":
@@ -2411,7 +2411,7 @@ class W:
             self.banner()
             self.add_token(r["host"])
         ok = r["status"] in ("pushed", "up-to-date", "nothing", "pulled")
-        if what == "pull" or r["status"] in ("pulled", "conflict", "busy"):
+        if what == "pull":
             line = self._pull_line(r, url) or (self.t("sh_nothing"), "")
         elif r["status"] == "behind":
             line = self.t("sh_behind"), "red"

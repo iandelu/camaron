@@ -299,10 +299,13 @@ def _print_result(r: dict) -> None:
 class Pull(Command):
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         try:
-            run = cli.services.catchup.run(_progress)
+            return self._pull(cli)
         except Exception as e:                                  # noqa: BLE001 — one line, not a traceback
             print(f"error: {e}")
             return 1
+
+    def _pull(self, cli: CliContext) -> int:
+        run = cli.services.catchup.run(_progress)
         if run["status"] != "done" or not run["pull"]:
             print(run["status"])
             return 0 if run["status"] == "skipped" else 1

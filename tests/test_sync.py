@@ -153,3 +153,19 @@ def test_pull_from_the_cli_offline_exits_1(kit, tmp_path):
     kit.services.templates.init_templates("demo", log=lambda _: None)
     kit.services.share.set_remote(str(tmp_path / "gone.git")); kit.services.share.checkpoint_commit("first")
     r = cli(kit, "pull"); assert r.returncode == 1 and r.stdout.startswith("error (not-found)")
+
+
+@pytest.mark.parametrize("fail", ["run", "rebuild"])
+def test_pull_turns_an_exception_into_one_error_line(kit, capsys, fail):
+    from types import SimpleNamespace
+    from lib.interfaces.cli.commands import team
+
+    def boom(*a, **kw):
+        raise RuntimeError("boom")
+    run = {"status": "done", "views": {"graphs": ["web"]},
+           "pull": {"status": "up-to-date", "detail": "main", "commits": 0, "files": []}}
+    catchup = SimpleNamespace(run=boom if fail == "run" else (lambda log=print: run), rebuild_graphs=boom)
+    code = team.Pull().run(SimpleNamespace(), SimpleNamespace(services=SimpleNamespace(catchup=catchup)))
+    out = capsys.readouterr()
+    assert code == 1 and "Traceback" not in out.out + out.err
+    assert [l for l in out.out.splitlines() if l.startswith("error:")] == ["error: boom"]

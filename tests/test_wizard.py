@@ -409,3 +409,12 @@ def test_share_asks_which_of_the_three(kit, fake_wizard, monkeypatch, said):
     w = fake_wizard(["push"])
     w.do_share()
     assert w.t("sh_behind") in said
+
+
+def test_a_sync_conflict_says_the_sh_line_and_does_not_raise(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "share",
+                        lambda log=print: {"status": "conflict", "detail": "origin/main"})
+    w = fake_wizard(["share", True])
+    w.do_share()
+    assert w.t("sh_conflict", detail="origin/main") in said
