@@ -2645,6 +2645,18 @@
     "exclusive_groups": [],
     "subparsers": null
    },
+   "pull": {
+    "aliases": [],
+    "args": [],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
+   "push": {
+    "aliases": [],
+    "args": [],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
    "radar": {
     "aliases": [],
     "args": [

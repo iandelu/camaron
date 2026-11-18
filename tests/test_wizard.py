@@ -360,3 +360,52 @@ def test_tool_rows_shape(kit, monkeypatch):
     assert kit.wizard.W().tool_rows() == want
     if hasattr(kit.onboard, "tool_rows"):
         assert kit.onboard.tool_rows() == want
+
+
+# ---------- catching up on open ----------
+def pulled(status, **kw):
+    pull = {"status": status, "commits": 0, "files": [], "regenerated": [], "detail": "", **kw}
+    return {"status": "done", "pull": pull, "views": {"c4": "fresh", "graphs": []}, "at": ""}
+
+
+@pytest.mark.parametrize("result,key,vars", [
+    (pulled("pulled", commits=3), "cu_pulled", {"n": 3}),
+    (pulled("up-to-date"), "cu_up_to_date", {}),
+    (pulled("conflict", files=["a.md", "b.md"]), "cu_conflict", {"files": "a.md, b.md"}),
+    (pulled("error", reason="network", host="h"), "cu_offline", {}),
+    ({"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""}, "cu_busy", {}),
+])
+def test_catch_up_says_what_happened(kit, fake_wizard, monkeypatch, said, result, key, vars):
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: result)
+    w = fake_wizard([])
+    w.catch_up()
+    assert w.t(key, **vars) in said
+
+
+def test_catch_up_rebuilds_the_stale_graphs(kit, fake_wizard, monkeypatch):
+    r = pulled("up-to-date"); r["views"]["graphs"] = ["web"]
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: r)
+    seen = []
+    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda repos, log=print: seen.append(repos))
+    fake_wizard([]).catch_up()
+    assert seen == [["web"]]
+
+
+def test_catch_up_survives_an_exception(kit, fake_wizard, monkeypatch):
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: 1 / 0)
+    fake_wizard([]).catch_up()
+
+
+def test_the_menu_opens_after_a_failed_catch_up(kit, fake_wizard, monkeypatch):
+    kit.common.save_json(kit.wizard.FIRSTRUN, {"step": 6, "done": True})
+    kit.plan.sync()
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: 1 / 0)
+    fake_wizard(["exit"])._run()
+
+
+def test_share_asks_which_of_the_three(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "push", lambda log=print: {"status": "behind", "detail": ""})
+    w = fake_wizard(["push"])
+    w.do_share()
+    assert w.t("sh_behind") in said

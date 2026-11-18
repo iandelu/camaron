@@ -214,10 +214,10 @@ def test_join_first_run_resumes_on_its_step(kit, fake_wizard, monkeypatch):
 def test_share_menu_sets_the_remote_and_asks_before_pushing(kit, fake_wizard, tmp_path, monkeypatch):
     kit.services.templates.init_templates("demo", log=lambda _: None)
     remote = bare(tmp_path)
-    w = fake_wizard([str(remote), False])                               # URL, then "no" to publishing
+    w = fake_wizard([str(remote), "share", False])                      # URL, sync, then "no" to publishing
     w.do_share()
     assert kit.services.share.docs_remote() == str(remote) and not remote_files_safe(remote)
-    w = fake_wizard([True, False])                                      # publish, then "no" to auto-share
+    w = fake_wizard(["share", True, False])                             # sync, publish, then "no" to auto-share
     w.do_share()
     assert ".camarones/workspace.yaml" in remote_files(remote) and not kit.services.share.auto_share()
 
@@ -334,7 +334,7 @@ def test_share_menu_shows_the_reason_and_offers_a_token(kit, fake_wizard, monkey
         "detail": "fatal: Authentication failed"})
     monkeypatch.setattr(kit.wizard.W, "say", lambda self, msg, style="": said.append(msg))
     monkeypatch.setattr(kit.wizard.W, "add_token", lambda self, host=None: calls.append(host) or host)
-    fake_wizard([True, True, False]).do_share()                          # publish, add a token, then stop
+    fake_wizard(["share", True, True, False]).do_share()                 # sync, publish, add a token, then stop
     assert kit.wizard.T["en"]["sh_err_auth"].split("{")[0] in said[0] or \
         kit.wizard.T["es"]["sh_err_auth"].split("{")[0] in said[0]
     assert calls == [1, "gitlab.example.com", 1]
@@ -450,10 +450,10 @@ def test_share_menu_offers_auto_share_once(kit, fake_wizard, tmp_path):
     kit.services.templates.init_templates("demo", log=lambda _: None)
     remote = bare(tmp_path)
     kit.services.share.set_remote(str(remote))
-    fake_wizard([True, True]).do_share()                                # publish, then "yes" to auto-share
+    fake_wizard(["share", True, True]).do_share()                       # sync, publish, then "yes" to auto-share
     assert kit.services.share.auto_share()
     (kit.root / "docs" / "note.md").write_text("# note\n", encoding="utf-8")
-    fake_wizard([True]).do_share()                                      # already decided: not asked again
+    fake_wizard(["share", True]).do_share()                             # already decided: not asked again
     assert "sh_auto_ask" in kit.wizard.T["es"] and "sh_auto_ask" in kit.wizard.T["en"]
 
 

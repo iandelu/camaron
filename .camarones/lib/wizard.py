@@ -113,7 +113,7 @@ T = {
         "m_ci": "⚙️  CI (GitLab / GitHub)",
         "m_extra": "➕ Revisiones extra (seguridad, arquitectura) — beta",
         "m_update": "🔄 Actualizar doc tras cambios (sesión con IA)",
-        "m_share": "🤝 Compartir con el equipo (traer y publicar cam-docs)",
+        "m_share": "🤝 Equipo: traer, subir o sincronizar",
         "sh_url": "URL del repo de cam-docs del equipo (GitHub/GitLab; vacío para volver):",
         "sh_confirm": "Traigo lo último del equipo y publico tu trabajo en {url}. ¿Seguimos?",
         "sh_pushed": "✔ Publicado en {url} ({detail}). Tu equipo ya puede pescarlo.",
@@ -148,6 +148,16 @@ T = {
         "us_empty": "Aún no hay estadísticas: aparecen cuando el equipo usa el portal, los agentes (MCP) o la CLI, y llegan al compartir.",
         "us_on": "▶ Activar estadísticas en este equipo",
         "us_off": "⏸ Desactivar estadísticas en este equipo",
+        "sh_pick": "¿Qué hacemos con el equipo?",
+        "sh_do_pull": "⬇ Traer sus cambios",
+        "sh_do_push": "⬆ Subir los míos",
+        "sh_do_share": "⇅ Sincronizar (traer y subir)",
+        "sh_behind": "El equipo tiene cambios nuevos: tráelos primero o sincroniza.",
+        "cu_pulled": "✔ Traje {n} cambio(s) del equipo.",
+        "cu_up_to_date": "✔ Ya tienes lo último del equipo.",
+        "cu_conflict": "No he podido traer los cambios del equipo: chocan con los tuyos en {files}. No he tocado nada.",
+        "cu_busy": "Ya se está poniendo al día otro proceso: sigo con lo que hay.",
+        "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "Te unes a «{name}»: el equipo ya eligió repos, stack y arquitectura, y el plan sigue donde lo dejaron. "
                         "Yo solo preparo esta máquina: herramientas y repos. Nada de pelar dos veces la misma gamba.",
@@ -474,7 +484,7 @@ T = {
         "m_ci": "⚙️  CI (GitLab / GitHub)",
         "m_extra": "➕ Extra reviews (security, architecture) — beta",
         "m_update": "🔄 Update docs after changes (AI session)",
-        "m_share": "🤝 Share with the team (pull and publish cam-docs)",
+        "m_share": "🤝 Team: bring in, upload or sync",
         "sh_url": "URL of the team's cam-docs repo (GitHub/GitLab; empty to go back):",
         "sh_confirm": "I'll pull the team's latest and publish your work to {url}. Go ahead?",
         "sh_pushed": "✔ Published to {url} ({detail}). Your team can reel it in now.",
@@ -509,6 +519,16 @@ T = {
         "us_empty": "No stats yet: they appear as the team uses the portal, agents (MCP) or the CLI, and arrive when sharing.",
         "us_on": "▶ Turn stats on for this computer",
         "us_off": "⏸ Turn stats off for this computer",
+        "sh_pick": "What shall we do with the team?",
+        "sh_do_pull": "⬇ Bring in their changes",
+        "sh_do_push": "⬆ Upload mine",
+        "sh_do_share": "⇅ Sync (bring in and upload)",
+        "sh_behind": "The team has new changes: bring them in first, or sync.",
+        "cu_pulled": "✔ Brought in {n} change(s) from the team.",
+        "cu_up_to_date": "✔ You already have the team's latest.",
+        "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
+        "cu_busy": "Another process is already catching up: carrying on with what's here.",
+        "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "You're joining “{name}”: the team already picked the repos, stack and architecture, and the plan carries "
                         "on where they left it. I'll just set up this machine: tools and repos. No peeling the same shrimp twice.",
@@ -1010,6 +1030,7 @@ class W:
             if not self.first_run(resume_step(state), mode=mode):
                 return
         else:
+            self.catch_up()
             self.usage_notice()
             time.sleep(0.8)
         usage.record("wizard:open")
@@ -2325,6 +2346,39 @@ class W:
                     self.safe(self.busy, services.current().setup.wire_one, n)
             plan.sync()
 
+    def catch_up(self) -> None:
+        cu = services.current().catchup
+        run = self.safe(self.busy, cu.run)
+        if not run:
+            return
+        if run["status"] == "busy":
+            self.say(self.t("cu_busy"), "grey62")
+            return
+        r = run.get("pull") or {}
+        line = self._pull_line(r)
+        if line:
+            self.say(line[0], line[1])
+        if run["views"]["graphs"]:
+            self.safe(self.busy, cu.rebuild_graphs, run["views"]["graphs"])
+
+    def _pull_line(self, r: dict, url: str = "") -> tuple[str, str] | None:
+        st = r.get("status")
+        if st == "pulled":
+            return self.t("cu_pulled", n=r["commits"]), "green"
+        if st == "up-to-date":
+            return self.t("cu_up_to_date"), "grey62"
+        if st == "conflict":
+            return self.t("cu_conflict", files=", ".join(r["files"]) or r["detail"]), "red"
+        if st == "busy":
+            return self.t("cu_busy"), "grey62"
+        if st == "error":
+            reason = (r.get("reason") or "").replace("-", "_")
+            if reason in ("network", "not_found"):
+                return self.t("cu_offline"), "yellow"
+            key = "sh_err_" + reason if ("sh_err_" + reason) in T[self.lang] else "sh_err_unknown"
+            return self.t(key, host=r.get("host") or url, url=url), "red"
+        return None
+
     def do_share(self) -> None:
         url = services.current().share.docs_remote()
         if not url:
@@ -2332,13 +2386,18 @@ class W:
             if not url:
                 return
             services.current().share.set_remote(url)
-        if not self.yes(self.t("sh_confirm", url=url), default=True):
+        sh = services.current().share
+        what = self.sel(self.t("sh_pick"), [Choice(self.t("sh_do_pull"), "pull"), Choice(self.t("sh_do_push"), "push"),
+                                            Choice(self.t("sh_do_share"), "share")])
+        if not what:
+            return
+        if what == "share" and not self.yes(self.t("sh_confirm", url=url), default=True):
             return
         while True:
-            r = self.safe(self.busy, services.current().share.share)
+            r = self.safe(self.busy, getattr(sh, what))
             if not r:
                 return
-            url = services.current().share.docs_remote() or url
+            url = sh.docs_remote() or url
             if r["status"] != "error" or not r.get("reason"):
                 break
             host = r.get("host") or url
@@ -2351,12 +2410,18 @@ class W:
                 return
             self.banner()
             self.add_token(r["host"])
-        ok = r["status"] in ("pushed", "up-to-date", "nothing")
-        self.say(self.t("sh_" + r["status"].replace("-", "_"), url=url, detail=r["detail"], cli=cli_cmd()),
-                 f"bold {ORANGE}" if r["status"] == "pushed" else ("" if ok else "red"))
-        if ok and not services.current().share.AUTO_SHARE.exists():    # asked once; the CLI flag changes it later
+        ok = r["status"] in ("pushed", "up-to-date", "nothing", "pulled")
+        if what == "pull" or r["status"] in ("pulled", "conflict", "busy"):
+            line = self._pull_line(r, url) or (self.t("sh_nothing"), "")
+        elif r["status"] == "behind":
+            line = self.t("sh_behind"), "red"
+        else:
+            line = self.t("sh_" + r["status"].replace("-", "_"), url=url, detail=r["detail"], cli=cli_cmd()), \
+                f"bold {ORANGE}" if r["status"] == "pushed" else ("" if ok else "red")
+        self.say(*line)
+        if ok and what != "pull" and not sh.AUTO_SHARE.exists():    # asked once; the CLI flag changes it later
             on = bool(self.yes(self.t("sh_auto_ask", cli=cli_cmd()), default=True))
-            services.current().share.set_auto_share(on)
+            sh.set_auto_share(on)
             if on:
                 self.say(self.t("sh_auto_on"), "green")
         self.pause()

@@ -140,3 +140,16 @@ def test_the_app_starts_a_catch_up_job(kit, tmp_path, app_server):
     publish(kit, bare(tmp_path))
     code, job = app_call(app_server + "/api/app/catch-up", {}, token=TOKEN)
     assert code == 200 and job["kind"] == "catch-up"
+
+
+def test_pull_and_push_from_the_cli(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    r = cli(kit, "pull"); assert r.returncode == 0 and r.stdout.startswith("up-to-date")
+    (kit.root / "docs" / "cli.md").write_text("# CLI\n", encoding="utf-8")
+    r = cli(kit, "push"); assert r.returncode == 0 and r.stdout.startswith("pushed")
+
+
+def test_pull_from_the_cli_offline_exits_1(kit, tmp_path):
+    kit.services.templates.init_templates("demo", log=lambda _: None)
+    kit.services.share.set_remote(str(tmp_path / "gone.git")); kit.services.share.checkpoint_commit("first")
+    r = cli(kit, "pull"); assert r.returncode == 1 and r.stdout.startswith("error (not-found)")

@@ -270,7 +270,7 @@ class Remote(Command):
         return 0
 
 
-@command("share", "both", "team", es="Sincronizar con el equipo (pull y push)", en="Sync with the team (pull and push)")
+@command("share", "both", "team", es="Sincronizar con el equipo (traer y subir)", en="Sync with the team (bring in and upload)")
 class Share(Command):
     def configure(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("--auto", choices=["on", "off"])
@@ -284,6 +284,40 @@ class Share(Command):
         why = f" ({r['reason']})" if r.get("reason") else ""
         print(f"{r['status']}{why}{': ' + r['detail'] if r['detail'] else ''}")
         return 0 if r["status"] in ("pushed", "up-to-date", "nothing") else 1
+
+
+def _progress(msg) -> None:
+    print(msg, file=sys.stderr)
+
+
+def _print_result(r: dict) -> None:
+    why = f" ({r['reason']})" if r.get("reason") else ""
+    print(f"{r['status']}{why}{': ' + r['detail'] if r.get('detail') else ''}")
+
+
+@command("pull", "both", "team", es="Traer los cambios del equipo", en="Bring in the team's changes")
+class Pull(Command):
+    def run(self, args: argparse.Namespace, cli: CliContext) -> int:
+        try:
+            run = cli.services.catchup.run(_progress)
+        except Exception as e:                                  # noqa: BLE001 — one line, not a traceback
+            print(f"error: {e}")
+            return 1
+        if run["status"] != "done" or not run["pull"]:
+            print(run["status"])
+            return 0 if run["status"] == "skipped" else 1
+        _print_result(run["pull"])
+        if run["views"]["graphs"]:
+            cli.services.catchup.rebuild_graphs(run["views"]["graphs"], _progress)
+        return 0 if run["pull"]["status"] in ("up-to-date", "pulled", "nothing") else 1
+
+
+@command("push", "both", "team", es="Subir tus cambios al equipo", en="Upload your changes to the team")
+class Push(Command):
+    def run(self, args: argparse.Namespace, cli: CliContext) -> int:
+        r = cli.services.share.push(_progress)
+        _print_result(r)
+        return 0 if r["status"] in ("pushed", "nothing") else 1
 
 
 def cmd_trust(a, cli: CliContext) -> int:
