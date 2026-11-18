@@ -445,17 +445,19 @@ Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la
 
 Leer es cosa del portal; esta sección enseña el estado de la documentación y hace el trabajo que el portal no puede
 (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). El estado, los contadores y las preguntas sin respuesta se leen de lo que el
-proyecto ya sabe, sin modelo; escribir una wiki y **Preguntar con IA** usan el agente de esta máquina.
+proyecto ya sabe, sin modelo; escribir una wiki usa el proveedor de OpenWiki o el agente de esta máquina, y el chat usa
+el agente y el modelo que elijas.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
-- **Estado de la documentación**, la fila de chips bajo el título, cuenta lo que el proyecto ya sabe: borradores, páginas
-  por reconfirmar, páginas que citan código borrado, traducciones pendientes y comentarios pendientes; cuántas wikis
-  están al día, desfasadas, escritas con un alcance anterior o sin hacer; y el C4 (al día, desfasado, aún sin construir
-  o aún sin modelo que construir). Una cuenta a cero no se muestra, y una línea lo dice cuando no hay ningún
-  chip. Mientras se leen las wikis, enseña un marcador. **Wikis desfasadas** es un botón: te lleva a la primera
-  tarjeta en ese estado. El chip del C4 se vuelve a leer cuando acaba una construcción del C4.
+- La fila de chips bajo el título (un lector de pantalla la anuncia como «Estado de la documentación») cuenta lo que el
+  proyecto ya sabe: borradores, páginas por reconfirmar, páginas que citan código borrado, traducciones pendientes y
+  comentarios pendientes; cuántas wikis están al día, desfasadas, escritas con un alcance anterior o sin hacer; y el C4
+  (al día, desfasado, aún sin construir o aún sin modelo que construir). Una cuenta a cero no se muestra, y una línea lo
+  dice cuando no hay ningún chip. Mientras se leen las wikis, enseña un marcador. **Wikis desfasadas** es un botón: te
+  lleva a la primera tarjeta en ese estado. El chip del C4 se vuelve a leer cuando una construcción del C4 termina bien;
+  si falla, se queda como estaba.
 - **Leer la documentación**, **Revisar borradores** y **Buscar o preguntar** abren el portal en tu navegador.
   **Revisar borradores** muestra cuántos borradores hay (`Revisar borradores · 4`) y ningún número cuando no hay.
 - **Construir el explorador C4** construye el mapa interactivo de LikeC4 que el portal enseña en Arquitectura; **Ver**
@@ -472,16 +474,40 @@ proyecto ya sabe, sin modelo; escribir una wiki y **Preguntar con IA** usan el a
   segundos que lleva, y la tarjeta late (no si tu sistema pide menos movimiento). Se escribe una wiki a la vez.
 - La acción que escribe páginas está desactivada, con el motivo, si el repo no está clonado, no hay ningún motor de
   wiki instalado o se está generando la wiki de otro repo; **Ver** nunca lo está. La fila **Grafo del wiki · {repo}**
-  (**Construir el grafo** o **Reconstruir el grafo**) aparece cuando falta el grafo o es anterior a las páginas de la
-  wiki, y se queda para enseñar esa construcción. Si no se pueden leer las wikis, un único aviso con **Reintentar** lo
-  dice y las acciones siguen desactivadas; si falla solo una segunda lectura, las tarjetas conservan lo leído y el aviso
-  dice que puede estar desactualizado.
+  (**Construir el grafo** o **Reconstruir el grafo**) aparece cuando la wiki ya tiene páginas y falta el grafo o es
+  anterior a ellas, y se queda para enseñar esa construcción; tras una construcción fallida su botón dice
+  **Reintentar**. Si no se pueden leer las wikis, un único aviso con **Reintentar** lo dice y las acciones siguen
+  desactivadas; si falla solo una segunda lectura, las tarjetas conservan lo leído y el aviso dice que puede estar
+  desactualizado.
 - **Preguntas sin respuesta** aparece solo cuando hay alguna: las preguntas hechas en esta máquina (en la búsqueda o en
   Preguntar del portal, o por un agente) que ninguna página respondió, cada una con las veces que se hizo (`×3`).
   **Añadir a preguntas abiertas** la manda a las preguntas abiertas de la próxima entrevista; **Descartar** la olvida.
-- **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza
-  sus fuentes en el portal. Espera hasta 90 segundos; `ask.ai: false` en `workspace.yaml` lo apaga y `ask.model` elige
-  el modelo.
+- **Preguntar con IA** es un campo y un botón **Preguntar** al final de la página, y el chat que abren: un panel a la
+  derecha de la página (un cajón sobre la página en una ventana estrecha). **Preguntar** envía la pregunta del campo y
+  abre el panel con ella; con el campo vacío solo abre el panel, y una pregunta que aún no puede salir se queda en el
+  campo. Al abrirse, el foco va al campo del panel; <kbd>Esc</kbd> en el panel, o **Cerrar**, lo cierra y devuelve el
+  foco a lo que lo abrió. <kbd>Intro</kbd> envía y <kbd>Shift</kbd> <kbd>Intro</kbd> empieza una línea nueva.
+- El chat responde **solo con la documentación**: una llamada sin interfaz y sin herramientas, en una carpeta vacía, así
+  que no lee el código. Cada respuesta dice quién la escribió y enlaza sus fuentes con botones que abren la página en el
+  portal. Los últimos turnos van como contexto, así que una pregunta de seguimiento puede ser corta. Cuando ninguna
+  página responde, lo dice y la pregunta pasa a **Preguntas sin respuesta**. Si el agente no da nada (no ha iniciado
+  sesión, o no tiene ese modelo), el turno falla y dice por qué. Una respuesta espera hasta 90 segundos.
+- El selector de arriba del panel lista, de cada agente instalado en esta máquina, los modelos a los que se puede
+  preguntar: haiku, sonnet y opus de Claude; el modelo con el que está configurado Codex; los modelos que tiene Ollama,
+  para OpenCode (solo si están instalados los dos; si no, el modelo por defecto de OpenCode); o el único modelo por
+  defecto de un agente de comando. El kit no instala ningún modelo: un agente que no está en esta máquina no aparece. El
+  primer chat se abre con el agente y el modelo que usa la respuesta con IA de Preguntar (el enrutado para trabajos
+  pequeños; `ask.model` en `workspace.yaml` fija el modelo), así que cuesta lo mismo. Tras un turno que funcionó, la
+  elección se guarda en esta máquina (`chat` en `~/.camarones.json`) y el siguiente chat se abre con ella. El selector
+  se cierra mientras se escribe una respuesta.
+- Un camarón pequeño bajo la conversación enseña en qué punto está el turno: piensa mientras se espera la respuesta (la
+  etiqueta dice «Pelando tus docs…») y habla mientras el texto se va mostrando por pasos («Contestando…»); un clic en
+  el texto lo muestra entero. Si tu sistema pide menos movimiento, el camarón se queda quieto y la respuesta aparece sin
+  más.
+- La conversación vive en la memoria de la ventana y no se guarda nada: sobrevive a ir a otra sección y volver (abre el
+  panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía y abandona una respuesta que aún se esté
+  escribiendo. Desaparece al cerrar la ventana o cambiar de proyecto. Sin ningún agente instalado en esta máquina, o con
+  `ask.ai: false` en `workspace.yaml`, el panel lo dice y, en el primer caso, enlaza a **Máquina**.
 
 <!-- portal:#/docs -->
 

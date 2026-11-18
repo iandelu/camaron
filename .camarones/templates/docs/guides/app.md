@@ -431,17 +431,18 @@ Every repo's dependencies, read from its manifests and lockfiles without AI: Qua
 
 Reading is the portal's; this section shows the state of the docs and does the work the portal cannot (`#/docs`,
 <kbd>g</kbd> <kbd>d</kbd>). The status, the counters and the unanswered questions are read from what the project already
-knows, with no model; writing a wiki and **Ask with AI** use this machine's agent.
+knows, with no model; writing a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the agent and
+model you pick.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
-- **Documentation status**, the row of chips under the title, counts what the project already knows: drafts, pages to
-  reconfirm, pages that cite deleted code, translations pending and feedback pending; how many wikis are up to date,
-  out of date, written under an earlier scope or missing; and the C4 (up to date, out of date, not built yet, or no
-  model to build yet). A count at zero is left out, and a line says so when no chip applies. While the wikis are being
-  read it shows a placeholder. **Wikis out of date** is a button: it scrolls to the first such card. The C4 chip
-  is read again when a C4 build ends.
+- The row of chips under the title (a screen reader announces it as "Documentation status") counts what the project
+  already knows: drafts, pages to reconfirm, pages that cite deleted code, translations pending and feedback pending;
+  how many wikis are up to date, out of date, written under an earlier scope or missing; and the C4 (up to date, out of
+  date, not built yet, or no model to build yet). A count at zero is left out, and a line says so when no chip applies.
+  While the wikis are being read it shows a placeholder. **Wikis out of date** is a button: it scrolls to the first such
+  card. The C4 chip is read again when a C4 build ends successfully; a failed one leaves it as it was.
 - **Read the docs**, **Review drafts** and **Search or ask** open the portal in your browser. **Review drafts** shows
   how many drafts there are (`Review drafts · 4`) and no number when there are none.
 - **Build the C4 explorer** builds the interactive LikeC4 map the portal shows under Architecture; **View** opens it.
@@ -456,15 +457,37 @@ knows, with no model; writing a wiki and **Ask with AI** use this machine's agen
   taken, and the card pulses (not when your system asks for reduced motion). One wiki runs at a time.
 - The action that writes pages is off, with the reason, when the repo is not cloned, no wiki engine is installed, or
   another repo's wiki is being generated; **View** never is. The **Wiki graph · {repo}** row (**Build the graph** or
-  **Rebuild the graph**) appears when the graph is missing or older than the wiki's pages, and stays to show that build.
-  If the wikis cannot be read, one notice with **Try again** says so and the actions stay off; if only a second read
-  fails, the cards keep what was read and the notice says it may be out of date.
+  **Rebuild the graph**) appears once the wiki has pages, when the graph is missing or older than them, and stays to
+  show that build; after a failed graph build its button reads **Try again**. If the wikis cannot be read, one notice
+  with **Try again** says so and the actions stay off; if only a second read fails, the cards keep what was read and the
+  notice says it may be out of date.
 - **Unanswered questions** appears only when there are some: the questions asked on this machine (in the portal's search
   or Ask, or by an agent) that no page answered, each with how many times it was asked (`×3`). **Add to open
   questions** sends it to the open questions of the next interview; **Dismiss** forgets it.
-- **Ask with AI** answers a question only from the docs, through this machine's agent, and lists its sources as
-  buttons to the portal. It waits up to 90 seconds; `ask.ai: false` in `workspace.yaml` turns it off and `ask.model`
-  picks the model.
+- **Ask with AI** is a field and an **Ask** button at the end of the page, and the chat they open: a panel on the
+  right of the page (a drawer over the page in a narrow window). **Ask** sends the question in the field and opens the
+  panel on it; with the field empty it only opens the panel, and a question that cannot go yet stays in the field.
+  Opening puts the focus in the panel's field; <kbd>Esc</kbd> in the panel, or **Close**, closes it and gives the focus
+  back to what opened it. <kbd>Enter</kbd> sends and <kbd>Shift</kbd> <kbd>Enter</kbd> starts a new line.
+- The chat answers **only from the docs**: one headless call with no tools, in an empty folder, so it does not read the
+  code. Each answer says who wrote it and lists its sources as buttons that open the page in the portal. The last few
+  turns go along as context, so a follow-up can be short. When no page answers, it says so and the question joins
+  **Unanswered questions**. If the agent gives nothing (it is not signed in, or does not have that model), the turn
+  fails and says why. An answer waits up to 90 seconds.
+- The picker at the top of the panel lists, for each agent installed on this machine, the models it can be asked for:
+  Claude's haiku, sonnet and opus; the model Codex is configured with; the models Ollama has, for OpenCode (only when
+  both are installed, otherwise OpenCode's default); or the single default of a command agent. The kit installs no
+  model: an agent that is not on this machine is not listed. The first chat opens on the agent and model Ask's AI answer
+  uses (the one routed for small jobs; `ask.model` in `workspace.yaml` sets the model), so it costs the same. After a turn
+  that worked, the pick is kept on this machine (`chat` in `~/.camarones.json`) and the next chat opens on it. The
+  picker is closed while an answer is being written.
+- A small shrimp under the conversation shows where the turn is: it thinks while the answer is awaited (the label reads
+  "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
+  When your system asks for reduced motion the shrimp stays still and the answer simply appears.
+- The conversation lives in the window's memory, nothing is saved: it survives going to another section and coming back
+  (open the panel again), one question runs at a time, and **Clear** empties it and drops an answer still being
+  written. It is gone when the window is closed or the project is switched. With no agent installed on this machine, or
+  with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to **Machine**.
 
 <!-- portal:#/docs -->
 

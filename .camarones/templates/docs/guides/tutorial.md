@@ -403,8 +403,9 @@ A first wiki waits for the repo's brief (`wikis/<repo>/INSTRUCTIONS.md`, written
 glossary; `camaron wiki <repo> --force` skips that check, and the command neither chooses the repo nor writes a brief:
 it needs the repo cloned and an engine. In the app's **Docs**, each repo's card shows its wiki's state with one action; with no pages yet it
 is **Generate the wiki**: for a repo not chosen yet it chooses it, and without a brief it first writes a starter one
-from the static scan (no AI), which the repo-brief unit replaces later. **Update**, **Expand** and **Try again** run
-the same OpenWiki on a wiki that already has pages. The action stays closed, with the reason, when the repo is not
+from the static scan (no AI), which the repo-brief unit replaces later. **Update** and **Expand** run
+the same OpenWiki on a wiki that already has pages. **Try again** appears after a failed run: after a failed first run
+(no pages yet) it repeats the initial generation. The action stays closed, with the reason, when the repo is not
 cloned (clone it from **Machine**) or no wiki engine is installed. Runs go one at a time (while one repo's runs, the
 others wait), and a batch stops as soon as the
 engine is out of quota or logged out instead of failing every remaining repo.

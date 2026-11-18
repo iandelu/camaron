@@ -140,7 +140,7 @@ The API serves the portal and the app; it is not a stable public interface (the 
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (server-sent events), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
 | Quality | `GET health`, `kpis`, `misses`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Machine work (app token) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
-| The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
+| The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `chat/models`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `chat` (a Docs chat turn, a quiet job the app follows), `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
 Long work is a **job**: `GET jobs` lists them, `GET jobs/<id>?since=n` reads its lines from line `n`.
 

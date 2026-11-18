@@ -418,8 +418,9 @@ lógica, no librerías ni repos de CI. La primera wiki de un repo espera a su br
 escribe la unidad repo-brief) para usar tu glosario; `camaron wiki <repo> --force` se salta esa comprobación, y el comando ni elige el repo ni escribe un brief: pide el repo
 clonado y un motor. En **Docs** de la app, la tarjeta de cada repo muestra el estado de su wiki con una sola acción; si aún no tiene
 páginas, es **Generar la wiki**: si el repo aún no está elegido, lo elige, y si no tiene brief, antes escribe uno inicial
-con el análisis estático (sin IA), que la unidad repo-brief sustituye después. **Actualizar**, **Ampliar** y
-**Reintentar** lanzan el mismo OpenWiki sobre una wiki que ya tiene páginas. La acción queda cerrada, con el motivo, si
+con el análisis estático (sin IA), que la unidad repo-brief sustituye después. **Actualizar** y **Ampliar**
+lanzan el mismo OpenWiki sobre una wiki que ya tiene páginas. **Reintentar** aparece tras una ejecución fallida: tras
+una primera ejecución fallida (aún sin páginas) repite la generación inicial. La acción queda cerrada, con el motivo, si
 el repo no está clonado (clónalo desde **Máquina**) o no hay ningún motor de wiki instalado. Se lanzan de una en una
 (mientras se genera la de un repo, las de los demás esperan), y un lote se para en cuanto el motor se queda sin cuota o sin sesión, en vez de fallar todos los repos
 que quedan.
