@@ -138,7 +138,7 @@ The API serves the portal and the app; it is not a stable public interface (the 
 | Architecture | `GET c4/view?id`; `POST c4/element`, `c4/confirm`, `c4/relation`, `c4/remove` |
 | Board and stories | `GET kanban`, `kanban/item?id`, `kanban/waves`, `stories`, `stories/item`, `stories/files`; `POST stories/analyze`; with a token: `POST kanban/init`, `add`, `move`, `assign`, `link`, `archive`, `stories/save`, `stories/suggest` |
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (server-sent events), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
-| Quality | `GET health`, `kpis`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
+| Quality | `GET health`, `kpis`, `misses`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Machine work (app token) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
 | The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 

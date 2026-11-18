@@ -140,7 +140,7 @@ La API sirve al portal y a la app; no es una interfaz pública estable (esa es l
 | Arquitectura | `GET c4/view?id`; `POST c4/element`, `c4/confirm`, `c4/relation`, `c4/remove` |
 | Tablero e historias | `GET kanban`, `kanban/item?id`, `kanban/waves`, `stories`, `stories/item`, `stories/files`; `POST stories/analyze`; con un token: `POST kanban/init`, `add`, `move`, `assign`, `link`, `archive`, `stories/save`, `stories/suggest` |
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (eventos enviados por el servidor), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
-| Calidad | `GET health`, `kpis`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
+| Calidad | `GET health`, `kpis`, `misses`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Trabajo en la máquina (token de la app) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
 | La app (token de la app) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (eventos enviados por el servidor), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (una sesión, en el lienzo o en una ventana; su nombre antiguo, `agent`, sigue valiendo), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
