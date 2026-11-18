@@ -29,7 +29,7 @@ def test_line_ranges_and_symbols():
 
 
 def test_legacy_evidence_inherits_the_repo():
-    got, bad = anchors.parse_legacy("gw:pom.xml#L322-L404, src/main/java/config/C.java", None)
+    got, _ = anchors.parse_legacy("gw:pom.xml#L322-L404, src/main/java/config/C.java", None)
     assert [(a.repo, a.path, a.legacy) for a in got] == [("gw", "pom.xml", True), ("gw", "src/main/java/config/C.java", True)]
     got, bad = anchors.parse_legacy("src/main/java/demo/Api.java", "api")
     assert got[0].repo == "api" and bad == []
@@ -83,3 +83,34 @@ def test_serve_follows_the_page_rule():
     assert verdict.serve("no-evidence", False, policy="warn")[0] is True
     assert verdict.serve("broken", False, policy="warn")[0] is True
     assert verdict.serve("broken", False)[1] and verdict.serve("fresh", True)[1] is None
+
+
+@pytest.mark.parametrize("policy", ["Block", None, "off", "blokc"])
+def test_an_unknown_policy_fails_closed(policy):
+    assert verdict.serve("broken", False, policy=policy)[0] is False
+    assert verdict.serve("no-evidence", False, policy=policy)[0] is False
+
+
+def test_an_unknown_state_is_an_error():
+    with pytest.raises(ValueError):
+        verdict.serve("no_evidence", False)
+
+
+@pytest.mark.parametrize("text", ["foo/bar:x, a.java", ":x, a.java"])
+def test_a_bad_legacy_entry_does_not_poison_the_repo(text):
+    got, bad = anchors.parse_legacy(text, "api")
+    assert [(a.repo, a.path) for a in got] == [("api", "a.java")] and len(bad) == 1
+
+
+def test_legacy_repo_switches_and_carries_on():
+    got, _ = anchors.parse_legacy("a:x, y, b:z, w", None)
+    assert [(a.repo, a.path) for a in got] == [("a", "x"), ("a", "y"), ("b", "z"), ("b", "w")]
+
+
+def test_backslashes_and_spaces_around_the_hash_are_normalised():
+    got, _ = anchors.parse_code(["api:src\\main\\A.java", "api:src/A.java #L3-L9"])
+    assert [(a.path, a.kind) for a in got] == [("src/main/A.java", "file"), ("src/A.java", "lines")]
+
+
+def test_a_code_value_that_is_not_text_is_unreadable():
+    assert anchors.parse_code(5) == ([], ["5"])

@@ -19,7 +19,9 @@ def combine(results: list[str]) -> str:
 
 def serve(state: str, confirmed: bool, policy: str = "block") -> tuple[bool, str | None]:
     """Whether an agent may read it, and the notice to show with it (or instead of it). `warn` serves everything."""
-    blocking = policy == "block"
+    if state not in STATES:
+        raise ValueError(f"unknown state {state!r}")
+    blocking = policy != "warn"
     if state == "broken":
         return (not blocking), ("withheld: some of its evidence is gone. Read the code instead." if blocking
                                 else "may be out of date: some of its evidence is gone.")

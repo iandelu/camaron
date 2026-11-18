@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from fnmatch import fnmatchcase
 from pathlib import PurePosixPath
 
-KINDS = ("repo", "file", "folder", "glob", "lines", "symbol")
 GLOB_CHARS = ("*", "?", "[")
 LINES = re.compile(r"^L\d+(-L?\d+)?$")
 SPECIFICITY = {"lines": 3, "symbol": 3, "file": 2, "folder": 1, "glob": 1, "repo": 0}
@@ -32,6 +31,7 @@ def _entries(value: object) -> list[str]:
 
 def _anchor(repo: str, rest: str, legacy: bool, raw: str) -> Anchor | None:
     path, hashed, frag = rest.replace("\\", "/").partition("#")
+    path, frag = path.strip(), frag.strip()
     folder = path.endswith("/")
     p = PurePosixPath(path)
     if not repo or "/" in repo or not path.strip("/") or p.is_absolute() or ".." in p.parts:
@@ -58,6 +58,8 @@ def _split(entry: str) -> tuple[str | None, str]:
 
 def parse_code(value: str | list[str]) -> tuple[list[Anchor], list[str]]:
     """Anchors, and the raw entries that cannot be read (no `repo:`, empty path, absolute path, `..`)."""
+    if not isinstance(value, (str, list, tuple)):
+        return [], [repr(value)]
     got: list[Anchor] = []
     bad: list[str] = []
     for entry in _entries(value):
@@ -77,10 +79,9 @@ def parse_legacy(text: str, default_repo: str | None) -> tuple[list[Anchor], lis
     current = default_repo
     for entry in _entries((text or "").split(",")):
         repo, rest = _split(entry)
-        if repo is not None:
-            current = repo
-        a = _anchor(current or "", rest, True, entry)
+        a = _anchor(current if repo is None else repo, rest, True, entry) if (repo or current) else None
         if a:
+            current = a.repo
             got.append(a)
         else:
             bad.append(entry)
