@@ -18,21 +18,15 @@ export default function Machine({ srv, jobs, app }) {
   const load = () => srv.get('app/machine').then((x) => { setM(x); setError('') }, (e) => setError(e.message))
   useEffect(() => { load() }, [])
   const p = { srv, jobs, m, reload: load }
-  const tour = useTour()
   const fill = tokenPrefill(useHash())          // #/machine?host=<h>&kind=sonarqube: where Quality sends a repo's Sonar
   return (
     <Page title={t('nav.machine')}>
-      <Card className="dk-run" data-tour="mc-guide">
-        <span className="eyebrow">{t('mc.guide')}</span>
-        <p className="muted small">{t('mc.guideBody')}</p>
-        <div className="row"><Button size="sm" variant="primary" href="#/guide">{t('mc.guideOpen')}</Button>
-          <Button size="sm" onClick={() => tour.start('app')}>{t('tour.take')}</Button></div>
-      </Card>
+      <GuideCard />
       {error ? <Failed title={t('mc.failed')} detail={error} onRetry={() => { setError(''); load() }} /> : null}
       {!m && !error ? <Skeleton lines={6} /> : null}
       {m ? (<>
         <Setup {...p} />
-        <Settings {...p} />
+        <SessionSettings {...p} />
         <Tokens key={`${fill.host}|${fill.kind}`} srv={srv} host={fill.host} kind={fill.kind} />
         <Repos {...p} />
         <Kit {...p} app={app} />
@@ -40,6 +34,18 @@ export default function Machine({ srv, jobs, app }) {
         <Uninstall srv={srv} jobs={jobs} app={app} />
       </>) : null}
     </Page>
+  )
+}
+
+export function GuideCard() {
+  const tour = useTour()
+  return (
+    <Card className="dk-run" data-tour="mc-guide">
+      <span className="eyebrow">{t('mc.guide')}</span>
+      <p className="muted small">{t('mc.guideBody')}</p>
+      <div className="row"><Button size="sm" variant="primary" href="#/guide">{t('mc.guideOpen')}</Button>
+        <Button size="sm" onClick={() => tour.start('app')}>{t('tour.take')}</Button></div>
+    </Card>
   )
 }
 
@@ -72,7 +78,7 @@ export function Setup({ srv, jobs, m, reload }) {
 // server cannot open terminals (lib/terminals.available) opens windows whatever it says.
 const SESSIONS = { canvas: 'mc.sessCanvas', window: 'mc.sessWindow' }
 
-function Settings({ srv, jobs, m, reload }) {
+export function SessionSettings({ srv, jobs, m, reload }) {
   const c = useCmd(srv, jobs)
   const s = m.settings
   const [codex, setCodex] = useState(s.codex_model || '')
@@ -161,7 +167,7 @@ export function Tokens({ srv, host = '', kind = '' }) {
 }
 
 // This project's repos (cloned here or not, the stack its docs use) and its plan, quick or full.
-function Repos({ srv, jobs, m, reload }) {
+export function Repos({ srv, jobs, m, reload }) {
   const c = useCmd(srv, jobs)
   const [stacks, setStacks] = useState(() => Object.fromEntries(m.repos.map((r) => [r.name, r.stack || ''])))
   useEffect(() => { setStacks(Object.fromEntries(m.repos.map((r) => [r.name, r.stack || '']))) }, [m])
@@ -197,7 +203,7 @@ function Repos({ srv, jobs, m, reload }) {
 
 // The kit: update the global one (then restart the app on it), or repair it — `repair` writes back the files the kit
 // put on this machine (its skills, agent config, links) when something deleted or changed them; never the team's pages.
-function Kit({ srv, jobs, m, app }) {
+export function Kit({ srv, jobs, m, app }) {
   const c = useCmd(srv, jobs)
   const [updated, setUpdated] = useState(false)
   const update = async () => { const end = await c.run('self-update', {}); if (end?.status === 'done') setUpdated(true) }

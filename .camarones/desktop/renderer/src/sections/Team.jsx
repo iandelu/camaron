@@ -1,18 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
-import { Button, Card } from '@camaron/ui'
-import { useCmd } from '../hooks.js'
-import { JobOutput, Page } from '../parts.jsx'
+import { useState } from 'react'
+import { Button } from '@camaron/ui'
+import { Page } from '../parts.jsx'
 import { Repo } from './TeamStrip.jsx'
 import Commands from './Commands.jsx'
-import { lang, t } from '../i18n.js'
-import { skillsView, switchArgs } from '../skills.js'
+import { t } from '../i18n.js'
+import { Plugins, Skills, Trust } from './SettingsTeam.jsx'
 
 // The team by task: the team's cam-docs repo and sharing with it (where it stands, share now), the agent config and
 // hooks that came with it and this machine has not approved, the agents' skills and the plugins. The board and CI are
 // the portal's.
-// A kind or a state the CLI names in English (trust, plugins), in the user's words; an unknown one as it comes.
-const word = (family, v) => { const k = `${family}.${v}`; const w = t(k); return w === k ? v : w }
-
 export default function Team({ srv, jobs }) {
   const [tick, setTick] = useState(0)          // a pack added below arrives in the Trust card to approve
   return (
@@ -30,130 +26,3 @@ export default function Team({ srv, jobs }) {
   )
 }
 
-// What came with the team's repo (agent config, plugins) and this machine has not approved: nothing of it loads
-// until it is. Approving runs `trust --yes` after a dialog that lists it. (The method hooks' switch is Quality's.)
-function Trust({ srv, jobs, tick = 0 }) {
-  const list = useCmd(srv, jobs, { quiet: true })
-  const act = useCmd(srv, jobs)
-  const dialog = useRef(null)
-  const load = () => { list.run('trust', { json: true }) }
-  useEffect(() => { load() }, [tick])
-  const rows = list.job?.result?.pending
-  const then = async (p) => { await p; load() }
-  return (
-    <Card className="dk-run" data-tour="team-trust">
-      <span className="eyebrow">{t('tm.trust')}</span>
-      {rows ? (rows.length ? (<>
-        <ul className="dk-units">{rows.map((r) => (
-          <li key={r.kind + r.label} className="dk-unit"><div className="dk-unit-main"><b>{r.label}</b>
-            <span className="muted small">{word('tk', r.kind)}{r.detail ? ` · ${r.detail}` : ''}</span></div>
-            <span className="cu-chip cu-chip--warn">{word('ts', r.status)}</span></li>))}</ul>
-        <div className="row"><Button size="sm" variant="primary" disabled={act.running} onClick={() => dialog.current.showModal()}>
-          {t('tm.approve', { n: rows.length })}</Button></div>
-        <dialog ref={dialog} className="dk-dialog">
-          <h2>{t('tm.approveTitle')}</h2>
-          <p>{t('tm.approveText')}</p>
-          <ul>{rows.map((r) => <li key={r.kind + r.label}><code>{r.label}</code></li>)}</ul>
-          <div className="row">
-            <Button variant="ghost" onClick={() => dialog.current.close()}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={() => { dialog.current.close(); then(act.run('trust', {}, true)) }}>{t('tm.approveGo')}</Button>
-          </div>
-        </dialog>
-      </>) : <p className="small">{t('tm.trusted')}</p>) : <JobOutput c={list} />}
-      <JobOutput c={act} />
-    </Card>
-  )
-}
-
-// The agents' skills (`skills list --json`): each with its icon and two switches — the project's, for the whole team
-// (workspace.yaml), and this machine's, for you only (a Claude Code deny rule in the git-ignored settings.local.json).
-// Below, the kit's optional packs: adding one copies it into the team's skills, so the Trust card asks to approve it.
-function Skills({ srv, jobs, onChange }) {
-  const list = useCmd(srv, jobs, { quiet: true })
-  const act = useCmd(srv, jobs)
-  const load = () => list.run('skills', { action: 'list', json: true })
-  useEffect(() => { load() }, [])
-  const then = async (p) => { await p; load(); onChange?.() }
-  const data = list.job?.result
-  return (
-    <Card className="dk-run" data-tour="team-skills">
-      <span className="eyebrow">{t('tm.skills')}</span>
-      <p className="muted small">{t('tm.skillsLead')}</p>
-      {data?.skills ? <SkillsList data={data} busy={act.running}
-        onSwitch={(row, scope) => then(act.run('skills', switchArgs(row, scope)))}
-        onAdd={(pack) => then(act.run('skills', { action: 'add', args: [pack.name] }))} /> : <JobOutput c={list} />}
-      <JobOutput c={act} />
-    </Card>
-  )
-}
-
-export function SkillsList({ data, busy = false, onSwitch = () => {}, onAdd = () => {} }) {
-  const { rows, packs } = skillsView(data, lang())
-  return (<>
-    <ul className="dk-units">{rows.map((r) => (
-      <li key={r.name} className="dk-unit">
-        <span className="dk-skill-icon" aria-hidden="true">{r.icon}</span>
-        <div className="dk-unit-main"><b>{r.name}</b>
-          <span className="muted small">{t(r.origin, { pack: r.pack })}{r.description ? ` · ${r.description}` : ''}</span></div>
-        <div className="row dk-unit-acts">
-          {r.waiting ? <span className="cu-chip cu-chip--warn">{t('tm.skWaiting')}</span> : null}
-          <label className="dk-check"><input type="checkbox" checked={r.project} disabled={busy}
-            onChange={() => onSwitch(r, 'project')} />{t('tm.skProject')}</label>
-          <label className="dk-check" title={t('tm.skMachineHint')}><input type="checkbox" checked={r.machine} disabled={busy}
-            onChange={() => onSwitch(r, 'machine')} />{t('tm.skMachine')}</label>
-        </div>
-      </li>))}</ul>
-    {packs.length ? (<>
-      <span className="eyebrow">{t('tm.skAvailable')}</span>
-      <ul className="dk-units">{packs.map((p) => (
-        <li key={p.name} className="dk-unit">
-          <span className="dk-skill-icon" aria-hidden="true">{p.icon}</span>
-          <div className="dk-unit-main"><b>{p.title}</b>
-            <span className="muted small">{p.summary} · {p.license} · {p.skills.join(', ')}</span></div>
-          <div className="row dk-unit-acts">
-            {p.runsCode ? <span className="cu-chip cu-chip--warn">{t('tm.runsCode')}</span> : null}
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => onAdd(p)}>{t('tm.skAdd')}</Button>
-          </div>
-        </li>))}</ul>
-    </>) : null}
-  </>)
-}
-
-// The plugins: the kit's own (installed with Camarón, nothing downloaded) and the team's (folders in the team repo's
-// .camarones/plugins/, they arrive when you pull it). On or off is this machine's choice only; a team plugin that
-// runs code or steers an agent is approved first (the card above), one that sends the docs out is off until enabled.
-const PLUGIN_STATE = { active: ['ok', 'tm.active'], 'off on this machine': [undefined, 'tm.off'], invalid: ['bad', 'tm.invalid'] }
-function Plugins({ srv, jobs }) {
-  const list = useCmd(srv, jobs, { quiet: true })
-  const act = useCmd(srv, jobs)
-  useEffect(() => { list.run('plugins', { json: true }) }, [])
-  const rows = list.job?.result
-  const toggle = async (p) => { await act.run('plugins', { action: p.status === 'active' ? 'disable' : 'enable', target: p.name }); list.run('plugins', { json: true }) }
-  if (Array.isArray(rows) && !rows.length) return null
-  return (
-    <Card className="dk-run" data-tour="team-plugins">
-      <span className="eyebrow">{t('tm.plugins')}</span>
-      <p className="muted small">{t('tm.pluginsLead')}</p>
-      {Array.isArray(rows) ? (
-        <ul className="dk-units">{rows.map((p) => {
-          // a kit plugin that sends the docs out (Confluence, Notion) is simply off until enabled here
-          const [state, label] = PLUGIN_STATE[p.status] || (p.source === 'kit' ? [undefined, 'tm.off'] : ['warn', 'tm.needsOk'])
-          return (
-            <li key={p.name} className="dk-unit">
-              <div className="dk-unit-main"><b>{p.name} <span className="muted small">{p.version}</span></b>
-                <span className="muted small">{t(p.source === 'kit' ? 'tm.fromKit' : 'tm.fromTeam')} · {(p.provides || []).map((k) => word('pk', k)).join(', ')}</span>
-                {p.errors?.length ? <span className="small">{p.errors.join(' · ')}</span> : null}</div>
-              <div className="row dk-unit-acts">
-                {p.runs_code ? <span className="cu-chip cu-chip--warn">{t('tm.runsCode')}</span> : null}
-                {p.sends_data ? <span className="cu-chip cu-chip--warn">{t('tm.sendsData')}</span> : null}
-                <span className={'cu-chip' + (state ? ` cu-chip--${state}` : '')}>{t(label)}</span>
-                {p.status !== 'invalid' ? <Button size="sm" variant="ghost" disabled={act.running} onClick={() => toggle(p)}>{p.status === 'active' ? t('tm.disable') : t('tm.enable')}</Button> : null}
-              </div>
-            </li>
-          )
-        })}</ul>
-      ) : <JobOutput c={list} />}
-      <JobOutput c={act} />
-    </Card>
-  )
-}

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import { SkillsList } from './sections/Team.jsx'
+import { SkillsList } from './sections/SettingsTeam.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
