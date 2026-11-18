@@ -395,7 +395,8 @@ Los agentes conservan los bloques `<!-- human -->` y respetan los archivos con `
 que cita en sus `x-sources`. Si ese código cambia, la página pasa a **sospechosa**; si desaparece, a **obsoleta**; si solo
 se movió, sigue **fresca**. Una fuente puede nombrar un símbolo (`orders:src/…/OrderService.java#OrderService.place`)
 que se vuelve a encontrar aunque se mueva, y una página que cita otras páginas o elementos C4 se vuelve sospechosa con
-ellos. Los agentes no reciben páginas sospechosas, obsoletas ni sin revisar y sin fuentes (el MCP y `llms.txt` las
+ellos; si es por un elemento roto o sin evidencia, `fresh --ack` no basta: el aviso y `check` dicen que se arregle o se
+añada su `code`, o que una persona lo confirme. Los agentes no reciben páginas sospechosas, obsoletas ni sin revisar y sin fuentes (el MCP y `llms.txt` las
 retienen y dicen qué código leer); las personas las siguen viendo, con un aviso. `freshness: {ai_policy: warn}` en
 `workspace.yaml` se las entrega con una advertencia.
 

@@ -134,7 +134,9 @@ touched it, and a click opens its lines in your editor (or in the repository fro
 says one still holds. `freshness: {ai_policy: warn}` in `workspace.yaml` serves them with a warning instead.
 Cite a symbol rather than lines when you can (`orders:src/…/OrderService.java#OrderService.place`): it is found again
 wherever it moves, so only a change to its own body counts. A page built on other pages or C4 elements cites them
-(`docs/flows/checkout.md`, `c4:shop.orders`) and becomes suspect when one of them does.
+(`docs/flows/checkout.md`, `c4:shop.orders`) and becomes suspect when one of them does. When its element is broken
+or has no evidence, `fresh --ack` does not help: the notice and `check` say to fix or add its `code`, or to have a
+person confirm it.
 
 To protect a paragraph from agents:
 

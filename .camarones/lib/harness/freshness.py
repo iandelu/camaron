@@ -501,7 +501,9 @@ def element_states(fqns) -> dict:
 
 
 def states() -> dict[str, dict]:
-    """Every page's freshness: {state, changed, missing}. New or rewritten pages get their fingerprints first."""
+    """Every page's freshness: {state, changed, missing}, plus `c4` ({source: broken | no-evidence}) for the `c4:`
+    sources it is suspect through, which `fresh --ack` cannot settle. New or rewritten pages get their fingerprints
+    first."""
     pages = _pages()
     decisions = {logical for logical, (fm, _) in pages.items() if adr_doc.is_decision(logical, fm.get("type"))}
     cited = {logical: [s.strip()[3:].strip() for s in _sources(fm) if kind(s) == "c4"]
@@ -510,7 +512,7 @@ def states() -> dict[str, dict]:
     stamp_all(pages, model)
     data = _load()["pages"]
     c4 = {"model": model, "cited": {c4_element(n, model) for logical, names in cited.items() if logical not in decisions
-                                    for n in names} - {None}}
+                                    for n in names} - {None}, "held": {}}
     out = {}
     for logical, (fm, _) in pages.items():
         srcs = _sources(fm)
@@ -521,13 +523,17 @@ def states() -> dict[str, dict]:
         flagged = (data.get(logical) or {}).get("flag")
         if flagged:
             out.setdefault(logical, {})[f"flagged: {flagged['reason']} ({flagged.get('by', '?')})"] = "changed"
-    return _settle(pages, out)
+    result = _settle(pages, out)
+    for st in result.values():
+        if held := {s: c4["held"][s] for s in st["changed"] if s in c4["held"]}:
+            st["c4"] = held
+    return result
 
 
 def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> str:
     """check_source, plus spec §5.4 for `c4:` sources: a decision only needs its element to exist; another page goes
     suspect when its element is broken, or has no evidence and no person vouched for it. `c4` holds this call's model,
-    the cited elements and, once first needed, their states."""
+    the cited elements, once first needed their states, and in `held` the sources an element's state makes suspect."""
     if kind(s) != "c4":
         return check_source(s, stamp)
     name = s.strip()[3:]
@@ -539,6 +545,7 @@ def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> 
             c4["elements"] = _cited_states(c4["model"], c4["cited"])
         el = c4["elements"].get(c4_element(name, c4["model"])) or {}
         if el.get("state") == "broken" or (el.get("state") == "no-evidence" and not el.get("confirmed")):
+            c4["held"][s] = el["state"]
             return "changed"
     return result
 
@@ -600,15 +607,30 @@ def code_paths(refs: list[str]) -> list[str]:
     return out
 
 
+ELEMENT_FIX = {"broken": "is broken: fix its `code`",
+               "no-evidence": "has no evidence: add `code` to it or have a person confirm it"}
+
+
+def element_advice(held: dict) -> str:
+    """What settles a page suspect through its C4 elements (its state's `c4`): their evidence, never `fresh --ack`."""
+    parts = []
+    for state, fix in ELEMENT_FIX.items():
+        if names := ", ".join(s.strip()[3:].strip() for s, got in held.items() if got == state):
+            parts.append(f"its C4 element {names} {fix}")
+    return "; ".join(parts) + " (`camaron arch-verify`)"
+
+
 def gate(logical: str, trust: str, state: dict | None = None) -> tuple[bool, str | None]:
     """Whether an agent may read this page, and the notice to show with it (or instead of it)."""
     st = state or status(logical)
     blocking = policy() == "block"
     if st["state"] in OUT_OF_DATE:
-        what = st["missing"] + st["changed"]
+        held = st.get("c4") or {}
+        what = [s for s in st["missing"] + st["changed"] if s not in held]
         why = ("its code is gone" if st["state"] == "stale" else "its code changed since it was written")
-        notice = (f"{'withheld' if blocking else 'may be out of date'}: {logical} — {why}. Read the code instead: "
-                  + ", ".join(code_paths(what)))
+        reasons = [f"{why}. Read the code instead: " + ", ".join(code_paths(what))] if what or not held else []
+        notice = (f"{'withheld' if blocking else 'may be out of date'}: {logical} — "
+                  + "; ".join(reasons + ([element_advice(held)] if held else [])) + ("." if held else ""))
         return (not blocking), notice
     if st["state"] == "unverified" and trust != "confirmed":
         notice = (f"{'withheld' if blocking else 'unreviewed'}: {logical} has no sources to check it against and "

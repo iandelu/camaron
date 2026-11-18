@@ -145,7 +145,9 @@ una unidad para actualizarlas y `fresh --ack <página> --by <nombre>` dice que u
 `freshness: {ai_policy: warn}` en `workspace.yaml` se entregan con una advertencia en lugar de retenerlas.
 Mejor citar un símbolo que unas líneas (`orders:src/…/OrderService.java#OrderService.place`): se vuelve a encontrar
 aunque se mueva, así que solo cuenta un cambio en su propio cuerpo. Una página que se apoya en otras páginas o en
-elementos C4 los cita (`docs/flows/checkout.md`, `c4:shop.orders`) y pasa a sospechosa cuando alguno lo es.
+elementos C4 los cita (`docs/flows/checkout.md`, `c4:shop.orders`) y pasa a sospechosa cuando alguno lo es. Si su
+elemento está roto o no tiene evidencia, `fresh --ack` no sirve: el aviso y `check` dicen que se arregle o se añada su
+`code`, o que una persona lo confirme.
 
 Para proteger un párrafo de los agentes:
 

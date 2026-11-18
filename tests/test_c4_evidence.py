@@ -257,6 +257,30 @@ def test_pages_follow_their_element(c4, kit):                   # spec §5.4
     assert c4.status("flows/a.md")["changed"] == ["c4:shop.db"]
 
 
+def test_a_page_its_element_holds_back_says_what_fixes_it(c4, kit):
+    """`fresh --ack` cannot help a page whose element is broken or has no evidence: the gate and `check` say what can."""
+    page(kit, "flows/a.md", ["c4:shop.db"])
+    page(kit, "flows/d.md", ["c4:shop.api.legacy"])
+    page(kit, "flows/m.md", [f"api:{API}#L3-L5", "c4:shop.db"])
+    c4.stamp_all()
+    edit(kit, "api", API, COMMENT, CODE)
+    advice = ("its C4 element shop.db has no evidence: add `code` to it or have a person confirm it "
+              "(`camaron arch-verify`)")
+    ok, notice = c4.gate("flows/a.md", "draft")
+    assert not ok and notice == f"withheld: flows/a.md — {advice}."
+    _, notice = c4.gate("flows/d.md", "draft")
+    assert notice == "withheld: flows/d.md — its C4 element shop.api.legacy is broken: fix its `code` (`camaron arch-verify`)."
+    _, notice = c4.gate("flows/m.md", "draft")
+    assert notice == (f"withheld: flows/m.md — its code changed since it was written. Read the code instead: "
+                      f"api/{API}#L3-L5; {advice}.")
+    _, warns = kit.services.doc_status.check()
+    mine = {w.split(":", 1)[0].rsplit("/", 1)[-1]: w for w in warns if "flows/" in w and ("C4 element" in w or "code" in w)}
+    assert mine["a.md"].endswith(f": {advice}") and "--ack" not in mine["a.md"]
+    assert "its C4 element shop.api.legacy is broken: fix its `code`" in mine["d.md"]
+    assert f"its code changed since it was written (api/{API}#L3-L5) — refresh it, or `fresh --ack` if it still " \
+           f"holds; {advice}" in mine["m.md"]
+
+
 def test_adding_anchors_or_confirming_leaves_citing_pages_fresh(c4, kit):
     page(kit, "flows/a.md", ["c4:shop.db"])
     page(kit, "flows/b.md", ["c4:shop.ghost"])
