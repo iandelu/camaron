@@ -4,6 +4,11 @@ from __future__ import annotations
 import importlib
 import os
 import re
+import subprocess
+import sys
+import time
+
+import pytest
 
 from conftest import KIT_DIR, purge_kit_modules
 
@@ -71,3 +76,37 @@ def test_now_is_utc_to_the_second():
     """now() moved from docs.py to core/clock.py (F5a): an ISO time in UTC without microseconds, as .state.json keeps it."""
     now = importlib.import_module("lib.core.clock").now()
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", now)
+
+
+SLEEPS = [sys.executable, "-c", "import time; time.sleep(30)"]
+
+
+def test_a_command_past_its_timeout_is_killed_and_raises(kit):
+    from lib.core import process
+    calls = (lambda: process.out(SLEEPS, timeout=1),
+             lambda: process.run(SLEEPS, timeout=1, check=False, capture=True))
+    for call in calls:
+        started = time.monotonic()
+        with pytest.raises(subprocess.TimeoutExpired):
+            call()
+        assert time.monotonic() - started < 15                    # back long before the child would have ended
+
+
+def test_a_command_inside_its_timeout_answers_as_before(kit):
+    from lib.core import process
+    assert process.out([sys.executable, "-c", "print('hi')"], timeout=30) == "hi"
+    assert process.run([sys.executable, "-c", "pass"], timeout=30, check=False).returncode == 0
+
+
+def test_no_timeout_leaves_subprocess_run_as_it_was(kit, monkeypatch):
+    from lib.core import process
+    seen = []
+
+    def fake(cmd, **kw):
+        seen.append(kw)
+        return subprocess.CompletedProcess(cmd, 0, "x\n", "")
+    monkeypatch.setattr(process.subprocess, "run", fake)
+    assert process.out(["tool"]) == "x"
+    assert "timeout" not in seen[0]
+    process.out(["tool"], timeout=4)
+    assert seen[1]["timeout"] == 4
