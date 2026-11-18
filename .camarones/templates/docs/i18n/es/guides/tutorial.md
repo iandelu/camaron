@@ -467,9 +467,9 @@ falta y `uninstall` lo quita.
 **Hooks del método (opcionales).** `camaron hooks on` añade cinco hooks de Claude Code en `cam-docs/.claude/settings.json`,
 que son del kit (`trust` no pregunta por ellos): al empezar la sesión el agente recibe el estado del plan, el último
 relevo y las revisiones pendientes; con cada mensaje recibe las secciones de la doc, los elementos C4 y los nodos del
-grafo de código que encajan con él, sin llamar a ningún modelo (de las páginas que el MCP retendría solo ve el aviso);
+grafo de código que encajan con él, sin llamar a ningún modelo (de las páginas que el MCP retendría solo ve el aviso, y lo mismo de los elementos C4 que el código no respalda);
 antes de su primer cambio en un fichero de un repo de servicio, una sesión que no ha consultado la doc se frena una vez
-y se le dice qué páginas leer (`hooks: {gate: false}` en `workspace.yaml` quita ese freno); justo después de editar una
+y se le dice qué páginas leer y qué elemento C4 cubre el fichero (`hooks: {gate: false}` en `workspace.yaml` quita ese freno); justo después de editar una
 página de la doc, esa página se revisa y los problemas vuelven al agente; antes de terminar, si los repos han cambiado
 desde la doc, se le recuerda una vez actualizarla. `camaron hooks report` dice cuántas sesiones que tocaron código
 consultaron la doc antes de su primer cambio. `camaron hooks off` los quita.

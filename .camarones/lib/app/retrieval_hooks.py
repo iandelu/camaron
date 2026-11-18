@@ -116,16 +116,19 @@ def _pages_citing(repo: str, rel: str) -> list[str]:
 
 
 def _elements_of(repo: str, rel: str) -> str:
-    """The C4 elements anchored on the file, with their states, as a line to read; empty when none or unreadable."""
+    """The C4 element anchored on the file (the most specific), its state and decisions, as lines to read; empty when
+    none or unreadable."""
     try:
-        fqns = c4_lookup.covering(repo, rel)
-        states = freshness.c4_states()["elements"] if fqns else {}
+        fqns = c4_lookup.covering(repo, rel)[:1]
+        if not fqns:
+            return ""
+        state = (freshness.element_states(fqns).get(fqns[0]) or {}).get("state", "no-evidence")
+        decisions = c4_lookup.decisions_about(fqns[0], 2)
     except Exception:  # noqa: BLE001 — a model that does not parse must not block the stop's message
         return ""
-    if not fqns:
-        return ""
-    named = ", ".join(f"{f} ({(states.get(f) or {}).get('state', 'no-evidence')})" for f in fqns[:1])
-    return f"\n- C4: {named} — architecture(\"{repo}:{rel}\") says what the code backs"
+    lines = [f"- C4: {fqns[0]} ({state}) — architecture(\"{repo}:{rel}\") says what the code backs"]
+    lines += [f"- decision: read_doc(\"{d['path']}\") — {d['title']} ({d['status']})" for d in decisions]
+    return "\n" + "\n".join(lines)
 
 
 def pre_edit(payload: dict) -> tuple[int, str]:

@@ -687,8 +687,8 @@ cuántas van a la vez y por qué esperan las demás, si el servidor frena las pe
 límite de uso), y el ordenador no se suspende. `camaron doctor --context` suma los tokens que carga
 cada sesión de agente (avisa por encima de 6000; `context: {budget: N}`). `camaron hooks on` añade cinco hooks de Claude
 Code: el estado del plan al empezar; con cada mensaje, las secciones de la doc, los elementos C4 y los nodos del grafo de
-código que encajan con él (sin IA); antes del primer cambio en un repo de servicio, un freno único si la sesión no ha
-consultado la doc (`hooks: {gate: false}` lo quita); la revisión de cada página al editarla, y un recordatorio si los
+código que encajan con él (sin IA; los elementos C4 que el código no respalda se retienen); antes del primer cambio en un repo de servicio, un freno único si la sesión no ha
+consultado la doc, con el elemento C4 que cubre el fichero (`hooks: {gate: false}` lo quita); la revisión de cada página al editarla, y un recordatorio si los
 repos cambiaron. `camaron hooks report` dice cuántas sesiones consultaron la doc antes de tocar código.
 `camaron eval comply <unidad>` ejecuta una unidad de verdad y puntúa lo escrito, sin IA (para el sandbox).
 

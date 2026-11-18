@@ -451,8 +451,9 @@ Claude Code config (`~/.claude.json`), never in the repo; `doctor` says when a r
 **Method hooks (opt-in).** `camaron hooks on` adds five Claude Code hooks to `cam-docs/.claude/settings.json`, which
 the kit owns (`trust` does not ask about them): at session start the agent gets the plan state, the last handoff and
 pending reviews; with every prompt it gets the docs sections, C4 elements and code-graph nodes that match it, with no
-model call (pages the MCP would withhold show only their notice); before its first edit of a service-repo file, a
-session that consulted no docs is stopped once and told which pages to read (`hooks: {gate: false}` in
+model call (pages the MCP would withhold show only their notice, and so do C4 elements the code does not back); before its
+first edit of a service-repo file, a session that consulted no docs is stopped once and told which pages to read and
+which C4 element covers the file (`hooks: {gate: false}` in
 `workspace.yaml` turns that stop off); right after it edits a docs page, that page is checked and the problems go back
 to the agent; before it stops, if the repos moved on since the docs, it is reminded once to update them.
 `camaron hooks report` says how many code-editing sessions consulted the docs before their first edit.

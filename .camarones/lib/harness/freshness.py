@@ -464,6 +464,12 @@ def _cited_states(model, fqns: set[str]) -> dict:
     return _evaluate([i for i in items if i], _repos())["elements"]
 
 
+def element_states(fqns) -> dict:
+    """The evidence states of just these elements, as `c4_states()["elements"]` gives them: what a prompt needs of the
+    few elements it names, without evaluating the whole model."""
+    return _cited_states(_model(), set(fqns))
+
+
 def states() -> dict[str, dict]:
     """Every page's freshness: {state, changed, missing}. New or rewritten pages get their fingerprints first."""
     pages = _pages()

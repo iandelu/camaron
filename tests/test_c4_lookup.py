@@ -7,7 +7,7 @@ import importlib
 import pytest
 
 from test_method_hooks import edit
-from test_prompt_context import PAGE, UNSOURCED, write_model
+from test_prompt_context import MODEL, PAGE, UNSOURCED, node, write_graph, write_model
 
 DECISION = """---
 title: Retry failed payments with backoff
@@ -74,14 +74,22 @@ def test_the_pre_edit_stop_names_the_element(ctx_world):
     rh = importlib.import_module("lib.app.retrieval_hooks")
     code, text = rh.pre_edit(edit(ctx_world, "c4-1"))
     assert code == 2 and 'architecture("api:src/main/java/demo/Api.java")' in text and "shop.payments" in text
+    assert "decisions/0001-retries.md" in text
 
 
 def test_the_context_stays_under_its_cap_with_decisions(ctx_world, ctx):
     for n in range(2, 8):
         (ctx_world.root / "docs" / "decisions" / f"000{n}-more.md").write_text(
             DECISION.replace("Retry failed", f"Long title {n} " + "word " * 80), encoding="utf-8", newline="\n")
-    out = ctx.build("why does Api.java retry payments with backoff")
-    assert 0 < len(out["text"]) <= ctx.CAP
+    prompt = "why does Api.java retry payments with backoff"
+    natural = len(ctx.build(prompt)["text"])
+    ctx.CAP = natural - 120                                                   # the C4 part is the one that gets cut
+    try:
+        out = ctx.build(prompt)
+    finally:
+        ctx.CAP = 6000
+    assert len(out["text"]) <= natural - 120 < natural
+    assert all("· fresh" in line for line in out["text"].splitlines() if line.startswith("- shop.payments"))
 
 
 def test_decisions_come_accepted_first_and_by_citation_then_by_code(ctx_world):
@@ -128,3 +136,113 @@ def test_a_file_only_a_repo_container_covers_returns_the_container(ctx_world):
 }
 """)
     assert c4_lookup.covering("api", "src/Anything.java") == ["shop.orders"]
+
+
+API = "src/main/java/demo/Api.java"
+RELATED = """model {
+  shop = system 'Shop' {
+    payments = service 'Payments' {
+      description 'Charges cards'
+      metadata { evidence 'api:src/main/java/demo/Api.java' }
+    }
+    billing = service 'Billing' {
+      description 'Sends invoices'
+    }
+    ledger = service 'Ledger' {
+      description 'Books entries'
+    }
+    payments -> billing 'notifies'
+    payments -> ledger 'books' {
+      #confirmed
+    }
+    payments -> billing 'audits' {
+      metadata { code 'api:src/main/java/demo/Api.java#L1' }
+    }
+  }
+}
+"""
+
+
+def test_relations_are_served_by_their_own_evidence(ctx_world):
+    import lib.mcp as mcp
+    write_model(ctx_world, RELATED)
+    text = mcp.architecture("shop.payments")
+    assert "-> shop.billing — withheld:" in text and "'notifies'" not in text            # no evidence, nobody vouched
+    assert "-> shop.billing 'audits' (fresh)" in text                                       # backed by its own anchor
+    assert "-> shop.ledger 'books' (no-evidence) · vouched for by a person" in text         # confirmed, labelled
+    assert "withheld" in mcp.architecture("shop.billing") and "'audits'" not in mcp.architecture("shop.billing")
+
+
+def test_a_broken_element_names_the_code_to_read(ctx_world, ctx):
+    import lib.mcp as mcp
+    write_model(ctx_world, MODEL.replace("api:src/main/java/demo/Api.java", "api:src/gone/Old.java"))
+    out = ctx.build("change how payments retry")
+    assert "withheld: shop.payments" in out["text"] and "Read the code instead: api:src/gone/Old.java (missing)" in out["text"]
+    assert "Read the code instead: api:src/gone/Old.java (missing)" in mcp.architecture("shop.payments")
+
+
+def test_a_named_file_under_a_folder_anchor_reaches_its_element(ctx_world, ctx):
+    write_model(ctx_world, MODEL.replace("'api:src/main/java/demo/Api.java'", "'api:src/main/java/demo/'")
+                .replace("Charges cards and retries failed payments", "Settles"))
+    assert ctx.build("explain src/main/java/demo/Api.java please")["c4"] == ["shop.payments"]
+    assert ctx.build("explain api:src/main/java/demo/Api.java please")["c4"] == ["shop.payments"]
+    write_graph(ctx_world, "api", [node("Api", API)])
+    assert ctx.build("explain what Api.java does please")["c4"] == ["shop.payments"]
+
+
+def test_withheld_elements_do_not_take_the_slots_of_served_ones(ctx_world, ctx):
+    held = "".join(f"    bill{n} = service 'Billing {n}' {{\n      description 'Sends invoices'\n    }}\n"
+                   for n in range(5))
+    write_model(ctx_world, MODEL.replace("    billing = service", held + "    billing = service")
+                .replace("Charges cards and retries failed payments", "Billing invoices"))
+    out = ctx.build("change how billing invoices are sent")
+    assert out["c4"] == ["shop.payments"] and out["text"].count("withheld: shop.") == ctx.C4_TOP
+
+
+def test_a_confirmed_element_without_evidence_is_served_with_its_notice(ctx_world, ctx):
+    write_model(ctx_world, MODEL.replace("    billing = service 'Billing' {", "    billing = service 'Billing' {\n      #confirmed"))
+    out = ctx.build("change how billing sends invoices")
+    assert out["c4"] == ["shop.billing"] and "vouched for by a person" in out["text"]
+
+
+def test_the_warn_policy_serves_what_block_withholds(ctx_world, ctx):
+    ws = ctx_world.services.workspace.workspace()
+    ws["freshness"] = {"ai_policy": "warn"}
+    ctx_world.services.workspace.save_workspace(ws)
+    served, held = ctx._c4("billing", ["billing"], set(), [])
+    assert [e["fqn"] for e in served] == ["shop.billing"] and held == []
+    assert served[0]["notice"] == "unreviewed: nothing in the code backs it."
+
+
+def test_a_changed_file_makes_its_element_suspect(ctx_world, ctx):
+    from lib.harness import freshness
+    write_model(ctx_world, MODEL.replace("'api:src/main/java/demo/Api.java'", "'api:src/main/java/demo/Api.java#L3'"))
+    freshness.c4_states()
+    api = ctx_world.ws / "api" / API
+    api.write_text(api.read_text(encoding="utf-8").replace("public class Api", "public class Moved"), encoding="utf-8")
+    out = ctx.build("why does Api.java retry payments with backoff")
+    assert "shop.payments" in out["c4"] and "suspect" in out["text"] and "its code changed: verify." in out["text"]
+
+
+def test_an_element_whose_repo_is_not_here_is_unchecked(ctx_world, ctx, monkeypatch):
+    from lib.harness import freshness
+    real = freshness.element_states
+    monkeypatch.setattr(freshness, "element_states", lambda fqns: {
+        f: {**s, "state": "unchecked"} for f, s in real(fqns).items()})
+    out = ctx.build("why does Api.java retry payments with backoff")
+    assert "unchecked" in out["text"] and "not checked here." in out["text"]
+
+
+def test_targets_are_normalised_and_a_missing_element_is_the_error(ctx_world):
+    import lib.mcp as mcp
+    for target in ("api:./src/main/java/demo/Api.java#L3", "api:/src/main/java/demo/Api.java"):
+        assert "shop.payments" in mcp.architecture(target)
+    assert mcp.architecture("shop.nothing").startswith("no C4 element 'shop.nothing'")
+    assert "Empty target" in mcp.architecture(" ")
+
+
+def test_a_repo_container_reads_as_the_whole_repo(ctx_world):
+    import lib.mcp as mcp
+    write_model(ctx_world, "model {\n  shop = system 'Shop' {\n    orders = service 'Orders' {\n"
+                "      metadata { repo 'api' code 'api:src/main/java/demo/Api.java' }\n    }\n  }\n}\n")
+    assert "whole repo api" in mcp.architecture("shop.orders")

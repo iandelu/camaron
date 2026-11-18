@@ -22,6 +22,8 @@ PAGES = 4
 SECTION_CHARS = 1400
 C4_TOP = 3
 DECISIONS_TOP = 2
+DESC_CHARS = 300
+C4_MARK = "\x00"          # tags the C4 part, which is cut at line boundaries
 NODES_TOP = 6
 UNVERIFIED = {"state": "unverified", "changed": [], "missing": []}
 # words that say what to do, not where: left out of name matching (C4, graph), kept for the docs search
@@ -95,23 +97,42 @@ def _pages(prompt: str) -> list[dict]:
     return pages
 
 
-def _named_files(prompt: str, elements: dict) -> set[tuple[str, str]]:
-    """The (repo, path) of file anchors whose file name the prompt says (`Api.java`)."""
+def _named_paths(prompt: str, nodes: list[dict], elements: dict) -> set[tuple[str, str]]:
+    """The (repo, path) of the files the prompt names: by file name (graph nodes, file anchors), as `repo:path`, or as
+    a repo-relative path that exists in a repo."""
     names = {f.lower() for f in re.findall(r"[\w.-]+\.[A-Za-z]\w*", prompt)}
-    return {(a.repo, a.path) for fqn in elements for a in anchors.of_element(fqn, elements)[0]
-            if a.kind in ("file", "lines", "symbol") and a.path.rsplit("/", 1)[-1].lower() in names}
+    found = {(n["repo"], n["file"]) for n in nodes if n["file"].rsplit("/", 1)[-1].lower() in names}
+    found |= {(a.repo, a.path) for fqn in elements for a in anchors.of_element(fqn, elements)[0]
+              if a.kind in ("file", "lines", "symbol") and a.path.rsplit("/", 1)[-1].lower() in names}
+    repos = services.current().workspace.repo_names()
+    for token in re.findall(r"[\w.-]+(?::|/)[\w./-]*[\w-]", prompt):
+        repo, colon, rest = token.partition(":")
+        if colon and repo in repos:
+            found.add((repo, rest.lstrip("/")))
+        elif "/" in token and "." in token.rsplit("/", 1)[-1]:
+            found |= {(r, token.lstrip("./")) for r in repos if repo_dir(r).joinpath(token.lstrip("./")).is_file()}
+    return found
 
 
-def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]]) -> tuple[list[dict], list[str]]:
-    """(served elements, a `withheld:` line per element the evidence does not allow)."""
+def _c4_line(e: dict) -> str:
+    head = (f"- {e['fqn']} — {e['title']} ({e['kind']}{', repo ' + e['repo'] if e['repo'] else ''}) · {e['state']}"
+            + (f" · {e['notice']}" if e["notice"] else ""))
+    desc = e["description"] if len(e["description"]) <= DESC_CHARS else e["description"][:DESC_CHARS].rsplit(" ", 1)[0] + " …"
+    return "\n".join([head + (f": {desc}" if desc else "")]
+                     + ([f"  evidence: {', '.join(e['evidence'][:3])}"] if e["evidence"] else [])
+                     + [f"  decision: {d['path']} — {d['title']} ({d['status']})" for d in e["decisions"]])
+
+
+def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]], nodes: list[dict]
+        ) -> tuple[list[dict], list[str]]:
+    """(served elements, a `withheld:` line per element the evidence does not allow). Only the candidates are
+    evaluated, and decision pages are read only when an element is served."""
     try:
         elements = c4edit.index()["elements"]
-        states = freshness.c4_states()["elements"]
     except Exception:  # noqa: BLE001 — a model that does not parse must not hide the docs
         return [], []
-    files = files | _named_files(prompt, elements)
     covered = {}
-    for repo, path in files:
+    for repo, path in files | _named_paths(prompt, nodes, elements):
         for fqn in c4_lookup.covering(repo, path, elements)[:1]:
             covered[fqn] = covered.get(fqn, 0) + 1
     scored = []
@@ -122,19 +143,29 @@ def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]]) -> tuple[lis
         score += 2 * covered.get(fqn, 0)
         if score >= 2:
             scored.append((-score, fqn, el))
+    if not scored:
+        return [], []
     scored.sort(key=lambda s: (s[0], s[1]))
-    policy, pages = freshness.policy(), c4_lookup.decision_pages()
+    try:
+        states = freshness.element_states(f for _, f, _ in scored)
+    except Exception:  # noqa: BLE001
+        return [], []
+    policy, pages = freshness.policy(), None
     served, held = [], []
-    for _, fqn, el in scored[:C4_TOP]:
+    for _, fqn, el in scored:
+        if len(served) >= C4_TOP:
+            break
         st = states.get(fqn) or {"state": "no-evidence", "confirmed": False, "anchors": []}
         ok, notice = verdict.serve(st["state"], bool(st["confirmed"]), policy)
         if not ok:
-            held.append(f"withheld: {fqn} — {(notice or '').removeprefix('withheld: ')}")
+            if len(held) < C4_TOP:
+                held.append(c4_lookup.withheld(fqn, notice, st["anchors"]))
             continue
+        pages = c4_lookup.decision_pages() if pages is None else pages
         served.append({"fqn": fqn, "title": el.get("title", ""), "kind": el.get("kind", ""),
                        "repo": (el.get("metadata") or {}).get("repo", ""), "description": el.get("description", ""),
                        "state": st["state"], "notice": notice,
-                       "evidence": [a["raw"] for a in st["anchors"] if not a["raw"].endswith(":")],
+                       "evidence": [a["raw"] for a in c4_lookup.shown(st["anchors"])],
                        "decisions": c4_lookup.decisions_about(fqn, DECISIONS_TOP, elements, pages)})
     return served, held
 
@@ -189,14 +220,6 @@ def _graph_nodes(prompt: str, terms: list[str], paths: set[str]) -> tuple[list[d
     return nodes, stale
 
 
-def _c4_line(e: dict) -> str:
-    head = (f"- {e['fqn']} — {e['title']} ({e['kind']}{', repo ' + e['repo'] if e['repo'] else ''}) · {e['state']}"
-            + (f" · {e['notice']}" if e["notice"] else ""))
-    return "\n".join([head + (f": {e['description']}" if e["description"] else "")]
-                     + ([f"  evidence: {', '.join(e['evidence'][:3])}"] if e["evidence"] else [])
-                     + [f"  decision: {d['path']} — {d['title']} ({d['status']})" for d in e["decisions"]])
-
-
 def _render(pages: list[dict], c4: list[dict], held: list[str], nodes: list[dict], stale: list[str]) -> str:
     parts = [HEADER]
     for p in pages:
@@ -206,10 +229,8 @@ def _render(pages: list[dict], c4: list[dict], held: list[str], nodes: list[dict
     held_pages = [p for p in pages if not p["served"]]
     if held_pages:
         parts.append("\n".join(f"- {p['notice']}" for p in held_pages))
-    if c4:
-        parts.append("C4 elements:\n" + "\n".join(map(_c4_line, c4)))
-    if held:
-        parts.append("\n".join(f"- {h}" for h in held))
+    if c4 or held:
+        parts.append(C4_MARK + "C4 elements:\n" + "\n".join([*map(_c4_line, c4), *(f"- {h}" for h in held)]))
     if nodes:
         parts.append("Code graph:\n" + "\n".join(
             f"- {n['label']} — {n['repo']}/{n['file']}" + (f":{n['line']}" if n["line"] else "") for n in nodes)
@@ -219,7 +240,14 @@ def _render(pages: list[dict], c4: list[dict], held: list[str], nodes: list[dict
         room = CAP - len(text) - 2
         if room <= 0:
             break
-        text += ("\n\n" if text else "") + (part if len(part) <= room else part[:max(0, room - 2)] + " …")
+        by_line = part.startswith(C4_MARK)
+        part = part.removeprefix(C4_MARK)
+        if len(part) > room:
+            cut = part[:max(0, room - 2)]
+            if by_line and "\n" in cut:                    # a head line keeps its state and notice or goes whole
+                cut = cut[:cut.rindex("\n")]
+            part = cut + " …"
+        text += ("\n\n" if text else "") + part
     return text[:CAP]
 
 
@@ -232,8 +260,8 @@ def build(prompt: str) -> dict:
     pages = _pages(prompt)
     paths = {s for p in pages for s in p["sources"]}
     files = {(r, f) for p in pages for r, f in p["cited"]}
-    c4, held = _c4(prompt, terms, files)
     nodes, stale = _graph_nodes(prompt, terms, paths)
+    c4, held = _c4(prompt, terms, files, nodes)
     if not (pages or c4 or held or nodes):
         return _empty()
     return {"text": _render(pages, c4, held, nodes, stale), "pages": [{k: p[k] for k in ("path", "section", "trust", "fresh",
