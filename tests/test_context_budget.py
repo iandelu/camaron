@@ -6,7 +6,7 @@ import json, os, subprocess, sys
 
 from conftest import KIT_DIR
 
-KIT_SHARE = 2500
+KIT_SHARE = 2600                     # 4.89: the architecture tool and its AGENTS.md line cost ~100
 
 
 def _doctor(kit, *args):

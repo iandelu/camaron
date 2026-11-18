@@ -44,7 +44,7 @@ MODEL = """model {
   shop = system 'Shop' {
     payments = service 'Payments' {
       description 'Charges cards and retries failed payments'
-      metadata { evidence 'src/main/java/demo/Api.java' }
+      metadata { evidence 'api:src/main/java/demo/Api.java' }
     }
     billing = service 'Billing' {
       description 'Sends invoices'

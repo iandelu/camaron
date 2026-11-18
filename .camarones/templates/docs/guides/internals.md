@@ -315,6 +315,7 @@ it at `http://127.0.0.1:8765/mcp` (Streamable HTTP) with the token in `~/.camaro
 | `pipeline_status`, `run_events`, `kpis` | The plan, a run's events, the KPIs |
 | `run_node` | Starts a ready unit, only with `mcp: {pipeline_control: true}` in `workspace.yaml` |
 | `repo_graph` | Asks the graphify code graph of one repo or all |
+| `architecture` | The C4 element behind an element id or a `repo:path` file: its evidence in the code and its state, its relations and the decisions about it. Elements the code does not back are withheld. The prompt hook and the pre-edit stop name the same elements; states and evidence live here, not in `likec4` |
 | `board_next`, `board_waves` | What may start now without collisions; the open work in waves. Read only; an agent moves its own card through the CLI (`camaron change start\|link\|close` in `cam-task`, else `camaron board move`) |
 
 It also offers every page as a resource (`camdocs://<path>`, plus `camdocs://llms.txt`) and two prompts,

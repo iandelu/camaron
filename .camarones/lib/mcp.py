@@ -11,7 +11,7 @@ from .common import HOME, ROOT, DOCS, WORK, WS_FILE, VERSIONS, run, which
 from .core.paths import CACHE
 from .harness import freshness
 from . import usage
-from .app import services
+from .app import c4_lookup, services
 from .domain.docs import directives, frontmatter, logical_paths, page_outline, trust_levels
 
 PROTOCOL = "2025-06-18"
@@ -52,6 +52,10 @@ TOOLS = [
                                             "refreshed or a person acknowledges it (`camaron fresh --ack`).",
      "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}, "reason": {"type": "string"}},
                      "required": ["path", "reason"]}},
+    {"name": "architecture", "description": "The C4 element behind an element id or a repo:path file: its evidence in the "
+                                            "code and its state, its relations and the decisions about it. Elements the "
+                                            "code does not back are withheld.",
+     "inputSchema": {"type": "object", "properties": {"target": {"type": "string"}}, "required": ["target"]}},
     {"name": "pipeline_status", "description": "The documentation plan: units, their status and the last run.",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "run_node", "description": "Start one ready unit of the plan in the background (needs "
@@ -167,6 +171,11 @@ def doc_status() -> str:
         if c["status"] != "up-to-date":
             lines.append(f"- repo {repo}: {c['status']}" + (f" ({len(c.get('files', []))} files)" if c.get("files") else ""))
     return "\n".join(lines)
+
+
+def architecture(target: str) -> str:
+    usage.record("mcp:architecture")
+    return c4_lookup.render(c4_lookup.lookup(target)) if str(target or "").strip() else "Empty target."
 
 
 def repo_graph(question: str, repo: str | None = None) -> str:
@@ -339,7 +348,7 @@ def board_waves(story: str | None = None, epic: str | None = None) -> str:
 
 
 HANDLERS = {"search_docs": search_docs, "read_doc": read_doc, "list_docs": list_docs, "doc_status": doc_status,
-            "ask": ask, "repo_graph": repo_graph, "propose_edit": propose_edit, "add_feedback": add_feedback,
+            "ask": ask, "repo_graph": repo_graph, "architecture": architecture, "propose_edit": propose_edit, "add_feedback": add_feedback,
             "mark_suspect": mark_suspect, "pipeline_status": pipeline_status, "run_node": run_node,
             "run_events": run_events, "kpis": kpis, "board_next": board_next, "board_waves": board_waves}
 

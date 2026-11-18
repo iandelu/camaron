@@ -9,7 +9,7 @@ and never receive kit files.
 0. Any code change: follow skill `cam-task` (docs first, difficulty, verification, guardrails, linked PRs).
 1. Before coding, look it up: `camarones` MCP tools (`search_docs`, then `read_doc(path, section)` for the section a hit
    names; `repo_graph`) or `{{CAM}}docs/llms.txt`.
-   `confirmed` pages are the source of truth; `draft` pages must be verified against the code.
+   Architecture behind a file or element, with its evidence: `architecture("<repo>:<path>" or "<element id>")`.
 2. Code questions: `graphify query "<question>" --graph {{CAM}}graph/<repo>/graph.json` (one repo) or
    `--graph {{CAM}}.camarones/.cache/graph/graph.json` (all repos).
 3. Outside a `cam-task` change, after changing behaviour, update the affected pages in `{{CAM}}docs/` in the same

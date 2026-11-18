@@ -11,7 +11,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-from lib.app import prompt_context, services
+from lib.app import c4_lookup, prompt_context, services
 from lib.common import CACHE, ROOT, repo_dir
 from lib.domain.docs import frontmatter
 from lib.harness import freshness
@@ -115,6 +115,19 @@ def _pages_citing(repo: str, rel: str) -> list[str]:
     return found
 
 
+def _elements_of(repo: str, rel: str) -> str:
+    """The C4 elements anchored on the file, with their states, as a line to read; empty when none or unreadable."""
+    try:
+        fqns = c4_lookup.covering(repo, rel)
+        states = freshness.c4_states()["elements"] if fqns else {}
+    except Exception:  # noqa: BLE001 — a model that does not parse must not block the stop's message
+        return ""
+    if not fqns:
+        return ""
+    named = ", ".join(f"{f} ({(states.get(f) or {}).get('state', 'no-evidence')})" for f in fqns[:3])
+    return f"\n- C4: {named} — architecture(\"{repo}:{rel}\") says what the code backs"
+
+
 def pre_edit(payload: dict) -> tuple[int, str]:
     """(exit code, message): 2 stops the edit once per session when no docs were consulted; 0 lets it through."""
     if not gate_enabled():
@@ -138,7 +151,8 @@ def pre_edit(payload: dict) -> tuple[int, str]:
         read = ("\n".join(f"- read_doc(\"{p}\")" for p in pages[:5]) if pages else
                 f"- no page cites this file: search_docs(\"{Path(rel).stem}\") or ask(\"<what you are changing>\")")
         return 2, (f"Camarón: before you edit {repo}/{rel}, read what the docs say — this session consulted none.\n"
-                   f"{read}\nIf the docs do not cover it, say so and edit again (this stop happens once per session).")
+                   f"{read}{_elements_of(repo, rel)}\nIf the docs do not cover it, say so and edit again "
+                   "(this stop happens once per session).")
     _log({"session": sid, "event": "edit", "repo": repo, "consulted": consulted})
     return 0, ""
 

@@ -329,6 +329,7 @@ solo repo. `camaron doctor` avisa si falta y `camaron repair` lo vuelve a poner.
 | `pipeline_status`, `run_events`, `kpis` | El plan, los eventos de una ejecución, los KPIs |
 | `run_node` | Lanza una unidad lista, solo con `mcp: {pipeline_control: true}` en `workspace.yaml` |
 | `repo_graph` | Pregunta al grafo de código de graphify de un repo o de todos |
+| `architecture` | El elemento C4 detrás de un id de elemento o de un archivo `repo:ruta`: su evidencia en el código y su estado, sus relaciones y las decisiones que hablan de él. Los elementos que el código no respalda se retienen. El hook de prompt y la parada previa a editar nombran los mismos elementos; los estados y la evidencia viven aquí, no en `likec4` |
 | `board_next`, `board_waves` | Lo que puede empezar ya sin choques; el trabajo abierto en oleadas. Solo leen; un agente mueve su propia tarjeta por la CLI (`camaron change start\|link\|close` en `cam-task`, si no `camaron board move`) |
 
 También ofrece cada página como recurso (`camdocs://<ruta>`, más `camdocs://llms.txt`) y dos prompts,

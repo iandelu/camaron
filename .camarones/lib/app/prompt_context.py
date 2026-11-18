@@ -7,8 +7,9 @@ from __future__ import annotations
 import json, re
 
 from lib import c4edit
-from lib.app import services
+from lib.app import c4_lookup, services
 from lib.common import out, repo_dir
+from lib.domain.c4 import anchors, verdict
 from lib.domain.c4.drift import NOT_SOURCE, TEST_FILE
 from lib.domain.docs import directives, frontmatter, page_outline, synonyms
 from lib.harness import freshness
@@ -20,6 +21,7 @@ REL = 0.35                 # …and so is one far below the best page
 PAGES = 4
 SECTION_CHARS = 1400
 C4_TOP = 3
+DECISIONS_TOP = 2
 NODES_TOP = 6
 UNVERIFIED = {"state": "unverified", "changed": [], "missing": []}
 # words that say what to do, not where: left out of name matching (C4, graph), kept for the docs search
@@ -73,7 +75,7 @@ def _pages(prompt: str) -> list[dict]:
         st = states.get(freshness.docs_alias(h["path"], states), UNVERIFIED)
         ok, notice = freshness.gate(h["path"], h["trust"], st)
         page = {"path": h["path"], "section": h.get("section"), "trust": h["trust"], "fresh": st["state"],
-                "served": ok, "notice": notice, "text": "", "sources": []}
+                "served": ok, "notice": notice, "text": "", "sources": [], "cited": []}
         f = services.current().docs.find_page(h["path"]) if ok else None
         if f:
             fm, body = frontmatter.split_fm(f.read_text(encoding="utf-8", errors="replace"))
@@ -85,30 +87,56 @@ def _pages(prompt: str) -> list[dict]:
                 text = text[:SECTION_CHARS].rsplit(" ", 1)[0] + " …"
             page["text"] = (tl + "\n\n" if tl and found else "") + text
             page["section"] = h["section"] if found else None
-            page["sources"] = [p for p in map(_code_path, fm.get("x-sources") or []) if p]
+            sources = [str(x) for x in fm.get("x-sources") or []]
+            page["sources"] = [p for p in map(_code_path, sources) if p]
+            page["cited"] = [(r, path.split("#", 1)[0]) for r, path, _ in
+                             map(freshness.parse, [x for x in sources if not x.startswith("c4:")]) if r and path]
         pages.append(page)
     return pages
 
 
-def _c4(terms: list[str], paths: set[str]) -> list[dict]:
+def _named_files(prompt: str, elements: dict) -> set[tuple[str, str]]:
+    """The (repo, path) of file anchors whose file name the prompt says (`Api.java`)."""
+    names = {f.lower() for f in re.findall(r"[\w.-]+\.[A-Za-z]\w*", prompt)}
+    return {(a.repo, a.path) for fqn in elements for a in anchors.of_element(fqn, elements)[0]
+            if a.kind in ("file", "lines", "symbol") and a.path.rsplit("/", 1)[-1].lower() in names}
+
+
+def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]]) -> tuple[list[dict], list[str]]:
+    """(served elements, a `withheld:` line per element the evidence does not allow)."""
     try:
         elements = c4edit.index()["elements"]
+        states = freshness.c4_states()["elements"]
     except Exception:  # noqa: BLE001 — a model that does not parse must not hide the docs
-        return []
+        return [], []
+    files = files | _named_files(prompt, elements)
+    covered = {}
+    for repo, path in files:
+        for fqn in c4_lookup.covering(repo, path, elements):
+            covered[fqn] = covered.get(fqn, 0) + 1
     scored = []
     for fqn, el in elements.items():
         name = _words(fqn) + _words(el.get("title", ""))
         desc = _words(el.get("description", ""))
-        evidence = [p for p in map(_code_path, str((el.get("metadata") or {}).get("evidence", "")).split(","))
-                    if p]
         score = sum(2 for t in terms if _matches(t, name)) + sum(1 for t in terms if _matches(t, desc))
-        score += 2 * sum(1 for e in evidence for p in paths if p == e or p.startswith(e.rstrip("/") + "/"))
+        score += 2 * covered.get(fqn, 0)
         if score >= 2:
-            scored.append((-score, fqn, el, evidence))
+            scored.append((-score, fqn, el))
     scored.sort(key=lambda s: (s[0], s[1]))
-    return [{"fqn": fqn, "title": el.get("title", ""), "kind": el.get("kind", ""),
-             "repo": (el.get("metadata") or {}).get("repo", ""), "description": el.get("description", ""),
-             "evidence": evidence} for _, fqn, el, evidence in scored[:C4_TOP]]
+    policy, pages = freshness.policy(), c4_lookup.decision_pages()
+    served, held = [], []
+    for _, fqn, el in scored[:C4_TOP]:
+        st = states.get(fqn) or {"state": "no-evidence", "confirmed": False, "anchors": []}
+        ok, notice = verdict.serve(st["state"], bool(st["confirmed"]), policy)
+        if not ok:
+            held.append(f"withheld: {fqn} — {(notice or '').removeprefix('withheld: ')}")
+            continue
+        served.append({"fqn": fqn, "title": el.get("title", ""), "kind": el.get("kind", ""),
+                       "repo": (el.get("metadata") or {}).get("repo", ""), "description": el.get("description", ""),
+                       "state": st["state"], "notice": notice,
+                       "evidence": [a["raw"] for a in st["anchors"] if not a["raw"].endswith(":")],
+                       "decisions": c4_lookup.decisions_about(fqn, DECISIONS_TOP, elements, pages)})
+    return served, held
 
 
 def _graph_nodes(prompt: str, terms: list[str], paths: set[str]) -> tuple[list[dict], list[str]]:
@@ -161,20 +189,27 @@ def _graph_nodes(prompt: str, terms: list[str], paths: set[str]) -> tuple[list[d
     return nodes, stale
 
 
-def _render(pages: list[dict], c4: list[dict], nodes: list[dict], stale: list[str]) -> str:
+def _c4_line(e: dict) -> str:
+    head = (f"- {e['fqn']} — {e['title']} ({e['kind']}{', repo ' + e['repo'] if e['repo'] else ''}) · {e['state']}"
+            + (f" · {e['notice']}" if e["notice"] else ""))
+    return "\n".join([head + (f": {e['description']}" if e["description"] else "")]
+                     + ([f"  evidence: {', '.join(e['evidence'][:3])}"] if e["evidence"] else [])
+                     + [f"  decision: {d['path']} — {d['title']} ({d['status']})" for d in e["decisions"]])
+
+
+def _render(pages: list[dict], c4: list[dict], held: list[str], nodes: list[dict], stale: list[str]) -> str:
     parts = [HEADER]
     for p in pages:
         if p["served"]:
             cite = p["path"] + (f"#{p['section']}" if p["section"] else "")
             parts.append(f"[{cite}] ({p['trust']} · {p['fresh']})\n{p['text']}")
-    held = [p for p in pages if not p["served"]]
-    if held:
-        parts.append("\n".join(f"- {p['notice']}" for p in held))
+    held_pages = [p for p in pages if not p["served"]]
+    if held_pages:
+        parts.append("\n".join(f"- {p['notice']}" for p in held_pages))
     if c4:
-        parts.append("C4 elements:\n" + "\n".join(
-            f"- {e['fqn']} — {e['title']} ({e['kind']}{', repo ' + e['repo'] if e['repo'] else ''})"
-            + (f": {e['description']}" if e["description"] else "")
-            + (f" · evidence: {', '.join(e['evidence'][:3])}" if e["evidence"] else "") for e in c4))
+        parts.append("C4 elements:\n" + "\n".join(map(_c4_line, c4)))
+    if held:
+        parts.append("\n".join(f"- {h}" for h in held))
     if nodes:
         parts.append("Code graph:\n" + "\n".join(
             f"- {n['label']} — {n['repo']}/{n['file']}" + (f":{n['line']}" if n["line"] else "") for n in nodes)
@@ -196,9 +231,10 @@ def build(prompt: str) -> dict:
     terms = _terms(prompt)
     pages = _pages(prompt)
     paths = {s for p in pages for s in p["sources"]}
-    c4 = _c4(terms, paths)
+    files = {(r, f) for p in pages for r, f in p["cited"]}
+    c4, held = _c4(prompt, terms, files)
     nodes, stale = _graph_nodes(prompt, terms, paths)
-    if not (pages or c4 or nodes):
+    if not (pages or c4 or held or nodes):
         return _empty()
-    return {"text": _render(pages, c4, nodes, stale), "pages": [{k: p[k] for k in ("path", "section", "trust", "fresh",
+    return {"text": _render(pages, c4, held, nodes, stale), "pages": [{k: p[k] for k in ("path", "section", "trust", "fresh",
             "served")} for p in pages], "c4": [e["fqn"] for e in c4], "nodes": nodes}
