@@ -229,20 +229,20 @@ themselves come in later versions.
 - **Docs written by an older kit:** **Plan › Start the docs again** — **Redo** reopens every finished unit for review
   (nothing deleted); **Wipe and start over** tags `cam-docs` in git, deletes what was generated and restarts the plan,
   keeping interviews, confirmed pages and the board (`camaron docs reset --redo | --wipe`).
-- **Uninstall a project:** **Settings › Uninstall this project** — **See what it would remove** first. It stops the
+- **Uninstall a project:** **Settings › Kit › Uninstall this project** — **See what it would remove** first. It stops the
   portal, zips `cam-docs` into the system's temporary folder, removes what the kit added to each repo and the workspace
   folder (also inside your own `.claude/` and `CLAUDE.md`), and deletes `cam-docs`. The repos end exactly as in their last commit (`camaron uninstall`).
-- **Update the kit:** **Settings › Update the kit** (`camaron self-update`) updates every project on this machine at
+- **Update the kit:** **Settings › Kit › Update the kit** (`camaron self-update`) updates every project on this machine at
   once and restarts the app.
 
-<!-- go:settings -->
+<!-- go:settings/kit -->
 
 ## When something fails
 
 | Symptom | First thing to try |
 |---|---|
 | A tool is missing or the wrong version | **Quality › Requirements and tools**, or `camaron doctor` |
-| A kit file or link was edited or deleted | **Settings › Repair the kit's files**, or `camaron repair` |
+| A kit file or link was edited or deleted | **Settings › Kit › Repair the kit's files**, or `camaron repair` |
 | Your own `.claude/` or `CLAUDE.md` was already in the workspace folder | Nothing to do: setup and **Repair** link the kit's entries inside your folder and import its rules into your `CLAUDE.md`; a file of yours that cannot be combined is listed as yours and kept |
 | A private repo will not clone | Save a token in **Settings › Tokens** and **Clone or pull the repos** |
 | An agent session left a unit half done | **Plan**, open the unit, **Continue** (or **Start over**) |

@@ -74,9 +74,9 @@ test('the sections group lists each section, then its other views', () => {
 
 test('commands go to the place that holds them', () => {
   const hrefs = Object.fromEntries(entries({ sections: ALL, t, commands: [cmd('radar', 'analyze'), cmd('ci', 'team'),
-    cmd('run', 'generate'), cmd('trust', 'team'), cmd('skills', 'team')] }).find((x) => x.id === 'commands').items.map((i) => [i.id, i.href]))
+    cmd('run', 'generate'), cmd('trust', 'team'), cmd('skills', 'team'), cmd('repair', 'machine')] }).find((x) => x.id === 'commands').items.map((i) => [i.id, i.href]))
   expect(hrefs).toEqual({ 'cmd:radar': '#/quality/radar', 'cmd:ci': '#/docs/ci', 'cmd:run': '#/flow/plan',
-    'cmd:trust': '#/settings/trust', 'cmd:skills': '#/settings/skills' })
+    'cmd:trust': '#/settings/trust', 'cmd:skills': '#/settings/skills', 'cmd:repair': '#/settings/kit' })
 })
 
 test('with no query, everything but the commands; typing finds them too', () => {

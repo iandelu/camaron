@@ -38,6 +38,8 @@ test('where the app runs each command', () => {
   expect(sectionFor(c('radar', 'analyze'))).toBe('quality')
   expect(inPanel(c('radar', 'analyze'))).toBe(false)
   expect(sectionFor(c('uninstall', 'machine', { destructive: true }))).toBe('settings/kit')
+  expect(sectionFor(c('repair', 'machine'))).toBe('settings/kit')                // the Kit card's Repair button
+  expect(sectionFor(c('self-update', 'machine'))).toBe('settings/kit')
   expect(sectionFor(c('trust', 'team'))).toBe('settings/trust')
   expect(sectionFor(c('interview', 'interviews'))).toBe('docs/interviews')
   expect(sectionFor(c('run', 'generate'))).toBe('flow/plan')

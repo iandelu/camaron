@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Aviso, Skeleton } from '@camaron/ui'
 import { useCmd, useHash } from '../hooks.js'
 import { Failed } from '../parts.jsx'
-import { tokenPrefill, viewOf } from '../nav.js'
+import { tokenNotice, tokenPrefill, viewOf } from '../nav.js'
 import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
 import { GuideCard, Kit, Repos, SessionSettings, Setup, Tokens, Uninstall } from './Machine.jsx'
@@ -23,7 +23,7 @@ export function SettingsView({ view, m, error = '', pending = 0, fill, srv, jobs
         <Commands srv={srv} jobs={jobs} section="settings" />
       </>)
         : view === 'tokens' ? (<>
-          {fill.host ? <Aviso tone="warn" title={t('st.from', { host: fill.host })} /> : null}
+          {tokenNotice(fill) ? <Aviso tone="warn" title={t(tokenNotice(fill), { host: fill.host })} /> : null}
           <Tokens key={`${fill.host}|${fill.kind}`} srv={srv} host={fill.host} kind={fill.kind} />
         </>)
         : view === 'skills' ? <Skills srv={srv} jobs={jobs} onChange={onSkillsChange} />

@@ -11,8 +11,8 @@
     "quality": ["doctor", "eval", "ab", "inventory", "health", "fresh", "blocks", "hooks"],
     "docs": ["remote", "share"],
     "docs/interviews": ["interview"],
-    "settings": ["setup", "config", "sync", "detect", "stack", "profile", "repair"],
-    "settings/kit": ["self-update", "uninstall"],
+    "settings": ["setup", "config", "sync", "detect", "stack", "profile"],
+    "settings/kit": ["self-update", "repair", "uninstall"],
     "settings/skills": ["skills"],
     "settings/plugins": ["plugins"],
     "settings/trust": ["trust"]

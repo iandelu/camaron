@@ -243,21 +243,21 @@ propias PR llegan en versiones posteriores.
   terminada para revisarla (sin borrar nada); **Borrar y empezar de cero** etiqueta `cam-docs` en git, borra lo generado
   y vuelve a empezar el plan, conservando las entrevistas, las páginas confirmadas y el tablero
   (`camaron docs reset --redo | --wipe`).
-- **Desinstalar un proyecto:** **Ajustes › Desinstalar este proyecto**, primero **Ver qué borraría**. Para el portal,
+- **Desinstalar un proyecto:** **Ajustes › Kit › Desinstalar este proyecto**, primero **Ver qué borraría**. Para el portal,
   guarda `cam-docs` en un `.zip` en la carpeta temporal del sistema, quita lo que el kit añadió a cada repo y a la
   carpeta del workspace (también dentro de tu propio `.claude/` y `CLAUDE.md`), y borra `cam-docs`. Los repos quedan exactamente como en su último commit
   (`camaron uninstall`).
-- **Actualizar el kit:** **Ajustes › Actualizar el kit** (`camaron self-update`) actualiza a la vez todos los proyectos
+- **Actualizar el kit:** **Ajustes › Kit › Actualizar el kit** (`camaron self-update`) actualiza a la vez todos los proyectos
   de esta máquina y reinicia la app.
 
-<!-- go:settings -->
+<!-- go:settings/kit -->
 
 ## Cuando algo falla
 
 | Síntoma | Lo primero que probar |
 |---|---|
 | Falta una herramienta o tiene otra versión | **Calidad › Requisitos y herramientas**, o `camaron doctor` |
-| Alguien editó o borró un fichero o un enlace del kit | **Ajustes › Reparar los archivos del kit**, o `camaron repair` |
+| Alguien editó o borró un fichero o un enlace del kit | **Ajustes › Kit › Reparar los archivos del kit**, o `camaron repair` |
 | Ya tenías tu propio `.claude/` o `CLAUDE.md` en la carpeta del espacio de trabajo | Nada: setup y **Reparar** enlazan dentro de tu carpeta lo del kit e importan sus reglas en tu `CLAUDE.md`; un fichero tuyo que no se puede combinar sale como tuyo y se queda |
 | Un repo privado no se clona | Guarda un token en **Ajustes › Tokens** y **Clonar o actualizar los repos** |
 | Una sesión de agente dejó una unidad a medias | **Plan**, abre la unidad y **Seguir** (o **Empezar de cero**) |

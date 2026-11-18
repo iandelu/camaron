@@ -482,7 +482,7 @@ Esta máquina y el kit que lleva (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Bajo
 
 Los servidores guardados con **Probar** y **Borrar**; un formulario (servidor, tipo, token) cuyo **Comprobar y guardar** prueba antes el token contra el servidor (**Guardarlo igualmente** si insistes). Los tokens viven en el llavero del sistema, nunca en el proyecto ni en una línea de comandos. SonarQube solo por https (http solo en localhost)
 
-La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice de dónde vienes; la antigua `#/machine?host=…&kind=…` sigue llegando a él.
+La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice por qué: un servidor de SonarQube viene de Calidad; uno de la forja, o sin tipo (un compartir que Docs no pudo hacer), dice que para compartir con el equipo falta su token. La antigua `#/machine?host=…&kind=…` sigue llegando a él.
 
 ### Skills
 

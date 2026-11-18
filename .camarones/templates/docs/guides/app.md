@@ -469,7 +469,7 @@ This machine and the kit on it (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Six ta
 
 Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost)
 
-The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying where you came from; the old `#/machine?host=…&kind=…` still lands on it.
+The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a share Docs could not make), says sharing with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
 
 ### Skills
 

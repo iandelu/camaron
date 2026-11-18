@@ -71,6 +71,10 @@ export function tokenPrefill(hash) {
   return { host: q.get('host') || '', kind: TOKEN_KINDS.includes(kind) ? kind : '' }
 }
 
+// The Tokens notice for a prefill: SonarQube comes from Quality; a forge or no kind, from a share Docs could not make
+// (its refused-token link, or an old #/machine?host= one). null: nothing to say.
+export const tokenNotice = ({ host, kind }) => (!host ? null : kind === 'sonarqube' ? 'st.fromQuality' : 'st.fromShare')
+
 // #/flow/plan?term=<id>: the Plan opens with that terminal in front. Anything but a terminal's id is ignored.
 export function termOf(hash) {
   const [route, query = ''] = String(hash || '').split('?')

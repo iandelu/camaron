@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, termOf, tokenPrefill, viewOf } from './nav.js'
+import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, termOf, tokenNotice, tokenPrefill, viewOf } from './nav.js'
 
 test('a project has four places; this machine has its own, Kit dev only in a kit checkout', () => {
   expect(PROJECT).toEqual(['flow', 'board', 'quality', 'docs'])
@@ -55,6 +55,13 @@ test('the tokens address can prefill the token form', () => {
   expect(tokenPrefill('#/settings/tokens')).toEqual({ host: '', kind: '' })
   expect(tokenPrefill('#/machine?host=x')).toEqual({ host: '', kind: '' })    // the redirect runs first
   expect(tokenPrefill('')).toEqual({ host: '', kind: '' })
+})
+
+// Only SonarQube comes from Quality; the forge hosts and a bare host come from a share Docs could not make.
+test('the tokens notice names where the prefill came from', () => {
+  expect(tokenNotice({ host: 'sonar.io', kind: 'sonarqube' })).toBe('st.fromQuality')
+  for (const kind of ['', 'gitlab', 'github']) expect(tokenNotice({ host: 'git.acme', kind }), kind).toBe('st.fromShare')
+  expect(tokenNotice({ host: '', kind: 'sonarqube' })).toBeNull()
 })
 
 test('an address can ask the Plan for one terminal', () => {
