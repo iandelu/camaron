@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import json, os, subprocess, sys, threading, urllib.error, urllib.request
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
+from test_app_api import TOKEN, app_server, call as app_call   # noqa: F401 — app_server is a fixture
 from test_team_repo import bare, git, publish
 
 
@@ -114,3 +116,27 @@ def test_trust_and_hooks_as_json(kit):
     assert r.returncode == 0 and json.loads(r.stdout) == {"enabled": False}
     cli(kit, "hooks", "on")
     assert json.loads(cli(kit, "hooks", "--json").stdout) == {"enabled": True}
+
+
+def test_the_portal_brings_in_and_uploads(kit, tmp_path, portal):
+    remote = bare(tmp_path); publish(kit, remote)
+    assert call(portal + "/api/sync/pull", {}, header=False)[0] == 403
+    code, r = call(portal + "/api/sync/pull", {})
+    assert code == 200 and r["result"]["pull"]["status"] == "up-to-date" and "catch_up" in r["sync"]
+    (kit.root / "docs" / "edit.md").write_text("# Edit\n", encoding="utf-8")
+    code, r = call(portal + "/api/sync/push", {})
+    assert code == 200 and r["result"]["status"] == "pushed" and r["sync"]["pending"] == []
+
+
+def test_the_app_opens_a_terminal_in_cam_docs(kit, app_server, monkeypatch):
+    opened = []
+    import lib.adapters.system.os_open as os_open
+    monkeypatch.setattr(os_open, "open_new_terminal", lambda cmd, cwd: opened.append((cmd, cwd)) or True)
+    code, r = app_call(app_server + "/api/app/terminal", {}, token=TOKEN)
+    assert code == 200 and r == {"opened": True} and Path(opened[0][1]).resolve() == kit.root.resolve()
+
+
+def test_the_app_starts_a_catch_up_job(kit, tmp_path, app_server):
+    publish(kit, bare(tmp_path))
+    code, job = app_call(app_server + "/api/app/catch-up", {}, token=TOKEN)
+    assert code == 200 and job["kind"] == "catch-up"

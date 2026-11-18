@@ -81,6 +81,11 @@
   },
   {
     "method": "POST",
+    "path": "/api/app/catch-up",
+    "access": "app"
+  },
+  {
+    "method": "POST",
     "path": "/api/app/cmd",
     "access": "app"
   },
@@ -202,6 +207,11 @@
   {
     "method": "GET",
     "path": "/api/app/summary",
+    "access": "app"
+  },
+  {
+    "method": "POST",
+    "path": "/api/app/terminal",
     "access": "app"
   },
   {
@@ -547,6 +557,16 @@
   {
     "method": "GET",
     "path": "/api/sync",
+    "access": "public"
+  },
+  {
+    "method": "POST",
+    "path": "/api/sync/pull",
+    "access": "public"
+  },
+  {
+    "method": "POST",
+    "path": "/api/sync/push",
     "access": "public"
   },
   {
