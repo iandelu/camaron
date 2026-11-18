@@ -189,7 +189,9 @@ The project's ADRs, made with the evidence in front of you and written down, wit
 - **Candidates**: the decisions the code already took that no ADR names (runtime libraries, C4 technologies, Docker
   Compose and Helm files). **Create a retro ADR** opens the form already filled in.
 - **Evidence**: the pack of what the project knows about what the ADR touches (code graph neighbours, citing pages,
-  related ADRs, commits, C4, libraries, open questions). **Write without AI** writes the proposed ADR with it.
+  related ADRs, commits, C4, libraries, open questions). **Write without AI** writes the proposed ADR with it. The C4
+  elements are listed by what their code anchors cover, and a new ADR cites in `x-sources` the elements (`c4:`) that
+  cover the files it touches, so agents get the decision with each element.
 - **Review**: part by part (approve, edit or defer each section and the affected pages) and point by point (pick an
   option or *Other*, with a reason), plus the attendees. **Present** (<kbd>P</kbd>) shows one part per screen for a
   meeting: <kbd>←</kbd> <kbd>→</kbd> change part, <kbd>1</kbd>–<kbd>9</kbd> pick, <kbd>E</kbd> edits, <kbd>D</kbd>

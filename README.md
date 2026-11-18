@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.88.0-ff875f?style=flat-square" alt="Versión 4.88.0">
+  <img src="https://img.shields.io/badge/version-4.90.0-ff875f?style=flat-square" alt="Versión 4.90.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -43,7 +43,8 @@ repositorios.
 2. **Después, la IA lo completa.** Entrevistas, redacción, arquitectura, dominio, flujos y mantenimiento cuando cambia
    el código, una unidad de trabajo por sesión.
 3. **Todo lo que añade la IA se puede revisar y rastrear**: borrador → confirmado, con las fuentes (`x-sources`) de cada
-   afirmación, y sospechoso en cuanto ese código cambia.
+   afirmación, y sospechoso en cuanto ese código cambia. El C4 también: cada elemento y relación lleva el código que lo
+   respalda y `arch-verify` lo comprueba.
 
 Camarón te habla como tu becario gamba al que has mandado a documentar: con ganas, con chispa y consciente de que es
 pequeño. Las bromas se quedan en las esperas y los éxitos; los errores y las decisiones van al grano.
@@ -423,6 +424,61 @@ camaron feedback docs/overview/system.md "Falta describir los reintentos" --by "
 mermaid-cli y gitleaks forman el componente `quality`; si faltan, `check` lo avisa una vez y sigue. `check --secrets`
 ejecuta solo el escaneo de secretos.
 
+## El C4 respaldado por el código
+
+Dos reglas mandan: **el C4 representa el código, no al revés** (si discrepan, se corrige el modelo) y **nada en el C4
+sin evidencia en el código**. Lo que no tiene evidencia se trata como inventado: los agentes no lo reciben como un hecho.
+Solo una persona puede dar fe de lo que el código no muestra (un actor, un sistema externo).
+
+Cada elemento y cada relación del `.c4` lleva sus anclas en `metadata { code [...] }`, con la misma sintaxis que
+`x-sources` (`repo:ruta`, `#Lx-Ly`, `#Clase.método`, carpetas y globs). El campo antiguo `evidence` se sigue leyendo y
+nunca se reescribe:
+
+```c4
+security = component 'OIDC permission policy' {
+  metadata { code ['backoffice-gateway:src/main/resources/application.properties#L33-L47'] }
+}
+restApi -> platformData 'direct:{operationId}-base' {
+  metadata { code 'backoffice-gateway:src/main/java/platformdata/CountryRoute.java#L58' }
+}
+```
+
+`arch-draft` escribe esas anclas solo (también en los modelos nuevos de `--save`); los modelos existentes no se
+reescriben. `camaron arch-verify` da a cada elemento y relación un estado, y de él dependen lo que reciben los agentes
+y lo que dice `check`:
+
+| Estado | Significa | Agentes | `check` |
+|---|---|---|---|
+| `fresh` | Hay evidencia y no ha cambiado desde el sello | Se sirve | — |
+| `suspect` | Un ancla cambió desde el sello | Se sirve, marcado «su código cambió: verifícalo» | aviso |
+| `broken` | Falta parte de la evidencia (fichero, símbolo, rango, carpeta, repo) | Se retiene, con el código que leer | aviso (ERROR con `--strict`) |
+| `no-evidence` | Nada lo respalda | Se retiene, salvo que una persona lo confirmó | aviso (ERROR con `--strict`) |
+| `unchecked` | Tiene evidencia que esta máquina no puede comprobar (repo sin clonar, sin grafo) | Se sirve, marcado «no comprobado aquí» | nota, nunca error |
+
+Una relación sin ancla propia queda respaldada si el código muestra algo entre sus dos extremos: el grafo
+(`camaron graph`) entre componentes de un repo, el escaneo de `arch-draft` entre contenedores. El mismo informe de
+deriva lista lo que está en el código y no en el modelo, los ficheros que dos elementos hermanos cubren a la vez y las
+carpetas que ningún elemento cubre, como componentes candidatos; dice también qué no pudo comparar. `arch-verify --ack
+<elemento> --by "Tu nombre"` toma el código de hoy como referencia de un elemento; `--json` da lo mismo para máquinas.
+
+```sh
+camaron arch-verify                      # estados, deriva y qué no se pudo comparar
+camaron arch-verify --ack backoffice.restApi --by ana
+camaron check --strict                   # broken, no-evidence, deriva y evidencia ilegible son ERROR
+```
+
+**Cómo falla CI.** El `docs.yml` de cam-docs ejecuta `camaron check` en cada pull request a cam-docs, tras clonar los
+repos de servicio; los hallazgos del C4 salen como avisos y CI sigue en verde. Un equipo que quiera frenar un elemento o
+una relación sin evidencia cambia esa línea a `camaron check --strict` (que también convierte en error los otros avisos
+de `check`). Sin `REPOS_TOKEN` los repos no se clonan: el C4 queda `unchecked`, CI lo dice y no falla. `suspect` y
+`unchecked` nunca fallan.
+
+Los agentes ven solo lo que el código respalda: el hook de prompt, la herramienta `architecture` del MCP y el freno
+antes de la primera edición sirven los elementos `fresh`, `suspect` y `unchecked` con su estado, retienen el resto
+diciendo por qué, y añaden las decisiones (ADR) que hablan de cada elemento. Un ADR nuevo cita en `x-sources` los
+elementos `c4:` que cubren los ficheros que toca, y el paquete de evidencia lista los elementos por lo que cubren sus
+anclas. `CONVENTIONS` y `PLAYBOOK` piden a los agentes que escriban las anclas al dibujar cada elemento.
+
 ## Las guías
 
 La documentación completa de Camarón vive en cuatro guías, en español e inglés. Se leen en la app (**Máquina ›
@@ -450,7 +506,7 @@ Cada función es un comando `camaron`; `camaron catalog` dice dónde vive cada u
 | Preparar la máquina | `setup`, `doctor`, `config`, `sync`, `detect`, `stack`, `profile`, `self-update`, `upgrade`, `version` |
 | El plan | `plan` (`next`, `start`, `note`, `done`, `redo`, `approve`, `sync`, `cost`), `run`, `autopilot`, `runs`, `pipeline`, `prompt`, `interview`, `docs reset` |
 | Leer y revisar | `up`, `down`, `portal`, `status`, `confirm`, `feedback`, `review`, `fresh`, `translated`, `llms` |
-| Documentación sin IA | `pages` (alias `diagrams`), `blocks`, `schemas`, `inventory`, `bump`, `radar`, `history`, `arch-draft`, `arch-validate`, `graph`, `wiki` |
+| Documentación sin IA | `pages` (alias `diagrams`), `blocks`, `schemas`, `inventory`, `bump`, `radar`, `history`, `arch-draft`, `arch-validate`, `arch-verify`, `graph`, `wiki` |
 | Calidad y medida | `check`, `health`, `kpis`, `stats`, `eval`, `ab`, `changes`, `mark-documented` |
 | Decisiones | `adr` (`list`, `candidates`, `new`, `pack`, `write`, `show`, `accept`, `reject`) |
 | Tablero | `board` (`init`, `add`, `list`, `show`, `move`, `assign`, `link`, `archive`, `repair`, `next`, `waves`, `story`) |
@@ -493,7 +549,7 @@ también `docs/architecture/messaging.md`. `camaron history` escribe `docs/overv
 commits, quién trabaja dónde, ficheros que cambian juntos, tickets entre repos). `radar` deja el stack y las
 herramientas en `docs/overview/tooling.md` y `stack` corrige uno mal detectado. `schemas` lee tablas y colecciones de
 migraciones (Flyway, Liquibase), entidades (JPA, SQLAlchemy, Django, TypeORM, Prisma), Mongo y Firestore.
-`arch-draft` propone un borrador C4 (entiende proyectos Firebase); cada elemento y relación que respalda el código lleva su `metadata { code [...] }` (`repo:ruta#Ln`), así que `arch-verify` no lo marca `no-evidence`; el actor `user` y un repo sin manifiesto sí siguen apareciendo como `no-evidence`. Los modelos existentes no se reescriben: lo recibes en tu próximo `arch-draft --save`. `arch-verify` también compara el modelo con lo que muestra el código: las dependencias del grafo (`camaron graph`) entre los componentes de un repo y las del escaneo de `arch-draft` entre contenedores que el modelo no dibuja, y las carpetas que ningún elemento cubre, como componentes candidatos; una relación sin ancla propia queda respaldada si el código la muestra, `unchecked` si une componentes de un repo sin grafo o si el repo de uno de sus extremos no está clonado aquí, y `no-evidence` si no.
+`arch-draft` propone un borrador C4 (entiende proyectos Firebase) y escribe en cada elemento y relación que respalda el código su ancla `metadata { code [...] }` (`repo:ruta#Ln`); el actor `user` y un repo sin manifiesto siguen apareciendo como `no-evidence`. Cómo se comprueba y qué hace CI: [El C4 respaldado por el código](#el-c4-respaldado-por-el-código).
 
 **El C4 en un repo.** Si un repo de servicio ya tiene su propio modelo LikeC4, `cam-docs` no hace otro: `project.architecture: <repo>:<ruta>` en `.camarones/workspace.yaml` (por ejemplo `api:docs/architecture`) lo convierte en el modelo del proyecto. El portal lista sus vistas, el explorador C4 se construye desde él, el editor de Arquitectura cambia sus `.c4` (que commiteas en ese repo), `check` comprueba las fuentes `c4:` contra él, el MCP `likec4` lo lee y `arch-draft` no escribe un borrador aparte. `check` avisa si la clave nombra un repo que no existe o una carpeta que aún no está; sin la clave, todo sigue en `docs/architecture/`.
 

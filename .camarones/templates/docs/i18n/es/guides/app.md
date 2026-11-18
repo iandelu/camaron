@@ -195,7 +195,8 @@ Los ADR del proyecto, decididos con la evidencia delante y escritos, sin IA (`#/
   C4, ficheros de Docker Compose y Helm). **Crear ADR retro** abre el formulario ya relleno.
 - **Evidencia**: el paquete de lo que el proyecto sabe de lo que toca el ADR (vecinos en el grafo del código, páginas
   que lo citan, ADR relacionados, commits, C4, librerías, preguntas abiertas). **Escribir sin IA** escribe con él el ADR
-  propuesto.
+  propuesto. Los elementos del C4 salen por lo que cubren sus anclas de código, y un ADR nuevo cita en `x-sources` los
+  elementos (`c4:`) que cubren los ficheros que toca, para que los agentes reciban la decisión con cada elemento.
 - **Revisión**: parte por parte (aprobar, editar o aplazar cada sección y las páginas afectadas) y punto por punto
   (elegir una opción u *Otra*, con un motivo), más los asistentes. **Presentar** (<kbd>P</kbd>) enseña una parte por
   pantalla para una reunión: <kbd>←</kbd> <kbd>→</kbd> cambian de parte, <kbd>1</kbd>–<kbd>9</kbd> eligen,
