@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import Docs from './sections/Docs.jsx'
-import { FetchNote, ShareResult, TeamStripView } from './sections/TeamStrip.jsx'
+import { FetchNote, Repo, ShareResult, TeamStripView } from './sections/TeamStrip.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -79,4 +79,13 @@ test('Docs keeps its tabs and the portal buttons when the team repo cannot be re
     expect(out).toContain('Leer la documentación')
     expect(out).toMatch(/aria-current="page"[^>]*>Leer</)
   } finally { delete globalThis.location }
+})
+
+test('the strip remounts the repo card when its key changes, and hands it onChanged', () => {
+  const find = (n, type) => (!n || typeof n !== 'object' ? null : n.type === type ? n
+    : [].concat(n.props?.children ?? []).map((c) => find(c, type)).find(Boolean) ?? null)
+  const el = (repoKey) => find(TeamStripView({ sync: null, result: null, busy: '', onShare: noop, onRetry: noop, srv: {}, jobs: null, onChanged: noop, repoKey }), Repo)
+  expect(el(0).key).toBe('0')
+  expect(el(1).key).toBe('1')
+  expect(el(1).props.onChanged).toBe(noop)
 })

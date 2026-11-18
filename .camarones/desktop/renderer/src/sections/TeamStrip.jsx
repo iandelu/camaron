@@ -23,7 +23,7 @@ export function Repo({ srv, jobs, onChanged }) {
     setResult(null)
     try { const r = await srv.post('sync/share', {}); setResult(r.result); setS(r.sync); onChanged?.() } catch (e) { setResult({ status: 'error', detail: e.message }) } finally { setBusy('') }
   }
-  async function check() { setBusy('check'); try { await load(true) } finally { setBusy('') } }
+  async function check() { setBusy('check'); try { await load(true); onChanged?.() } finally { setBusy('') } }
   const clean = url.trim()
   return (
     <Card className="dk-run" data-tour="team-repo">
@@ -77,7 +77,7 @@ export function FetchNote({ fetched, remote }) {
 
 // Docs' head: where the team repo stands in one sentence (GET sync, read once), Share now, and the repo card folded
 // below. The strip reads; the repo card, as before, saves the remote and switches auto-share.
-export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs, onChanged }) {
+export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs, onChanged, repoKey = 0 }) {
   const st = stripState(sync)
   return (
     <div className="dk-run" data-tour="docs-team">
@@ -90,7 +90,7 @@ export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs,
       <ShareResult result={result} remote={sync?.remote} />
       <details className="dk-fold">
         <summary>{t('ts.repo')}</summary>
-        <div className="dk-fold-body"><Repo srv={srv} jobs={jobs} onChanged={onChanged} /></div>
+        <div className="dk-fold-body"><Repo key={repoKey} srv={srv} jobs={jobs} onChanged={onChanged} /></div>
       </details>
     </div>
   )
@@ -100,6 +100,7 @@ export default function TeamStrip({ srv, jobs }) {
   const [sync, setSync] = useState(null)
   const [result, setResult] = useState(null)
   const [busy, setBusy] = useState('')
+  const [repoKey, setRepoKey] = useState(0)          // remounts the repo card so it re-reads after the strip's own share or retry
   const alive = useRef(true)
   const load = () => srv.get('sync').then((x) => { if (alive.current) setSync(x) }, (e) => { if (alive.current) setSync({ error: e.message }) })
   useEffect(() => {
@@ -115,8 +116,9 @@ export default function TeamStrip({ srv, jobs }) {
       if (!alive.current) return
       setResult(r.result)
       setSync(r.sync)
+      setRepoKey((n) => n + 1)
     } catch (e) { if (alive.current) setResult({ status: 'error', detail: e.message }) } finally { if (alive.current) setBusy('') }
   }
-  const retry = () => { setSync(null); load() }
-  return <TeamStripView sync={sync} result={result} busy={busy} onShare={share} onRetry={retry} srv={srv} jobs={jobs} onChanged={load} />
+  const retry = () => { setSync(null); setRepoKey((n) => n + 1); load() }
+  return <TeamStripView sync={sync} result={result} busy={busy} onShare={share} onRetry={retry} srv={srv} jobs={jobs} onChanged={load} repoKey={repoKey} />
 }
