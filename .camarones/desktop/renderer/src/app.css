@@ -65,6 +65,17 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 /* the sections: cards of one task each, the plan's units as rows, folds for what waits, the catalog's forms */
 .dk-body { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }   /* a card's body, inside a health row */
 .dk-run { gap: .6rem; }
+/* the health header (sections/DocsHealth.jsx): a wrapping strip; the tone only tints, the words say it; the stale-wikis chip is a button */
+.dk-health { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-height: 1.75rem; }
+.dk-health > .cu-skel { flex: 1; max-width: 22rem; }
+.dk-hchip { --tone: var(--color-ink-soft); display: inline-flex; align-items: center; gap: .4rem; min-height: 1.75rem; padding: 0 .6rem;
+  border: 1px solid var(--color-rule); border-radius: var(--consola-radio-chico); background: var(--color-canvas-elevated);
+  color: var(--tone); font: inherit; font-size: var(--text-meta); }
+.dk-hchip.is-ok { --tone: var(--color-estado-bien); }
+.dk-hchip.is-warn { --tone: var(--color-estado-aviso); }
+.dk-hchip.is-info { --tone: var(--color-acento-texto); }
+button.dk-hchip { cursor: pointer; }
+button.dk-hchip:hover { border-color: var(--tone); }
 .dk-wikis { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; align-items: start; }
 .dk-wikis > * { animation: dk-rise var(--duration-normal) var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
 /* a wiki card: --state tints its icon and word; the running one has a static ring on a pseudo-element that fades in and out

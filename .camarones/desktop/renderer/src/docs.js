@@ -67,7 +67,8 @@ export const wikiAction = (state) => WIKI_ACTIONS[state] || { kind: null }
 
 // The header's chips from what the section already read: GET index (`summary`, `feedback`), GET wikis rows and GET viewers.
 // Counted chips are omitted at 0; an unread source (null) gives none, never a zero. Each wiki falls in the one bucket of its
-// card (no pages, old, stale, fresh), so the four add up to the repos. `n` is null for the C4 chips: they are a state.
+// card (no pages, old, stale, fresh), so the four add up to the repos. `n` is null for the C4 chips: they are a state; one
+// not built says whether there is a model to build (`c4None`) or not yet (`c4NoModel`).
 export function docsHealth(index, wikis, viewers) {
   const chip = (key, tone, n = null) => ({ key, tone, n, text: `docs.h.${key}` })
   const out = []
@@ -88,7 +89,7 @@ export function docsHealth(index, wikis, viewers) {
     counted('wikiFresh', 'ok', n.fresh)
   }
   const c4 = viewers?.c4
-  if (c4) out.push(!c4.exists ? chip('c4None', 'info') : c4.stale ? chip('c4Stale', 'warn') : chip('c4Fresh', 'ok'))
+  if (c4) out.push(c4.exists ? (c4.stale ? chip('c4Stale', 'warn') : chip('c4Fresh', 'ok')) : chip(c4.model === false ? 'c4NoModel' : 'c4None', 'info'))
   return out
 }
 

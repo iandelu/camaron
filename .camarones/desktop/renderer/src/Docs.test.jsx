@@ -22,6 +22,38 @@ test('Docs opens the portal through the browser and offers the C4 build', () => 
   expect(out).toMatch(/aria-label="Construir: Construir el explorador C4"/)
 })
 
+// The health header is the first thing under the title, above the read actions. Nothing is read yet in a static render, so it
+// is the skeleton: no chip, and above all no C4 chip with a zero or a guess while GET viewers has not answered.
+test('the health header sits above the read actions, a skeleton until the wikis are read, with no C4 chip', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render({ ...index, summary: { draft: 4 }, feedback: 2 })
+  expect(out).toMatch(/<div[^>]*role="status"[^>]*data-tour="docs-health"|<div[^>]*data-tour="docs-health"[^>]*role="status"/)
+  expect(out.indexOf('data-tour="docs-health"')).toBeGreaterThan(out.indexOf('<h1'))
+  expect(out.indexOf('data-tour="docs-health"')).toBeLessThan(out.indexOf('data-tour="docs-portal"'))
+  expect(out.slice(out.indexOf('data-tour="docs-health"'), out.indexOf('data-tour="docs-portal"'))).toContain('cu-skel')
+  expect(out).not.toContain('dk-hchip')
+  expect(out).not.toMatch(/C4: /)
+})
+
+// Review is where the drafts are: it says how many; at zero (or with no summary) it is the plain label.
+test('Review carries the draft count; at zero or without a summary there is no badge', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  expect(render({ ...index, summary: { draft: 4 } })).toMatch(/<\/svg>Revisar borradores · 4<\/button>/)
+  expect(render({ ...index, summary: { draft: 0 } })).toMatch(/<\/svg>Revisar borradores<\/button>/)
+  expect(render()).toMatch(/<\/svg>Revisar borradores<\/button>/)
+  expect(render({ ...index, summary: { draft: 4 } })).not.toContain('Leer la documentación · ')
+  setLang('en')
+  expect(render({ ...index, summary: { draft: 12 } })).toMatch(/<\/svg>Review drafts · 12<\/button>/)
+})
+
+test('each read action has its icon before its words', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const row = render().match(/data-tour="docs-portal">(.*?)<\/div>/)[1]
+  const buttons = row.match(/<button.*?<\/button>/g)
+  expect(buttons).toHaveLength(3)
+  buttons.forEach((b, i) => expect(b).toMatch(new RegExp(`^<button[^>]*><svg[^>]*class="dk-ico".*?</svg>${['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar'][i]}</button>$`)))
+})
+
 // One block per repo, with or without a wiki. Nothing is read yet here (the wikis load after the first render), so every
 // card is the quiet one: its Generate closed, no state word, no figures and no graph row; View only where the tree knows pages.
 test('one wiki block per repo of the project, each quiet until the wikis are read', () => {

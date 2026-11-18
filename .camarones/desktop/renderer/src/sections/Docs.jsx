@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
-import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiAction, wikiBlocks,
+import { answerView, askBody, askError, buildFailed, c4Card, docsHealth, openPortal, startBuild, startWiki, wikiAction, wikiBlocks,
   wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
 import { JobOutput, Page } from '../parts.jsx'
 import { t } from '../i18n.js'
+import { DocsHealth } from './DocsHealth.jsx'
 import { DocsIcon } from './DocsIcons.jsx'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
@@ -18,13 +19,16 @@ const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
 export default function Docs({ srv, jobs, app, index }) {
   const open = (hash) => openPortal(app, location.origin, hash)
   const wikis = useWikis(srv)
+  const viewers = useViewers(srv)
   const { running } = useStore(jobs || NO_JOBS)
+  const drafts = index?.summary?.draft || 0
   return (
     <Page title={t('nav.docs')} wide>
+      <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
       <div className="row" data-tour="docs-portal">
-        <Button variant="primary" onClick={() => open('#/')}>{t('docs.read')}</Button>
-        <Button onClick={() => open('#/review')}>{t('docs.review')}</Button>
-        <Button variant="ghost" onClick={() => open('#/search')}>{t('docs.search')}</Button>
+        <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
+        <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
+        <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
       </div>
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
       <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
@@ -61,6 +65,19 @@ function useWikis(srv) {
     return () => { alive.current = false }
   }, [])
   return { ...state, reload }
+}
+
+// GET viewers (what the C4 explorer and the graphs are), read once; null until read and when it failed, so the header says
+// nothing of the C4 rather than a zero.
+function useViewers(srv) {
+  const [viewers, setViewers] = useState(null)
+  const alive = useRef(true)
+  useEffect(() => {
+    alive.current = true
+    srv.get('viewers').then((v) => { if (alive.current) setViewers(v) }, () => {})
+    return () => { alive.current = false }
+  }, [])
+  return viewers
 }
 
 // GET wikis failed: said once, with a Retry. `kept`: the cards still show the last good read.

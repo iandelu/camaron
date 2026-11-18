@@ -281,12 +281,24 @@ test('a wiki row counts in the bucket of the card it will be: no pages, old, sta
   expect(docsHealth({}, [{ pages: 0, stale: true, old: true }], null).map((x) => x.key)).toEqual(['wikiNone'])   // no pages wins
 })
 
-test('the C4 chip is current, stale or not built', () => {
+test('the C4 chip is current, stale, not built yet, or has no model to build', () => {
   const c4 = (v) => chips(docsHealth({}, null, { c4: v }))
   expect(c4({ exists: true, stale: false, model: true })).toEqual([['c4Fresh', 'ok', null]])
   expect(c4({ exists: true, stale: true, model: true })).toEqual([['c4Stale', 'warn', null]])
-  expect(c4({ exists: false, stale: false, model: false })).toEqual([['c4None', 'info', null]])
+  expect(c4({ exists: false, stale: false, model: true })).toEqual([['c4None', 'info', null]])      // there is a model: it can be built
+  expect(c4({ exists: false, stale: false, model: false })).toEqual([['c4NoModel', 'info', null]])  // nothing to build yet
   expect(c4({ exists: false, stale: true, model: true })).toEqual([['c4None', 'info', null]])   // nothing built: not stale
+  expect(c4({ exists: false })).toEqual([['c4None', 'info', null]])                           // an answer without `model` keeps the old chip
+  expect(c4({ exists: true, stale: false, model: false })).toEqual([['c4Fresh', 'ok', null]])   // a built explorer outranks the model flag
+})
+
+// The chip-to-card scroll relies on it: a repo counts under the state its card shows (wikiState on the block of the same row).
+test('the wiki chips count what the cards show', () => {
+  const states = wikiBlocks(index, rows).map((b) => wikiState(b))
+  expect(states).toEqual(['fresh', 'stale', 'old', 'none', 'none', 'old'])        // e: no pages + stale = none; f: stale + old = old
+  const count = (s) => states.filter((x) => x === s).length
+  const chipN = Object.fromEntries(docsHealth({}, rows, null).map((x) => [x.key, x.n]))
+  expect(chipN).toEqual({ wikiNone: count('none'), wikiStale: count('stale'), wikiOld: count('old'), wikiFresh: count('fresh') })
 })
 
 test('an unread source gives no chip, never a zero', () => {
