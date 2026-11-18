@@ -26,9 +26,9 @@ Cada proyecto tiene su ventana, servida por el servidor local de ese proyecto (v
 
 | Parte | Qué hace |
 |---|---|
-| Cabecera | La marca (vuelve al Resumen), dónde estás (`proyecto › sección`), **Ver portal**, **Buscar o ir a…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) y **⋯**. La cabecera es la barra de la ventana: arrástrala para moverla |
+| Cabecera | La marca (vuelve a Flujo), dónde estás (`proyecto › sección`), **Ver portal**, **Buscar o ir a…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) y **⋯**. La cabecera es la barra de la ventana: arrástrala para moverla |
 | Raíl | Un botón por cada proyecto de esta máquina, con sus iniciales. Otro proyecto se abre **en esta ventana**: la app arranca el servidor de ese proyecto, lleva la ventana a él y para el anterior. Pararlo cierra las sesiones abiertas en su lienzo, así que si alguna sigue viva la app pregunta antes: *Hay {n} sesiones abiertas en este proyecto: al cambiar de proyecto se cierran.* — **Cancelar** o **Cambiar igualmente**. Un proyecto que no está en el disco sale apagado. **+** abre la pantalla de inicio |
-| Secciones | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad y Docs (Librerías es una vista de Calidad); después, bajo **Esta app**, Máquina, Guía y (solo en un checkout del kit) Kit dev. Al pasar por una ves su atajo |
+| Barra lateral | Cuatro lugares: Flujo (Resumen y Plan), Tablero, Calidad (Salud y Librerías) y Docs (Leer, Wikis, Decisiones y Entrevistas); después, bajo **Esta app**, Ajustes (General, Tokens, Skills, Plugins, Confianza y Kit), Guía y (solo en un checkout del kit) Kit dev. Un lugar con vistas las enseña como pestañas bajo su título. Al pasar por uno ves su atajo |
 | Zona central | La sección en la que estás |
 | Panel de trabajos y barra de estado | Lo que corre ahora y los últimos trabajos, con su salida; la barra de estado enseña el primer trabajo en curso y la versión del kit |
 
@@ -57,8 +57,9 @@ una **Salida** plegada que se abre sola cuando algo falla.
 | Teclas | Va a |
 |---|---|
 | <kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd> | La paleta: una sección, otro proyecto, una acción o, en cuanto escribes, cualquier comando y cualquier capítulo de esta guía |
-| <kbd>g</kbd> y después <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>d</kbd> | Resumen, Tablero, Decisiones, Plan, Entrevistas, Equipo, Calidad, Docs |
-| <kbd>g</kbd> y después <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Máquina, Guía, Kit dev (en un checkout del kit) |
+| <kbd>g</kbd> y después <kbd>f</kbd> <kbd>b</kbd> <kbd>q</kbd> <kbd>d</kbd> | Flujo, Tablero, Calidad, Docs |
+| <kbd>g</kbd> y después <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Ajustes, Guía, Kit dev (en un checkout del kit) |
+| <kbd>g</kbd> y después <kbd>s</kbd> <kbd>p</kbd> <kbd>a</kbd> <kbd>i</kbd> <kbd>t</kbd> | Las letras de antes siguen valiendo: Flujo, Flujo › Plan, Docs › Decisiones, Docs › Entrevistas, Docs |
 
 La segunda letra tiene que llegar en segundo y medio desde la <kbd>g</kbd>. Los atajos no cuentan mientras escribes en
 un campo o en un diálogo. En la paleta, <kbd>↑</kbd> <kbd>↓</kbd> se mueven, <kbd>Intro</kbd> va y <kbd>Esc</kbd>
@@ -67,7 +68,7 @@ abre en su sección con su formulario listo.
 
 ### Claro, oscuro e idioma
 
-La app sigue el tema claro u oscuro de tu sistema y cambia con él. Su idioma es el de Máquina › Idioma y modelos
+La app sigue el tema claro u oscuro de tu sistema y cambia con él. Su idioma es el de Ajustes › Idioma y modelos
 (español o inglés), el mismo ajuste que usa el asistente de la terminal.
 
 ## La pantalla de inicio
@@ -125,12 +126,17 @@ Un proyecto nuevo en una **carpeta vacía** va Repos → Herramientas → Instal
 proyecto al que te **uniste** va Herramientas → Instalar → Listo, porque el resto ya lo decidió el equipo, y se salta
 el asistente entero si esta máquina ya tiene todos los repos y herramientas.
 
-## Resumen
+## Flujo
 
-El proyecto de un vistazo y lo único que toca hacer ahora (`#/summary`, <kbd>g</kbd> <kbd>s</kbd>).
+Dónde está el proyecto y qué toca ejecutar después (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Bajo el título hay dos pestañas: **Resumen** y **Plan** (`#/flow/plan`).
 
-<!-- go:summary -->
-<!-- tour:summary -->
+<!-- go:flow -->
+<!-- tour:flow -->
+
+### Resumen
+
+El proyecto de un vistazo y lo único que toca hacer ahora (`#/flow`; la antigua `#/summary` sigue abriéndolo).
+
 
 **Siguiente paso** es el mismo que propone el asistente de la terminal: primero una unidad a medias, después la
 siguiente unidad lista, después las páginas que esperan revisión, y si no queda nada, «Todo al día: no queda nada que
@@ -138,11 +144,11 @@ pelar». Su botón depende de qué paso sea:
 
 | El paso es | El botón |
 |---|---|
-| Una unidad que hace un agente | **Empezar con {agente}** o **Seguir con {agente}** (eliges el agente si tienes dos o más): abre el agente con esa unidad como una terminal en el lienzo del Plan y te lleva allí (o en una ventana de terminal propia, según Máquina › **Dónde se abren las sesiones**) |
-| Una entrevista, antes de que nadie eligiera cómo se hacen | **Elige cómo se hacen las entrevistas** → Entrevistas |
-| Preparar la máquina (`setup`) | **Preparar la máquina** → Máquina |
-| Las respuestas del equipo (`answers`) | **Recoger las respuestas** → Entrevistas |
-| La CI (`ci`) | **Configurar la CI** → Equipo |
+| Una unidad que hace un agente | **Empezar con {agente}** o **Seguir con {agente}** (eliges el agente si tienes dos o más): abre el agente con esa unidad como una terminal en el lienzo del Plan y te lleva allí (o en una ventana de terminal propia, según Ajustes › **Dónde se abren las sesiones**) |
+| Una entrevista, antes de que nadie eligiera cómo se hacen | **Elige cómo se hacen las entrevistas** → Docs › Entrevistas |
+| Preparar la máquina (`setup`) | **Preparar la máquina** → Ajustes |
+| Las respuestas del equipo (`answers`) | **Recoger las respuestas** → Docs › Entrevistas |
+| La CI (`ci`) | **Configurar la CI** → Docs |
 | La revisión humana (`confirm`) o páginas que esperan | **Revisar en el portal** |
 | Construir el portal (`portal`), o no queda nada | **Leer la documentación** |
 | Cualquier otra cosa | **Ver el plan** |
@@ -152,71 +158,14 @@ comprobación encontró algo que le falta a esta máquina o un fichero del kit f
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en
 curso.
 
-## Tablero
+### Plan
 
-El Kanban del proyecto, guardado en `cam-docs/backlog/` y versionado con la documentación (`#/board`, <kbd>g</kbd>
-<kbd>b</kbd>). La app escribe en él con su propio token. El [Tablero del portal](portal.md#tablero) enseña las mismas
-tarjetas, con filtros.
+Ejecuta el plan de documentación y mira cada unidad (`#/flow/plan`, <kbd>g</kbd> <kbd>p</kbd> sigue funcionando). Mira
+[el plan y el harness](internals.md#el-plan-y-el-harness) para saber qué es una unidad.
 
-<!-- go:board -->
-<!-- tour:board -->
-
-Un proyecto sin tablero enseña **Activar el tablero** (`camaron board init`). Con tablero:
-
-- **Seis columnas**: Backlog, Listo, En curso, En revisión, Hecho, Bloqueado. Una tarjeta enseña su id, su tipo
-  (Épica, Historia, Bug, Spike, Tarea), su prioridad, su título, su padre (`↳ WI-3`) y a quién está asignada.
-- **Mueve una tarjeta** arrastrándola, o con el teclado: las flechas eligen tarjeta, <kbd>Espacio</kbd> la coge, las
-  flechas la mueven, <kbd>Intro</kbd> o <kbd>Espacio</kbd> la sueltan, <kbd>Esc</kbd> la devuelve. <kbd>Intro</kbd> sobre
-  una tarjeta que no has cogido la abre.
-- **La puerta de salida.** Mover una tarjeta a En curso comprueba que sus dependencias estén hechas y que los ficheros
-  que toca no choquen con trabajo ya en curso. Si algo la bloquea, la app nombra qué y pregunta si moverla de todos
-  modos; decir que sí fuerza el movimiento (y el movimiento forzado se cuenta).
-- **Abre una tarjeta** para leer su descripción, sus criterios de aceptación y su definición de hecho. Una historia
-  lista sus tareas y tiene **Añadir tarea**. **Eliminar** la quita del tablero tras preguntar: su fichero pasa a
-  `backlog/archive/tasks` (sus tareas se quedan).
-- **Añadir** (arriba) crea un elemento: tipo, título, dentro de qué va (una tarea bajo una épica o una historia; una
-  historia, un bug o un spike bajo una épica) y prioridad.
-
-Escribir historias con sus subtareas y oleadas se hace en las [Historias del portal](portal.md#historias).
-
-## Decisiones
-
-Los ADR del proyecto, decididos con la evidencia delante y escritos, sin IA (`#/decisions`, <kbd>g</kbd>
-<kbd>a</kbd>). Cada ADR es `docs/decisions/<NNNN>-<título>.md`; lo que su revisión va decidiendo se guarda en
-`docs/.work/adr/<NNNN>.yaml`, que va a git. La guía de comandos tiene [todas las reglas](tutorial.md#-decisiones).
-
-<!-- go:decisions -->
-
-- **La lista**: cada ADR con su estado (En curso, En revisión, Propuesta, Aceptada, Sustituida, Rechazada…), filtros y
-  búsqueda por título, número o repo. Un ADR que el kit no escribió aparece con su estado y no se reescribe.
-- **Nuevo ADR**: un título, *nuevo* o *retroactivo* y, si quieres, el problema, los drivers, las restricciones, las
-  opciones candidatas y el ADR al que sustituye. **Toca** elige los ficheros, grupos del mapa y páginas que afecta.
-- **Candidatas**: las decisiones que el código ya tomó y que ningún ADR nombra (librerías de runtime, tecnologías del
-  C4, ficheros de Docker Compose y Helm). **Crear ADR retro** abre el formulario ya relleno.
-- **Evidencia**: el paquete de lo que el proyecto sabe de lo que toca el ADR (vecinos en el grafo del código, páginas
-  que lo citan, ADR relacionados, commits, C4, librerías, preguntas abiertas). **Escribir sin IA** escribe con él el ADR
-  propuesto.
-- **Revisión**: parte por parte (aprobar, editar o aplazar cada sección y las páginas afectadas) y punto por punto
-  (elegir una opción u *Otra*, con un motivo), más los asistentes. **Presentar** (<kbd>P</kbd>) enseña una parte por
-  pantalla para una reunión: <kbd>←</kbd> <kbd>→</kbd> cambian de parte, <kbd>1</kbd>–<kbd>9</kbd> eligen,
-  <kbd>E</kbd> edita, <kbd>D</kbd> aplaza, <kbd>A</kbd> acepta, <kbd>Esc</kbd> sale. Solo queda la revisión: una parte
-  que no cabe se desplaza en su panel, y aceptar y las teclas siguen a la vista.
-- **Si el fichero cambia mientras revisas** (un pull, un editor), no se pisa nada: el guardado se rechaza y la app vuelve
-  a leer el ADR. Si cambió la parte que estabas editando, tu borrador sigue sin guardar junto a lo que dice ahora el
-  archivo, y **Guardar** espera a que elijas **Seguir con mi borrador** o **Usar el del archivo**.
-- **Aceptar** confirma el ADR con `x-owner: human` y *Decided by*; lo que aún no está decidido no se acepta, y la app
-  dice qué punto o sección falta. **Rechazar** pide un motivo. En ambos casos el subtítulo que el kit escribió bajo el
-  título (`description`) cambia con el estado; si lo escribió una persona, no se toca.
-
-<!-- cmd:adr -->
-
-## Plan
-
-Ejecuta el plan de documentación y ve cada unidad (`#/plan`, <kbd>g</kbd> <kbd>p</kbd>). Qué es una unidad, en
-[el plan y el harness](internals.md#el-plan-y-el-harness).
-
-<!-- go:plan -->
+<!-- go:flow/plan -->
 <!-- tour:plan -->
+
 
 Un proyecto sin plan ofrece **Crear el plan** (`camaron plan sync`). Si no, de arriba abajo:
 
@@ -235,7 +184,7 @@ automático*, más abajo).
 
 **Mantenerla al día.** **Empezar con {agente}** abre una sesión que actualiza la documentación con lo que cambió en el
 código desde que se escribió: en el lienzo, una terminal llamada **Actualizar docs** en la franja **Sesiones sueltas**
-(o una ventana, según Máquina › **Dónde se abren las sesiones**). Mientras esa terminal sigue abierta, el botón te
+(o una ventana, según Ajustes › **Dónde se abren las sesiones**). Mientras esa terminal sigue abierta, el botón te
 lleva a ella.
 
 **Las unidades.** Hechas de total, y cada unidad como tarjeta en un **Tablero** (Listas para empezar, En curso, Te
@@ -256,7 +205,7 @@ detalle: fase, quién la hace, su repo, de qué depende, sus notas y, con su ter
 | Una entrevista antes de elegir el modo | **Cuestionario del equipo** o **En vivo, con un agente** |
 
 **Empezar** y **Seguir** abren la sesión en el lienzo, en el nodo de la unidad, y te llevan a ella (o en una ventana,
-según Máquina); empezar una unidad cuya sesión ya está abierta allí te lleva a su terminal («Ya tiene una sesión
+según Ajustes); empezar una unidad cuya sesión ya está abierta allí te lleva a su terminal («Ya tiene una sesión
 abierta: aquí está su terminal.»). **Seguir** reabre la conversación de esa unidad; si no se encuentra (su historial
 ya no está, o su agente no guardó ninguno), se abre una sesión nueva sobre las notas de la unidad y su nodo lo dice.
 Nunca retoma otra conversación de la carpeta.
@@ -293,7 +242,7 @@ una sesión nueva**; una que acabó bien se pliega como las de una ejecución. L
 de ninguna unidad: su terminal, **Actualizar docs**, va en la franja **Sesiones sueltas**, debajo del grafo. Una unidad
 abierta en el lienzo nunca se abre dos veces: su botón te lleva a su terminal, y su detalle ofrece **Ver su terminal**.
 Un proyecto tiene como mucho 8 terminales a la vez. Viven en el servidor del proyecto, así que cerrar la ventana del
-proyecto las termina y sus unidades quedan en pausa. Máquina › **Dónde se abren las sesiones** › **En una ventana de
+proyecto las termina y sus unidades quedan en pausa. Ajustes › **Dónde se abren las sesiones** › **En una ventana de
 terminal** abre las sesiones en una ventana propia, como antes (`camaron config set sessions window`); una máquina en
 la que la app no puede abrir terminales lo hace sola y lo dice.
 
@@ -328,57 +277,32 @@ revisión. Primero **Ver qué haría**; después un diálogo repite la lista.
 
 <!-- cmd:docs -->
 
-## Entrevistas
+## Tablero
 
-Cómo se hacen las entrevistas y cómo llegan las respuestas del equipo (`#/interviews`, <kbd>g</kbd> <kbd>i</kbd>).
+El Kanban del proyecto, guardado en `cam-docs/backlog/` y versionado con la documentación (`#/board`, <kbd>g</kbd>
+<kbd>b</kbd>). La app escribe en él con su propio token. El [Tablero del portal](portal.md#tablero) enseña las mismas
+tarjetas, con filtros.
 
-<!-- go:interviews -->
-<!-- tour:interviews -->
+<!-- go:board -->
+<!-- tour:board -->
 
-Hasta que alguien elige, la sección pregunta **¿Cómo hacéis las entrevistas?**: un **Cuestionario del equipo** (responde
-el equipo y después un agente lo consolida) o **En vivo, con un agente**. Una vez elegido puedes cambiar
-(**Pasar a en vivo** / **Pasar a cuestionario**). En modo cuestionario:
+Un proyecto sin tablero enseña **Activar el tablero** (`camaron board init`). Con tablero:
 
-- el estado del cuestionario: preguntas, personas que han respondido y cuántas preguntas no tienen acuerdo;
-- **Responder en el portal** abre la Entrevista del portal, donde cada persona responde;
-- **Exportar el formulario** escribe un formulario HTML sin conexión (`camaron interview export`) y lo enseña en tu
-  explorador de archivos;
-- **Importar respuestas** elige los ficheros de respuestas que te mandaron (`camaron interview import`);
-- **Cerrar la ronda** da por hecha la unidad de respuestas cuando alguien ha respondido.
+- **Seis columnas**: Backlog, Listo, En curso, En revisión, Hecho, Bloqueado. Una tarjeta enseña su id, su tipo
+  (Épica, Historia, Bug, Spike, Tarea), su prioridad, su título, su padre (`↳ WI-3`) y a quién está asignada.
+- **Mueve una tarjeta** arrastrándola, o con el teclado: las flechas eligen tarjeta, <kbd>Espacio</kbd> la coge, las
+  flechas la mueven, <kbd>Intro</kbd> o <kbd>Espacio</kbd> la sueltan, <kbd>Esc</kbd> la devuelve. <kbd>Intro</kbd> sobre
+  una tarjeta que no has cogido la abre.
+- **La puerta de salida.** Mover una tarjeta a En curso comprueba que sus dependencias estén hechas y que los ficheros
+  que toca no choquen con trabajo ya en curso. Si algo la bloquea, la app nombra qué y pregunta si moverla de todos
+  modos; decir que sí fuerza el movimiento (y el movimiento forzado se cuenta).
+- **Abre una tarjeta** para leer su descripción, sus criterios de aceptación y su definición de hecho. Una historia
+  lista sus tareas y tiene **Añadir tarea**. **Eliminar** la quita del tablero tras preguntar: su fichero pasa a
+  `backlog/archive/tasks` (sus tareas se quedan).
+- **Añadir ▾** (arriba) es un menú. **Historia** abre las Historias del portal en tu navegador, donde se escriben las historias; **Tarea** y **Bug** abren aquí el formulario: tipo, título, dentro de qué va (una tarea bajo una épica o una historia; una
+  historia, un bug o un spike bajo una épica) y prioridad.
 
-Debajo, **Entrevistas con un agente** lista las unidades de entrevista con los mismos botones que en Plan.
-
-## Equipo
-
-El repo `cam-docs` del equipo y lo que llegó con él (`#/team`, <kbd>g</kbd> <kbd>t</kbd>).
-
-<!-- go:team -->
-<!-- tour:team -->
-
-**Repo del equipo.** Pega su URL y **Guardar** (`camaron remote`). Con remoto, tres cifras —por enviar, por traer, sin
-guardar— y **Compartir ahora** (un checkpoint, después tu trabajo rebasado sobre el del equipo y subido),
-**Comprobar** (pregunta al remoto qué hay de nuevo) y **Compartir cada vez que se guarda el progreso**
-(`camaron share --auto on|off`, solo en esta máquina). Un conflicto se deshace sin tocar nada; algo que parece un
-secreto no se publica. Un compartir o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o
-proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de git debajo; un problema de token enlaza a
-**Máquina › Tokens** para ese servidor.
-
-**Lo que llegó con el repo del equipo.** Los hooks, servidores MCP, ajustes, skills, ficheros y plugins de `cam-docs`
-que no escribió el kit esperan aquí a que los apruebes en esta máquina: **Aprobar (n)** los lista y ejecuta
-`camaron trust --yes`. Las aprobaciones viven en `~/.camarones/trust/`, nunca en el repo. El interruptor de los hooks
-del método del propio kit está en **Calidad**.
-
-**Plugins.** Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
-uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
-máquina.
-
-**Skills.** Cada skill de los agentes del proyecto con su icono, de dónde viene (el kit, una copia del equipo, del
-equipo, un pack) y dos interruptores: **Proyecto** la apaga para todo el equipo (`camaron skills disable`, se guarda en
-`workspace.yaml`) y **Esta máquina** solo para ti, en Claude Code (`--machine`). Una skill que espera tu aprobación lo
-dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno en las skills del equipo
-(`camaron skills add`) y la tarjeta de arriba te pide aprobarlo.
-
-**Todos los comandos** tiene board, checkpoint, ci, export, portal, removed y translated.
+Escribir historias con sus subtareas y oleadas se hace en las [Historias del portal](portal.md#historias).
 
 ## Calidad
 
@@ -398,7 +322,7 @@ Arriba, un veredicto («Páginas desactualizadas: 3 · Críticas o altas: 2», o
 | Documentación | Al día · Revisar · Riesgo | páginas desactualizadas, por revisar | **Páginas desactualizadas** (cada una con **Sigue valiendo**, o **Añadir una unidad que las actualice**), **Preguntas de control (IA)** (confirmar preguntas de oro, hacerlas, o **Proponer preguntas con {agente}**), **Contexto de cada sesión** (los tokens que carga cada sesión de agente frente al presupuesto), **Páginas por revisar** (portal), **Bloques generados** (actualizarlos), **Con y sin cam-docs (IA)** (la misma pregunta dos veces), **Escaneo de secretos** (gitleaks sobre la documentación y las wikis, `camaron check --secrets`: se ejecuta al abrir la fila, lista cada sitio donde encontró algo —nunca el valor— y dice claro cuando no pudo ejecutarse) y **Hooks para los agentes** (el interruptor de los cinco hooks del método de Claude Code, `camaron hooks`, y lo que han visto: prompts con documentación, sesiones que leyeron la documentación antes de su primera edición de código, ediciones frenadas) |
 | Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en el portal). **Librerías** → la vista Librerías |
 
-Un repo que usa SonarQube sin token guardado enseña **Conectar SonarQube**, que abre Máquina › Tokens con el servidor
+Un repo que usa SonarQube sin token guardado enseña **Conectar SonarQube**, que abre Ajustes › Tokens con el servidor
 escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo del panel: **Ver los KPIs** (portal) y
 **Todos los comandos** (los de análisis y comprobación: check, graph, pages, schemas, radar, history, kpis, stats…).
 
@@ -406,7 +330,7 @@ escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo d
 <!-- cmd:check -->
 <!-- cmd:hooks -->
 
-## Librerías
+### Librerías
 
 Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la segunda vista de Calidad
 (`#/quality/libs`).
@@ -443,45 +367,158 @@ Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la
 
 ## Docs
 
-Leer es cosa del portal; esta sección lo abre y hace el trabajo que él no puede (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>).
+Leer es cosa del portal; este lugar lo abre y hace el trabajo que él no puede (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). Bajo el título hay cuatro pestañas: **Leer**, **Wikis**, **Decisiones** y **Entrevistas**.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
+**La franja del equipo.** Encima de las pestañas, en todas las de Docs, el repo `cam-docs` del equipo: si estás al día,
+tienes cambios por traer o nunca compartiste (y cuándo lo hiciste por última vez), y **Compartir ahora** (un checkpoint,
+después tu trabajo rebasado sobre el del equipo y subido). Su pliegue, **Repo del equipo**, guarda la URL: pégala y
+**Guardar** (`camaron remote`). Con remoto ofrece además **Comprobar** (pregunta al remoto qué hay de nuevo) y
+**Compartir cada vez que se guarda el progreso** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se
+deshace sin tocar nada; algo que parece un secreto no se publica. Un compartir o una comprobación que falla dice por qué
+—no llega al servidor (conexión, VPN o proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de git
+debajo; un problema de token enlaza a **Ajustes › Tokens** para ese servidor.
+
+### Leer
+
 - **Leer la documentación**, **Revisar borradores** y **Buscar o preguntar** abren el portal en tu navegador.
 - **Construir el explorador C4** construye el mapa interactivo de LikeC4 que el portal enseña en Arquitectura; **Ver**
   lo abre.
+- **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza
+  sus fuentes en el portal. Espera hasta 90 segundos; `ask.ai: false` en `workspace.yaml` lo apaga y `ask.model` elige
+  el modelo.
+- **Todos los comandos**, plegado, tiene board, checkpoint, ci, export, portal, removed y translated.
+
+<!-- portal:#/docs -->
+
+### Wikis
+
+La wiki de cada repo (`#/docs/wikis`).
+
+<!-- go:docs/wikis -->
+
 - **Un bloque por repo**: **Generar la wiki** escribe la wiki OpenWiki de ese repo. Si el repo no estaba elegido para
   tener wiki, lo elige; si aún no tiene brief, antes escribe uno inicial sin IA. Está desactivado, con el motivo, si el
   repo no está clonado, no hay ningún motor de wiki instalado o se está generando la wiki de otro repo (una a la vez).
   Cuando la wiki tiene páginas: **Ver** y **Grafo del wiki · {repo}** (construir su grafo).
-- **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza
-  sus fuentes en el portal. Espera hasta 90 segundos; `ask.ai: false` en `workspace.yaml` lo apaga y `ask.model` elige
-  el modelo.
 
-<!-- portal:#/docs -->
+### Decisiones
 
-## Máquina
+<!-- go:docs/decisions -->
 
-Esta máquina y la preparación de este proyecto (`#/machine`, <kbd>g</kbd> <kbd>m</kbd>).
+Los ADR del proyecto, decididos con la evidencia delante y escritos, sin IA (`#/docs/decisions`, <kbd>g</kbd>
+<kbd>a</kbd> sigue funcionando). Cada ADR es `docs/decisions/<NNNN>-<título>.md`; lo que su revisión va decidiendo se guarda en
+`docs/.work/adr/<NNNN>.yaml`, que va a git. La guía de comandos tiene [todas las reglas](tutorial.md#-decisiones).
 
-<!-- go:machine -->
-<!-- tour:machine -->
+
+- **La lista**: cada ADR con su estado (En curso, En revisión, Propuesta, Aceptada, Sustituida, Rechazada…), filtros y
+  búsqueda por título, número o repo. Un ADR que el kit no escribió aparece con su estado y no se reescribe.
+- **Nuevo ADR**: un título, *nuevo* o *retroactivo* y, si quieres, el problema, los drivers, las restricciones, las
+  opciones candidatas y el ADR al que sustituye. **Toca** elige los ficheros, grupos del mapa y páginas que afecta.
+- **Candidatas**: las decisiones que el código ya tomó y que ningún ADR nombra (librerías de runtime, tecnologías del
+  C4, ficheros de Docker Compose y Helm). **Crear ADR retro** abre el formulario ya relleno.
+- **Evidencia**: el paquete de lo que el proyecto sabe de lo que toca el ADR (vecinos en el grafo del código, páginas
+  que lo citan, ADR relacionados, commits, C4, librerías, preguntas abiertas). **Escribir sin IA** escribe con él el ADR
+  propuesto.
+- **Revisión**: parte por parte (aprobar, editar o aplazar cada sección y las páginas afectadas) y punto por punto
+  (elegir una opción u *Otra*, con un motivo), más los asistentes. **Presentar** (<kbd>P</kbd>) enseña una parte por
+  pantalla para una reunión: <kbd>←</kbd> <kbd>→</kbd> cambian de parte, <kbd>1</kbd>–<kbd>9</kbd> eligen,
+  <kbd>E</kbd> edita, <kbd>D</kbd> aplaza, <kbd>A</kbd> acepta, <kbd>Esc</kbd> sale. Solo queda la revisión: una parte
+  que no cabe se desplaza en su panel, y aceptar y las teclas siguen a la vista.
+- **Si el fichero cambia mientras revisas** (un pull, un editor), no se pisa nada: el guardado se rechaza y la app vuelve
+  a leer el ADR. Si cambió la parte que estabas editando, tu borrador sigue sin guardar junto a lo que dice ahora el
+  archivo, y **Guardar** espera a que elijas **Seguir con mi borrador** o **Usar el del archivo**.
+- **Aceptar** confirma el ADR con `x-owner: human` y *Decided by*; lo que aún no está decidido no se acepta, y la app
+  dice qué punto o sección falta. **Rechazar** pide un motivo. En ambos casos el subtítulo que el kit escribió bajo el
+  título (`description`) cambia con el estado; si lo escribió una persona, no se toca.
+
+<!-- cmd:adr -->
+
+### Entrevistas
+
+<!-- go:docs/interviews -->
+<!-- tour:interviews -->
+
+Cómo se hacen las entrevistas y cómo llegan las respuestas del equipo (`#/docs/interviews`, <kbd>g</kbd> <kbd>i</kbd> sigue funcionando).
+
+
+Hasta que alguien elige, la sección pregunta **¿Cómo hacéis las entrevistas?**: un **Cuestionario del equipo** (responde
+el equipo y después un agente lo consolida) o **En vivo, con un agente**. Una vez elegido puedes cambiar
+(**Pasar a en vivo** / **Pasar a cuestionario**). En modo cuestionario:
+
+- el estado del cuestionario: preguntas, personas que han respondido y cuántas preguntas no tienen acuerdo;
+- **Responder en el portal** abre la Entrevista del portal, donde cada persona responde;
+- **Exportar el formulario** escribe un formulario HTML sin conexión (`camaron interview export`) y lo enseña en tu
+  explorador de archivos;
+- **Importar respuestas** elige los ficheros de respuestas que te mandaron (`camaron interview import`);
+- **Cerrar la ronda** da por hecha la unidad de respuestas cuando alguien ha respondido.
+
+Debajo, **Entrevistas con un agente** lista las unidades de entrevista con los mismos botones que en Plan.
+
+## Ajustes
+
+Esta máquina y el kit que lleva (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Bajo el título hay seis pestañas: **General**, **Tokens**, **Skills**, **Plugins**, **Confianza** y **Kit**. Las antiguas `#/machine` y `#/team` llegan aquí y a Docs.
+
+<!-- go:settings -->
+<!-- tour:settings -->
+
+### General
 
 | Tarjeta | Qué hace |
 |---|---|
 | Guía y recorrido | Abre esta guía, o el recorrido por la app |
 | Preparar esta máquina | **Ejecutar setup** (`camaron setup`): herramientas, repos, conexión de los agentes, con barra de progreso. Cuando ya ha corrido en esta máquina, la tarjeta dice **Lista**, cuándo y con qué kit, y **Volver a ejecutar** queda como opción discreta |
 | Idioma y modelos | El idioma de las sesiones de IA, el modelo de Claude Code y el de Codex (la lista del propio Codex, u **Otro…** para escribirlo): los que usa una sesión cuando el enrutado no da ninguno para su unidad; y **Dónde se abren las sesiones**: **En el lienzo del plan** (por defecto) o **En una ventana de terminal** (en una máquina que no puede abrir terminales dentro de la app, avisa de que se abren en una ventana). Cada cambio es un `camaron config set` |
-| Tokens de GitLab, GitHub y SonarQube | Los servidores guardados con **Probar** y **Borrar**; un formulario (servidor, tipo, token) cuyo **Comprobar y guardar** prueba antes el token contra el servidor (**Guardarlo igualmente** si insistes). Los tokens viven en el llavero del sistema, nunca en el proyecto ni en una línea de comandos. SonarQube solo por https (http solo en localhost) |
 | Repos y plan | Cada repo, clonado o no, con su stack (edítalo, o **Volver al detectado**); **Clonar o actualizar los repos** (`sync`), **Detectar repos en la carpeta** (`detect`) y el perfil del plan, rápido o completo |
-| El kit | **Actualizar el kit** (`self-update`, solo con la instalación global) y después **Reiniciar la app con la versión nueva**; **Reparar los archivos del kit** (`repair`) |
 | Todos los comandos | down, upgrade, version; con cuidado: migrate, unlink |
-| Desinstalar este proyecto | Primero **Ver qué borraría**; después **Desinstalar** abre un diálogo que repite la lista. Si cambias una opción, **Desinstalar** desaparece hasta que vuelvas a mirar, para que la lista sea siempre lo que se ejecuta. Opcional: también los ajustes, tokens y cachés de esta máquina, y sin copia de seguridad. Por defecto se guarda una copia `.zip` de `cam-docs` en la carpeta temporal del sistema, y un tablero que ya existía se conserva (copiado junto a los repos) |
-
-La dirección `#/machine?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario de Tokens relleno.
 
 <!-- cmd:setup -->
+
+### Tokens
+
+<!-- go:settings/tokens -->
+
+Los servidores guardados con **Probar** y **Borrar**; un formulario (servidor, tipo, token) cuyo **Comprobar y guardar** prueba antes el token contra el servidor (**Guardarlo igualmente** si insistes). Los tokens viven en el llavero del sistema, nunca en el proyecto ni en una línea de comandos. SonarQube solo por https (http solo en localhost)
+
+La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice de dónde vienes; la antigua `#/machine?host=…&kind=…` sigue llegando a él.
+
+### Skills
+
+<!-- go:settings/skills -->
+
+Cada skill de los agentes del proyecto con su icono, de dónde viene (el kit, una copia del equipo, del
+equipo, un pack) y dos interruptores: **Proyecto** la apaga para todo el equipo (`camaron skills disable`, se guarda en
+`workspace.yaml`) y **Esta máquina** solo para ti, en Claude Code (`--machine`). Una skill que espera tu aprobación lo
+dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno en las skills del equipo
+(`camaron skills add`) y la pestaña Confianza te pide aprobarlo.
+
+### Plugins
+
+<!-- go:settings/plugins -->
+
+Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
+uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
+máquina.
+
+### Confianza
+
+<!-- go:settings/trust -->
+
+La pestaña lleva la cuenta de lo que espera aprobación (**Confianza · 2**). Los hooks, servidores MCP, ajustes, skills, ficheros y plugins de `cam-docs`
+que no escribió el kit esperan aquí a que los apruebes en esta máquina: **Aprobar (n)** los lista y ejecuta
+`camaron trust --yes`. Las aprobaciones viven en `~/.camarones/trust/`, nunca en el repo. El interruptor de los hooks
+del método del propio kit está en **Calidad**.
+
+### Kit
+
+<!-- go:settings/kit -->
+
+| Tarjeta | Qué hace |
+|---|---|
+| El kit | **Actualizar el kit** (`self-update`, solo con la instalación global) y después **Reiniciar la app con la versión nueva**; **Reparar los archivos del kit** (`repair`) |
+| Desinstalar este proyecto | Primero **Ver qué borraría**; después **Desinstalar** abre un diálogo que repite la lista. Si cambias una opción, **Desinstalar** desaparece hasta que vuelvas a mirar, para que la lista sea siempre lo que se ejecuta. Opcional: también los ajustes, tokens y cachés de esta máquina, y sin copia de seguridad. Por defecto se guarda una copia `.zip` de `cam-docs` en la carpeta temporal del sistema, y un tablero que ya existía se conserva (copiado junto a los repos) |
 
 ## Guía
 
@@ -493,7 +530,7 @@ los agentes.
 
 ## Todos los comandos
 
-Plan, Equipo, Calidad y Máquina terminan con **Todos los comandos**, plegado: los comandos de esa zona que ninguna
+Plan, Calidad, Docs (Leer) y Ajustes (General) terminan con **Todos los comandos**, plegado: los comandos de esa zona que ninguna
 tarjeta ejecuta ya, cada uno con un formulario sacado del propio parser de la CLI (`camaron catalog`). Un flag es una
 casilla, una elección un desplegable, un número un campo numérico; `--yes` y `--json` nunca son campos. Los comandos que
 borran o mueven datos van al final, bajo **Con cuidado: borran o mueven datos**, con un **Ejecutar** en rojo; ellos y
