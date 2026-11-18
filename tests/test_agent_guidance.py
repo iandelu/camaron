@@ -137,3 +137,8 @@ def test_the_rules_ask_every_c4_element_for_code_evidence():
         text = (KIT_DIR / name).read_text(encoding="utf-8")
         assert "metadata { code [" in text, name
         assert "arch-verify" in text, name
+        assert "no-evidence" in text, name
+    conventions = (KIT_DIR / "CONVENTIONS.md").read_text(encoding="utf-8")
+    assert "never mark it `#confirmed` yourself" in conventions
+    playbook = (KIT_DIR / "PLAYBOOK.md").read_text(encoding="utf-8")
+    assert " ".join(playbook.split()).count("other than those it lists in the handoff for a person to confirm") == 2
