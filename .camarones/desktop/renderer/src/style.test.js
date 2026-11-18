@@ -68,10 +68,22 @@ test('the scan\'s bar and tick do not move for who asked for less motion, and th
 test('the wiki cards\' motion is staggered, tone-driven and off for who asked for less motion', () => {
   expect(css).toMatch(/\.dk-wikis > \*\s*\{[^}]*animation:\s*dk-rise[^}]*animation-delay:\s*calc\(var\(--i,\s*0\)\s*\*\s*40ms\)/)
   expect(css).toMatch(/\.dk-wiki\.is-generating\s*\{[^}]*--tone:\s*var\(--color-aurora-amber\)/)
-  expect(css).toMatch(/\.dk-wiki\.is-generating::after\s*\{[^}]*animation:\s*dk-pulse/)
   expect(css).toMatch(/\.dk-wiki\.is-generating \.dk-ico\s*\{[^}]*animation:\s*dk-glow/)
   expect(css).toMatch(/\.dk-wiki\.is-done \.dk-ico\s*\{[^}]*animation:\s*dk-tick-pop/)
   expect(css).toMatch(/\.dk-wiki\s*\{[^}]*min-width:\s*0/)
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
   expect(reduced).toMatch(/\.dk-wikis > \*[^{]*\.dk-wiki\.is-generating::after[^{]*\.dk-wiki\.is-generating \.dk-ico[^{]*\.dk-wiki\.is-done \.dk-ico[^{]*\{\s*animation:\s*none/)
+})
+
+// What moves moves only by transform or opacity (CAMARON.md). The running card's ring is static on its pseudo-element and the
+// pseudo-element fades in and out; the Board's `dk-pulse` animates a box-shadow and stays the Board's.
+test('the running wiki card pulses by opacity alone, over a static ring', () => {
+  const after = css.match(/\.dk-wiki\.is-generating::after\s*\{([^}]*)\}/)[1]
+  const name = after.match(/animation:\s*([\w-]+)/)[1]
+  expect(name).not.toBe('dk-pulse')
+  expect(after).toMatch(/box-shadow:\s*0 0 0 4px color-mix\(in srgb, var\(--tone\) 30%, transparent\)/)
+  const body = css.match(new RegExp(`@keyframes ${name}\\s*\\{((?:[^{}]|\\{[^}]*\\})*)\\}`))[1]
+  const props = [...body.matchAll(/\{([^}]*)\}/g)].flatMap(([, decls]) => [...decls.matchAll(/([\w-]+)\s*:/g)].map((m) => m[1]))
+  expect(props.length).toBeGreaterThan(0)
+  expect(new Set(props)).toEqual(new Set(['opacity']))
 })

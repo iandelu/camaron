@@ -128,7 +128,7 @@ export function WikiCard({ block, gen, graph, loading = false, failed = false, b
   const state = unread ? 'unread' : own === 'none' && block.blocked ? 'blocked' : own
   const action = wikiAction(unread || state === 'blocked' ? 'none' : state)
   const writes = !!action.kind && action.kind !== 'view'
-  const why = (block.blocked && !(block.blocked === 'unread' && (loading || failed)) ? t(WHY[block.blocked]) : '')
+  const why = (block.blocked && writes && !(block.blocked === 'unread' && (loading || failed)) ? t(WHY[block.blocked]) : '')
     || (busyWith && writes ? t('docs.wikiBusy', { repo: busyWith }) : '')
   const label = action.label && t(action.label)
   const line = unread || state === 'generating' ? [] : figures(block.info, now)

@@ -293,6 +293,26 @@ test('a blocked card with no pages shows its reason and a closed Generate; with 
   expect(primary(fresh)).not.toContain('disabled')
 })
 
+// The reason is for the action it closes: a card whose only primary is View (pages, nothing to write) has nothing closed to explain.
+test('the reason shows only when the card\'s write action is closed, never beside an open View', () => {
+  for (const [over, reason] of [[{ canGenerate: false }, 'No hay ningún motor de wiki instalado'],
+    [{ cloned: false, canGenerate: false }, 'Este repo aún no está clonado']]) {
+    const fresh = card(over)
+    expect(primary(fresh)).toContain('Ver')
+    expect(primary(fresh)).not.toContain('disabled')
+    expect(fresh).not.toContain(reason)
+    const stale = card({ ...over, stale: true })
+    expect(primary(stale)).toContain('Actualizar')
+    expect(primary(stale)).toContain('disabled')
+    expect(stale).toContain(reason)
+    const failed = card(over, { gen: failedRun })
+    expect(primary(failed)).toContain('disabled')
+    expect(failed).toContain(reason)
+    expect(card({ ...over, old: true })).toContain(reason)
+  }
+  expect(card({ ...NONE, canGenerate: false })).toContain('No hay ningún motor de wiki instalado')
+})
+
 test("another repo's run closes what writes pages on this card, with the reason, and leaves View alone", () => {
   const stale = card({ stale: true }, { busyWith: 'web' })
   expect(primary(stale)).toContain('disabled')
