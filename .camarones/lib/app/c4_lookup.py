@@ -137,7 +137,8 @@ def _relations(fqn: str, rep: dict, policy: str) -> tuple[list[dict], list[dict]
     return into, out
 
 
-def _normal(rel: str) -> str:
+def normal(rel: str) -> str:
+    """A repo-relative path as anchors write it: no `#…`, `/` separators, no leading `./` or `/`."""
     rel = rel.split("#", 1)[0].strip().replace("\\", "/")
     return re.sub(r"^(\./|/)+", "", rel)
 
@@ -146,7 +147,7 @@ def _targets(target: str, els: dict) -> tuple[list[str], str | None]:
     target = target.strip()
     if ":" in target and target not in els:
         repo, _, rel = target.partition(":")
-        found = covering(repo.strip(), _normal(rel), els)
+        found = covering(repo.strip(), normal(rel), els)
         return found[:FILE_LIMIT], (None if found else f"no C4 element is anchored on {target}")
     return ([target], None) if target in els else ([], f"no C4 element {target!r}")
 

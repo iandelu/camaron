@@ -201,6 +201,22 @@ def test_a_named_file_under_a_folder_anchor_reaches_its_element(ctx_world, ctx):
     assert ctx.build("explain what Api.java does please")["c4"] == ["shop.payments"]
 
 
+def test_a_named_path_under_a_dot_folder_keeps_its_dot(ctx_world, ctx):
+    ci = ctx_world.ws / "api" / ".github" / "workflows" / "ci.yml"
+    ci.parent.mkdir(parents=True)
+    ci.write_text("on: push\n", encoding="utf-8", newline="\n")
+    write_model(ctx_world, MODEL.replace("'api:src/main/java/demo/Api.java'", "'api:.github/workflows/'")
+                .replace("Charges cards and retries failed payments", "Settles"))
+    assert ctx.build("explain .github/workflows/ci.yml please")["c4"] == ["shop.payments"]
+    assert ctx.build("explain ./.github/workflows/ci.yml please")["c4"] == ["shop.payments"]
+
+
+def test_a_named_path_that_cannot_be_looked_up_leaves_the_rest_of_the_context(ctx_world, ctx, monkeypatch):
+    monkeypatch.setattr(ctx, "_named_paths", lambda *a: (_ for _ in ()).throw(OSError(63, "File name too long")))
+    out = ctx.build("why does Api.java retry payments with backoff")
+    assert out["pages"] and "shop.payments" in out["c4"]
+
+
 def test_withheld_elements_do_not_take_the_slots_of_served_ones(ctx_world, ctx):
     held = "".join(f"    bill{n} = service 'Billing {n}' {{\n      description 'Sends invoices'\n    }}\n"
                    for n in range(5))

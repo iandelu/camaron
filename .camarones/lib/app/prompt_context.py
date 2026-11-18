@@ -108,9 +108,10 @@ def _named_paths(prompt: str, nodes: list[dict], elements: dict) -> set[tuple[st
     for token in re.findall(r"[\w.-]+(?::|/)[\w./-]*[\w-]", prompt):
         repo, colon, rest = token.partition(":")
         if colon and repo in repos:
-            found.add((repo, rest.lstrip("/")))
+            found.add((repo, c4_lookup.normal(rest)))
         elif "/" in token and "." in token.rsplit("/", 1)[-1]:
-            found |= {(r, token.lstrip("./")) for r in repos if repo_dir(r).joinpath(token.lstrip("./")).is_file()}
+            rel = c4_lookup.normal(token)
+            found |= {(r, rel) for r in repos if repo_dir(r).joinpath(rel).is_file()}
     return found
 
 
@@ -131,8 +132,12 @@ def _c4(prompt: str, terms: list[str], files: set[tuple[str, str]], nodes: list[
         elements = c4edit.index()["elements"]
     except Exception:  # noqa: BLE001 — a model that does not parse must not hide the docs
         return [], []
+    try:
+        named = _named_paths(prompt, nodes, elements)
+    except Exception:  # noqa: BLE001 — a path the system refuses to look up must not hide the rest
+        named = set()
     covered = {}
-    for repo, path in files | _named_paths(prompt, nodes, elements):
+    for repo, path in files | named:
         for fqn in c4_lookup.covering(repo, path, elements)[:1]:
             covered[fqn] = covered.get(fqn, 0) + 1
     scored = []
