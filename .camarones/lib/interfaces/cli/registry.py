@@ -20,12 +20,13 @@ PACKAGE = "lib.interfaces.cli.commands"
 # argparse prints this order in --help and in "invalid choice"; a command not listed comes after, by name
 ORDER: tuple[str, ...] = (
     "help", "setup", "install", "upgrade", "new", "switch", "self-update", "unlink", "profile", "init", "sync",
-    "detect", "changes", "llms", "graph", "arch", "arch-validate", "arch-verify", "portal", "down", "wizard", "version", "repair",
-    "history", "removed", "review", "hook", "hooks", "mcp", "doctor", "plugins", "export", "run", "eval", "ab", "pr",
-    "blocks", "pages", "diagrams", "fresh", "kpis", "runs", "pipeline", "mark-documented", "status", "check", "confirm",
-    "translated", "up", "wiki", "migrate", "uninstall", "docs", "ci", "plan", "checkpoint", "remote", "share", "trust",
-    "join", "stats", "feedback", "arch-draft", "radar", "inventory", "bump", "health", "schemas", "interview", "stack",
-    "prompt", "autopilot", "catalog", "board", "change", "adr", "projects", "app", "config",
+    "detect", "changes", "llms", "graph", "arch", "arch-validate", "arch-verify", "portal", "down", "wizard",
+    "version", "repair", "history", "removed", "review", "hook", "hooks", "mcp", "doctor", "plugins", "export",
+    "run", "eval", "ab", "pr", "blocks", "pages", "diagrams", "fresh", "kpis", "runs", "pipeline", "mark-documented",
+    "status", "check", "confirm", "translated", "up", "wiki", "migrate", "uninstall", "docs", "ci",
+    "plan", "checkpoint", "remote", "share", "trust", "join", "stats", "feedback", "arch-draft", "radar",
+    "inventory", "bump", "health", "schemas", "interview", "stack", "prompt", "autopilot", "catalog", "board",
+    "change", "adr", "projects", "app", "config",
 )
 
 

@@ -37,6 +37,9 @@ class ArchVerify(Command):
                 print(f"could not acknowledge: {e}", file=sys.stderr)
                 return 1
             print("acknowledged:", ", ".join(done) or "nothing")
+            if missing := [n for n in args.ack if n not in done]:
+                print("not in the C4 model: " + ", ".join(missing), file=sys.stderr)
+                return 1
             return 0
         rep = c4_verify.report()
         print(json.dumps(rep, indent=2, ensure_ascii=False) if args.json else "\n".join(c4_verify.text(rep)))

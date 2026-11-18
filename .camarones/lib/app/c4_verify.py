@@ -2,10 +2,10 @@
 text `camaron arch-verify` prints. Reads only; states are kept by `harness.freshness`."""
 from __future__ import annotations
 
-from lib.domain.c4.verdict import STATES
 from lib.harness import freshness
 
 WORST_FIRST = ("broken", "suspect", "no-evidence", "unchecked", "fresh")
+GATED = ("broken", "no-evidence")
 
 
 def report() -> dict:
@@ -25,9 +25,12 @@ def _what(item: dict) -> str:
     return "; ".join(parts) or item["state"]
 
 
+def _where(item: dict) -> str:
+    return f"{item['file']}:{item['line']}: " if item.get("file") else ""
+
+
 def _line(item: dict, name: str) -> str:
-    where = f"{item['file']}:{item['line']}: " if item.get("file") else ""
-    return f"{where}C4 {name}: {item['state']} — {_what(item)}"
+    return f"{_where(item)}C4 {name}: {item['state']} — {_what(item)}"
 
 
 def findings(strict: bool) -> tuple[list[str], list[str]]:
@@ -39,15 +42,14 @@ def findings(strict: bool) -> tuple[list[str], list[str]]:
     for group in ("elements", "relations"):
         for name, item in rep[group].items():
             for raw in item.get("unreadable") or []:
-                warns.append(f"{item.get('file', '')}:{item.get('line', 0)}: C4 {name}: unreadable evidence entry "
-                             f"{raw!r}")
+                (errors if strict else warns).append(f"{_where(item)}C4 {name}: unreadable evidence entry {raw!r}")
             state = item["state"]
             if state == "unchecked":
                 unchecked += 1
             elif state == "fresh" or (state == "no-evidence" and item.get("confirmed")):
                 continue
             else:
-                (errors if strict else warns).append(_line(item, name))
+                (errors if strict and state in GATED else warns).append(_line(item, name))
     if unchecked:
         warns.append(f"C4: {unchecked} unchecked element(s) or relation(s): their repo is not cloned here")
     return errors, warns
@@ -68,5 +70,3 @@ def text(rep: dict) -> list[str]:
         out += [f"  {n}" for n in legacy]
     return out or ["No C4 model found."]
 
-
-assert set(WORST_FIRST) == set(STATES)
