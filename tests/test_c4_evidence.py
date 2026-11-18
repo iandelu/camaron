@@ -287,3 +287,23 @@ def test_stamps_from_the_current_kit_migrate(c4, kit):
     assert pages["flows/a.md"]["sources"]["c4:shop.api"]["v"] == 2
     assert pages["flows/a.md"]["sources"]["c4:shop.api"] == c4.fingerprint("c4:shop.api")
     assert "v" not in pages["flows/b.md"]["sources"]["c4:shop.api"]
+
+
+def test_an_extend_element_the_current_kit_could_not_find_migrates(c4, kit):
+    """Before v2 an element declared through `extend` was never found: its pages kept a null stamp, stale for good."""
+    from lib.common import save_json
+    page(kit, "flows/a.md", ["c4:shop.api.orders"])
+    page(kit, "flows/b.md", ["c4:shop.api.nope"])
+    assert c4._c4_lines("shop.api.orders") is None                       # what the current kit stamped: nothing
+    shas = {p: sha for p, (_, sha) in c4._pages().items()}
+    save_json(c4.FILE, {"v": 1, "pages": {
+        p: {"body_sha": shas[p], "at": "2026-11-01T10:00:00", "sources": {src: None}}
+        for p, src in (("flows/a.md", "c4:shop.api.orders"), ("flows/b.md", "c4:shop.api.nope"))}})
+    assert c4.status("flows/a.md")["state"] == "fresh"
+    assert c4.status("flows/b.md")["state"] == "stale"                   # still not in the model: left alone
+    before = c4.FILE.read_text(encoding="utf-8")
+    c4.states()
+    assert c4.FILE.read_text(encoding="utf-8") == before
+    pages = stamps(c4)["pages"]
+    assert pages["flows/a.md"]["sources"]["c4:shop.api.orders"] == c4.fingerprint("c4:shop.api.orders")
+    assert pages["flows/b.md"]["sources"]["c4:shop.api.nope"] is None

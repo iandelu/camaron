@@ -224,14 +224,22 @@ def _stamp(entry_for: dict, logical: str, fm: dict, sha: str, by: str | None = N
 
 def _migrate_c4(entry: dict) -> int:
     """A `c4:` source stamped before v2 takes the v2 fingerprint when its element did not change since (the v1 hash
-    still matches); one that did keeps its v1 stamp, which reports `changed`."""
+    still matches); one that did keeps its v1 stamp, which reports `changed`. A null stamp (v1 never found an element
+    declared through `extend`) takes it once the model has the element."""
     n = 0
     for s, st in (entry.get("sources") or {}).items():
-        if kind(s) == "c4" and isinstance(st, dict) and "v" not in st:
+        if kind(s) != "c4":
+            continue
+        if st is None:
+            now = fingerprint(s)
+        elif isinstance(st, dict) and "v" not in st:
             old = _c4_lines(str(s).strip()[3:])
-            if old is not None and _hash(_norm(old)) == st.get("h"):
-                entry["sources"][s] = fingerprint(s)
-                n += 1
+            now = fingerprint(s) if old is not None and _hash(_norm(old)) == st.get("h") else None
+        else:
+            continue
+        if now is not None:
+            entry["sources"][s] = now
+            n += 1
     return n
 
 
@@ -321,7 +329,7 @@ def _ref(a: anchors.Anchor) -> str:
 
 
 def _reach(a: anchors.Anchor, repos: set[str]) -> str | None:
-    """`missing` for a repo workspace.yaml does not list, `unchecked` for one not cloned here, None if it can be read."""
+    """`missing` for a repo workspace.yaml does not list, `unchecked` for one not cloned here, None if readable."""
     if a.repo not in repos:
         return "missing"
     return None if repo_dir(a.repo).is_dir() else "unchecked"
