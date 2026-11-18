@@ -131,7 +131,19 @@ def _anchor(repo: str, blob: str, at: int) -> str | None:
     i = blob.rfind("\n### ", 0, max(at, 0) + 1)
     if at < 0 or i < 0:
         return None
-    return f"{repo}:{blob[i + 5:blob.index(chr(10), i + 1)]}#L{blob.count(chr(10), i + 1, at)}"
+    end = blob.index("\n", i + 1)
+    if at <= end:                                          # a match on the header line is not a line of the file
+        return None
+    return f"{repo}:{blob[i + 5:end]}#L{blob.count(chr(10), i + 1, at)}"
+
+
+def _line(anchor: str) -> int:
+    return int(anchor.rpartition("#L")[2]) if "#L" in anchor else 0
+
+
+def _quote(value: str) -> str:
+    """A LikeC4 string: single quotes, or double quotes when the value holds a `'` (the rule of c4edit.quote)."""
+    return f"'{value}'" if "'" not in value else '"' + value.replace('"', "'") + '"'
 
 
 def _functions_dir(repo: Path) -> str | None:
@@ -177,7 +189,9 @@ def scan() -> dict:
     fixed = {r["name"]: r["stack"] for r in ws["repos"] if r.get("stack")}    # stack confirmed by a human or an agent
     model = {"repos": {}, "dbs": {}, "brokers": set(), "idps": set(), "edges": [], "caches": set(), "sources": set(),
              "evidence": {}, "edge_evidence": {}}
-    proof: dict[str, set] = {}
+    proof: dict[str, set] = {}                      # datastore key / broker / idp label / "cache" -> anchors
+    repo_proof: dict[str, set] = {}                 # repo or functions container -> anchors
+    by_user: dict[tuple, set] = {}                  # (datastore key, repo) -> that repo's anchors
     blobs = {}
     for n in names:
         repo = repo_dir(n)
@@ -185,13 +199,13 @@ def scan() -> dict:
         blobs[n] = blob
         model["sources"] |= {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         model["repos"][n] = {"kind": kinds.get(n, "service"), "tech": fixed.get(n) or stack(repo, blob)}
-        proof[n] = {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
+        repo_proof[n] = {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         if src := _functions_dir(repo):                    # Cloud Functions: a container of their own
             fn = f"{n} Cloud Functions"
             blobs[n], blobs[fn] = _split(blob, src)
             lang = "TypeScript" if (repo / src / "tsconfig.json").is_file() else "Node.js"
             model["repos"][fn] = {"kind": "service", "tech": f"Cloud Functions · {lang}", "repo": n}
-            proof[fn] = {f"{n}:{src}/package.json"}
+            repo_proof[fn] = {f"{n}:{src}/package.json"}
     owner = {n: r.get("repo", n) for n, r in model["repos"].items()}
     projects = {n: _firebase_project(repo_dir(n), blobs[n]) for n in names}
     found_projects = {p for p in projects.values() if p}
@@ -199,12 +213,14 @@ def scan() -> dict:
     for n, blob in blobs.items():
         low = blob.lower()
 
-        def cite(at: int, node: str | None = None, n=n, blob=blob) -> str | None:
+        def cite(at: int, node: str | None = None, source: bool = True, n=n, blob=blob) -> str | None:
             if at >= 0 and (path := _source(blob, at)):
-                model["sources"].add(f"{owner[n]}:{path}")
+                if source:
+                    model["sources"].add(f"{owner[n]}:{path}")
                 anchor = _anchor(owner[n], blob, at)
                 if anchor and node:
                     proof.setdefault(node, set()).add(anchor)
+                    by_user.setdefault((node, n), set()).add(anchor)
                 return anchor
             return None
         for label, hints in FIREBASE.items():
@@ -233,7 +249,7 @@ def scan() -> dict:
                     break
         if any(d in low for d in CACHE_DEPS):
             model["caches"].add(n)
-            model["edge_evidence"][(n, "cache", "caches")] = cite(min(low.find(d) for d in CACHE_DEPS if d in low), "cache")
+            model["edge_evidence"][(n, "cache", "caches")] = cite(min(low.find(d) for d in CACHE_DEPS if d in low), "cache", source=False)
         for label, deps in (("RabbitMQ", RABBIT_DEPS), ("Kafka", KAFKA_DEPS)):
             if any(d in low for d in deps):
                 model["brokers"].add(label)
@@ -274,9 +290,10 @@ def scan() -> dict:
     for key, d in model["dbs"].items():
         for u in sorted(d["users"]):
             model["edges"].append((u, key, "sync", "reads/writes"))
-            mine = sorted(a for a in proof.get(key, ()) if a.startswith(f"{owner[u]}:"))
-            model["edge_evidence"][(u, key, "reads/writes")] = mine[0] if mine else None
+            mine = by_user.get((key, u))
+            model["edge_evidence"][(u, key, "reads/writes")] = min(mine, key=lambda a: (_line(a), a)) if mine else None
     model["evidence"] = {k: sorted(v) for k, v in proof.items() if v}
+    model["repo_evidence"] = {k: sorted(v) for k, v in repo_proof.items() if v}
     model["edge_evidence"] = {k: v for k, v in model["edge_evidence"].items() if v}
     return model
 
@@ -284,11 +301,11 @@ def scan() -> dict:
 def _code_meta(anchors, pad: str) -> list[str]:
     """`metadata { code [...] }` (up to 3 anchors, sorted) as the lines an element block carries; none without any."""
     top = sorted(anchors or ())[:3]
-    return [f"{pad}metadata {{ code [{', '.join(repr(q(a)) for a in top)}] }}"] if top else []
+    return [f"{pad}metadata {{ code [{', '.join(_quote(a) for a in top)}] }}"] if top else []
 
 
 def _relation_proof(anchor: str | None) -> str:
-    return f" {{ metadata {{ code '{q(anchor)}' }} }}" if anchor else ""
+    return f" {{ metadata {{ code {_quote(anchor)} }} }}" if anchor else ""
 
 
 def render_c4(model: dict, project: str) -> dict[str, str]:
@@ -302,7 +319,7 @@ def render_c4(model: dict, project: str) -> dict[str, str]:
     for n, r in model["repos"].items():
         lines += [f"    {ids[n]} = {kind_map.get(r['kind'], 'service')} '{q(n)}' {{", "      #ai-draft",
                   f"      technology '{q(r['tech'])}'", f"      metadata {{ repo '{q(r.get('repo', n))}' }}",
-                  *_code_meta(evidence.get(n), "      "), "    }"]
+                  *_code_meta((model.get("repo_evidence") or {}).get(n), "      "), "    }"]
     ext_ids = {}
     for key, d in model["dbs"].items():
         i = ident(f"db {d['label']} {d['name']}")
