@@ -171,7 +171,11 @@ The foundation for one repo — after this unit the repo is useful on its own:
    edit `model.c4`, `views.c4` or `spec.c4`): if `model.c4` has no container for this repo yet, declare it here with
    `extend <system> { <container> = service '…' { metadata { repo '<repo>' } } }`; then
    `extend <system>.<container> { components… }`, its relationships, and the `<repo_snake>_components` view. No
-   architecture folder at all yet? Run `CLI arch-draft --save` first. `CLI arch-validate` → ✓ Valid.
+   architecture folder at all yet? Run `CLI arch-draft --save` first. Every component and relation carries
+   `metadata { code ['repo:path#Lx-Ly', …] }` (CONVENTIONS §4); a relation the graph cannot see (Camel `direct:`,
+   Kafka, HTTP) is anchored to the line that makes the call. `CLI arch-validate` → ✓ Valid, then `CLI arch-verify`:
+   the unit is done when it shows no `no-evidence` item this unit wrote. List in the handoff the elements a person
+   must confirm.
 3. Repo brief (CONVENTIONS §7): `docs/repos/<repo>/brief.md` — stack (must match `CLI stack`; fix it there, not only in
    the brief), how to build/test/run, interfaces, data owned,
    doc pointers and the Mermaid component diagram (`likec4 gen mermaid docs/architecture -o build/mmd` →
@@ -206,6 +210,9 @@ Write `docs/overview/system.md` (purpose, context diagram in words, how to navig
 Skeleton: `overview.md`. If `docs/index.md` is the generated home, keep its blocks and its `:::cards`, write around
 them and remove `x-generated: true` from its frontmatter, keeping `x-owner: ai`; `CLI blocks` still refreshes the blocks.
 (Before 4.52 the home was `docs/architecture/system-map.md` plus `first-look.md`; they stay until `CLI pages --adopt`.)
+Every element and relation carries `metadata { code ['repo:path#Lx-Ly', …] }` (CONVENTIONS §4); actors and external
+systems the code cannot show stay `#ai-draft` for a person to confirm. The unit is done when `CLI arch-verify` shows no
+`no-evidence` item this unit wrote; list in the handoff the elements a person must confirm.
 The `likec4` MCP server (in `.mcp.json` / `.codex/config.toml`) answers questions about the model while you write it
 (search elements, relationships, "who calls X?").
 

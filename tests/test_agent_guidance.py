@@ -130,3 +130,10 @@ def test_agents_are_told_about_the_new_pages():
     conventions = (KIT_DIR / "CONVENTIONS.md").read_text(encoding="utf-8")
     for kind in ("schema", "states", "endpoints-map", "context", "messaging", "repos"):
         assert f"`{kind}`" in skill and f"`{kind}`" in conventions, kind
+
+
+def test_the_rules_ask_every_c4_element_for_code_evidence():
+    for name in ("CONVENTIONS.md", "PLAYBOOK.md"):
+        text = (KIT_DIR / name).read_text(encoding="utf-8")
+        assert "metadata { code [" in text, name
+        assert "arch-verify" in text, name
