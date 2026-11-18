@@ -48,7 +48,12 @@ FETCH_TIMEOUT = 30                                   # seconds: opening never wa
 def _pull(log: Log) -> dict:
     if scheduler.busy():
         return {"status": "busy", "commits": 0, "files": [], "regenerated": [], "detail": "run"}
-    return services.current().share.pull(log, timeout=FETCH_TIMEOUT)
+    try:
+        return services.current().share.pull(log, timeout=FETCH_TIMEOUT)
+    except Exception as e:                                   # noqa: BLE001 — opening must go on, and say why
+        log(f"⚠ bringing in the team's work failed: {e}")
+        return {"status": "error", "commits": 0, "files": [], "regenerated": [], "detail": str(e), "reason": "unknown",
+                "host": ""}
 
 
 def _run(log: Log) -> dict:

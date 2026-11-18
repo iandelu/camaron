@@ -136,6 +136,16 @@ def docs_remote() -> str:
     return out(["git", "remote", "get-url", "origin"], cwd=ROOT) if (ROOT / ".git").exists() else ""
 
 
+def _clean_origin() -> str:
+    """The team's remote, repaired in place when an older kit stored it as typed (a browser URL's ?query or #fragment)."""
+    from lib.projects import clean_remote
+    url = docs_remote()
+    if url and clean_remote(url) != url:
+        url = clean_remote(url)
+        run(["git", "remote", "set-url", "origin", url], cwd=ROOT, check=False, quiet=True)
+    return url
+
+
 def set_remote(url: str) -> None:
     """Point cam-docs at the team's repo (origin). The first share publishes it."""
     if not (ROOT / ".git").exists():
@@ -174,14 +184,10 @@ def _failed(r: subprocess.CompletedProcess, url: str) -> dict:
 def share(log: Log = print) -> dict:
     """Checkpoint, bring in the team's work (rebase onto origin) and push. Returns {"status", "detail"}:
     pushed · up-to-date · no-remote · nothing · blocked (secrets staged) · conflict (rebase undone) · error."""
-    url = docs_remote()
+    url = _clean_origin()
     if not url:
         return {"status": "no-remote", "detail": ""}
     from lib import creds
-    from lib.projects import clean_remote
-    if clean_remote(url) != url:                                      # stored as typed by an older kit
-        url = clean_remote(url)
-        run(["git", "remote", "set-url", "origin", url], cwd=ROOT, check=False, quiet=True)
     auth = creds.git_env(url)
 
     def git(*args: str, env: dict | None = None):
@@ -342,7 +348,7 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
     uncommitted changes that would not re-apply are kept in git's stash) · busy · error."""
     result = lambda status, detail="", **kw: {"status": status, "commits": 0, "files": [],   # noqa: E731
                                               "regenerated": [], "detail": detail, **kw}
-    url = docs_remote()
+    url = _clean_origin()
     if not url:
         return result("no-remote")
     if _in_progress():
@@ -409,7 +415,7 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
 def push(log: Log = print) -> dict:
     """Upload local cam-docs work; never rebases and never pulls. Returns {"status", "detail"}: pushed · nothing ·
     behind (the team moved: pull first, nothing changed) · blocked (secrets staged) · no-remote · error."""
-    url = docs_remote()
+    url = _clean_origin()
     if not url:
         return {"status": "no-remote", "detail": ""}
     global _sharing

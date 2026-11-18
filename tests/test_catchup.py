@@ -107,3 +107,13 @@ def test_the_catch_up_bounds_its_fetch(kit, monkeypatch):
     monkeypatch.setattr(kit.services.share, "pull", pull)
     fake_c4(kit, monkeypatch, {"exists": False, "stale": False, "model": False})
     assert kit.services.catchup.run(log=lambda _: None)["pull"]["status"] == "up-to-date" and seen["timeout"] == 30
+
+def test_a_pull_that_raises_is_an_error_and_the_run_goes_on(kit, monkeypatch):
+    def boom(log=print, timeout=None):
+        raise RuntimeError("index broke")
+    monkeypatch.setattr(kit.services.share, "pull", boom)
+    fake_c4(kit, monkeypatch, {"exists": True, "stale": True, "model": True})
+    r = kit.services.catchup.run(log=lambda _: None)
+    assert r["status"] == "done" and r["views"]["c4"] == "built"
+    assert (r["pull"]["status"], r["pull"]["reason"], r["pull"]["detail"]) == ("error", "unknown", "index broke")
+    assert kit.services.catchup.last() == r

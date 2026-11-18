@@ -547,3 +547,12 @@ def test_connect_keeps_the_saved_token_when_the_new_one_is_rejected(kit, monkeyp
 
 def test_connect_strings_exist_in_both_languages(kit):
     assert set(kit.projects.CONNECT["es"]) == set(kit.projects.CONNECT["en"])
+
+
+@pytest.mark.parametrize("action", ["pull", "push"])
+def test_pull_and_push_repair_an_origin_saved_with_a_fragment(kit, tmp_path, action):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    git(kit.root, "remote", "set-url", "origin", remote.as_uri() + "#readme")     # what an older kit stored as typed
+    assert getattr(kit.services.share, action)(log=lambda _: None)["status"] in ("up-to-date", "nothing")
+    assert kit.services.share.docs_remote() == remote.as_uri()
