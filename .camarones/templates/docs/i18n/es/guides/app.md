@@ -509,7 +509,8 @@ el agente y el modelo que elijas.
 - Un camarón pequeño bajo la conversación enseña en qué punto está el turno: piensa mientras se espera la respuesta (la
   etiqueta dice «Pelando tus docs…») y habla mientras el texto se va mostrando por pasos («Contestando…»); un clic en
   el texto lo muestra entero. Si tu sistema pide menos movimiento, el camarón se queda quieto y la respuesta aparece sin
-  más.
+  más. Al enviar una pregunta la conversación baja hasta ella; una respuesta nueva se enseña desde su principio, y la
+  lista no se mueve mientras se va mostrando.
 - La conversación vive en la memoria de la ventana y no se guarda nada: sobrevive a ir a otra sección y volver (abre el
   panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía al momento y descarta una respuesta que aún
   se esté escribiendo: la siguiente pregunta puede salir cuando esa respuesta descartada haya terminado (hasta entonces

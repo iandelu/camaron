@@ -18,7 +18,7 @@ export const TOURS = {
   team: at('team', 'team-repo', 'team-trust', 'team-plugins'),
   quality: at('quality', 'q-verdict', 'q-areas', 'q-repos'),
   libs: at(LIBS, 'libs-actions', 'libs-filters', 'libs-table'),
-  docs: at('docs', 'docs-portal', 'docs-health', 'docs-c4', 'docs-wikis', 'docs-chat'),
+  docs: at('docs', 'docs-health', 'docs-portal', 'docs-c4', 'docs-wikis', 'docs-chat'),
   machine: at('machine', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-tokens', 'mc-repos', 'mc-kit', 'mc-uninstall'),
 }
 

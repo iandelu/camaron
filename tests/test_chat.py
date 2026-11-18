@@ -281,6 +281,13 @@ def test_a_bad_routing_tier_does_not_take_the_picker_down(machine, chat):
     assert chat.default_choice() == {"runner": "claude", "model": HAIKU}
 
 
+@pytest.mark.parametrize("routing", ["claude", {"bounded": 5}, ["bounded"]], ids=["string", "number-tier", "list"])
+def test_a_hand_edited_routing_of_another_shape_does_not_take_the_picker_down(machine, chat, routing):
+    machine.install("claude", "codex")
+    machine.prefs(routing=routing)
+    assert chat.default_choice() == {"runner": "claude", "model": HAIKU}
+
+
 def test_ask_comes_before_the_first_cheap_entry(machine, chat):
     machine.install("claude", fake=True)
     machine.prefs(routing={"bounded": ["fake"]})
@@ -473,6 +480,17 @@ def test_a_turn_remembers_the_pick_and_counts_as_chat_not_ask(kit, answerer, tur
     assert events(kit).count("app:chat") == 1 and "portal:ask-ai" not in events(kit)
     turn("zzqx frobnicate")
     assert events(kit).count("app:chat") == 2
+
+
+def test_a_pick_that_cannot_be_kept_does_not_lose_the_answer(kit, answerer, turn, monkeypatch):  # noqa: F811
+    from lib import chat
+
+    def unwritable(*_a, **_k):
+        raise PermissionError("~/.camarones.json is read-only")
+    monkeypatch.setattr(chat, "save_json", unwritable)
+    r, lines = turn(PAYMENTS, model="fast-1")
+    assert r["answer"] == RETRIED and lines == [RETRIED]
+    assert events(kit).count("app:chat") == 1
 
 
 def test_ask_still_counts_as_ask_only_when_its_model_was_asked(kit, answerer):  # noqa: F811

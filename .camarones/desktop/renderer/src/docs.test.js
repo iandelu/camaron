@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { actOnMiss, answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, missAction, missesOf, openPortal, portalUrl, readMisses,
+import { actOnMiss, answerView, askError, buildFailed, c4Card, citeHash, docsHealth, lastMiss, missAction, missesOf, openPortal, portalUrl, readMisses,
   readViewers, startBuild, startWiki, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiRunning, wikiRuns,
   wikiRunsEnded, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
@@ -138,14 +138,6 @@ test('a build failed when the POST was rejected or the job ended failed (not whe
   expect(buildFailed({ error: '', job: null })).toBe(false)
 })
 
-// POST ask/answer takes {q}; an empty question is never sent (answers.answer would spend a model call on nothing).
-test('the question is trimmed, and an empty one is not sent', () => {
-  expect(askBody('  how does auth work?  ')).toEqual({ q: 'how does auth work?' })
-  expect(askBody('')).toBeNull()
-  expect(askBody('   \n ')).toBeNull()
-  expect(askBody(undefined)).toBeNull()
-})
-
 // A cite is "<path>" or "<path>#<section>": its page under #/docs/<path>, a section after "::" (portal core.hrefFor).
 // A wiki page's path is repos/<repo>/<page> (docs.iter_docs), like a repo's own pages: the portal's router sends
 // #/docs/<a wiki page> on to #/wiki/<repo>/<page>, so the app need not tell them apart.
@@ -222,6 +214,23 @@ test('a wiki running for one repo closes Generate on the others', () => {
   expect(wikiBusyWith([{ id: '2', kind: 'c4', status: 'running' }], 'web')).toBe('')
   expect(wikiBusyWith([], 'web')).toBe('')
   expect(wikiBusyWith(undefined, 'web')).toBe('')
+})
+
+// A chat turn that found nothing is written to the misses (lib/usage.py) as it ends: the card reads them again each time a new one
+// lands in the conversation, keyed on that reply's id (0 while there is none).
+test('the newest chat reply that found nothing, as the misses card\'s cue to read again', () => {
+  const q = (id) => ({ id, role: 'user', text: 'q' })
+  const none = (id) => ({ id, role: 'assistant', text: '', result: { answer: null, cited: [] } })
+  const said = (id) => ({ id, role: 'assistant', text: 'yes', result: { answer: 'yes', cited: [] } })
+  const failed = (id) => ({ id, role: 'assistant', text: '', error: 'boom' })
+  expect(lastMiss([])).toBe(0)
+  expect(lastMiss([q(1)])).toBe(0)
+  expect(lastMiss([q(1), said(2)])).toBe(0)
+  expect(lastMiss([q(1), failed(2)])).toBe(0)
+  expect(lastMiss([q(1), none(2)])).toBe(2)
+  expect(lastMiss([q(1), none(2), q(3), said(4)])).toBe(2)
+  expect(lastMiss([q(1), none(2), q(3), said(4), q(5), none(6)])).toBe(6)
+  expect(lastMiss(undefined)).toBe(0)
 })
 
 // A run started before Docs was left is not the card's own useJob any more: the jobs store still lists it.

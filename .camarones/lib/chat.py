@@ -98,7 +98,7 @@ def _asks(offered: list[dict]) -> dict | None:
     Codex's to its CLI) becomes that runner's cheapest entry: the panel never opens on a model it cannot show."""
     try:
         target = answers.runner()
-    except ValueError:                      # a routing tier the config misspells: the picker still opens
+    except (ValueError, TypeError, AttributeError):     # a hand-edited routing, misspelt or misshapen: the picker opens
         return None
     if not target:
         return None
@@ -169,6 +169,9 @@ def turn(runner: str, model: str | None, q: str, history: list[dict], log) -> di
         raise RuntimeError(f"{who} gave no answer: is it signed in, and does it have that model?")
     for line in (got["answer"] or "").splitlines():
         log(line)
-    remember(runner, model)
+    try:
+        remember(runner, model)
+    except OSError:                         # the pick is a convenience: an unwritable home must not lose the answer
+        pass
     usage.record("app:chat", channel="human", hit=bool(got["answer"]))
     return {"rc": 0, "result": got}

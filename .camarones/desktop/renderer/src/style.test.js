@@ -110,6 +110,18 @@ test('each shrimp state runs its own motion, and none of them runs for who asked
     /\.dk-shrimp\.thinking \.shrimp-antennae[^{]*\.dk-shrimp\.answering \.shrimp-tail[^{]*\.dk-shrimp-dots i[^{]*\{\s*animation:\s*none/)
 })
 
+// A motion that starts or ends away from the drawing's pose snaps when its state begins and ends: both rest at no turn at 0%
+// and 100%, the swing happens in between.
+test.each(['dk-shrimp-sway', 'dk-shrimp-flick'])('%s starts and ends at the favicon\'s pose', (name) => {
+  const body = keyframes(name)
+  const rest = body.match(/(?:^|\})\s*0%,\s*100%\s*\{([^}]*)\}/)
+  expect(rest, name).not.toBeNull()
+  expect(rest[1]).toMatch(/transform:\s*(?:translate\([^)]*\)\s*)?rotate\(0deg\)\s*;?\s*$/)
+  const turns = [...body.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map((m) => Number(m[1]))
+  expect(Math.min(...turns)).toBeLessThan(0)
+  expect(Math.max(...turns)).toBeGreaterThan(0)
+})
+
 test('the tail flicks about the apex of its fan, the translate the favicon gives its group', () => {
   const favicon = readFileSync(new URL('../../../portal/app/public/favicon.svg', import.meta.url), 'utf-8')
   const [, x, y] = favicon.match(/class="shrimp-tail"\s+transform="translate\(([\d.]+) ([\d.]+)\)"/)

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test, vi } from 'vitest'
 import Docs, { AnswerView, Build, BuildCard, WikiBlock, WikiCard, WikiGrid, WikisUnread } from './sections/Docs.jsx'
 import { c4Card, wikiBlocks } from './docs.js'
-import { setLang } from './i18n.js'
+import { S, setLang } from './i18n.js'
 import { TOURS } from './tour.js'
 
 // A test can stand in for useJob (the hooks need a renderer with effects, which static markup is not); the rest of the module is real.
@@ -20,13 +20,18 @@ const render = (idx = index) => renderToStaticMarkup(<Docs srv={srv} jobs={null}
 
 afterEach(() => { delete globalThis.location; stub.job = null; setLang('es') })
 
-// The Docs tour points at five things and each must be on the page, or its bubble would have nothing to show.
-test('every step of the Docs tour points at something the page renders', () => {
+// The Docs tour points at five things and each must be on the page, or its bubble would have nothing to show; it walks them in
+// the page's order, top to bottom, and each step's title is about its own target.
+test('every step of the Docs tour points at something the page renders, in the page\'s order', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   const out = render()
   const targets = TOURS.docs.map((s) => s.target)
-  expect(targets).toEqual(['docs-portal', 'docs-health', 'docs-c4', 'docs-wikis', 'docs-chat'])
+  expect(targets).toEqual(['docs-health', 'docs-portal', 'docs-c4', 'docs-wikis', 'docs-chat'])
   for (const target of targets) expect(out, target).toContain(`data-tour="${target}"`)
+  const at = targets.map((target) => out.indexOf(`data-tour="${target}"`))
+  expect(at).toEqual([...at].sort((a, b) => a - b))
+  expect([1, 2].map((n) => S.es[`tour.docs.${n}.t`])).toEqual(['Estado de la documentación', 'Leer'])
+  expect([1, 2].map((n) => S.en[`tour.docs.${n}.t`])).toEqual(['Documentation status', 'Reading'])
 })
 
 // Reading is the portal's, in the system browser: buttons that call app.openExternal, never a link the window follows.
@@ -140,7 +145,8 @@ test('the page has the chat\'s entry, not the old Ask card, and the panel starts
   expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
   expect(out).toMatch(/>Preguntar<\/button>/)
   expect(out).not.toContain('docs-ask')
-  expect(out).not.toContain('Preguntar con IA')
+  expect(out).toMatch(/<label[^>]*>Preguntar con IA<\/label>/)                    // the entry's visible name, not the panel
+  expect(out).not.toMatch(/<aside/)
   expect(out).not.toContain('Responde solo con lo que dice la documentación')
   expect(out).not.toContain('dk-chat')
   expect(out).toMatch(/^<div class="dk-docs"><div class="dk-page wide">/)

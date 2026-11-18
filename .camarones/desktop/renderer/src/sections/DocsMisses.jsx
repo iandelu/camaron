@@ -4,17 +4,22 @@ import { actOnMiss, readMisses } from '../docs.js'
 import { errorLine } from '../onboarding.js'
 import { t } from '../i18n.js'
 
-// The questions asked (in the portal's Ask or by agents) that no page answered, read once from GET misses. Each can go to the
-// open questions of the next interview or be dismissed. The card shows nothing while it reads, when the read failed and when
-// there are no misses; `misses` is null until a list lands.
-export function DocsMisses({ srv }) {
+// The questions asked (in the portal's Ask, the docs chat or by agents) that no page answered, read from GET misses on mount and
+// again whenever `version` changes (the chat's newest reply that found nothing). Each can go to the open questions of the next
+// interview or be dismissed. The card shows nothing while it first reads, when that read failed and when there are no misses;
+// `misses` is null until a list lands, and a later read that fails leaves the list it had.
+export function DocsMisses({ srv, version = 0 }) {
   const [state, setState] = useState({ misses: null, busy: '', error: '' })
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true
-    readMisses(srv, () => alive.current, (misses) => setState((s) => ({ ...s, misses })))
     return () => { alive.current = false }
   }, [])
+  useEffect(() => {
+    let current = true                               // a read overtaken by a newer one does not land
+    readMisses(srv, () => current && alive.current, (misses) => setState((s) => ({ ...s, misses: misses ?? s.misses })))
+    return () => { current = false }
+  }, [version])
   async function act(q, action) {
     setState((s) => ({ ...s, busy: q, error: '' }))
     const done = await actOnMiss(srv, q, action, (e) => errorLine(e, t))

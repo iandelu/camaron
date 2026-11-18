@@ -112,7 +112,8 @@ button.dk-hchip:hover { border-color: var(--tone); }
 .dk-docs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
 .dk-docs.with-chat { grid-template-columns: minmax(0, 1fr) 24rem; }
 .dk-docs > .dk-page { min-width: 0; }
-.dk-ask { display: flex; align-items: center; gap: .5rem; max-width: 40rem; }
+.dk-ask { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 40rem; }
+.dk-ask-label { flex-basis: 100%; }                /* the entry's visible name, on its own line above the field */
 .dk-chat { position: fixed; position-anchor: --dk-main; inset: anchor(top) anchor(right) anchor(bottom) auto; width: 24rem; margin: 1.75rem 2rem;
   display: flex; flex-direction: column; gap: .6rem; overflow-y: auto;
   padding: .9rem; border: 1px solid var(--color-rule); border-radius: var(--consola-radio-tarjeta); background: var(--color-canvas-elevated);
@@ -237,10 +238,12 @@ button.dk-hchip:hover { border-color: var(--tone); }
 .dk-shrimp-dots i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--color-ink-dim); animation: dk-shrimp-dot 1.2s ease-in-out infinite; }
 .dk-shrimp-dots i:nth-child(2) { animation-delay: .15s; }
 .dk-shrimp-dots i:nth-child(3) { animation-delay: .3s; }
-@keyframes dk-shrimp-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+/* both rest at the favicon's pose at 0% and 100%, so a state starts and ends without a snap */
+@keyframes dk-shrimp-sway { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
 @keyframes dk-shrimp-flick {
-  0%, 100% { transform: translate(31.7px, 48.5px) rotate(-10deg); }
-  50% { transform: translate(31.7px, 48.5px) rotate(10deg); }
+  0%, 100% { transform: translate(31.7px, 48.5px) rotate(0deg); }
+  25% { transform: translate(31.7px, 48.5px) rotate(-10deg); }
+  75% { transform: translate(31.7px, 48.5px) rotate(10deg); }
 }
 @keyframes dk-shrimp-dot { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-.25rem); } }
 .dk-bump .row { flex-wrap: nowrap; }

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import { AskEntry, ChatPanel, DocsChat, canSend, chatKey, revealer } from './DocsChat.jsx'
+import { AskEntry, ChatPanel, DocsChat, canSend, chatKey, chatScroll, revealer } from './DocsChat.jsx'
 import { S, setLang } from '../i18n.js'
 
 afterEach(() => setLang('es'))
@@ -148,12 +148,16 @@ test('a failed read of the models with models kept: a warning with Retry, and th
   expect(panel({ loadError: 'boom' })).toContain('I could not read the agents on this machine.')
 })
 
-test('a failed read with no models: the same warning and the no-agent way out', () => {
+// Unread is not "none installed": with nothing read, saying no agent is installed would contradict the warning above it.
+test('a failed read with no models: only the warning with Retry, not the no-agent way out', () => {
   const out = panel({ runners: [], choice: null, loadError: 'Failed to fetch' })
   expect(out).toContain('No he podido leer los agentes de esta máquina.')
   expect(out).toMatch(/>Reintentar<\/button>/)
-  expect(out).toContain('No hay ningún agente instalado en esta máquina que pueda responder.')
-  expect(out).toMatch(/href="#\/machine"/)
+  expect(out).not.toContain('No hay ningún agente instalado')
+  expect(out).not.toMatch(/href="#\/machine"/)
+  expect(field(out)).toContain('disabled')
+  setLang('en')
+  expect(panel({ runners: [], choice: null, loadError: 'boom' })).not.toContain('No agent that can answer is installed')
 })
 
 test('while a turn runs the shrimp thinks with the one joke, and neither the composer nor the picker take input', () => {
@@ -247,6 +251,34 @@ test('the page\'s entry: a labelled field, a button that is not the page\'s prim
   const en = renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)
   expect(en).toMatch(/aria-label="Question"/)
   expect(en).toMatch(/>Ask<\/button>/)
+})
+
+test('the page\'s entry says what it is in words you can see, before its field, tied to it', () => {
+  const chat = { get: () => BASE, subscribe: () => () => {}, send: noop }
+  const out = renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)
+  const label = out.match(/<label[^>]*for="([^"]+)"[^>]*>Preguntar con IA<\/label>/)
+  expect(label).not.toBeNull()
+  expect(out.indexOf('<label')).toBeLessThan(out.indexOf('<input'))
+  expect(out).toMatch(new RegExp(`<input[^>]*id="${label[1]}"`))
+  expect(out).toMatch(/<input[^>]*aria-label="Pregunta"/)
+  setLang('en')
+  expect(renderToStaticMarkup(<AskEntry chat={chat} onAsk={noop} />)).toMatch(/<label[^>]*>Ask with AI<\/label>/)
+})
+
+// The list's scroll: to the end when the person's question goes in (the thinking shrimp and what comes next are in view), to the
+// START of an answer once when it lands (a long answer reads from its top), and nothing while it is revealed or for what was seen.
+test('the conversation scrolls once per new message: to the end for a question, to the start of an answer', () => {
+  const q2 = { id: 3, role: 'user', text: 'And the gateway?' }
+  const a2 = { id: 4, role: 'assistant', text: 'Through Kong.', result: { answer: 'Through Kong.' } }
+  expect(chatScroll(0, [])).toBe(null)
+  expect(chatScroll(0, [ask])).toEqual({ id: 1, to: 'end' })
+  expect(chatScroll(1, [ask])).toBe(null)
+  expect(chatScroll(1, [ask, reply(JWT)])).toEqual({ id: 2, to: 'start' })
+  expect(chatScroll(2, [ask, reply(JWT)])).toBe(null)
+  expect(chatScroll(2, [ask, reply(JWT), q2])).toEqual({ id: 3, to: 'end' })
+  expect(chatScroll(3, [ask, reply(JWT), q2, a2])).toEqual({ id: 4, to: 'start' })
+  expect(chatScroll(0, [ask, reply(JWT), q2, a2])).toEqual({ id: 4, to: 'start' })     // the panel opens on the newest answer
+  expect(chatScroll(4, [ask, reply(undefined, { id: 5, error: 'boom' })])).toEqual({ id: 5, to: 'start' })
 })
 
 test('a question goes out only when an agent and model are picked, AI is on and no turn runs', () => {

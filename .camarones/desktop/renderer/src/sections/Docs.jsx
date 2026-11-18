@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
-import { buildFailed, c4Card, docsHealth, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
+import { buildFailed, c4Card, docsHealth, lastMiss, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
   wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
@@ -36,6 +36,7 @@ export default function Docs({ srv, jobs, chat, app, index }) {
     seenRuns.current = runs
   }, [runs.join('\n')])
   const talk = chat || NO_CHAT
+  const missed = lastMiss(useStore(talk).messages)
   const [chatting, setChatting] = useState(false)
   const opener = useRef(null)
   useEffect(() => { talk.load() }, [])
@@ -54,7 +55,7 @@ export default function Docs({ srv, jobs, chat, app, index }) {
         <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
           onDone={reloadViewers} /></div>
         <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
-        <DocsMisses srv={srv} />
+        <DocsMisses srv={srv} version={missed} />
         <AskEntry chat={talk} onAsk={ask} />
       </Page>
       {chatting ? <DocsChat chat={talk} onClose={close} onOpen={open} /> : null}

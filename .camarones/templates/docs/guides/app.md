@@ -489,7 +489,9 @@ model you pick.
   being written, nor while `ask.ai` is off.
 - A small shrimp under the conversation shows where the turn is: it thinks while the answer is awaited (the label reads
   "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
-  When your system asks for reduced motion the shrimp stays still and the answer simply appears.
+  When your system asks for reduced motion the shrimp stays still and the answer simply appears. Sending a question
+  scrolls the conversation down to it; a new answer is shown from its start, and the list does not move while it is
+  revealed.
 - The conversation lives in the window's memory, nothing is saved: it survives going to another section and coming back
   (open the panel again), one question runs at a time, and **Clear** empties it at once and throws away an answer still
   being written: the next question can go once that dropped answer has ended (the shrimp keeps thinking until then). If

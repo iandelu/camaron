@@ -116,6 +116,11 @@ export const viewersRead = (prev, got) => got ?? prev
 export const missesOf = (got) => (Array.isArray(got?.misses) ? got.misses : null)
 export const readMisses = readInto('misses', missesOf)
 
+// A chat turn that found nothing has joined the misses by the time its reply lands: the id of the newest such reply (0 for none)
+// is the card's cue to read them again.
+export const lastMiss = (messages) =>
+  (messages || []).findLast((m) => m.role === 'assistant' && m.result && m.result.answer === null)?.id || 0
+
 // POST kpis/miss: `question` adds the question to the open questions of the next interview, `dismiss` forgets it; either way the
 // server answers the new list.
 export const missAction = (srv, q, action) => srv.post('kpis/miss', { q, action })
@@ -153,12 +158,6 @@ export const openPortal = (app, origin, hash = '#/') => app.openExternal?.(porta
 
 // A useJob state that ended badly: the POST was rejected, or the job failed (a stopped one is the person's doing).
 export const buildFailed = (b) => !!b.error || (b.job?.status === 'failed' && !b.job.stopped)
-
-// Ask's AI answer (POST ask/answer, lib/answers.py): the question as the server takes it; null for an empty one.
-export const askBody = (q) => {
-  const text = String(q ?? '').trim()
-  return text ? { q: text } : null
-}
 
 // A source ("<path>" or "<path>#<section>") as the portal's address of that page: #/docs/<path>, a section after "::"
 // (portal core.hrefFor). A wiki page's path is wikis/<repo>/<page>; the portal's router sends #/docs/<a wiki page> on
