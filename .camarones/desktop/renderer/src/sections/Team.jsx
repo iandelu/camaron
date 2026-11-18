@@ -46,6 +46,11 @@ const when = (iso) => {
   return Number.isNaN(at) ? t('tm.never') : ago(at / 1000, Date.now() / 1000, t)
 }
 
+export function syncLine(s) {
+  const line = t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(s.last_share) })
+  return s.changes?.length ? `${line} · ${t('tm.unsaved', { n: s.changes.length })}` : line
+}
+
 export function SyncActions({ s, busy, onRun, onCheck }) {
   const primary = syncPrimary(s)
   const btn = (kind, label) => (
@@ -106,7 +111,7 @@ function Repo({ srv, jobs }) {
       </div>
       {error ? <Failed title={t('tm.failed')} detail={error} onRetry={() => { setError(''); load(false) }} />
         : !s ? <Skeleton lines={2} /> : !s.remote ? <p className="muted small">{t('tm.noRemote')}</p> : (<>
-        <p className="small">{t('tm.line', { behind: s.behind ?? '—', ahead: s.ahead ?? '—', when: when(s.last_share) })}</p>
+        <p className="small">{syncLine(s)}</p>
         <div className="row">
           <SyncActions s={s} busy={busy} onRun={sync} onCheck={check} />
           <label className="dk-check"><input type="checkbox" checked={!!s.auto} disabled={c.running}

@@ -36,9 +36,11 @@ export function fetchSay(fetched, remote = '') {
 
 const n0 = (v) => v || 0
 
+// `changes` (app.share.sync_status) leaves out the derived files the kit rewrites on every read; an older server sends
+// only `pending`.
 export function syncPrimary(s) {
   const behind = n0(s?.behind) > 0
-  const mine = n0(s?.ahead) > 0 || (s?.pending || []).length > 0
+  const mine = n0(s?.ahead) > 0 || (s?.changes ?? s?.pending ?? []).length > 0
   if (behind && mine) return 'share'
   if (behind) return 'pull'
   return mine ? 'push' : null

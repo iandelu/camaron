@@ -89,3 +89,9 @@ test('changes the autostash kept are a warning with a terminal, after Traer and 
     .toEqual({ key: 'cu.stashed', vars: {}, tone: 'warn', terminal: true })
   expect(catchUpSay({ status: 'done', pull: { status: 'conflict', files: ['docs/a.md'] } }).terminal).toBe(true)
 })
+
+test('files the kit rewrites on its own never make uploading the primary', () => {
+  expect(syncPrimary({ ahead: 0, behind: 0, pending: ['docs/.status.json'], changes: [] })).toBe(null)
+  expect(syncPrimary({ ahead: 0, behind: 0, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] })).toBe('push')
+  expect(syncPrimary({ ahead: 0, behind: 2, pending: ['docs/.status.json'], changes: [] })).toBe('pull')
+})

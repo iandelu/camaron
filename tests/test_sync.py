@@ -57,6 +57,16 @@ def test_a_check_for_news_names_the_teams_host(kit, monkeypatch):
     assert f == {"ok": False, "reason": "network", "host": "gitlab-central.example.space", "detail": said}
 
 
+def test_changes_leave_out_the_files_the_kit_rewrites(kit, tmp_path):
+    publish(kit, bare(tmp_path))
+    (kit.root / "docs" / ".status.json").write_text('{"rewritten": 1}\n', encoding="utf-8")   # every GET tree does this
+    s = kit.services.share.sync_status()
+    assert "docs/.status.json" in s["pending"] and s["changes"] == []
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    s = kit.services.share.sync_status()
+    assert s["changes"] == ["docs/mine.md"] and "docs/.status.json" in s["pending"]
+
+
 def test_auto_share_survives_the_last_share(kit, tmp_path):
     remote = bare(tmp_path)
     kit.services.share.set_auto_share(True)

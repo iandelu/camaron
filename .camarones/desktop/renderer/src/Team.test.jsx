@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test, vi } from 'vitest'
 import { Button } from '@camaron/ui'
-import { FetchNote, ShareResult, SkillsList, SyncActions, SyncResult, TerminalButton, runSync } from './sections/Team.jsx'
+import { FetchNote, ShareResult, SkillsList, SyncActions, SyncResult, TerminalButton, runSync, syncLine } from './sections/Team.jsx'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
@@ -134,4 +134,13 @@ test('a pull whose unsaved changes went to the stash warns and offers a terminal
   expect(out).toContain('He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos')
   expect(out).toContain('cu-aviso--warn')
   expect(el.props.action.type).toBe(TerminalButton)
+})
+
+test('the status line counts unsaved work only when there is some, never the files the kit rewrites', () => {
+  const s = { behind: 1, ahead: 2, pending: ['docs/.status.json'], changes: [], last_share: null }
+  expect(syncLine(s)).toBe('1 por traer · 2 por subir · última vez nunca')
+  expect(syncLine({ ...s, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] }))
+    .toBe('1 por traer · 2 por subir · última vez nunca · 1 sin guardar')
+  setLang('en')
+  expect(syncLine({ ...s, changes: ['docs/a.md', 'docs/b.md'] })).toBe('1 to bring in · 2 to upload · last time never · 2 unsaved')
 })

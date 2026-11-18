@@ -87,7 +87,8 @@ def set_auto_share(on: bool) -> None:
 
 def sync_status(fetch: bool = False) -> dict:
     """Where cam-docs stands against the team's repo, without the network unless `fetch`: the remote and branch, the
-    commits ahead / behind the last fetched origin, the files not checkpointed yet, the last commit and last share."""
+    commits ahead / behind the last fetched origin, the files not checkpointed yet (`pending`; `changes` leaves out the
+    derived files the kit rewrites on its own), the last commit and last share."""
     git = lambda *a: out(["git", *a], cwd=ROOT)                       # noqa: E731
     url = docs_remote()
     branch = git("symbolic-ref", "--short", "HEAD") if (ROOT / ".git").exists() else ""
@@ -109,6 +110,7 @@ def sync_status(fetch: bool = False) -> dict:
         pending = sorted({ln[3:].strip().strip('"').split(" -> ")[-1] for ln in status.splitlines() if len(ln) > 3})
     head = git("log", "-1", "--format=%h%x00%s%x00%cI").split("\x00") if branch else []
     return {"remote": url, "branch": branch, "ahead": ahead, "behind": behind, "pending": pending,
+            "changes": [p for p in pending if p not in DERIVED],
             "head": dict(zip(("hash", "subject", "date"), head)) if len(head) == 3 else None,
             "auto": auto_share(), "last_share": load_json(SHARED, {}).get("last"), "fetched": fetched}
 
