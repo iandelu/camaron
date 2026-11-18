@@ -151,7 +151,7 @@ const toggled = (ids, id) => {
 
 // The run is over when its log says so or when the Plan's poll does: a run stopped from outside never logs its end.
 // The terminals with you come from useTerminals: a unit's newest one is its node, the loose ones go under the graph.
-// `focus`: a terminal to put in front (the Plan's #/plan?term=<id>), once the list has it; then onFocused().
+// `focus`: a terminal to put in front (the Plan's #/flow/plan?term=<id>), once the list has it; then onFocused().
 function Flow({ srv, units, run, pilot, onOpen, focus, onFocused, onSession, onTake, canStart, noAgent }) {
   const log = useRunFeed(srv, run)
   const ended = log.finished || Boolean(run?.finished)
@@ -329,7 +329,7 @@ function Flow({ srv, units, run, pilot, onOpen, focus, onFocused, onSession, onT
         <Button size="sm" onClick={fit}>{t('cv.fit')}</Button>
         <Button size="sm" onClick={relayout}>{t('cv.relayout')}</Button>
       </div>
-      {noAgent ? <Aviso tone="warn" title={t('next.noAgent')}><Button size="sm" href="#/machine">{t('next.machine')}</Button></Aviso> : null}
+      {noAgent ? <Aviso tone="warn" title={t('next.noAgent')}><Button size="sm" href="#/settings">{t('next.machine')}</Button></Aviso> : null}
       {error ? <Aviso tone="error" title={t(error.title)} detail={error.detail} /> : null}
       {note ? <Aviso tone="info" title={t(note.key, note.vars)} /> : null}
       <div ref={frame} className="dk-canvas">

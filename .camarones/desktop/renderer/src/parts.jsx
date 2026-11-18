@@ -148,8 +148,8 @@ export function UnitActions({ u, srv, a, plan, onChanged }) {
           onClick={() => agent(act.mode)}>{t(act.label, { agent: a.label(a.agent) })}</Button>
         {act.mode === 'continue' ? <Button size="sm" variant="ghost" disabled={busy || !a.agent} onClick={() => agent('restart')}>{t('unit.restart')}</Button> : null}
       </>) : null}
-      {noAgent ? <Button size="sm" href="#/machine">{t('next.machine')}</Button> : null}
-      {act?.kind === 'live' && act.term ? <Button size="sm" href={`#/plan?term=${act.term}`}>{t('pty.show')}</Button> : null}
+      {noAgent ? <Button size="sm" href="#/settings">{t('next.machine')}</Button> : null}
+      {act?.kind === 'live' && act.term ? <Button size="sm" href={`#/flow/plan?term=${act.term}`}>{t('pty.show')}</Button> : null}
       {act?.kind === 'live' && !act.term ? <span className="muted small">{t('sess.openShort')}</span> : null}
     </div>
     {note.ok ? <p className="muted small dk-unit-note" role="status">{note.ok}</p> : null}
