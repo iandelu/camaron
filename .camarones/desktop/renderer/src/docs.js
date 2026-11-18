@@ -138,6 +138,13 @@ export const startWiki = (srv, block, action) => srv.post('wiki', wikiRequest(bl
 export const wikiBusyWith = (running, repo) =>
   (running || []).find((j) => j.kind === 'wiki' && j.status === 'running' && j.repo && j.repo !== repo)?.repo || ''
 
+// The repos whose wiki runs, from the same list: a run started before Docs was left is no card's useJob any more, so its card
+// reads it here (`wikiRunning`), and the section reads the wikis again once a run leaves the list (`wikiRunsEnded`: the repos in
+// `prev` not in `now`).
+export const wikiRuns = (running) => (running || []).filter((j) => j.kind === 'wiki' && j.status === 'running' && j.repo).map((j) => j.repo)
+export const wikiRunning = (running, repo) => wikiRuns(running).includes(repo)
+export const wikiRunsEnded = (prev, now) => prev.filter((repo) => !now.includes(repo))
+
 // POST wiki refused with busy (another repo's wiki started meanwhile) has its own sentence; anything else as errorLine.
 export const wikiError = (e, t) => (String(e?.message ?? e ?? '') === 'busy' ? t('docs.wikiBusyAny') : errorLine(e, t))
 

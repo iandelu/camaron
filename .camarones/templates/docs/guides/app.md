@@ -453,8 +453,10 @@ model you pick.
   run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
 - **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
   has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
-  the pages already there. While a wiki is being written its button reads **Generating…** with the seconds it has
-  taken, and the card pulses (not when your system asks for reduced motion). One wiki runs at a time.
+  the pages already there. While a wiki is being written its button reads **Generating…** with a running count of
+  seconds, and the card pulses (not when your system asks for reduced motion). It does so too when you come back to
+  Docs during a run started earlier, and the card and the chips above catch up when the run ends. One wiki runs at a
+  time.
 - The action that writes pages is off, with the reason, when the repo is not cloned, no wiki engine is installed, or
   another repo's wiki is being generated; **View** never is. The **Wiki graph · {repo}** row (**Build the graph** or
   **Rebuild the graph**) appears once the wiki has pages, when the graph is missing or older than them, and stays to

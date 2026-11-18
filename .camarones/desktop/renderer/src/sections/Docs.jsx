@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
 import { buildFailed, c4Card, docsHealth, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
-  wikiBlocks, wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
+  wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
@@ -29,6 +29,12 @@ export default function Docs({ srv, jobs, chat, app, index }) {
   const wikis = useWikis(srv)
   const { viewers, reload: reloadViewers } = useViewers(srv)
   const { running } = useStore(jobs || NO_JOBS)
+  const runs = wikiRuns(running)
+  const seenRuns = useRef(runs)
+  useEffect(() => {                                 // a run that ended, whoever started it: its card and the header catch up
+    if (wikiRunsEnded(seenRuns.current, runs).length) wikis.reload()
+    seenRuns.current = runs
+  }, [runs.join('\n')])
   const talk = chat || NO_CHAT
   const [chatting, setChatting] = useState(false)
   const opener = useRef(null)
@@ -64,7 +70,7 @@ export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, rel
       <div className="dk-wikis" data-tour="docs-wikis">
         {wikiBlocks(index, rows).map((b, i) => (
           <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading} failed={failed} busyWith={wikiBusyWith(running, b.repo)}
-            onView={() => open(b.hash)} onDone={reload} />))}
+            runningHere={wikiRunning(running, b.repo)} onView={() => open(b.hash)} onDone={reload} />))}
       </div>
     </>
   )
@@ -134,13 +140,13 @@ export function BuildCard({ title, hint, build, onBuild, onView }) {
 
 // One block per repo: its card runs POST wiki (Generate chooses the repo and writes the starter brief, Update asks for mode
 // `update`) and the graph build, and opens the wiki in the portal. Wiring only: what the card shows is WikiCard's.
-export function WikiBlock({ srv, jobs, block, loading = false, failed = false, busyWith = '', index = 0, onView, onDone }) {
+export function WikiBlock({ srv, jobs, block, loading = false, failed = false, busyWith = '', runningHere = false, index = 0, onView, onDone }) {
   const gen = useJob(srv, jobs, async (action) => startWiki(srv, block, action))
   const graph = useJob(srv, jobs, () => startBuild(srv, block.graph))
   const run = async (action) => { if ((await gen.run(action))?.status === 'done') onDone?.() }
   const build = async () => { if ((await graph.run())?.status === 'done') onDone?.() }
-  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} failed={failed} busyWith={busyWith} index={index} now={Date.now() / 1000}
-    onGenerate={run} onUpdate={run} onGraph={build} onView={onView} />
+  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} failed={failed} busyWith={busyWith} runningHere={runningHere} index={index}
+    now={Date.now() / 1000} onGenerate={run} onUpdate={run} onGraph={build} onView={onView} />
 }
 
 // Why Generate is closed: a repo that is not cloned or without a wiki engine (the portal's canGenerate), or wikis not read.
@@ -158,11 +164,13 @@ const figures = ({ pages, at, brief }, now) => [
 // tree fallback's `blocked: 'unread'`) its row is only defaults, so it says nothing about freshness and closes its action. A
 // failed re-read (`failed`) keeps the last good rows, so it does not quiet the card; it only spares the card the unread reason,
 // said once above. A reason of its own (not cloned, no engine) or another repo's run (busyWith) closes what writes pages, never View.
-export function WikiCard({ block, gen, graph, loading = false, failed = false, busyWith = '', index = 0, now, onGenerate, onUpdate, onGraph, onView }) {
+// `runningHere`: this repo's run as the jobs store lists it (one started before Docs was left is no longer `gen`'s).
+export function WikiCard({ block, gen, graph, loading = false, failed = false, busyWith = '', runningHere = false, index = 0, now, onGenerate, onUpdate,
+  onGraph, onView }) {
   const title = t('docs.wikiBlock', { repo: block.repo })
   const graphTitle = t('docs.wiki', { repo: block.repo })
   const pages = block.hasWiki || gen.job?.status === 'done'
-  const own = wikiState({ ...block, hasWiki: pages }, { running: gen.running, failed: buildFailed(gen) })
+  const own = wikiState({ ...block, hasWiki: pages }, { running: gen.running || runningHere, failed: buildFailed(gen) })
   const unread = (loading || block.blocked === 'unread') && own !== 'generating'
   const state = unread ? 'unread' : own === 'none' && block.blocked ? 'blocked' : own
   const action = wikiAction(unread || state === 'blocked' ? 'none' : state)

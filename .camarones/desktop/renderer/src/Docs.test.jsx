@@ -251,6 +251,27 @@ test('Docs reads the running wiki from the jobs store and closes Generate on the
   expect(out.match(/Se está generando la wiki de api/g)).toHaveLength(2)            // web and ui, not api itself
 })
 
+// A run started before Docs was left (or in another window) is the jobs store's, not the card's own useJob: on return its card is
+// generating all the same, with the closed "Generating…" primary, never its old state word with its action open.
+test('a wiki run the jobs store lists shows its own card as generating', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const jobs = { get: () => ({ running: [{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }], recent: [], error: '' }),
+    subscribe: () => () => {}, refresh: () => {} }
+  const out = renderToStaticMarkup(<Docs srv={srv} jobs={jobs} app={{ openExternal: () => {} }} index={index} />)
+  expect([...out.matchAll(/data-wiki-state="([^"]*)"/g)].map((m) => m[1])).toEqual(['generating', 'unread', 'unread'])   // api, web, ui
+  expect(out).toMatch(/<button[^>]*cu-btn--primary[^>]*disabled=""[^>]*aria-busy="true"[^>]*aria-label="Generando…: Wiki · api"/)
+})
+
+test('in the grid, the running repo\'s card is generating whatever its row said; the others keep theirs', () => {
+  const rows = [row({ repo: 'api', stale: true }), row({ repo: 'web' })]
+  const out = renderToStaticMarkup(<WikiGrid srv={srv} jobs={null} index={index} wikis={{ rows, loading: false, failed: false, reload: () => {} }}
+    running={[{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }]} open={() => {}} />)
+  expect([...out.matchAll(/data-wiki-state="([^"]*)"/g)].map((m) => m[1])).toEqual(['generating', 'fresh'])
+  expect(out).not.toContain('Desfasada')
+  expect(out).toMatch(/aria-label="Generando…: Wiki · api"/)
+  expect(out).not.toMatch(/aria-label="Actualizar: Wiki · api"/)
+})
+
 // When GET wikis fails the section says so once, with a Retry; on a failed re-read the cards keep what they showed.
 test('a failed read of the wikis offers Retry, in Spanish and English', () => {
   const first = renderToStaticMarkup(<WikisUnread kept={false} onRetry={() => {}} />)

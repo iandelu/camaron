@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest'
 import { actOnMiss, answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, missAction, missesOf, openPortal, portalUrl, readMisses,
-  readViewers, startBuild, startWiki, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
+  readViewers, startBuild, startWiki, viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiRunning, wikiRuns,
+  wikiRunsEnded, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -221,6 +222,26 @@ test('a wiki running for one repo closes Generate on the others', () => {
   expect(wikiBusyWith([{ id: '2', kind: 'c4', status: 'running' }], 'web')).toBe('')
   expect(wikiBusyWith([], 'web')).toBe('')
   expect(wikiBusyWith(undefined, 'web')).toBe('')
+})
+
+// A run started before Docs was left is not the card's own useJob any more: the jobs store still lists it.
+test('the jobs store says whether a repo\'s own wiki is running, and which repos\' are', () => {
+  const running = [{ id: '1', kind: 'wiki', repo: 'api', status: 'running' }, { id: '2', kind: 'c4', status: 'running' },
+    { id: '3', kind: 'wiki', repo: 'web', status: 'done' }, { id: '4', kind: 'cmd', repo: 'ui', status: 'running' }]
+  expect(wikiRunning(running, 'api')).toBe(true)
+  expect(['web', 'ui', 'db'].map((r) => wikiRunning(running, r))).toEqual([false, false, false])
+  expect(wikiRunning(undefined, 'api')).toBe(false)
+  expect(wikiRuns(running)).toEqual(['api'])
+  expect(wikiRuns(undefined)).toEqual([])
+})
+
+// When a run leaves the running list the wikis are read again, so the card and the header catch up.
+test('the wiki runs that ended between two reads of the running list', () => {
+  expect(wikiRunsEnded(['api'], [])).toEqual(['api'])
+  expect(wikiRunsEnded(['api', 'web'], ['web'])).toEqual(['api'])
+  expect(wikiRunsEnded([], ['api'])).toEqual([])
+  expect(wikiRunsEnded(['api'], ['api'])).toEqual([])
+  expect(wikiRunsEnded([], [])).toEqual([])
 })
 
 test('busy from POST wiki has its own sentence, in Spanish and English; anything else as before', () => {

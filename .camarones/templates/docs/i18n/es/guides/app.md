@@ -470,8 +470,10 @@ el agente y el modelo que elijas.
   **Ver** la abre en el portal junto a la acción.
 - **Generar la wiki** escribe la wiki OpenWiki de ese repo; si el repo no estaba elegido para tener wiki, lo elige, y si
   aún no tiene brief, antes escribe uno inicial sin IA. **Actualizar** y **Ampliar** lanzan OpenWiki en modo
-  actualización sobre las páginas que ya existen. Mientras se escribe una wiki, su botón dice **Generando…** con los
-  segundos que lleva, y la tarjeta late (no si tu sistema pide menos movimiento). Se escribe una wiki a la vez.
+  actualización sobre las páginas que ya existen. Mientras se escribe una wiki, su botón dice **Generando…** con una
+  cuenta de segundos, y la tarjeta late (no si tu sistema pide menos movimiento). También lo hace al volver a Docs
+  durante una ejecución empezada antes, y la tarjeta y los avisos de arriba se ponen al día cuando termina. Se escribe
+  una wiki a la vez.
 - La acción que escribe páginas está desactivada, con el motivo, si el repo no está clonado, no hay ningún motor de
   wiki instalado o se está generando la wiki de otro repo; **Ver** nunca lo está. La fila **Grafo del wiki · {repo}**
   (**Construir el grafo** o **Reconstruir el grafo**) aparece cuando la wiki ya tiene páginas y falta el grafo o es
