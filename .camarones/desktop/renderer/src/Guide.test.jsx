@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { GuideView, markerAction } from './sections/Guide.jsx'
-import Machine from './sections/Machine.jsx'
+import { SettingsView } from './sections/Settings.jsx'
 import { parse } from './guide.js'
 import { setLang } from './i18n.js'
 
@@ -75,9 +75,9 @@ test('the search box is there, in the machine language', () => {
   expect(out).toContain('Go to Plan')
 })
 
-test('Machine opens with the guide card, before its own read arrives', () => {
+test('Settings opens with the guide card, before its own read arrives', () => {
   const srv = { get: () => new Promise(() => {}), post: () => new Promise(() => {}) }
-  const out = renderToStaticMarkup(<Machine srv={srv} jobs={null} app={{}} />)
+  const out = renderToStaticMarkup(<SettingsView view="general" m={null} fill={{ host: '', kind: '' }} srv={srv} jobs={null} app={{}} />)
   expect(out).toContain('Guía y recorrido')
   expect(out).toContain('href="#/guide"')
   expect(out.indexOf('Guía y recorrido')).toBeLessThan(out.indexOf('cu-skel') === -1 ? Infinity : out.indexOf('cu-skel'))

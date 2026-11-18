@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { TourBubble } from './Tour.jsx'
 import { TourOffer } from './sections/Summary.jsx'
-import Machine from './sections/Machine.jsx'
+import { SettingsView } from './sections/Settings.jsx'
 import { entries } from './palette.js'
 import { tourIds, TOURS } from './tour.js'
 import { LIBS, MACHINE, PROJECT } from './nav.js'
@@ -67,8 +67,8 @@ test('the Summary offers the tour until this machine has seen the offer', () => 
   expect(renderToStaticMarkup(<TourOffer srv={srv} />)).toBe('')        // not known yet: nothing flashes
 })
 
-test('the palette and Machine both start the tour', () => {
+test('the palette and Settings both start the tour', () => {
   const groups = entries({ sections: ['summary'], t })
   expect(groups.find((g) => g.id === 'actions').items).toContainEqual({ id: 'tour', label: 'Hacer el recorrido', action: 'tour' })
-  expect(renderToStaticMarkup(<Machine srv={srv} jobs={null} app={{}} />)).toContain('Hacer el recorrido')
+  expect(renderToStaticMarkup(<SettingsView view="general" m={null} fill={{ host: '', kind: '' }} srv={srv} jobs={null} app={{}} />)).toContain('Hacer el recorrido')
 })

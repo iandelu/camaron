@@ -1,41 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Chip, Skeleton } from '@camaron/ui'
+import { Aviso, Button, Card, Chip } from '@camaron/ui'
 import { seconds, setupProgress } from '../quality.js'
 import { ago } from '../jobs.js'
-import { useCmd, useHash } from '../hooks.js'
-import { Failed, JobOutput, Page } from '../parts.jsx'
-import Commands from './Commands.jsx'
-import { tokenPrefill } from '../nav.js'
+import { useCmd } from '../hooks.js'
+import { JobOutput } from '../parts.jsx'
 import { t } from '../i18n.js'
 import { useTour } from '../Tour.jsx'
-
-// This machine by task: the guide to all of it, prepare it (setup, with its progress), the language and models of the agent sessions and
-// where they open, the forge and SonarQube tokens (kept in the OS keychain), this project's repos and plan, the kit itself; and, apart, uninstall —
-// previewed first. Every action is a catalog command run by the server (lib/appapi.py).
-export default function Machine({ srv, jobs, app }) {
-  const [m, setM] = useState(null)
-  const [error, setError] = useState('')
-  const load = () => srv.get('app/machine').then((x) => { setM(x); setError('') }, (e) => setError(e.message))
-  useEffect(() => { load() }, [])
-  const p = { srv, jobs, m, reload: load }
-  const fill = tokenPrefill(useHash())          // #/machine?host=<h>&kind=sonarqube: where Quality sends a repo's Sonar
-  return (
-    <Page title={t('nav.machine')}>
-      <GuideCard />
-      {error ? <Failed title={t('mc.failed')} detail={error} onRetry={() => { setError(''); load() }} /> : null}
-      {!m && !error ? <Skeleton lines={6} /> : null}
-      {m ? (<>
-        <Setup {...p} />
-        <SessionSettings {...p} />
-        <Tokens key={`${fill.host}|${fill.kind}`} srv={srv} host={fill.host} kind={fill.kind} />
-        <Repos {...p} />
-        <Kit {...p} app={app} />
-        <Commands srv={srv} jobs={jobs} section="machine" />
-        <Uninstall srv={srv} jobs={jobs} app={app} />
-      </>) : null}
-    </Page>
-  )
-}
 
 export function GuideCard() {
   const tour = useTour()
