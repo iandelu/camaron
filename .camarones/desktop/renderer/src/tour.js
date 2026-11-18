@@ -19,7 +19,8 @@ export const TOURS = {
   docs: at('docs', 'docs-team', 'tabs-docs', 'docs-portal', 'docs-c4', 'docs-ask'),
   interviews: at('docs/interviews', 'iv-mode', 'iv-questionnaire', 'iv-agents'),
   settings: [...at('settings', 'tabs-settings', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-repos'), ...at('settings/tokens', 'mc-tokens'),
-    ...at('settings/trust', 'team-trust'), ...at('settings/kit', 'mc-kit', 'mc-uninstall')],
+    ...at('settings/skills', 'team-skills'), ...at('settings/plugins', 'team-plugins'), ...at('settings/trust', 'team-trust'),
+    ...at('settings/kit', 'mc-kit', 'mc-uninstall')],
 }
 
 // The place each tour belongs to: its steps live there or in one of its views.

@@ -7,10 +7,11 @@ x-owner: human
 ---
 # La app de escritorio
 
-> **TL;DR:** `camaron app` abre una ventana por proyecto. El raíl de la izquierda cambia de proyecto, las secciones
-> ejecutan lo que pasa en tu máquina (plan, entrevistas, equipo, calidad, librerías, wikis, preparación) y el portal se
-> abre en tu navegador para leer. Cada botón ejecuta un comando `camaron` que podrías escribir tú, y su salida queda en
-> el panel de trabajos de abajo.
+> **TL;DR:** `camaron app` abre una ventana por proyecto. El raíl de la izquierda cambia de proyecto; cuatro lugares
+> ejecutan lo que pasa en tu máquina — **Flujo** (resumen, plan), **Tablero**, **Calidad** (salud, librerías) y **Docs**
+> (leer, wikis, decisiones, entrevistas) — con **Ajustes** y la **Guía** aparte, y el portal se abre en tu navegador
+> para leer. Cada botón ejecuta un comando `camaron` que podrías escribir tú, y su salida queda en el panel de trabajos
+> de abajo.
 
 La app es donde **operas** un proyecto; el [portal](portal.md) es donde lo **lees**. La app nunca muestra el portal
 dentro de su ventana: **Ver portal**, la sección Docs y cada botón «Abrir en el portal» lo abren en el navegador del
@@ -383,7 +384,7 @@ debajo; un problema de token enlaza a **Ajustes › Tokens** para ese servidor.
 
 ### Leer
 
-- **Leer la documentación**, **Revisar borradores** y **Buscar o preguntar** abren el portal en tu navegador.
+- **Leer la documentación**, **Revisar borradores**, **Buscar o preguntar** y **Ver la CI** abren el portal en tu navegador.
 - **Construir el explorador C4** construye el mapa interactivo de LikeC4 que el portal enseña en Arquitectura; **Ver**
   lo abre.
 - **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza

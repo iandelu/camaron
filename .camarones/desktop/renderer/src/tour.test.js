@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { HOME, holes, place, tourAction, tourAlias, tourIds, TOURS } from './tour.js'
 import { S } from './i18n.js'
-import { LIBS } from './nav.js'
+import { LIBS, VIEWS } from './nav.js'
 
 test('a tour of the whole app and one per place, each with something to show', () => {
   expect(tourIds()).toEqual(['app', 'flow', 'plan', 'board', 'quality', 'libs', 'docs', 'interviews', 'settings'])
@@ -16,6 +16,11 @@ test('a tour of the whole app and one per place, each with something to show', (
 test('the tour of the app walks the five places and the guide, not libraries', () => {
   const nav = TOURS.app.map((s) => s.target).filter((x) => x.startsWith('nav-'))
   expect(nav).toEqual(['nav-flow', 'nav-board', 'nav-quality', 'nav-docs', 'nav-settings', 'nav-guide'])
+})
+
+test('the Settings tour visits every tab', () => {
+  const places = new Set(TOURS.settings.map((s) => s.section))
+  for (const v of VIEWS.settings.slice(1)) expect(places.has(`settings/${v}`), v).toBe(true)
 })
 
 test('old tour ids still resolve', () => {

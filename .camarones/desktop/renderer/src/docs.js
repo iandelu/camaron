@@ -100,11 +100,11 @@ export function askError(e, t) {
 // The team strip's one sentence from GET sync: `null` while unread, { error } when it failed, no remote when nothing is
 // shared yet; `n` of ahead counts what is committed and what is not saved yet.
 export function stripState(sync) {
-  if (!sync) return { key: 'ts.reading', tone: 'none' }
-  if (sync.error) return { key: 'ts.failed', tone: 'warn' }
-  if (!sync.remote) return { key: 'ts.never', tone: 'none' }
-  if (sync.behind > 0) return { key: 'ts.behind', vars: { n: sync.behind }, tone: 'warn' }
+  if (!sync) return { key: 'strip.reading', tone: 'none' }
+  if (sync.error) return { key: 'strip.failed', tone: 'warn' }
+  if (!sync.remote) return { key: 'strip.never', tone: 'none' }
+  if (sync.behind > 0) return { key: 'strip.behind', vars: { n: sync.behind }, tone: 'warn' }
   const n = (sync.ahead || 0) + (sync.pending?.length || 0)
-  if (n > 0) return { key: 'ts.ahead', vars: { n }, tone: 'warn' }
-  return { key: 'ts.upToDate', tone: 'ok' }
+  if (n > 0) return { key: 'strip.ahead', vars: { n }, tone: 'warn' }
+  return { key: 'strip.upToDate', tone: 'ok' }
 }

@@ -42,6 +42,7 @@ function ReadView({ srv, jobs, open }) {
         <Button variant="primary" onClick={() => open('#/')}>{t('docs.read')}</Button>
         <Button onClick={() => open('#/review')}>{t('docs.review')}</Button>
         <Button variant="ghost" onClick={() => open('#/search')}>{t('docs.search')}</Button>
+        <Button variant="ghost" onClick={() => open('#/ci')}>{t('docs.ci')}</Button>
       </div>
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
       <Ask srv={srv} open={open} />

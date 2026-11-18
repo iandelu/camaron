@@ -190,7 +190,7 @@ arquitectura, el tablero y las historias, el estado en vivo del plan, la calidad
 (`camaron app`) es donde operas: ejecutar el plan, las entrevistas, compartir, la salud y las librerías, las wikis y el
 explorador C4, la preparación. El portal nunca ejecuta nada en tu máquina, así que el botón que echas de menos ahí está
 en la app. Las dos se explican pantalla a pantalla en sus propias guías —[el portal](portal.md) y
-[la app de escritorio](app.md)— y la app enseña todas las guías en **Ajustes › General**, con un recorrido guiado.
+[la app de escritorio](app.md)— y la app enseña todas las guías en su **Guía** (`g h`), con un recorrido guiado.
 [Cómo funciona Camarón](internals.md) cuenta el servidor, las APIs y el MCP.
 
 | | Comando | Qué es |

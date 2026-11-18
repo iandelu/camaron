@@ -7,10 +7,11 @@ x-owner: human
 ---
 # The desktop app
 
-> **TL;DR:** `camaron app` opens one window per project. The rail on the left switches projects, the sections run
-> what happens on your machine (plan, interviews, team, quality, libraries, wikis, setup), and the portal opens in your
-> browser to read. Every button runs a `camaron` command you could type yourself, and its output lands in the jobs
-> panel at the bottom.
+> **TL;DR:** `camaron app` opens one window per project. The rail on the left switches projects; four places run what
+> happens on your machine — **Flow** (summary, plan), **Board**, **Quality** (health, libraries) and **Docs** (read,
+> wikis, decisions, interviews) — with **Settings** and the **Guide** apart, and the portal opens in your browser to
+> read. Every button runs a `camaron` command you could type yourself, and its output lands in the jobs panel at the
+> bottom.
 
 The app is where you **operate** a project; the [portal](portal.md) is where you **read** it. The app never shows the
 portal inside its window: **View portal**, the Docs section and every "Open in the portal" button open it in your
@@ -374,7 +375,7 @@ links to **Settings › Tokens** for that server.
 
 ### Read
 
-- **Read the docs**, **Review drafts** and **Search or ask** open the portal in your browser.
+- **Read the docs**, **Review drafts**, **Search or ask** and **See CI** open the portal in your browser.
 - **Build the C4 explorer** builds the interactive LikeC4 map the portal shows under Architecture; **View** opens it.
 - **Ask with AI** answers a question only from the docs, through this machine's agent, and lists its sources as
   buttons to the portal. It waits up to 90 seconds; `ask.ai: false` in `workspace.yaml` turns it off and `ask.model`

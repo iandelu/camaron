@@ -89,11 +89,11 @@ export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs,
           <span className={'cu-chip' + (st.tone === 'none' ? '' : ` cu-chip--${st.tone}`)} role="status">{t(st.key, st.vars)}</span>
           {last ? <span className="muted small">{t('strip.last', { when: ago(last, now / 1000, t) })}</span> : null}
           <span className="dk-grow"></span>
-          {sync?.remote ? <Button size="sm" variant="primary" disabled={!!busy} onClick={onShare}>{t('ts.share')}</Button> : null}
+          {sync?.remote ? <Button size="sm" variant="primary" disabled={!!busy} onClick={onShare}>{t('strip.share')}</Button> : null}
         </div>)}
       <ShareResult result={result} remote={sync?.remote} />
       <details className="dk-fold">
-        <summary>{t('ts.repo')}</summary>
+        <summary>{t('strip.repo')}</summary>
         <div className="dk-fold-body"><Repo key={repoKey} srv={srv} jobs={jobs} onChanged={onChanged} /></div>
       </details>
     </div>

@@ -178,8 +178,8 @@ Two faces over the same project. The **portal** (in your browser) is where the t
 the board and stories, the plan's live state, quality and review. The **desktop app** (`camaron app`) is where you
 operate: run the plan, interviews, sharing, health and libraries, wikis and the C4 explorer, setup. The portal never
 runs anything on your machine, so a button you miss there is in the app. Both are explained screen by screen in their
-own guides — [the portal](portal.md) and [the desktop app](app.md) — and the app shows every guide in **Settings ›
-General**, with a guided tour. [How Camarón works](internals.md) covers the server, the APIs and the MCP.
+own guides — [the portal](portal.md) and [the desktop app](app.md) — and the app shows every guide in its **Guide**
+(`g h`), with a guided tour. [How Camarón works](internals.md) covers the server, the APIs and the MCP.
 
 | | Command | What it is |
 |---|---|---|

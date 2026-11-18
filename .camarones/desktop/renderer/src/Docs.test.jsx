@@ -18,7 +18,8 @@ test('Docs opens the portal through the browser and offers the C4 build', () => 
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
   expect(out.replace(/<nav [\s\S]*?<\/nav>/, '')).not.toMatch(/<a [^>]*href=/)   // only the tabs are links
-  for (const label of ['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar']) expect(out).toContain(label)
+  for (const label of ['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar', 'Ver la CI']) expect(out).toContain(label)
+  expect(out).not.toContain('tablero')                                       // the app has its own Board
   expect(out).toContain('Construir el explorador C4')
   expect(out).toMatch(/aria-label="Construir: Construir el explorador C4"/)
 })
@@ -70,6 +71,7 @@ test('the strings exist in English', () => {
   globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
   out = render()
   expect(out).toContain('Ask with AI')
+  expect(out).toContain('>See CI</button>')
   expect(out).toMatch(/aria-label="Question"/)
   expect(out).toMatch(/>Ask<\/button>/)
 })

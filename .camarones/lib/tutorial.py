@@ -210,7 +210,7 @@ PAGES = {
                  "Sincronizar), Calidad (Salud, Librerías, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o "
                  "lleva la pregunta a Preguntar, que da las secciones que responden con su cita, sin IA. El portal "
                  "nunca ejecuta nada en tu máquina: lanzar el plan, generar wikis, construir el explorador C4 o "
-                 "responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Ajustes › General) o "
+                 "responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Guía) o "
                  "en docs/guides/portal.md."},
         {"icon": "🖥", "title": "La app de escritorio, por tareas",
          "art": r"""
@@ -430,7 +430,7 @@ PAGES = {
                  "Tu gambita de prácticas ya ha colgado los post-its en su sitio: tú solo los mueves."},
         {"icon": "📜", "title": "Decisiones: los ADR, con la evidencia delante",
          "art": r"""
-   Decisiones (g a)                       docs/decisions/0007-why-jpa.md
+   Docs › Decisiones (g d)                docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Aceptada   Why spring... |     type: decision      x-owner: human
    | 0008  En revision  Cache de... |     ## Status   Accepted (2026-10-28)
@@ -440,7 +440,7 @@ PAGES = {
    problema -> evidencia -> revision -> aceptado
    camaron adr candidates | new | pack | write | accept | reject""",
          "text": "Un ADR deja por escrito por qué el código es como es. La pestaña «Decisiones» de Docs en la app de escritorio "
-                 "(`g a`) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente "
+                 "(`g d` y la pestaña; `g a` sigue valiendo) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente "
                  "instalado. El ADR vive en `docs/decisions/NNNN-titulo.md` y lo que la revisión va decidiendo, en "
                  "`docs/.work/adr/NNNN.yaml`.\n\n"
                  "Plantear. «Nuevo ADR» pide un título y de qué va: nuevo (algo que el código aún no hace) o retroactivo "
@@ -743,11 +743,11 @@ PAGES = {
                  "any page or view, or takes the question to Ask, which gives the sections that answer with their "
                  "citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, "
                  "building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the "
-                 "app (Settings › General) or in docs/guides/portal.md."},
+                 "app (Guide) or in docs/guides/portal.md."},
         {"icon": "🖥", "title": "The desktop app, by task",
          "art": r"""
    +----------------------------------------------------------------------------+
-   | camarón  bench > Flow                            [ Search or go to…  Ctrl K ]   |
+   | camarón  bench > Flow                       [ Search or go to…  Ctrl K ]   |
    | [BE] Flow         NEXT STEP                                                |
    | [CL] Board        Discovery of api                                         |
    | [+ ] Quality      [Claude Code v]  ( Start with Claude Code )              |
@@ -785,7 +785,7 @@ PAGES = {
    | 2  Node.js 22 or newer         node --version                              |
    |                                if missing: camaron doctor --install node   |
    | 3  open the app                camaron app                                 |
-   |                                (the first time it downloads Electron, ~100 MB) |
+   |                                (first time: downloads Electron, ~100 MB)   |
    |                                                                            |
    |    inside a project       ->  opens that project                           |
    |    in any other folder    ->  start: pick a folder · join · recent         |
@@ -961,7 +961,7 @@ PAGES = {
                  "Your intern shrimp has pinned the sticky notes up already: all you do is move them."},
         {"icon": "📜", "title": "Decisions: the ADRs, with the evidence in front of you",
          "art": r"""
-   Decisions (g a)                        docs/decisions/0007-why-jpa.md
+   Docs › Decisions (g d)                 docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Accepted   Why spring... |     type: decision      x-owner: human
    | 0008  In review  Cache de...   |     ## Status   Accepted (2026-10-28)
@@ -970,7 +970,7 @@ PAGES = {
 
    problem -> evidence -> review -> accepted
    camaron adr candidates | new | pack | write | accept | reject""",
-         "text": "An ADR writes down why the code is the way it is. The “Decisions” tab of Docs in the desktop app (`g a`) "
+         "text": "An ADR writes down why the code is the way it is. The “Decisions” tab of Docs in the desktop app (`g d`, then the tab; `g a` still works) "
                  "helps you make the decision with the evidence in front of you and works entirely without AI, with no "
                  "agent installed. The ADR lives in `docs/decisions/NNNN-title.md` and what the review decides along "
                  "the way, in `docs/.work/adr/NNNN.yaml`.\n\n"

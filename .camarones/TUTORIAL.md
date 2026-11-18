@@ -174,13 +174,13 @@ Docs are written in English (best for AIs and mixed teams) and translated to Spa
    +----------------------------------------------------------------------------+
 ```
 
-The 🦐 portal is where the team reads the docs, in English or Spanish and offline (its fonts too). Live (`camaron up`, or “View portal” in the app) it also edits, confirms, reviews, answers the interview and syncs with the team; exported (`camaron portal`) it is a read-only site deployed with Docker or on any static host (`camaron up --static` shows it as is). Home asks first and shows the project's state; the sidebar has seven zones: Docs (pages and wikis), Board, Stories, Architecture (the C4 model with its elements to fix and confirm, the code graph and Data), Plan (the live Pipeline, the Interview and Sync), Quality (Health, Libraries, KPIs and CI) and Review. Ctrl K jumps to any page or view, or takes the question to Ask, which gives the sections that answer with their citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the app (Settings › General) or in docs/guides/portal.md.
+The 🦐 portal is where the team reads the docs, in English or Spanish and offline (its fonts too). Live (`camaron up`, or “View portal” in the app) it also edits, confirms, reviews, answers the interview and syncs with the team; exported (`camaron portal`) it is a read-only site deployed with Docker or on any static host (`camaron up --static` shows it as is). Home asks first and shows the project's state; the sidebar has seven zones: Docs (pages and wikis), Board, Stories, Architecture (the C4 model with its elements to fix and confirm, the code graph and Data), Plan (the live Pipeline, the Interview and Sync), Quality (Health, Libraries, KPIs and CI) and Review. Ctrl K jumps to any page or view, or takes the question to Ask, which gives the sections that answer with their citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the app (Guide) or in docs/guides/portal.md.
 
 ### 12. 🖥 The desktop app, by task
 
 ```text
    +----------------------------------------------------------------------------+
-   | camarón  bench > Flow                            [ Search or go to…  Ctrl K ]   |
+   | camarón  bench > Flow                       [ Search or go to…  Ctrl K ]   |
    | [BE] Flow         NEXT STEP                                                |
    | [CL] Board        Discovery of api                                         |
    | [+ ] Quality      [Claude Code v]  ( Start with Claude Code )              |
@@ -201,7 +201,7 @@ The 🦐 portal is where the team reads the docs, in English or Spanish and offl
    | 2  Node.js 22 or newer         node --version                              |
    |                                if missing: camaron doctor --install node   |
    | 3  open the app                camaron app                                 |
-   |                                (the first time it downloads Electron, ~100 MB) |
+   |                                (first time: downloads Electron, ~100 MB)   |
    |                                                                            |
    |    inside a project       ->  opens that project                           |
    |    in any other folder    ->  start: pick a folder · join · recent         |
@@ -315,7 +315,7 @@ Your intern shrimp has pinned the sticky notes up already: all you do is move th
 ### 20. 📜 Decisions: the ADRs, with the evidence in front of you
 
 ```text
-   Decisions (g a)                        docs/decisions/0007-why-jpa.md
+   Docs › Decisions (g d)                 docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Accepted   Why spring... |     type: decision      x-owner: human
    | 0008  In review  Cache de...   |     ## Status   Accepted (2026-10-28)
@@ -326,7 +326,7 @@ Your intern shrimp has pinned the sticky notes up already: all you do is move th
    camaron adr candidates | new | pack | write | accept | reject
 ```
 
-An ADR writes down why the code is the way it is. The “Decisions” tab of Docs in the desktop app (`g a`) helps you make the decision with the evidence in front of you and works entirely without AI, with no agent installed. The ADR lives in `docs/decisions/NNNN-title.md` and what the review decides along the way, in `docs/.work/adr/NNNN.yaml`.
+An ADR writes down why the code is the way it is. The “Decisions” tab of Docs in the desktop app (`g d`, then the tab; `g a` still works) helps you make the decision with the evidence in front of you and works entirely without AI, with no agent installed. The ADR lives in `docs/decisions/NNNN-title.md` and what the review decides along the way, in `docs/.work/adr/NNNN.yaml`.
 
 Framing. “New ADR” asks for a title and what it is about: new (something the code does not do yet) or retroactive (something the code already does that nobody wrote down). In “Touches” you search the files, code-map groups and doc pages it affects. “Candidates” lists, without AI, the decisions the code already took that no ADR names: data, cache, messaging, security and framework libraries from the inventory, C4 technologies and deployment files (Docker Compose, Helm); “Create a retro ADR” opens one with the title and what it touches already in.
 
@@ -545,7 +545,7 @@ La documentación se escribe en inglés (lo que mejor entienden las IAs y los eq
    +----------------------------------------------------------------------------+
 ```
 
-El portal 🦐 es donde el equipo lee la documentación, en español o inglés y sin Internet (también sus fuentes). En vivo (`camaron up`, o «Ver portal» en la app) además edita, confirma, revisa, responde la entrevista y se sincroniza con el equipo; exportado (`camaron portal`) es una web de solo lectura que se despliega con Docker o en cualquier hosting estático (`camaron up --static` la enseña tal cual). Inicio pregunta primero y enseña el estado del proyecto; el menú lateral tiene siete zonas: Docs (páginas y wikis), Tablero, Historias, Arquitectura (el C4 con sus elementos para corregir y confirmar, el grafo de código y Datos), Plan (el Pipeline en vivo, la Entrevista y Sincronizar), Calidad (Salud, Librerías, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o lleva la pregunta a Preguntar, que da las secciones que responden con su cita, sin IA. El portal nunca ejecuta nada en tu máquina: lanzar el plan, generar wikis, construir el explorador C4 o responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Ajustes › General) o en docs/guides/portal.md.
+El portal 🦐 es donde el equipo lee la documentación, en español o inglés y sin Internet (también sus fuentes). En vivo (`camaron up`, o «Ver portal» en la app) además edita, confirma, revisa, responde la entrevista y se sincroniza con el equipo; exportado (`camaron portal`) es una web de solo lectura que se despliega con Docker o en cualquier hosting estático (`camaron up --static` la enseña tal cual). Inicio pregunta primero y enseña el estado del proyecto; el menú lateral tiene siete zonas: Docs (páginas y wikis), Tablero, Historias, Arquitectura (el C4 con sus elementos para corregir y confirmar, el grafo de código y Datos), Plan (el Pipeline en vivo, la Entrevista y Sincronizar), Calidad (Salud, Librerías, KPIs y CI) y Revisión. Ctrl K salta a cualquier página o vista, o lleva la pregunta a Preguntar, que da las secciones que responden con su cita, sin IA. El portal nunca ejecuta nada en tu máquina: lanzar el plan, generar wikis, construir el explorador C4 o responder con IA se hace en la app de escritorio. Cada vista, a fondo, en la app (Guía) o en docs/guides/portal.md.
 
 ### 12. 🖥 La app de escritorio, por tareas
 
@@ -686,7 +686,7 @@ Tu gambita de prácticas ya ha colgado los post-its en su sitio: tú solo los mu
 ### 20. 📜 Decisiones: los ADR, con la evidencia delante
 
 ```text
-   Decisiones (g a)                       docs/decisions/0007-why-jpa.md
+   Docs › Decisiones (g d)                docs/decisions/0007-why-jpa.md
    +--------------------------------+     ---
    | 0007  Aceptada   Why spring... |     type: decision      x-owner: human
    | 0008  En revision  Cache de... |     ## Status   Accepted (2026-10-28)
@@ -697,7 +697,7 @@ Tu gambita de prácticas ya ha colgado los post-its en su sitio: tú solo los mu
    camaron adr candidates | new | pack | write | accept | reject
 ```
 
-Un ADR deja por escrito por qué el código es como es. La pestaña «Decisiones» de Docs en la app de escritorio (`g a`) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente instalado. El ADR vive en `docs/decisions/NNNN-titulo.md` y lo que la revisión va decidiendo, en `docs/.work/adr/NNNN.yaml`.
+Un ADR deja por escrito por qué el código es como es. La pestaña «Decisiones» de Docs en la app de escritorio (`g d` y la pestaña; `g a` sigue valiendo) ayuda a tomar la decisión con la evidencia delante y funciona entera sin IA, sin ningún agente instalado. El ADR vive en `docs/decisions/NNNN-titulo.md` y lo que la revisión va decidiendo, en `docs/.work/adr/NNNN.yaml`.
 
 Plantear. «Nuevo ADR» pide un título y de qué va: nuevo (algo que el código aún no hace) o retroactivo (algo que el código ya hace y nadie dejó escrito). En «Toca» buscas los ficheros, los grupos del mapa del código y las páginas de documentación que afecta. «Candidatas» lista, sin IA, las decisiones que el código ya tomó y ningún ADR nombra: librerías de datos, caché, mensajería, seguridad y frameworks del inventario, tecnologías del C4 y ficheros de despliegue (Docker Compose, Helm); «Crear ADR retro» las abre con el título y lo que toca ya puestos.
 

@@ -200,10 +200,10 @@ test('a failed read of the wikis keeps the last good rows and says it failed', (
 })
 
 test('the team strip says where the team repo stands, one state at a time', () => {
-  expect(stripState(null)).toEqual({ key: 'ts.reading', tone: 'none' })
-  expect(stripState({ error: 'x' })).toEqual({ key: 'ts.failed', tone: 'warn' })
-  expect(stripState({ remote: '' })).toEqual({ key: 'ts.never', tone: 'none' })
-  expect(stripState({ remote: 'r', behind: 2, ahead: 0, pending: [] })).toEqual({ key: 'ts.behind', vars: { n: 2 }, tone: 'warn' })
-  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['a'] })).toEqual({ key: 'ts.ahead', vars: { n: 2 }, tone: 'warn' })
-  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'ts.upToDate', tone: 'ok' })
+  expect(stripState(null)).toEqual({ key: 'strip.reading', tone: 'none' })
+  expect(stripState({ error: 'x' })).toEqual({ key: 'strip.failed', tone: 'warn' })
+  expect(stripState({ remote: '' })).toEqual({ key: 'strip.never', tone: 'none' })
+  expect(stripState({ remote: 'r', behind: 2, ahead: 0, pending: [] })).toEqual({ key: 'strip.behind', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['a'] })).toEqual({ key: 'strip.ahead', vars: { n: 2 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
 })

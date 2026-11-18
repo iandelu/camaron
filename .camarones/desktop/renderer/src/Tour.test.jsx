@@ -75,7 +75,7 @@ test('the Summary offers the tour until this machine has seen the offer', () => 
 })
 
 test('the palette and Settings both start the tour', () => {
-  const groups = entries({ sections: ['summary'], t })
+  const groups = entries({ sections: ['flow'], t })
   expect(groups.find((g) => g.id === 'actions').items).toContainEqual({ id: 'tour', label: 'Hacer el recorrido', action: 'tour' })
   expect(renderToStaticMarkup(<SettingsView view="general" m={null} fill={{ host: '', kind: '' }} srv={srv} jobs={null} app={{}} />)).toContain('Hacer el recorrido')
 })
