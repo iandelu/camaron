@@ -1,21 +1,29 @@
 """Freshness (R23, R30: H14, H27). When a page is written, each of its x-sources is fingerprinted: its lines without
 whitespace, blank or comment-only lines. L1: `repo:path#Lx-Ly` or a whole file. L2: `repo:path#Class.method`, a
 symbol found again wherever it moved (lib/harness/symbols.py). L3: `docs/<page>.md` and `c4:<element>`, the pages and
-C4 elements a derived page builds on. Later the page is `fresh`, `suspect` (the cited code or element changed, or a
-cited page is suspect), `stale` (gone) or `unverified` (no sources). Fingerprints live in docs/.work/fresh.json (main
-cam-docs, never in unit worktrees).
+C4 elements a derived page builds on. Later the page is `fresh`, `suspect` (the cited code or element changed, a cited
+page is suspect, or a cited element lost its evidence), `stale` (gone) or `unverified` (no sources). Fingerprints live
+in docs/.work/fresh.json (main cam-docs, never in unit worktrees).
+
+C4 evidence (spec §5): every element and relation gets a state from the code anchors it names (lib/domain/c4). Its
+stamps live under `c4` in the same file, taken again when its block in the .c4 changes or a person acknowledges it.
 
 The AI gate: with `freshness: {ai_policy: block}` (the default) agents never get suspect or stale pages, nor
 unreviewed pages without sources — better no information than wrong information. People still see them."""
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import hashlib
+import os
 import re
-from pathlib import Path
+from collections import Counter
+from pathlib import Path, PurePosixPath
 
+from .. import adr_doc, c4edit
 from ..common import CAM_DIR, CTX, ROOT, WORK, load_json, repo_dir, save_json
 from .locks import FileLock
+from ..domain.c4 import anchors, verdict
 from ..domain.docs import frontmatter, logical_paths
 from ..app import services
 
@@ -23,6 +31,9 @@ FILE = WORK / "fresh.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "fresh.lock"
 COMMENT = re.compile(r"^(//|#|/\*|\*|<!--|-->|--\s|;)")
 OUT_OF_DATE = ("suspect", "stale")
+META_BLOCK = re.compile(rf"\bmetadata\s*\{{(?:{c4edit.STR}|[^{{}}'\"])*\}}")
+FINGERPRINTED = ("lines", "symbol")             # the other anchors are checked for existence only (spec §5.3)
+SECTIONS = ("elements", "relations")
 
 
 def _now() -> str:
@@ -73,6 +84,7 @@ def kind(ref: str) -> str:
 
 
 def _c4_lines(element: str) -> list[str] | None:
+    """The element's lines as the v1 fingerprint found them (one file, no `extend`): only to migrate v1 stamps."""
     from .symbols import locate
     arch = services.current().diagrams.arch_dir()          # docs/architecture, or the repo folder workspace.yaml names
     for f in sorted(arch.rglob("*.c4")) if arch.is_dir() else []:
@@ -83,16 +95,38 @@ def _c4_lines(element: str) -> list[str] | None:
     return None
 
 
+@functools.lru_cache(maxsize=1)
+def _parsed(texts: tuple[tuple[str, str], ...]) -> tuple[dict, str | None]:
+    try:
+        return c4edit.index(dict(texts)), None
+    except Exception as e:                       # a model c4edit cannot read: no states, and why
+        return {"elements": {}, "relations": []}, str(e) or type(e).__name__
+
+
+def _model() -> tuple[dict[str, list[str]], dict, str | None]:
+    """Each .c4 file's lines, c4edit's index of them and why it failed. Parsed again only when a file changed: a
+    states() call asks for it once per `c4:` source."""
+    arch = services.current().diagrams.arch_dir()
+    texts = tuple((f.relative_to(arch).as_posix(), f.read_text(encoding="utf-8", errors="replace"))
+                  for f in (sorted(arch.rglob("*.c4")) if arch.is_dir() else []))
+    return {rel: text.split("\n") for rel, text in texts}, *_parsed(texts)
+
+
+def _c4_text(block: list[str]) -> list[str]:
+    """An element's block as its v2 fingerprint reads it: no metadata blocks, tags or braces, so adding evidence or
+    confirming it (which turns a one-line element into a block) is no change."""
+    parts = re.split(f"({c4edit.STR})", META_BLOCK.sub(" ", "\n".join(block)))
+    return _norm("".join(p if i % 2 else re.sub(r"#[\w-]+|[{}]", " ", p) for i, p in enumerate(parts)).split("\n"))
+
+
 def c4_exists(element: str) -> bool:
-    """`c4:<element>` names an element the C4 model still has."""
-    return bool(element.strip()) and _c4_lines(element.strip()) is not None
+    """`c4:<element>` names an element the C4 model still has (fragments and `extend` included)."""
+    return element.strip() in _model()[1]["elements"]
 
 
 def _block(ref: str, read=None) -> list[str] | None:
-    """The lines a symbol or C4 source stands for now, or None when it is gone."""
+    """The lines a symbol source stands for now, or None when it is gone."""
     from .symbols import locate
-    if kind(ref) == "c4":
-        return _c4_lines(str(ref).strip()[3:])
     repo, path, _ = parse(ref)
     lines = (read or _lines)(repo, path)
     if lines is None:
@@ -115,7 +149,14 @@ def fingerprint(ref: str, read=None) -> dict | None:
     k = kind(ref)
     if k == "doc":
         return {"k": "doc"}                         # L3: a cited page counts through its own state, not its text
-    if k in ("symbol", "c4"):
+    if k == "c4":
+        files, idx, _ = _model()
+        el = idx["elements"].get(str(ref).strip()[3:].strip())
+        if el is None:
+            return None
+        text = _c4_text(files[el["file"]][el["start"]:el["end"] + 1])
+        return {"h": _hash(text), "n": len(text), "k": "c4", "v": 2}
+    if k == "symbol":
         block = _block(ref, read)
         return {"h": _hash(_norm(block)), "n": len(_norm(block)), "k": k} if block is not None else None
     repo, path, span = parse(ref)
@@ -181,13 +222,26 @@ def _stamp(entry_for: dict, logical: str, fm: dict, sha: str, by: str | None = N
                           "sources": {s: fingerprint(s) for s in _sources(fm)}}
 
 
+def _migrate_c4(entry: dict) -> int:
+    """A `c4:` source stamped before v2 takes the v2 fingerprint when its element did not change since (the v1 hash
+    still matches); one that did keeps its v1 stamp, which reports `changed`."""
+    n = 0
+    for s, st in (entry.get("sources") or {}).items():
+        if kind(s) == "c4" and isinstance(st, dict) and "v" not in st:
+            old = _c4_lines(str(s).strip()[3:])
+            if old is not None and _hash(_norm(old)) == st.get("h"):
+                entry["sources"][s] = fingerprint(s)
+                n += 1
+    return n
+
+
 def stamp_all(pages: dict | None = None) -> int:
     """Fingerprint pages that are new, rewritten, or cite other sources since their last stamp: a page written now
     reflects the code as it is now. Pages that did not change keep their old fingerprints."""
     pages = pages if pages is not None else _pages()
     with FileLock(LOCK):
         data = _load()
-        n = 0
+        n = sum(_migrate_c4(e) for e in data["pages"].values())
         for old in [k for k in data["pages"] if k not in pages]:       # a wiki page's pre-4.81 path: keep its stamp
             new = docs_alias(old, pages)
             if new != old and new not in data["pages"]:
@@ -232,21 +286,191 @@ def flag(logical: str, reason: str, by: str = "agent") -> None:
         save_json(FILE, data)
 
 
+# ---------- C4 evidence (spec §5.1–§5.3) ----------
+def relation_key(rel: dict, seen: Counter) -> str:
+    """`from -> to 'label'`; a repeat, in index order, gets ` [2]`, ` [3]`…"""
+    key = f"{rel['from']} -> {rel['to']} '{rel.get('label') or ''}'"
+    seen[key] += 1
+    return key if seen[key] == 1 else f"{key} [{seen[key]}]"
+
+
+def _c4_items() -> tuple[list[tuple], str | None]:
+    """(section, key, item, block lines, anchors, unreadable) for every element and relation, and why the model could
+    not be read."""
+    files, idx, error = _model()
+    els, seen, out = idx["elements"], Counter(), []
+    for fqn, el in els.items():
+        out.append(("elements", fqn, el, files[el["file"]][el["start"]:el["end"] + 1], *anchors.of_element(fqn, els)))
+    for rel in idx["relations"]:
+        meta = rel.get("metadata") or {}
+        got, bad = anchors.parse_code(meta.get("code") or [])
+        if isinstance(meta.get("evidence"), str):
+            more, worse = anchors.parse_legacy(meta["evidence"], anchors.container_repo(rel["from"], els))
+            got, bad = got + more, bad + worse
+        out.append(("relations", relation_key(rel, seen), rel, files[rel["file"]][rel["start"]:rel["end"] + 1],
+                    got, bad))
+    return out, error
+
+
+def _repos() -> set[str]:
+    return set(services.current().workspace.repo_names())
+
+
+def _ref(a: anchors.Anchor) -> str:
+    return f"{a.repo}:{a.path}" + (f"#{a.anchor}" if a.anchor else "")
+
+
+def _reach(a: anchors.Anchor, repos: set[str]) -> str | None:
+    """`missing` for a repo workspace.yaml does not list, `unchecked` for one not cloned here, None if it can be read."""
+    if a.repo not in repos:
+        return "missing"
+    return None if repo_dir(a.repo).is_dir() else "unchecked"
+
+
+def _any_file(root: Path, base: Path, glob: anchors.Anchor | None = None) -> bool:
+    """A file under `base` (one `glob` covers, on its repo-relative posix path); the first one ends the walk."""
+    for top, dirs, names in os.walk(base):
+        dirs[:] = [d for d in dirs if d != ".git"]
+        for name in names:
+            if glob is None or anchors.covers(glob, glob.repo, (Path(top) / name).relative_to(root).as_posix()):
+                return True
+    return False
+
+
+def _result(a: anchors.Anchor, stamps: dict, repos: set[str]) -> str:
+    """fresh | changed | missing | unchecked, for one anchor: lines and symbols against their fingerprint, the rest by
+    existence."""
+    if why := _reach(a, repos):
+        return why
+    if a.kind in FINGERPRINTED:
+        return check_source(_ref(a), stamps.get(a.raw))
+    root, parts = repo_dir(a.repo), PurePosixPath(a.path).parts
+    if a.kind == "repo":
+        return "fresh"
+    if a.kind == "file":
+        return "fresh" if root.joinpath(*parts).is_file() else "missing"
+    if a.kind == "glob":                          # walk only below the part before the first wildcard
+        parts = parts[:next(i for i, p in enumerate(parts) if any(c in p for c in anchors.GLOB_CHARS))]
+    return "fresh" if _any_file(root, root.joinpath(*parts), a if a.kind == "glob" else None) else "missing"
+
+
+def _c4_of(data: dict) -> dict:
+    c4 = data["c4"] = data["c4"] if isinstance(data.get("c4"), dict) else {}
+    for section in SECTIONS:
+        if not isinstance(c4.get(section), dict):
+            c4[section] = {}
+    return c4
+
+
+def _c4_stamp(block: list[str], got: list, repos: set[str], by: str | None = None) -> dict:
+    return {"sha": _hash(block), "at": _now(), **({"by": by} if by else {}),
+            "anchors": {a.raw: fingerprint(_ref(a)) for a in got if a.kind in FINGERPRINTED and not _reach(a, repos)}}
+
+
+def _c4_sync(items: list, repos: set[str], ack: set[str] = frozenset(), by: str | None = None) -> int:
+    """Stamp what is new, was edited or is acknowledged; fingerprint an anchor whose repo is first seen here; drop what
+    is gone. No items (no model here, or one that does not parse) leaves the stamps alone."""
+    if not items:
+        return 0
+    with FileLock(LOCK):
+        data = _load()
+        c4 = _c4_of(data)
+        n = 0
+        for section, key, _, block, got, _ in items:
+            e = c4[section].get(key)
+            if not e or e.get("sha") != _hash(block) or key in ack:
+                c4[section][key] = _c4_stamp(block, got, repos, by if key in ack else None)
+                n += 1
+                continue
+            fps = e.setdefault("anchors", {})
+            for a in got:
+                if a.kind in FINGERPRINTED and a.raw not in fps and not _reach(a, repos):
+                    fps[a.raw] = fingerprint(_ref(a))
+                    n += 1
+        for section in SECTIONS:
+            for gone in set(c4[section]) - {key for s, key, *_ in items if s == section}:
+                del c4[section][gone]
+                n += 1
+        if n:
+            save_json(FILE, data)
+        return n
+
+
+def c4_stamp_all() -> int:
+    """Stamp the C4 elements and relations that are new or whose block changed; drop the stamps of the gone ones."""
+    return _c4_sync(_c4_items()[0], _repos())
+
+
+def c4_ack(fqns: list[str], by: str) -> list[str]:
+    """A person says these elements (or relations, by key) still hold for the current code: take today's code as their
+    reference."""
+    items, _ = _c4_items()
+    known = {key for _, key, *_ in items}
+    done = [f for f in fqns if f in known]
+    _c4_sync(items, _repos(), set(done), by)
+    return done
+
+
+def c4_states() -> dict:
+    """Every element's and relation's evidence state (spec §5.2): {elements, relations, error}. New or edited ones get
+    their stamps first."""
+    items, error = _c4_items()
+    repos = _repos()
+    _c4_sync(items, repos)
+    stamps = _c4_of(_load())
+    out: dict = {"elements": {}, "relations": {}, "error": error}
+    for section, key, it, _, got, bad in items:
+        fps = (stamps[section].get(key) or {}).get("anchors") or {}
+        rows = [{"raw": a.raw, "kind": a.kind, "legacy": a.legacy, "result": _result(a, fps, repos)} for a in got]
+        state = verdict.combine([r["result"] for r in rows])
+        where = {"anchors": rows, "unreadable": bad, "file": it["file"], "line": it["start"] + 1}
+        if section == "elements":
+            out[section][key] = {"state": state, "confirmed": bool(it.get("confirmed")), **where,
+                                 "legacy_only": bool(got) and all(a.legacy for a in got)}
+        else:
+            out[section][key] = {"from": it["from"], "to": it["to"], "label": it["label"],
+                                 "own": state if got else None, "confirmed": "confirmed" in (it.get("tags") or []),
+                                 **where}
+    return out
+
+
 def states() -> dict[str, dict]:
     """Every page's freshness: {state, changed, missing}. New or rewritten pages get their fingerprints first."""
     pages = _pages()
     stamp_all(pages)
     data = _load()["pages"]
+    c4: dict = {}
     out = {}
     for logical, (fm, _) in pages.items():
         srcs = _sources(fm)
         if srcs:                                     # pages without sources stay out: _settle calls them unverified
             stamps = (data.get(logical) or {}).get("sources", {})
-            out[logical] = {s: check_source(s, stamps.get(s)) for s in srcs if kind(s) != "doc"}
+            decision = adr_doc.is_decision(logical, fm.get("type"))
+            out[logical] = {s: _check_page_source(s, stamps.get(s), decision, c4) for s in srcs
+                            if kind(s) != "doc"}
         flagged = (data.get(logical) or {}).get("flag")
         if flagged:
             out.setdefault(logical, {})[f"flagged: {flagged['reason']} ({flagged.get('by', '?')})"] = "changed"
     return _settle(pages, out)
+
+
+def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> str:
+    """check_source, plus spec §5.4 for `c4:` sources: a decision only needs its element to exist; another page goes
+    suspect when its element is broken, or has no evidence and no person vouched for it. `c4` holds c4_states(),
+    computed on first need."""
+    if kind(s) != "c4":
+        return check_source(s, stamp)
+    fqn = s.strip()[3:].strip()
+    if decision:
+        return "fresh" if c4_exists(fqn) else "missing"
+    result = check_source(s, stamp)
+    if result == "fresh":
+        if not c4:
+            c4.update(c4_states())
+        el = c4["elements"].get(fqn) or {}
+        if el.get("state") == "broken" or (el.get("state") == "no-evidence" and not el.get("confirmed")):
+            return "changed"
+    return result
 
 
 def _settle(pages: dict, own: dict) -> dict[str, dict]:

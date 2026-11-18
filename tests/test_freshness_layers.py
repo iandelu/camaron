@@ -152,6 +152,7 @@ C4 = """model {
   shop = system 'Shop' {
     orders = service 'Orders' {
       description 'Takes orders'
+      metadata { code 'api:src/main/java/demo/OrderService.java' }
     }
     billing = service 'Billing'
   }
