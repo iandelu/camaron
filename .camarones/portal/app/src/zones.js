@@ -16,12 +16,12 @@ export const ZONES = [
   { id: 'arch', href: '#/arch', views: [
     { id: 'c4', href: '#/c4' },
     { id: 'code', href: '#/code', needs: hasCode },
-    { id: 'data', href: '#/data', live: true },
-    { id: 'libs', href: '#/libs', live: true }] },
+    { id: 'data', href: '#/data', live: true }] },
   { id: 'plan', href: '#/plan', views: [{ id: 'pipeline', href: '#/pipeline', live: true },
     { id: 'interview', href: '#/interview', live: true }, { id: 'sync', href: '#/sync', live: true }] },
   { id: 'quality', href: '#/quality', views: [
-    { id: 'health', href: '#/health', live: true }, { id: 'kpis', href: '#/kpis', live: true }, { id: 'ci', href: '#/ci', live: true }] },
+    { id: 'health', href: '#/health', live: true }, { id: 'libs', href: '#/libs', live: true },
+    { id: 'kpis', href: '#/kpis', live: true }, { id: 'ci', href: '#/ci', live: true }] },
   { id: 'review', href: '#/review', views: [{ id: 'review', href: '#/review' }] },
 ]
 
@@ -29,7 +29,7 @@ export const ZONES = [
 const ROUTES = {
   kanban: ['board', 'kanban'], stories: ['stories', 'stories'],
   docs: ['docs', 'pages'], doc: ['docs', 'pages'], wikis: ['docs', 'wikis'], wiki: ['docs', 'wikis'],
-  c4: ['arch', 'c4'], code: ['arch', 'code'], data: ['arch', 'data'], libs: ['arch', 'libs'],
+  c4: ['arch', 'c4'], code: ['arch', 'code'], data: ['arch', 'data'], libs: ['quality', 'libs'],
   pipeline: ['plan', 'pipeline'], interview: ['plan', 'interview'], sync: ['plan', 'sync'], kpis: ['quality', 'kpis'], ci: ['quality', 'ci'], health: ['quality', 'health'],
   review: ['review', 'review'], status: ['review', 'review'],
 }

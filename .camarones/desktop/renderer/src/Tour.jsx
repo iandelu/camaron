@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '@camaron/ui'
 import { TOURS, holes, place, tourAction } from './tour.js'
-import { sectionOf } from './nav.js'
+import { placeOf } from './nav.js'
 import { typing } from './palette.js'
 import { t } from './i18n.js'
 
@@ -39,7 +39,7 @@ function TourLayer({ state, setState }) {
   const bubble = useRef(null)
   const go = (i) => (i < 0 ? null : i >= steps.length ? setState(null) : setState({ id: state.id, i }))
   useEffect(() => {
-    if (step.section && sectionOf(location.hash, {}) !== step.section) location.hash = `#/${step.section}`
+    if (step.section && placeOf(location.hash, {}) !== step.section) location.hash = `#/${step.section}`
     let tries = 0
     let timer
     const look = () => {
@@ -77,7 +77,7 @@ function TourLayer({ state, setState }) {
       else go(state.i + (k === 'next' ? 1 : -1))
     }
     addEventListener('keydown', on, true)
-    const away = () => { if (step.section && sectionOf(location.hash, {}) !== step.section) setState(null) }   // left mid-tour (g + a letter)
+    const away = () => { if (step.section && placeOf(location.hash, {}) !== step.section) setState(null) }   // left mid-tour (g + a letter)
     addEventListener('hashchange', away)
     return () => { removeEventListener('keydown', on, true); removeEventListener('hashchange', away) }
   }, [])

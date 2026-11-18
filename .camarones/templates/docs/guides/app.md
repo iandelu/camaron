@@ -7,10 +7,11 @@ x-owner: human
 ---
 # The desktop app
 
-> **TL;DR:** `camaron app` opens one window per project. The rail on the left switches projects, the sections run
-> what happens on your machine (plan, interviews, team, quality, libraries, wikis, setup), and the portal opens in your
-> browser to read. Every button runs a `camaron` command you could type yourself, and its output lands in the jobs
-> panel at the bottom.
+> **TL;DR:** `camaron app` opens one window per project. The rail on the left switches projects; four places run what
+> happens on your machine — **Flow** (summary, plan), **Board**, **Quality** (health, libraries) and **Docs** (read,
+> wikis, decisions, interviews) — with **Settings** and the **Guide** apart, and the portal opens in your browser to
+> read. Every button runs a `camaron` command you could type yourself, and its output lands in the jobs panel at the
+> bottom.
 
 The app is where you **operate** a project; the [portal](portal.md) is where you **read** it. The app never shows the
 portal inside its window: **View portal**, the Docs section and every "Open in the portal" button open it in your
@@ -26,9 +27,9 @@ Each project has its own window, served by that project's own local server (see
 
 | Part | What it does |
 |---|---|
-| Header | The brand (back to Summary), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
+| Header | The brand (back to Flow), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
 | Rail | One button per project of this machine, with its initials. Another project opens **in this window**: the app starts that project's server, moves the window to it and stops the old one. Stopping it ends the sessions open on its canvas, so when one is live the app asks first: *{n} sessions are open in this project: switching project ends them.* — **Cancel** or **Switch anyway**. A project that is not on disk is greyed out. **+** opens the start screen |
-| Sections | Summary, Board, Decisions, Plan, Interviews, Team, Quality, Libraries and Docs; then, under **This app**, Machine, Guide and (only in a checkout of the kit) Kit dev. Hover one to see its shortcut |
+| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
 | Main area | The section you are in |
 | Jobs panel and status bar | What runs now and the last jobs, with their output; the status bar shows the first running job and the kit's version |
 
@@ -56,8 +57,9 @@ Inside a section, a command's card shows the same thing: a state chip, the error
 | Keys | Goes to |
 |---|---|
 | <kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd> | The palette: a section, another project, an action or, once you type, any command and any chapter of this guide |
-| <kbd>g</kbd> then <kbd>s</kbd> <kbd>b</kbd> <kbd>a</kbd> <kbd>p</kbd> <kbd>i</kbd> <kbd>t</kbd> <kbd>q</kbd> <kbd>l</kbd> <kbd>d</kbd> | Summary, Board, Decisions, Plan, Interviews, Team, Quality, Libraries, Docs |
-| <kbd>g</kbd> then <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Machine, Guide, Kit dev (in a checkout of the kit) |
+| <kbd>g</kbd> then <kbd>f</kbd> <kbd>b</kbd> <kbd>q</kbd> <kbd>d</kbd> | Flow, Board, Quality, Docs |
+| <kbd>g</kbd> then <kbd>m</kbd> <kbd>h</kbd> <kbd>k</kbd> | Settings, Guide, Kit dev (in a checkout of the kit) |
+| <kbd>g</kbd> then <kbd>s</kbd> <kbd>p</kbd> <kbd>a</kbd> <kbd>i</kbd> <kbd>t</kbd> | The old letters still work: Flow, Flow › Plan, Docs › Decisions, Docs › Interviews, Docs |
 
 The second letter has to come within a second and a half of the <kbd>g</kbd>. Shortcuts are ignored while you type in a
 field or a dialog. In the palette, <kbd>↑</kbd> <kbd>↓</kbd> move, <kbd>Enter</kbd> goes and <kbd>Esc</kbd> closes;
@@ -66,7 +68,7 @@ form ready.
 
 ### Light, dark and language
 
-The app follows your system's light or dark theme and changes with it. Its language is the one in Machine ›
+The app follows your system's light or dark theme and changes with it. Its language is the one in Settings ›
 Language and models (Spanish or English), the same setting the terminal wizard uses.
 
 ## The start screen
@@ -123,23 +125,28 @@ A new project in an **empty folder** goes Repos → Tools → Install → Ready 
 **joined** goes Tools → Install → Ready, since the team already decided the rest — and skips the wizard entirely when
 this machine already has every repo and tool.
 
-## Summary
+## Flow
 
-The project at a glance and the one thing to do next (`#/summary`, <kbd>g</kbd> <kbd>s</kbd>).
+Where the project stands and what to run next (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Two tabs sit under the title: **Summary** and **Plan** (`#/flow/plan`).
 
-<!-- go:summary -->
-<!-- tour:summary -->
+<!-- go:flow -->
+<!-- tour:flow -->
+
+### Summary
+
+The project at a glance and the one thing to do next (`#/flow`; the old `#/summary` still opens it).
+
 
 **Next step** is the same next step the terminal wizard suggests: a unit left half done first, then the next ready
 unit, then pages waiting for review, then nothing ("All caught up"). Its button depends on what the step is:
 
 | The step is | The button |
 |---|---|
-| A unit an agent does | **Start with {agent}** or **Continue with {agent}** (pick the agent when you have two or more): it opens the agent on that unit as a terminal on the Plan's canvas and takes you there (or in a terminal window of its own, as Machine › **Where sessions open** says) |
-| An interview, before anyone chose how interviews run | **Choose how the interviews run** → Interviews |
-| Setting the machine up (`setup`) | **Prepare the machine** → Machine |
-| The team's answers (`answers`) | **Collect the answers** → Interviews |
-| CI (`ci`) | **Set up CI** → Team |
+| A unit an agent does | **Start with {agent}** or **Continue with {agent}** (pick the agent when you have two or more): it opens the agent on that unit as a terminal on the Plan's canvas and takes you there (or in a terminal window of its own, as Settings › **Where sessions open** says) |
+| An interview, before anyone chose how interviews run | **Choose how the interviews run** → Docs › Interviews |
+| Setting the machine up (`setup`) | **Prepare the machine** → Settings |
+| The team's answers (`answers`) | **Collect the answers** → Docs › Interviews |
+| CI (`ci`) | **Set up CI** → Docs |
 | Human review (`confirm`) or pages waiting | **Review in the portal** |
 | Building the portal (`portal`), or nothing left | **Read the docs** |
 | Anything else | **See the plan** |
@@ -148,71 +155,14 @@ With no agent installed, the card says so and offers **Prepare the machine**. Be
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.
 
-## Board
+### Plan
 
-The project's Kanban, stored in `cam-docs/backlog/` and versioned with the docs (`#/board`, <kbd>g</kbd> <kbd>b</kbd>).
-The app writes to it with its own token. The [portal's Board](portal.md#board) shows the same cards, with filters.
-
-<!-- go:board -->
-<!-- tour:board -->
-
-A project without a board shows **Turn the board on** (`camaron board init`). With a board:
-
-- **Six columns**: Backlog, Ready, In Progress, In Review, Done, Blocked. A card shows its id, type (Epic, Story, Bug,
-  Spike, Task), priority, title, its parent (`↳ WI-3`) and who it is assigned to.
-- **Move a card** by dragging it, or with the keyboard: arrows pick a card, <kbd>Space</kbd> grabs it, arrows move it,
-  <kbd>Enter</kbd> or <kbd>Space</kbd> drops it, <kbd>Esc</kbd> puts it back. <kbd>Enter</kbd> on a card you did not
-  grab opens it.
-- **The start gate.** Moving a card into In Progress checks that its dependencies are done and that the files it
-  touches do not collide with work already in progress. If something blocks it, the app names the blockers and asks
-  whether to move it anyway; yes forces the move (and the forced move is counted).
-- **Open a card** to read its description, its acceptance criteria and its definition of done. A story lists its tasks
-  and has **Add a task**. **Delete** takes the card off the board after asking: its file moves to
-  `backlog/archive/tasks` (its tasks stay).
-- **Add** (top) creates an item: type, title, what it goes under (a task under an epic or a story; a story, bug or
-  spike under an epic) and priority.
-
-Writing stories with their subtasks and waves happens in the [portal's Stories](portal.md#stories).
-
-## Decisions
-
-The project's ADRs, made with the evidence in front of you and written down, without AI (`#/decisions`, <kbd>g</kbd>
-<kbd>a</kbd>). Each ADR is `docs/decisions/<NNNN>-<title>.md`; what its review decides along the way is kept in
-`docs/.work/adr/<NNNN>.yaml`, which goes to git. The command guide has [every rule](tutorial.md#-decisions).
-
-<!-- go:decisions -->
-
-- **The list**: each ADR with its status (Running, In review, Proposed, Accepted, Superseded, Rejected…), filters and a
-  search by title, number or repo. An ADR the kit did not write shows with its status and is not rewritten.
-- **New ADR**: a title, *new* or *retroactive*, and optionally the problem, drivers, constraints, candidate options and
-  the ADR it supersedes. **Touches** picks the files, code-map groups and doc pages it affects.
-- **Candidates**: the decisions the code already took that no ADR names (runtime libraries, C4 technologies, Docker
-  Compose and Helm files). **Create a retro ADR** opens the form already filled in.
-- **Evidence**: the pack of what the project knows about what the ADR touches (code graph neighbours, citing pages,
-  related ADRs, commits, C4, libraries, open questions). **Write without AI** writes the proposed ADR with it. The C4
-  elements are listed by what their code anchors cover, and a new ADR cites in `x-sources` the elements (`c4:`) that
-  cover the files it touches, so agents get the decision with each element.
-- **Review**: part by part (approve, edit or defer each section and the affected pages) and point by point (pick an
-  option or *Other*, with a reason), plus the attendees. **Present** (<kbd>P</kbd>) shows one part per screen for a
-  meeting: <kbd>←</kbd> <kbd>→</kbd> change part, <kbd>1</kbd>–<kbd>9</kbd> pick, <kbd>E</kbd> edits, <kbd>D</kbd>
-  defers, <kbd>A</kbd> accepts, <kbd>Esc</kbd> leaves. Only the review stays on screen: a part too long for it scrolls
-  in its pane, while accepting and the keys stay in view.
-- **If the file changes while you review** (a pull, an editor), nothing is overwritten: the save is refused and the app
-  reads the ADR again. If the part you were editing changed, your draft stays, unsaved, beside what the file says now,
-  and **Save** waits until you choose **Keep my draft** or **Use the file's text**.
-- **Accept** confirms the ADR with `x-owner: human` and *Decided by*; what is not decided yet is not accepted, and the
-  app says which point or section is missing. **Reject** asks for a reason. Either way the subtitle the kit wrote under
-  the title (`description`) follows the status; one a person wrote is left alone.
-
-<!-- cmd:adr -->
-
-## Plan
-
-Run the documentation plan and see every unit (`#/plan`, <kbd>g</kbd> <kbd>p</kbd>). See
+Run the documentation plan and see every unit (`#/flow/plan`, <kbd>g</kbd> <kbd>p</kbd> still works). See
 [the plan and the harness](internals.md#the-plan-and-the-harness) for what a unit is.
 
-<!-- go:plan -->
+<!-- go:flow/plan -->
 <!-- tour:plan -->
+
 
 A project with no plan offers **Create the plan** (`camaron plan sync`). Otherwise, from the top:
 
@@ -232,7 +182,7 @@ below).
 
 **Keep it current.** **Start with {agent}** opens a session that updates the docs with what changed in the code since
 they were written: on the canvas, a terminal called **Update docs** in the **Loose sessions** lane (or a window, as
-Machine › **Where sessions open** says). While that terminal is open, the button takes you to it.
+Settings › **Where sessions open** says). While that terminal is open, the button takes you to it.
 
 **The units.** Done of total, and every unit as a card on a **Board** (Ready to start, Running, Need you, Waiting for
 others, Done), by **Phases** or on the **Canvas** (below). Colours: running amber, paused dimmed amber, done green, blocked red, awaiting your
@@ -252,7 +202,7 @@ or that it is waiting for you). The detail's button moves it:
 | An interview before the mode is chosen | **Team questionnaire** or **Live, with an agent** |
 
 **Start** and **Continue** open the session on the canvas, in the unit's node, and take you to it (or in a window, as
-Machine says); starting a unit whose session is already open there takes you to its terminal ("It already has an open
+Settings says); starting a unit whose session is already open there takes you to its terminal ("It already has an open
 session: here is its terminal."). **Continue** reopens that unit's own conversation; when it cannot be found (its
 transcript is gone, or its agent saved none), a new session opens on the unit's notes and its node says so. It never
 picks up another conversation of the folder.
@@ -290,7 +240,7 @@ session**; one that ended cleanly folds back like a run's. The docs update belon
 docs**, sits in the **Loose sessions** lane under the graph. A unit open on the canvas is never opened twice: its
 button takes you to its terminal, and its detail offers **Show its terminal**. A project holds up to 8 terminals at
 once. They live in the project's server, so closing the project's window ends them and their units read as paused.
-Machine › **Where sessions open** › **In a terminal window** opens sessions in a window of their own instead, as before
+Settings › **Where sessions open** › **In a terminal window** opens sessions in a window of their own instead, as before
 (`camaron config set sessions window`); a machine where the app cannot open terminals does that by itself and says so.
 
 **Taking a unit from the autopilot.** While the autopilot runs, started from the app or from a terminal, a unit at work
@@ -321,58 +271,37 @@ confirmed, the board and the review comments. **See what it would do** comes fir
 
 <!-- cmd:docs -->
 
-## Interviews
+## Board
 
-How the interviews run and how the team's answers come in (`#/interviews`, <kbd>g</kbd> <kbd>i</kbd>).
+The project's Kanban, stored in `cam-docs/backlog/` and versioned with the docs (`#/board`, <kbd>g</kbd> <kbd>b</kbd>).
+The app writes to it with its own token. The [portal's Board](portal.md#board) shows the same cards, with filters.
 
-<!-- go:interviews -->
-<!-- tour:interviews -->
+<!-- go:board -->
+<!-- tour:board -->
 
-Until someone chooses, the section asks **How do you run the interviews?**: a **Team questionnaire** (the team answers,
-then an agent consolidates) or **Live, with an agent**. Once chosen you can switch. In questionnaire mode:
+A project without a board shows **Turn the board on** (`camaron board init`). With a board:
 
-- the questionnaire's state: questions, people who answered, and how many questions have no agreement;
-- **Answer in the portal** opens the portal's Interview, where each person answers;
-- **Export the form** writes an offline HTML form (`camaron interview export`) and shows it in your file manager;
-- **Import answers** picks the answer files people sent back (`camaron interview import`);
-- **Close the round** marks the answers unit done once someone has answered.
+- **Six columns**: Backlog, Ready, In Progress, In Review, Done, Blocked. A card shows its id, type (Epic, Story, Bug,
+  Spike, Task), priority, title, its parent (`↳ WI-3`) and who it is assigned to.
+- **Move a card** by dragging it, or with the keyboard: arrows pick a card, <kbd>Space</kbd> grabs it, arrows move it,
+  <kbd>Enter</kbd> or <kbd>Space</kbd> drops it, <kbd>Esc</kbd> puts it back. <kbd>Enter</kbd> on a card you did not
+  grab opens it.
+- **The start gate.** Moving a card into In Progress checks that its dependencies are done and that the files it
+  touches do not collide with work already in progress. If something blocks it, the app names the blockers and asks
+  whether to move it anyway; yes forces the move (and the forced move is counted).
+- **Open a card** to read its description, its acceptance criteria and its definition of done. A story lists its tasks
+  and has **Add a task**. **Delete** takes the card off the board after asking: its file moves to
+  `backlog/archive/tasks` (its tasks stay).
+- **Add ▾** (top) is a menu. **Story** opens the portal's Stories in your browser, where stories are written; **Task** and **Bug** open the form here: type, title, what it goes under (a task under an epic or a story; a story, bug or
+  spike under an epic) and priority.
 
-Below, **Interviews with an agent** lists the interview units with the same buttons as in Plan.
-
-## Team
-
-The team's `cam-docs` repo and what came with it (`#/team`, <kbd>g</kbd> <kbd>t</kbd>).
-
-<!-- go:team -->
-<!-- tour:team -->
-
-**The team's repo.** Paste its URL and **Save** (`camaron remote`). With a remote, three figures — to send, to bring
-in, not saved yet — and **Share now** (a checkpoint, then your work rebased on the team's and pushed), **Check** (asks
-the remote what is new) and **Share every time progress is saved** (`camaron share --auto on|off`, this machine only).
-A conflict is undone and nothing is touched; something that looks like a secret is not published. A share or a check
-that fails says why — the server cannot be reached (connection, VPN or proxy), it wants a token or refuses yours, the
-repo is not there — with git's own line beneath; a token problem links to **Machine › Tokens** for that server.
-
-**What came with the team's repo.** Hooks, MCP servers, settings, skills, files and plugins in `cam-docs` that the kit
-did not write wait here until you approve them on this machine: **Approve (n)** lists them and runs
-`camaron trust --yes`. Approvals live in `~/.camarones/trust/`, never in the repo. **Method hooks in Claude Code**
-turns the kit's five hooks on or off (`camaron hooks`).
-
-**Plugins.** The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
-whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
-
-**Skills.** Every agent skill of the project with its icon, where it comes from (the kit, a team copy, the team's, a
-pack) and two switches: **Project** turns it off for the whole team (`camaron skills disable`, written to
-`workspace.yaml`), **This machine** only for you, in Claude Code (`--machine`). A skill that waits for your approval
-says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one into the team's skills
-(`camaron skills add`), and the card above asks you to approve it.
-
-**All commands** has board, checkpoint, ci, export, portal, removed and translated.
+Writing stories with their subtasks and waves happens in the [portal's Stories](portal.md#stories).
 
 ## Quality
 
 The project's health in one board: this machine, the docs and the code (`#/quality`, <kbd>g</kbd> <kbd>q</kbd>). It
-reads `camaron health`, which needs no AI.
+reads `camaron health`, which needs no AI. Two views sit under the title: **Health**, the board, and **Libraries**
+(`#/quality/libs`, below); the old `#/libs` address still opens it.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -383,21 +312,23 @@ and **Check everything** (`camaron health --refresh`). Then three areas, each wi
 | Area | States | Figures | What Open reveals |
 |---|---|---|---|
 | Machine | Ready · Review · At risk | tools, missing | **Requirements and tools**: what is missing first, each with **Install** (`camaron doctor --install …`), **Install the pinned ones** (`camaron setup`), **Check again**, and kit files out of place with **Repair**. **Kit files**: each file or link that is off, with why; **Repair** puts back the kit's, checks again and says what it could not fix and why. A file of yours that the kit never replaces is listed as kept, not as something to fix |
-| Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them) and **With and without cam-docs (AI)** (the same question asked twice) |
-| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries section |
+| Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them), **With and without cam-docs (AI)** (the same question asked twice), **Secret scan** (gitleaks over the docs and the wikis, `camaron check --secrets`: it runs when you open the row, lists each place it found — never the value — and says plainly when it could not run) and **Hooks for the agents** (the switch for the five Claude Code method hooks, `camaron hooks`, and what they saw: prompts that got docs, sessions that read the docs before their first code edit, edits stopped) |
+| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries view |
 
-A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Machine › Tokens with the
+A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Settings › Tokens with the
 server filled in. A figure that could not be read shows "—", never 0. Below the board: **See the KPIs** (portal) and
 **All commands** (the analysis and check commands: check, graph, pages, schemas, radar, history, kpis, stats…).
 
 <!-- cmd:health -->
 <!-- cmd:check -->
+<!-- cmd:hooks -->
 
-## Libraries
+### Libraries
 
-Every repo's dependencies, read from its manifests and lockfiles without AI (`#/libs`, <kbd>g</kbd> <kbd>l</kbd>).
+Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's second view
+(`#/quality/libs`).
 
-<!-- go:libs -->
+<!-- go:quality/libs -->
 <!-- tour:libs -->
 
 - **Scan for vulnerabilities** runs `camaron inventory --cves` (OSV-Scanner with its offline database, downloaded once);
@@ -428,44 +359,211 @@ Every repo's dependencies, read from its manifests and lockfiles without AI (`#/
 
 ## Docs
 
-Reading is the portal's; this section opens it and does the work it cannot (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>).
+Reading is the portal's; this place opens it, shows the state of the docs and does the work the portal cannot (`#/docs`,
+<kbd>g</kbd> <kbd>d</kbd>). Four tabs sit under the title: **Read**, **Wikis**, **Decisions** and **Interviews**. The
+status, the counters and the unanswered questions are read from what the project already knows, with no model; writing
+a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the agent and model you pick.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
-- **Read the docs**, **Review drafts** and **Search or ask** open the portal in your browser.
+**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have changes
+to bring in or never shared (and when you last did), and **Share now** (a checkpoint, then your work rebased on the team's
+and pushed). Its fold, **The team's repo**, holds the URL: paste it and **Save** (`camaron remote`). With a remote it
+also offers **Check** (asks the remote what is new) and **Share every time progress is saved**
+(`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched; something that looks
+like a secret is not published. A share or a check that fails says why — the server cannot be reached (connection, VPN
+or proxy), it wants a token or refuses yours, the repo is not there — with git's own line beneath; a token problem
+links to **Settings › Tokens** for that server.
+
+### Read
+
+- The row of chips under the tabs (a screen reader announces it as "Documentation status") counts what the project
+  already knows: drafts, pages to reconfirm, pages that cite deleted code, translations pending and feedback pending;
+  how many wikis are up to date, out of date, written under an earlier scope or missing; and the C4 (up to date, out of
+  date, not built yet, or no model to build yet). A count at zero is left out, and a line says so when no chip applies.
+  While the wikis are being read it shows a placeholder. **Wikis out of date** is a button: it opens the **Wikis** tab
+  at the first such card. The C4 chip is read again when a C4 build ends successfully; a failed one leaves it as it was.
+- **Read the docs**, **Review drafts**, **Search or ask** and **See CI** open the portal in your browser. **Review
+  drafts** shows how many drafts there are (`Review drafts · 4`) and no number when there are none.
 - **Build the C4 explorer** builds the interactive LikeC4 map the portal shows under Architecture; **View** opens it.
-- **One block per repo**: **Generate the wiki** writes that repo's OpenWiki. When the repo was not chosen for a wiki,
-  it chooses it; when it has no brief yet, it writes a starter brief without AI first. It is off, with the reason,
-  when the repo is not cloned, no wiki engine is installed, or another repo's wiki is being generated (one at a time).
-  Once the wiki has pages: **View** and **Wiki graph · {repo}** (build its graph).
-- **Ask with AI** answers a question only from the docs, through this machine's agent, and lists its sources as
-  buttons to the portal. It waits up to 90 seconds; `ask.ai: false` in `workspace.yaml` turns it off and `ask.model`
-  picks the model.
+- **Ask with AI** is a field and an **Ask** button under the C4 card, and the chat they open: a panel on the right of
+  the Docs place (a drawer over the page in a narrow window) that stays open while you move between the Docs tabs.
+  **Ask** sends the question in the field and opens the panel on it; with the field empty it only opens the panel, and a
+  question that cannot go yet stays in the field. Opening puts the focus in the panel's field; <kbd>Esc</kbd> in the
+  panel, or **Close**, closes it and gives the focus back to what opened it. <kbd>Enter</kbd> sends and
+  <kbd>Shift</kbd> <kbd>Enter</kbd> starts a new line.
+- The chat answers **only from the docs**: one headless call with no tools, in an empty folder, so it does not read the
+  code. Each answer says who wrote it and lists its sources as buttons that open the page in the portal. The last few
+  turns go along as context, so a follow-up can be short. When no page answers, it says so and the question joins
+  **Unanswered questions**. If the agent gives nothing (it is not signed in, or does not have that model), the turn
+  fails and says why. An answer waits up to 90 seconds; past that the turn fails and suggests a faster model from the
+  picker.
+- The picker at the top of the panel lists, for each agent installed on this machine, the models it can be asked for,
+  each option naming the agent and the model (`Claude Code · haiku`): Claude's haiku, sonnet and opus; Codex's single
+  default entry, which names the model set for Codex in **Settings** (`Codex · default (gpt-5.6-terra)`); the models
+  Ollama has, for OpenCode (only when both are installed, otherwise OpenCode's default); or the single default of a
+  command agent. The kit installs no model: an agent that is not on this machine is not listed. The first chat opens on
+  the agent and model Ask's AI answer uses (the one routed for small jobs; `ask.model` in `workspace.yaml` sets the
+  model), so it costs the same when Ask's model is one the picker offers; otherwise it opens on that agent's cheapest
+  entry, or on the first agent's when Ask's agent is not installed. After a turn that worked, the pick is kept on this
+  machine (`chat` in `~/.camarones.json`) and the next chat opens on it. The pick cannot be changed while an answer is
+  being written, nor while `ask.ai` is off.
+- A small shrimp under the conversation shows where the turn is: it thinks while the answer is awaited (the label reads
+  "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
+  When your system asks for reduced motion the shrimp stays still and the answer simply appears. Sending a question
+  scrolls the conversation down to it; a new answer is shown from its start, and the list does not move while it is
+  revealed.
+- The conversation lives in the window's memory, nothing is saved: it survives going to another place and coming back
+  (open the panel again), one question runs at a time, and **Clear** empties it at once and throws away an answer still
+  being written: the next question can go once that dropped answer has ended (the shrimp keeps thinking until then). If
+  the project's server is still answering an earlier question this window lost track of (the connection dropped while
+  it answered, or the window was reloaded), a new one is refused until that answer ends, and the panel says so. It is
+  gone when the window is closed or reloaded, or the project is switched. With no agent installed on this machine, or
+  with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to **Settings**.
+- **Unanswered questions** appears under the chat's field only when there are some: the questions asked on this machine
+  (in the portal's search or Ask, in this chat, or by an agent) that no page answered, each with how many times it was
+  asked (`×3`). **Add to open questions** sends it to the open questions of the next interview; **Dismiss** forgets it.
+- **All commands**, folded, has board, checkpoint, ci, export, portal, removed and translated.
 
 <!-- portal:#/docs -->
 
-## Machine
+### Wikis
 
-This machine and this project's setup (`#/machine`, <kbd>g</kbd> <kbd>m</kbd>).
+The wiki of each repo (`#/docs/wikis`).
 
-<!-- go:machine -->
-<!-- tour:machine -->
+<!-- go:docs/wikis -->
+
+- **One card per repo**, in a grid that fills the window. Each card shows its state with an icon and a word, the figures
+  the repo has (its pages, when the wiki was written, and whether its brief is the AI's or the starter one) and **one**
+  primary action that follows the state: **Generate the wiki** with no pages yet, **Update** when the code has changed
+  since the pages were written, **Expand** when the wiki was written under an earlier scope, **Try again** when the last
+  run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
+- **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
+  has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
+  the pages already there. While a wiki is being written its button reads **Generating…** with a running count of
+  seconds, and the card pulses (not when your system asks for reduced motion). It does so too when you come back to
+  Docs during a run started earlier, and the cards and Read's chips catch up when the run ends. One wiki runs at a time.
+- The action that writes pages is off, with the reason, when the repo is not cloned, no wiki engine is installed, or
+  another repo's wiki is being generated; **View** never is. The **Wiki graph · {repo}** row (**Build the graph** or
+  **Rebuild the graph**) appears once the wiki has pages, when the graph is missing or older than them, and stays to
+  show that build; after a failed graph build its button reads **Try again**. If the wikis cannot be read, one notice
+  with **Try again** says so and the actions stay off; if only a second read fails, the cards keep what was read and the
+  notice says it may be out of date.
+
+### Decisions
+
+<!-- go:docs/decisions -->
+
+The project's ADRs, made with the evidence in front of you and written down, without AI (`#/docs/decisions`, <kbd>g</kbd>
+<kbd>a</kbd> still works). Each ADR is `docs/decisions/<NNNN>-<title>.md`; what its review decides along the way is kept in
+`docs/.work/adr/<NNNN>.yaml`, which goes to git. The command guide has [every rule](tutorial.md#-decisions).
+
+
+- **The list**: each ADR with its status (Running, In review, Proposed, Accepted, Superseded, Rejected…), filters and a
+  search by title, number or repo. An ADR the kit did not write shows with its status and is not rewritten.
+- **New ADR**: a title, *new* or *retroactive*, and optionally the problem, drivers, constraints, candidate options and
+  the ADR it supersedes. **Touches** picks the files, code-map groups and doc pages it affects.
+- **Candidates**: the decisions the code already took that no ADR names (runtime libraries, C4 technologies, Docker
+  Compose and Helm files). **Create a retro ADR** opens the form already filled in.
+- **Evidence**: the pack of what the project knows about what the ADR touches (code graph neighbours, citing pages,
+  related ADRs, commits, C4, libraries, open questions). **Write without AI** writes the proposed ADR with it. The C4
+  elements are listed by what their code anchors cover, and a new ADR cites in `x-sources` the elements (`c4:`) that
+  cover the files it touches, so agents get the decision with each element.
+- **Review**: part by part (approve, edit or defer each section and the affected pages) and point by point (pick an
+  option or *Other*, with a reason), plus the attendees. **Present** (<kbd>P</kbd>) shows one part per screen for a
+  meeting: <kbd>←</kbd> <kbd>→</kbd> change part, <kbd>1</kbd>–<kbd>9</kbd> pick, <kbd>E</kbd> edits, <kbd>D</kbd>
+  defers, <kbd>A</kbd> accepts, <kbd>Esc</kbd> leaves. Only the review stays on screen: a part too long for it scrolls
+  in its pane, while accepting and the keys stay in view.
+- **If the file changes while you review** (a pull, an editor), nothing is overwritten: the save is refused and the app
+  reads the ADR again. If the part you were editing changed, your draft stays, unsaved, beside what the file says now,
+  and **Save** waits until you choose **Keep my draft** or **Use the file's text**.
+- **Accept** confirms the ADR with `x-owner: human` and *Decided by*; what is not decided yet is not accepted, and the
+  app says which point or section is missing. **Reject** asks for a reason. Either way the subtitle the kit wrote under
+  the title (`description`) follows the status; one a person wrote is left alone.
+
+<!-- cmd:adr -->
+
+### Interviews
+
+<!-- go:docs/interviews -->
+<!-- tour:interviews -->
+
+How the interviews run and how the team's answers come in (`#/docs/interviews`, <kbd>g</kbd> <kbd>i</kbd> still works).
+
+
+Until someone chooses, the section asks **How do you run the interviews?**: a **Team questionnaire** (the team answers,
+then an agent consolidates) or **Live, with an agent**. Once chosen you can switch. In questionnaire mode:
+
+- the questionnaire's state: questions, people who answered, and how many questions have no agreement;
+- **Answer in the portal** opens the portal's Interview, where each person answers;
+- **Export the form** writes an offline HTML form (`camaron interview export`) and shows it in your file manager;
+- **Import answers** picks the answer files people sent back (`camaron interview import`);
+- **Close the round** marks the answers unit done once someone has answered.
+
+Below, **Interviews with an agent** lists the interview units with the same buttons as in Plan.
+
+## Settings
+
+This machine and the kit on it (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Six tabs sit under the title: **General**, **Tokens**, **Skills**, **Plugins**, **Trust** and **Kit**. The old `#/machine` and `#/team` addresses land here and in Docs.
+
+<!-- go:settings -->
+<!-- tour:settings -->
+
+### General
 
 | Card | What it does |
 |---|---|
 | Guide and tour | Opens this guide, or the tour of the app |
 | Prepare this machine | **Run setup** (`camaron setup`): tools, repos, agent wiring, with a progress bar. Once it has run on this machine the card says **Ready**, when and with which kit, and **Run it again** stays as a quiet option |
 | Language and models | The language of the AI sessions, the Claude Code model and the Codex model (Codex's own list, or **Other…** to type one): the ones a session takes when the routing names none for its unit; and **Where sessions open**: **On the plan's canvas** (the default) or **In a terminal window** (a machine that cannot open terminals inside the app says that they open in a window). Each change is `camaron config set` |
-| GitLab, GitHub and SonarQube tokens | Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost) |
 | Repos and plan | Each repo, cloned or not, with its stack (edit it, or **Back to detected**); **Clone or pull the repos** (`sync`), **Detect repos in the folder** (`detect`) and the plan's profile, quick or full |
-| The kit | **Update the kit** (`self-update`, global install only) and then **Restart the app on the new version**; **Repair the kit's files** (`repair`) |
 | All commands | down, upgrade, version; with care: migrate, unlink |
-| Uninstall this project | **See what it would remove** first; then **Uninstall** opens a dialog that repeats the list. Changing an option takes **Uninstall** away until you look again, so the list is always what runs. Optional: also this machine's settings, tokens and caches, and without a backup. By default a `.zip` backup of `cam-docs` goes to the system's temporary folder, and an existing board is kept (copied next to the repos) |
-
-The address `#/machine?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the Tokens form filled in.
 
 <!-- cmd:setup -->
+
+### Tokens
+
+<!-- go:settings/tokens -->
+
+Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost)
+
+The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a share Docs could not make), says sharing with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
+
+### Skills
+
+<!-- go:settings/skills -->
+
+Every agent skill of the project with its icon, where it comes from (the kit, a team copy, the team's, a
+pack) and two switches: **Project** turns it off for the whole team (`camaron skills disable`, written to
+`workspace.yaml`), **This machine** only for you, in Claude Code (`--machine`). A skill that waits for your approval
+says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one into the team's skills
+(`camaron skills add`), and the Trust tab asks you to approve it.
+
+### Plugins
+
+<!-- go:settings/plugins -->
+
+The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
+whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
+
+### Trust
+
+<!-- go:settings/trust -->
+
+The tab carries a count of what waits for approval (**Trust · 2**). Hooks, MCP servers, settings, skills, files and plugins in `cam-docs` that the kit
+did not write wait here until you approve them on this machine: **Approve (n)** lists them and runs
+`camaron trust --yes`. Approvals live in `~/.camarones/trust/`, never in the repo. The switch for the kit's own method
+hooks is in **Quality**.
+
+### Kit
+
+<!-- go:settings/kit -->
+
+| Card | What it does |
+|---|---|
+| The kit | **Update the kit** (`self-update`, global install only) and then **Restart the app on the new version**; **Repair the kit's files** (`repair`) |
+| Uninstall this project | **See what it would remove** first; then **Uninstall** opens a dialog that repeats the list. Changing an option takes **Uninstall** away until you look again, so the list is always what runs. Optional: also this machine's settings, tokens and caches, and without a backup. By default a `.zip` backup of `cam-docs` goes to the system's temporary folder, and an existing board is kept (copied next to the repos) |
 
 ## Guide
 
@@ -476,7 +574,7 @@ controls. The same guides are copied into each project's `docs/guides/`, so the 
 
 ## All commands
 
-Plan, Team, Quality and Machine end with **All commands**, folded: the commands of that area that no card already runs,
+Plan, Quality, Docs (Read) and Settings (General) end with **All commands**, folded: the commands of that area that no card already runs,
 each with a form built from the CLI's own parser (`camaron catalog`). A flag becomes a checkbox, a choice a dropdown, a
 number a number field; `--yes` and `--json` are never fields. Commands that delete or move data come last, under
 **Careful: these delete or move data**, with a red **Run**; they and any command with `--yes` ask first in a dialog — unless the form asks only for a

@@ -2,23 +2,33 @@
 // points at; its title and text are i18n keys tour.<id>.<n>.t / .b (n from 1). Where the bubble goes and the dim around
 // the target are worked out here, so the overlay (Tour.jsx) only draws.
 
+import { LIBS } from './nav.js'
+
 const nav = (s) => ({ section: null, target: `nav-${s}` })
 const at = (section, ...targets) => targets.map((target) => ({ section, target }))
 
 export const TOURS = {
-  app: [{ section: null, target: 'rail' }, ...['summary', 'board', 'plan', 'interviews', 'team', 'quality', 'libs', 'docs', 'machine'].map(nav),
+  app: [{ section: null, target: 'rail' }, ...['flow', 'board', 'quality', 'docs', 'settings'].map(nav),
     { section: null, target: 'find' }, { section: null, target: 'portal' }, { section: null, target: 'menu' },
     { section: null, target: 'jobs' }, nav('guide')],
-  summary: at('summary', 'summary-next', 'summary-doctor', 'summary-stats'),
+  flow: at('flow', 'tabs-flow', 'summary-next', 'summary-doctor', 'summary-stats'),
+  plan: at('flow/plan', 'plan-run', 'plan-keep', 'plan-units', 'plan-cost', 'plan-reset'),
   board: at('board', 'board-columns', 'board-add', 'board-help'),
-  plan: at('plan', 'plan-run', 'plan-keep', 'plan-units', 'plan-cost', 'plan-reset'),
-  interviews: at('interviews', 'iv-mode', 'iv-questionnaire', 'iv-agents'),
-  team: at('team', 'team-repo', 'team-trust', 'team-plugins'),
   quality: at('quality', 'q-verdict', 'q-areas', 'q-repos'),
-  libs: at('libs', 'libs-actions', 'libs-filters', 'libs-table'),
-  docs: at('docs', 'docs-portal', 'docs-c4', 'docs-wikis', 'docs-ask'),
-  machine: at('machine', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-tokens', 'mc-repos', 'mc-kit', 'mc-uninstall'),
+  libs: at(LIBS, 'libs-actions', 'libs-filters', 'libs-table'),
+  docs: [...at('docs', 'docs-team', 'tabs-docs', 'docs-health', 'docs-portal', 'docs-c4'), ...at('docs/wikis', 'docs-wikis'), ...at('docs', 'docs-chat')],
+  interviews: at('docs/interviews', 'iv-mode', 'iv-questionnaire', 'iv-agents'),
+  settings: [...at('settings', 'tabs-settings', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-repos'), ...at('settings/tokens', 'mc-tokens'),
+    ...at('settings/skills', 'team-skills'), ...at('settings/plugins', 'team-plugins'), ...at('settings/trust', 'team-trust'),
+    ...at('settings/kit', 'mc-kit', 'mc-uninstall')],
 }
+
+// The place each tour belongs to: its steps live there or in one of its views.
+export const HOME = { flow: 'flow', plan: 'flow/plan', board: 'board', quality: 'quality', libs: LIBS, docs: 'docs', interviews: 'docs/interviews', settings: 'settings' }
+
+// Tours that merged into a place keep answering to their old id (old guides in projects still carry them).
+const ALIAS = { summary: 'flow', team: 'docs', machine: 'settings' }
+export const tourAlias = (id) => ALIAS[id] || id
 
 export const tourIds = () => Object.keys(TOURS)
 

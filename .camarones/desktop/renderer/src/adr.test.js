@@ -442,3 +442,11 @@ test('with a part being edited, no key defers, chooses or accepts; moving keeps 
   expect(fx({ do: 'toggle' }, true)).toEqual({ present: false })
   expect(keyEffect(a, 'drivers', { do: 'exit' }, { present: true })).toEqual({ present: false })   // nothing open: leave
 })
+
+test('the section lives under docs, the legacy address still routes', async () => {
+  const { ADR_BASE } = await import('./adr.js')
+  expect(ADR_BASE).toBe('#/docs/decisions')
+  expect(route('#/docs/decisions/new')).toEqual({ view: 'new' })
+  expect(route('#/docs/decisions/0012')).toEqual({ view: 'adr', id: '0012' })
+  expect(route('#/docs/decisions')).toEqual({ view: 'list' })
+})

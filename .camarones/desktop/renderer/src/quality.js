@@ -1,4 +1,4 @@
-// Pure pieces of the Quality, Machine, Kit dev and Libraries sections: the doctor's findings in the order you act on
+// Pure pieces of the Quality (with its Libraries view), Machine and Kit dev sections: the doctor's findings in the order you act on
 // them, the kit files that are off and why, pytest's tally, setup's and the vulnerability scan's progress and a check's time.
 
 // lib/doctor.report() → what is missing (needed prerequisites, pinned tools), with the command that fixes it; what
@@ -63,4 +63,18 @@ export const seconds = (iso) => { const ms = Date.parse(iso); return Number.isNa
 
 // The board rows (ui/src/health.js) whose control this app owns. `review` is a link into the portal and `repos` is
 // the board's own table, so neither is here.
-export const BOARD_ACTIONS = ['doctor', 'drift', 'fresh', 'evals', 'context', 'blocks', 'ab', 'libs']
+export const BOARD_ACTIONS = ['doctor', 'drift', 'fresh', 'evals', 'context', 'blocks', 'ab', 'secrets', 'hooks', 'libs']
+
+// `check --secrets` prints "WARN  <why>" for a scan it could not run and "ERROR <file:line: possible secret …>" per
+// finding (never the value). No output is a clean scan; a scan that did not run is never one.
+export function secretsVerdict(lines) {
+  const out = (lines || []).map(String)
+  const after = (tag) => out.filter((l) => l.startsWith(tag)).map((l) => l.slice(tag.length).trim())
+  const found = after('ERROR')
+  if (found.length) return { state: 'found', items: found }
+  const skipped = after('WARN')
+  return skipped.length ? { state: 'skipped', items: skipped } : { state: 'clean', items: [] }
+}
+
+// `hooks report`: the share of sessions that edited code and read the docs first, or a dash when none edited yet.
+export const hooksShare = (report) => (typeof report?.share === 'number' ? `${Math.round(report.share * 100)}%` : '—')

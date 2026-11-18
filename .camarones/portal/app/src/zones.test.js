@@ -21,7 +21,7 @@ test('static export: live-only zones and views are gone', () => {
 
 test('live: every zone, code only with a graph', () => {
   expect(zonesFor('live', idx).map((x) => x.id)).toEqual(['docs', 'board', 'stories', 'arch', 'plan', 'quality', 'review'])
-  expect(zonesFor('live', idx).find((x) => x.id === 'arch').views.map((v) => v.id)).toEqual(['c4', 'data', 'libs'])
+  expect(zonesFor('live', idx).find((x) => x.id === 'arch').views.map((v) => v.id)).toEqual(['c4', 'data'])
   expect(zonesFor('live', { ...idx, codeMaps: ['api'] }).find((x) => x.id === 'arch').views[1].id).toBe('code')
   expect(paletteEntries('live', idx).map((e) => e.href)).not.toContain('#/boards')
 })
@@ -29,7 +29,7 @@ test('live: every zone, code only with a graph', () => {
 test('Calidad: Salud comes first, live only', () => {
   expect(locate('#/health')).toEqual({ zone: 'quality', view: 'health' })
   expect(locate('#/health/api')).toEqual({ zone: 'quality', view: 'health' })
-  expect(zonesFor('live', idx).find((x) => x.id === 'quality').views.map((v) => v.id)).toEqual(['health', 'kpis', 'ci'])
+  expect(zonesFor('live', idx).find((x) => x.id === 'quality').views.map((v) => v.id)).toEqual(['health', 'libs', 'kpis', 'ci'])
   expect(zonesFor('static', idx).some((x) => x.id === 'quality')).toBe(false)
   expect(paletteEntries('live', idx)).toContainEqual({ key: 'view.health', href: '#/health', zone: 'quality' })
   expect(crumbs('#/health', 'live', idx)).toEqual([{ key: 'zone.quality', href: '#/quality' }, { key: 'view.health', href: '#/health' }])
@@ -84,6 +84,16 @@ test('home, unknown and unavailable routes have no crumbs', () => {
   expect(crumbs('#/plan', 'static', idx)).toEqual([])
 })
 
+// Libraries are a quality matter (versions, advisories) next to the health board, not an architecture view; #/libs is unchanged.
+test('Calidad holds the libraries, live only, at the same address as before', () => {
+  expect(locate('#/libs')).toEqual({ zone: 'quality', view: 'libs' })
+  expect(locate('#/libs/api')).toEqual({ zone: 'quality', view: 'libs' })
+  expect(zonesFor('static', idx).find((x) => x.id === 'arch').views.map((v) => v.id)).not.toContain('libs')
+  expect(crumbs('#/libs', 'live', idx)).toEqual([{ key: 'zone.quality', href: '#/quality' }, { key: 'view.libs', href: '#/libs' }])
+  expect(crumbs('#/libs/api', 'live', idx)).toEqual([{ key: 'zone.quality', href: '#/quality' }, { key: 'view.libs', href: '#/libs' },
+    { text: 'api', href: null }])
+})
+
 test('search keeps its query as a crumb', () => {
   expect(crumbs('#/search/fecha%20cita', 'live', idx)).toEqual([{ key: 'search', href: null }, { text: 'fecha cita', href: null }])
 })
@@ -91,7 +101,7 @@ test('search keeps its query as a crumb', () => {
 test('palette: one entry per available zone cover and view, a cover that is its view only once', () => {
   const live = paletteEntries('live', idx)
   expect(live.filter((e) => e.href === '#/review')).toEqual([{ key: 'zone.review', href: '#/review', zone: 'review' }])
-  expect(live).toContainEqual({ key: 'view.libs', href: '#/libs', zone: 'arch' })
+  expect(live).toContainEqual({ key: 'view.libs', href: '#/libs', zone: 'quality' })
   expect(live).toContainEqual({ key: 'zone.quality', href: '#/quality', zone: 'quality' })
   expect(live.filter((e) => e.href === '#/docs')).toHaveLength(1)
 })

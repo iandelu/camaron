@@ -1,45 +1,123 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card } from '@camaron/ui'
-import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiBlocks, wikiBusyWith,
-  wikiError, wikisRead } from '../docs.js'
-import { useJob, useStore } from '../hooks.js'
+import { Aviso, Button, Card, Thinking } from '@camaron/ui'
+import { route as adrRoute } from '../adr.js'
+import { buildFailed, c4Card, docsHealth, lastMiss, openPortal, readViewers, seeksStale, startBuild, startWiki, viewersRead, wikiAction,
+  wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
+import { useHash, useJob, useStore } from '../hooks.js'
+import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
-import { JobOutput, Page } from '../parts.jsx'
+import { JobOutput } from '../parts.jsx'
+import { viewOf } from '../nav.js'
+import { Place } from '../Place.jsx'
 import { t } from '../i18n.js'
+import Commands from './Commands.jsx'
+import Decisions from './Decisions.jsx'
+import { AskEntry, DocsChat } from './DocsChat.jsx'
+import { DocsHealth, scrollToStale } from './DocsHealth.jsx'
+import { DocsIcon } from './DocsIcons.jsx'
+import { DocsMisses } from './DocsMisses.jsx'
+import Interviews from './Interviews.jsx'
+import TeamStrip from './TeamStrip.jsx'
+
+export { AnswerView } from './DocsChat.jsx'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
 // href the window would follow). The portal has no app token (only the board's), so what it shows but cannot run is
-// run here: the C4 explorer, each repo's wiki (generate it, build its graph) and Ask's AI answer. One wiki runs at a
-// time: while one runs (the jobs store), Generate is closed on the other repos.
+// run here: the C4 explorer, each repo's wiki (generate it, build its graph) and the docs chat, on the window's chat
+// store. One wiki runs at a time: while one runs (the jobs store), Generate is closed on the other repos.
 const NONE = { running: [] }
 const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
-export default function Docs({ srv, jobs, app, index }) {
-  const open = (hash) => openPortal(app, location.origin, hash)
-  const { rows, loading, failed, reload } = useWikis(srv)
-  const { running } = useStore(jobs || NO_JOBS)
+const QUIET = { messages: [], running: false, runners: null, choice: null, ai: true, loadError: '' }
+const NO_CHAT = { ...NO_JOBS, get: () => QUIET, load: () => {}, send: () => {}, pick: () => {}, clear: () => {} }
+
+// The chat panel is the place's, not a tab's: it stays beside every tab while open, in the grid column the wrapper keeps for
+// it. The models are read on mount, so the picker is ready when it opens; closing it gives the focus back to what opened it,
+// or to the page when that went with its tab.
+export default function Docs({ srv, jobs, chat, app, index }) {
+  const hash = useHash()
+  const view = viewOf(hash, 'docs')
+  const open = (to) => openPortal(app, location.origin, to)
+  const talk = chat || NO_CHAT
+  const [chatting, setChatting] = useState(false)
+  const opener = useRef(null)
+  useEffect(() => { talk.load() }, [])
+  const ask = () => { opener.current = document.activeElement; setChatting(true) }
+  const close = () => {
+    setChatting(false)
+    const back = opener.current?.isConnected ? opener.current : document.getElementById('main')
+    back?.focus()
+  }
+  // the wiki grid fills the wide page; so does one ADR open (its review's two columns, its evidence's two cards)
+  const wide = view === 'wikis' || (view === 'decisions' && adrRoute(hash).view === 'adr')
   return (
-    <Page title={t('nav.docs')}>
+    <div className={chatting ? 'dk-docs with-chat' : 'dk-docs'}>
+      <Place section="docs" view={view} wide={wide} head={<TeamStrip srv={srv} jobs={jobs} />}>
+        {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} index={index} open={open} seek={seeksStale(hash)} />
+          : view === 'decisions' ? <Decisions srv={srv} />
+          : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
+          : <ReadView srv={srv} jobs={jobs} chat={talk} index={index} open={open} onAsk={ask} />}
+      </Place>
+      {chatting ? <DocsChat chat={talk} onClose={close} onOpen={open} /> : null}
+    </div>
+  )
+}
+
+// The health header, the portal's buttons (Review with its draft count), the C4 card, the chat's entry and, once a question
+// found nothing, the questions nobody answered (re-read after the chat's newest reply that found nothing).
+function ReadView({ srv, jobs, chat, index, open, onAsk }) {
+  const wikis = useWikis(srv, jobs)
+  const { viewers, reload: reloadViewers } = useViewers(srv)
+  const missed = lastMiss(useStore(chat).messages)
+  const drafts = index?.summary?.draft || 0
+  return (
+    <>
+      <DocsHealth chips={docsHealth(index, wikis.rows, viewers)} loading={wikis.loading} />
       <div className="row" data-tour="docs-portal">
-        <Button variant="primary" onClick={() => open('#/')}>{t('docs.read')}</Button>
-        <Button onClick={() => open('#/review')}>{t('docs.review')}</Button>
-        <Button variant="ghost" onClick={() => open('#/search')}>{t('docs.search')}</Button>
+        <Button variant="primary" onClick={() => open('#/')}><DocsIcon name="read" />{t('docs.read')}</Button>
+        <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
+        <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
+        <Button variant="ghost" onClick={() => open('#/ci')}><DocsIcon name="ci" />{t('docs.ci')}</Button>
       </div>
-      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
+      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
+        onDone={reloadViewers} /></div>
+      <AskEntry chat={chat} onAsk={onAsk} />
+      <DocsMisses srv={srv} version={missed} />
+      <Commands srv={srv} jobs={jobs} section="docs" />
+    </>
+  )
+}
+
+// The wiki cards. `seek`: the address asks for the first stale card (the health header's chip), looked for once the cards are read.
+function WikisView({ srv, jobs, index, open, seek }) {
+  const wikis = useWikis(srv, jobs)
+  const sought = useRef(!seek)
+  useEffect(() => {
+    if (sought.current || !wikis.rows) return
+    sought.current = true
+    scrollToStale()
+  }, [wikis.rows])
+  return <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={wikis.running} open={open} />
+}
+
+// The wiki cards and, once a read failed, the one notice above them (the cards do not repeat it). `wikis` is useWikis' state.
+export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, reload }, running, open }) {
+  return (
+    <>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
-      <div className="dk-stack" data-tour="docs-wikis">
-        {wikiBlocks(index, rows).map((b) => (             // a failed read is said once, above: the blocks do not repeat it
-          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
-            onView={() => open(b.hash)} onDone={reload} />))}
+      <div className="dk-wikis" data-tour="docs-wikis">
+        {wikiBlocks(index, rows).map((b, i) => (
+          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading} failed={failed} busyWith={wikiBusyWith(running, b.repo)}
+            runningHere={wikiRunning(running, b.repo)} onView={() => open(b.hash)} onDone={reload} />))}
       </div>
-      <Ask srv={srv} open={open} />
-    </Page>
+    </>
   )
 }
 
 // Each repo's wiki state (GET wikis, read-only: cloned, chosen, brief, pages, whether it can be generated), read once and
 // again after a run or a Retry; rows null while loading or when the first read failed (the blocks then keep Generate
-// closed). A failed re-read keeps the last good rows (wikisRead); `failed` brings the Retry.
-function useWikis(srv) {
+// closed). A failed re-read keeps the last good rows (wikisRead); `failed` brings the Retry. A run that ends, whoever started
+// it (the jobs store's `running`), reads them again, so its card and the header catch up.
+function useWikis(srv, jobs) {
   const [state, setState] = useState({ rows: null, loading: true, failed: false })
   const alive = useRef(true)
   const reload = () => srv.get('wikis').then((rows) => { if (alive.current) setState((s) => wikisRead(s, { rows })) },
@@ -49,7 +127,28 @@ function useWikis(srv) {
     reload()
     return () => { alive.current = false }
   }, [])
-  return { ...state, reload }
+  const { running } = useStore(jobs || NO_JOBS)
+  const runs = wikiRuns(running)
+  const seen = useRef(runs)
+  useEffect(() => {
+    if (wikiRunsEnded(seen.current, runs).length) reload()
+    seen.current = runs
+  }, [runs.join('\n')])
+  return { ...state, reload, running }
+}
+
+// GET viewers, read once and again after the C4 build (`reload`); null until read and when the first read failed, so the header
+// says nothing of the C4 rather than a zero. A failed reload keeps the last answer (viewersRead).
+function useViewers(srv) {
+  const [viewers, setViewers] = useState(null)
+  const alive = useRef(true)
+  const reload = () => readViewers(srv, () => alive.current, (got) => setViewers((prev) => viewersRead(prev, got)))
+  useEffect(() => {
+    alive.current = true
+    reload()
+    return () => { alive.current = false }
+  }, [])
+  return { viewers, reload }
 }
 
 // GET wikis failed: said once, with a Retry. `kept`: the cards still show the last good read.
@@ -58,10 +157,12 @@ export function WikisUnread({ kept, onRetry }) {
     action={<Button size="sm" onClick={onRetry}>{t('retry')}</Button>} />
 }
 
-// A build job of the project server (POST build, token-gated) followed to its end.
-function Build({ srv, jobs, card, ...rest }) {
+// A build job of the project server (POST build, token-gated) followed to its end; `onDone` only when it ended `done`, so what
+// the section read about the result (the header's C4 chip) is read again.
+export function Build({ srv, jobs, card, onDone, ...rest }) {
   const build = useJob(srv, jobs, () => startBuild(srv, card))
-  return <BuildCard build={build} onBuild={() => build.run()} {...rest} />
+  const run = async () => { if ((await build.run())?.status === 'done') onDone?.() }
+  return <BuildCard build={build} onBuild={run} {...rest} />
 }
 
 // A job's state with a rejection said in the person's language (the POST failed before there was a job).
@@ -82,93 +183,77 @@ export function BuildCard({ title, hint, build, onBuild, onView }) {
   )
 }
 
-// One block per repo: Generate runs POST wiki (it chooses the repo and writes the starter brief, which the hint says),
-// and once there are pages — already, or after this run — the graph can be built and the wiki viewed in the portal.
-// Generate is closed, with the reason, for a repo that is not cloned or without a wiki engine (the portal's canGenerate),
-// and while another repo's wiki runs (busyWith: that repo).
-const WHY = { notCloned: 'docs.notCloned', noEngine: 'docs.noEngine', unread: 'docs.wikiUnread' }
-export function WikiBlock({ srv, jobs, block, loading = false, busyWith = '', onView, onDone }) {
-  const gen = useJob(srv, jobs, async () => startWiki(srv, block))
+// One block per repo: its card runs POST wiki (Generate chooses the repo and writes the starter brief, Update asks for mode
+// `update`) and the graph build, and opens the wiki in the portal. Wiring only: what the card shows is WikiCard's.
+export function WikiBlock({ srv, jobs, block, loading = false, failed = false, busyWith = '', runningHere = false, index = 0, onView, onDone }) {
+  const gen = useJob(srv, jobs, async (action) => startWiki(srv, block, action))
   const graph = useJob(srv, jobs, () => startBuild(srv, block.graph))
+  const run = async (action) => { if ((await gen.run(action))?.status === 'done') onDone?.() }
+  const build = async () => { if ((await graph.run())?.status === 'done') onDone?.() }
+  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} failed={failed} busyWith={busyWith} runningHere={runningHere} index={index}
+    now={Date.now() / 1000} onGenerate={run} onUpdate={run} onGraph={build} onView={onView} />
+}
+
+// Why Generate is closed: a repo that is not cloned or without a wiki engine (the portal's canGenerate), or wikis not read.
+const WHY = { notCloned: 'docs.notCloned', noEngine: 'docs.noEngine', unread: 'docs.wikiUnread' }
+
+// The status line's figures, from the row; what the row does not know is left out, never shown as a zero.
+const figures = ({ pages, at, brief }, now) => [
+  pages > 0 && t(pages === 1 ? 'docs.w.pages.one' : 'docs.w.pages.many', { n: pages }),
+  pages > 0 && at > 0 && t('docs.w.written', { when: ago(at, now, t) }),
+  brief && t(`docs.w.brief.${brief}`),
+].filter(Boolean)
+
+// One repo's wiki as a card: its state (icon and word), one primary action, and View beside it once there are pages. `gen` and
+// `graph` are useJob states; `now` is epoch seconds, as the rows' `at`. Before the wikis are read (`loading` the first read, or the
+// tree fallback's `blocked: 'unread'`) its row is only defaults, so it says nothing about freshness and closes its action. A
+// failed re-read (`failed`) keeps the last good rows, so it does not quiet the card; it only spares the card the unread reason,
+// said once above. A reason of its own (not cloned, no engine) or another repo's run (busyWith) closes what writes pages, never View.
+// `runningHere`: this repo's run as the jobs store lists it (one started before Docs was left is no longer `gen`'s).
+export function WikiCard({ block, gen, graph, loading = false, failed = false, busyWith = '', runningHere = false, index = 0, now, onGenerate, onUpdate,
+  onGraph, onView }) {
   const title = t('docs.wikiBlock', { repo: block.repo })
   const graphTitle = t('docs.wiki', { repo: block.repo })
-  const go = buildFailed(gen) ? t('retry') : t('docs.generate')
-  const run = async () => { if ((await gen.run())?.status === 'done') onDone?.() }
-  const again = buildFailed(graph) ? t('retry') : t('docs.build')
   const pages = block.hasWiki || gen.job?.status === 'done'
-  const why = (block.blocked && !(block.blocked === 'unread' && loading) ? t(WHY[block.blocked]) : '')
-    || (busyWith ? t('docs.wikiBusy', { repo: busyWith }) : '')
+  const own = wikiState({ ...block, hasWiki: pages }, { running: gen.running || runningHere, failed: buildFailed(gen) })
+  const unread = (loading || block.blocked === 'unread') && own !== 'generating'
+  const state = unread ? 'unread' : own === 'none' && block.blocked ? 'blocked' : own
+  const action = wikiAction(unread || state === 'blocked' ? 'none' : state)
+  const writes = !!action.kind && action.kind !== 'view'
+  const why = (block.blocked && writes && !(block.blocked === 'unread' && (loading || failed)) ? t(WHY[block.blocked]) : '')
+    || (busyWith && writes ? t('docs.wikiBusy', { repo: busyWith }) : '')
+  const label = action.label && t(action.label)
+  const line = unread || state === 'generating' ? [] : figures(block.info, now)
+  const showGraph = pages && !unread && (!block.info.graph || block.info.graphStale || !!graph.job || !!graph.error)
+  const again = buildFailed(graph) ? t('retry') : t(block.info.graph ? 'docs.graphRebuild' : 'docs.graphBuild')
+  const go = () => (action.kind === 'view' ? onView() : action.kind === 'update' ? onUpdate(action) : onGenerate(action))
   return (
-    <Card className="dk-run">
-      <div className="row"><span className="eyebrow">{title}</span><span className="dk-grow"></span>
-        <Button size="sm" variant="primary" disabled={gen.running || !!block.blocked || !!busyWith} aria-label={`${go}: ${title}`} onClick={() => run()}>{go}</Button>
-        {pages ? <Button size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${title}`} onClick={onView}>{t('docs.view')}</Button> : null}</div>
-      <p className="muted small">{why || t('docs.generateHint')}</p>
+    <Card className={`dk-run dk-wiki is-${state}${gen.job?.status === 'done' ? ' is-done' : ''}`} data-wiki-state={state}
+      style={{ '--i': Math.min(index, 8) }}>
+      <div className="row dk-wiki-head"><DocsIcon name={unread ? 'wikis' : state} /><span className="eyebrow dk-wiki-name">{title}</span></div>
+      <p className="dk-wiki-status small">
+        {unread ? null : <strong className="dk-wiki-word">{t(`docs.w.${state}`)}</strong>}
+        {line.length ? <span className="muted">{` · ${line.join(' · ')}`}</span> : null}
+      </p>
+      {why ? <p className="muted small">{why}</p> : null}
+      <div className="row">
+        {state === 'generating'
+          ? <Button size="sm" variant="primary" disabled aria-busy="true" aria-label={`${t('docs.generating')}: ${title}`}>
+            <Thinking timer>{t('docs.generating')}</Thinking></Button>
+          : <Button size="sm" variant="primary" disabled={unread || (writes && (!!block.blocked || !!busyWith))}
+            aria-label={`${label}: ${title}`} onClick={go}>{label}</Button>}
+        {pages && action.kind !== 'view'
+          ? <Button size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${title}`} onClick={onView}>{t('docs.view')}</Button> : null}
+      </div>
       <JobOutput c={shownJob(gen, wikiError)} />
-      {pages ? (
+      {showGraph ? (
         <>
           <div className="row"><span className="muted small">{graphTitle}</span><span className="dk-grow"></span>
-            <Button size="sm" disabled={graph.running} aria-label={`${again}: ${graphTitle}`} onClick={() => graph.run()}>{again}</Button></div>
+            <Button size="sm" disabled={graph.running} aria-label={`${again}: ${graphTitle}`} onClick={onGraph}>{again}</Button></div>
           <p className="muted small">{t('docs.wikiHint')}</p>
           <JobOutput c={shownJob(graph)} />
         </>
       ) : null}
     </Card>
-  )
-}
-
-// Ask's AI answer: POST ask/answer waits for the model (up to 90 s), so it is a request of its own, not a job. An
-// empty question is not sent.
-function Ask({ srv, open }) {
-  const [q, setQ] = useState('')
-  const [state, setState] = useState({ busy: false, view: null, error: '' })
-  const alive = useRef(true)
-  useEffect(() => {
-    alive.current = true
-    return () => { alive.current = false }
-  }, [])
-  async function submit(e) {
-    e.preventDefault()
-    const body = askBody(q)
-    if (!body || state.busy) return
-    setState({ busy: true, view: null, error: '' })
-    try {
-      const view = answerView(await srv.post('ask/answer', body))
-      if (alive.current) setState({ busy: false, view, error: '' })
-    } catch (err) {
-      if (alive.current) setState({ busy: false, view: null, error: askError(err, t) })
-    }
-  }
-  return (
-    <Card className="dk-run" data-tour="docs-ask">
-      <span className="eyebrow">{t('docs.ask')}</span>
-      <p className="muted small">{t('docs.askHint')}</p>
-      <form className="row" onSubmit={submit}>
-        <input className="cu-input dk-grow" value={q} placeholder={t('docs.askPh')} aria-label={t('docs.askLabel')} onChange={(e) => setQ(e.target.value)} />
-        <Button type="submit" variant="primary" size="sm" disabled={state.busy || !q.trim()}>{t('docs.askGo')}</Button>
-      </form>
-      {state.busy ? <p className="muted small" role="status">{t('docs.asking')}</p> : null}
-      {state.error ? <Aviso tone="error" title={state.error} /> : null}
-      {state.view ? <AnswerView view={state.view} onOpen={open} /> : null}
-    </Card>
-  )
-}
-
-// The answer as text, who wrote it, and its sources as buttons that open the page in the portal.
-export function AnswerView({ view, onOpen }) {
-  if (view.kind === 'none') return <p className="muted">{t('docs.askNone')}</p>
-  return (
-    <div className="dk-out">
-      <p className="dk-answer">{view.text}</p>
-      {view.by ? <p className="muted small">{t('docs.by', { who: view.by })}</p> : null}
-      {view.sources.length ? (
-        <div className="row">
-          <span className="muted small">{t('docs.sources')}</span>
-          {view.sources.map((s) => (
-            <Button key={s.cite} size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${s.cite}`} onClick={() => onOpen(s.hash)}>{s.cite}</Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
   )
 }

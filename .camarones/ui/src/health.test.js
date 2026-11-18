@@ -149,17 +149,19 @@ test('a fact the snapshot does not hold is a dash and a neutral state, never 0 o
   expect(out).not.toContain('undefined')
 })
 
-test('rowsFor docs gives the six rows in spec order, with the error message of a failed source', () => {
+test('rowsFor docs gives the eight rows in spec order, with the error message of a failed source', () => {
   const s = snapshot()
   s.docs = { ...s.docs, stale: { error: 'no index' }, suspect: { error: 'no index' }, evals: { error: 'bad yaml' } }
   const rows = rowsFor('docs', s)
-  expect(rows.map((r) => r.id)).toEqual(['fresh', 'evals', 'context', 'review', 'blocks', 'ab'])
+  expect(rows.map((r) => r.id)).toEqual(['fresh', 'evals', 'context', 'review', 'blocks', 'ab', 'secrets', 'hooks'])
   expect(rows[0]).toMatchObject({ state: 'warn', figure: null, error: 'no index' })
   expect(rows[1]).toMatchObject({ state: 'warn', figure: null, error: 'bad yaml' })
   expect(rows[2]).toMatchObject({ state: 'ok', figure: '900/2000' })
   expect(rows[3]).toMatchObject({ state: 'ok', figure: '0' })
   expect(rows[4]).toEqual({ id: 'blocks', state: null, figure: null })        // no fact in the snapshot
   expect(rows[5]).toEqual({ id: 'ab', state: null, figure: null })
+  expect(rows[6]).toEqual({ id: 'secrets', state: null, figure: null })       // the app reads them live, the snapshot holds nothing
+  expect(rows[7]).toEqual({ id: 'hooks', state: null, figure: null })
 })
 
 test('rowsFor docs rates stale pages bad, suspect and unconfirmed questions warn', () => {
@@ -356,14 +358,14 @@ test('a Sonar repo without server figures says yes (or no); the gate never shows
   expect(repoRow('api', repo(), 'ok', en, true, NOW).sonar).toBe('no')
 })
 
-test('a repo with connect: true exposes the host to connect, and #/machine asks for the token of that host', () => {
+test('a repo with connect: true exposes the host to connect, and Settings › Tokens asks for the token of that host', () => {
   const r = repoRow('api', repo({ sonar: sonar({ connect: true }) }), 'ok', en, true, NOW)
   expect(r.connect).toBe('https://sonar.acme.test')
   expect(repoRow('api', repo({ sonar: sonar() }), 'ok', en, true, NOW).connect).toBeUndefined()
   const bare = repoRow('api', repo({ sonar: sonar({ connect: true, host: '' }) }), 'ok', en, true, NOW)
   expect(bare.connect).toBe('')                                          // SonarCloud or the team's host: none in the block
-  expect(sonarConnectHash('')).toBe('#/machine?kind=sonarqube')
-  expect(sonarConnectHash('https://sonar.acme.test/a b')).toBe('#/machine?host=https%3A%2F%2Fsonar.acme.test%2Fa%20b&kind=sonarqube')
+  expect(sonarConnectHash('')).toBe('#/settings/tokens?kind=sonarqube')
+  expect(sonarConnectHash('https://sonar.acme.test/a b')).toBe('#/settings/tokens?host=https%3A%2F%2Fsonar.acme.test%2Fa%20b&kind=sonarqube')
 })
 
 test('a Sonar error with kept values shows the gate, how old they are and the reason', () => {
@@ -390,12 +392,12 @@ test('the board draws the gate word, its age and the connect link only where the
   const app = code({ connectHref: sonarConnectHash })
   expect(app).toContain('Failed')
   expect(app).toContain('No connection')
-  expect(app).toContain(`href="#/machine?host=${encodeURIComponent('https://sonar.acme.test')}&amp;kind=sonarqube"`)
+  expect(app).toContain(`href="#/settings/tokens?host=${encodeURIComponent('https://sonar.acme.test')}&amp;kind=sonarqube"`)
   expect(app).toContain(en('hb.connect'))
   expect(code({})).not.toContain(en('hb.connect'))
   const bare = snapshot({ repos: { web: repo({ sonar: sonar({ connect: true, host: '' }) }) }, repo_state: { web: 'ok' } })
   const out = renderToStaticMarkup(h(HealthBoard, { snapshot: bare, initialTab: 'code', connectHref: sonarConnectHash }))
-  expect(out).toContain('href="#/machine?kind=sonarqube"')
+  expect(out).toContain('href="#/settings/tokens?kind=sonarqube"')
   expect(out).not.toContain('host=')
 })
 

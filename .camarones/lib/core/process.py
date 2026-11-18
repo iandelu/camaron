@@ -70,11 +70,15 @@ def which(name: str) -> str | None:
 
 
 def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool = False,
-        capture: bool = False, env: dict | None = None) -> subprocess.CompletedProcess:
-    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows)."""
+        capture: bool = False, env: dict | None = None, timeout: float | None = None) -> subprocess.CompletedProcess:
+    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows). With a `timeout`
+    (seconds) a command that runs longer is killed and `subprocess.TimeoutExpired` is raised; on Windows only the
+    direct child dies, so a .cmd shim's own child may outlive it."""
     exe = which(cmd[0]) or cmd[0]
     full = [exe, *cmd[1:]]
     kw: dict = {"cwd": str(cwd) if cwd else None, "env": {**os.environ, **(env or {})}}
+    if timeout is not None:
+        kw["timeout"] = timeout
     if capture or quiet:
         kw.update(capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
@@ -91,8 +95,8 @@ def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool
     return r
 
 
-def out(cmd: list[str], cwd: Path | None = None) -> str:
-    r = run(cmd, cwd=cwd, check=False, capture=True)
+def out(cmd: list[str], cwd: Path | None = None, timeout: float | None = None) -> str:
+    r = run(cmd, cwd=cwd, check=False, capture=True, timeout=timeout)
     return (r.stdout or "").strip() if r.returncode == 0 else ""
 
 

@@ -1,13 +1,13 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { GuideView, markerAction } from './sections/Guide.jsx'
-import Machine from './sections/Machine.jsx'
+import { SettingsView } from './sections/Settings.jsx'
 import { parse } from './guide.js'
 import { setLang } from './i18n.js'
 
 afterEach(() => setLang('es'))
 
-const SECTIONS = ['summary', 'plan', 'quality', 'machine', 'guide']
+const SECTIONS = ['flow', 'quality', 'docs', 'settings', 'guide']
 const COMMANDS = [{ name: 'check', zone: 'check', verdict: 'app' }, { name: 'setup', zone: 'machine', verdict: 'app' }]
 const APP = [
   '## Plan',
@@ -54,15 +54,20 @@ test('markers become buttons only for what this window has', () => {
 
 test('markerAction: where each marker goes, null when it cannot go there', () => {
   const ctx = { sections: SECTIONS, commands: COMMANDS, tours: ['plan'] }
-  expect(markerAction({ kind: 'go', target: 'plan' }, ctx)).toEqual({ label: 'Ir a Plan', href: '#/plan' })
+  expect(markerAction({ kind: 'go', target: 'plan' }, ctx)).toEqual({ label: 'Ir a Plan', href: '#/flow/plan' })
+  expect(markerAction({ kind: 'go', target: 'docs/decisions' }, ctx)).toEqual({ label: 'Ir a Decisiones', href: '#/docs/decisions' })
+  expect(markerAction({ kind: 'tour', target: 'machine' }, { ...ctx, tours: ['settings'] })).toEqual({ label: 'Enséñamelo', tour: 'settings' })
   expect(markerAction({ kind: 'cmd', target: 'check' }, ctx)).toEqual({ label: 'Abrir camaron check', href: '#/quality/check' })
-  expect(markerAction({ kind: 'cmd', target: 'setup' }, ctx)).toEqual({ label: 'Abrir camaron setup', href: '#/machine' })
+  expect(markerAction({ kind: 'cmd', target: 'setup' }, ctx)).toEqual({ label: 'Abrir camaron setup', href: '#/settings' })
   expect(markerAction({ kind: 'cmd', target: 'nope' }, ctx)).toBeNull()
   expect(markerAction({ kind: 'cmd', target: 'check' }, { ...ctx, commands: [] })).toBeNull()   // catalog not read yet
   expect(markerAction({ kind: 'portal', target: '#/review' }, ctx)).toEqual({ label: 'Abrir en el portal', portal: '#/review' })
   expect(markerAction({ kind: 'portal', target: 'javascript:alert(1)' }, ctx)).toBeNull()
   expect(markerAction({ kind: 'tour', target: 'plan' }, ctx)).toEqual({ label: 'Enséñamelo', tour: 'plan' })
   expect(markerAction({ kind: 'go', target: 'kitdev' }, ctx)).toBeNull()
+  expect(markerAction({ kind: 'go', target: 'quality/libs' }, ctx)).toEqual({ label: 'Ir a Librerías', href: '#/quality/libs' })
+  expect(markerAction({ kind: 'go', target: 'quality/libs' }, { ...ctx, sections: ['plan'] })).toBeNull()
+  expect(markerAction({ kind: 'go', target: 'quality/nope' }, ctx)).toBeNull()
 })
 
 test('the search box is there, in the machine language', () => {
@@ -72,9 +77,9 @@ test('the search box is there, in the machine language', () => {
   expect(out).toContain('Go to Plan')
 })
 
-test('Machine opens with the guide card, before its own read arrives', () => {
+test('Settings opens with the guide card, before its own read arrives', () => {
   const srv = { get: () => new Promise(() => {}), post: () => new Promise(() => {}) }
-  const out = renderToStaticMarkup(<Machine srv={srv} jobs={null} app={{}} />)
+  const out = renderToStaticMarkup(<SettingsView view="general" m={null} fill={{ host: '', kind: '' }} srv={srv} jobs={null} app={{}} />)
   expect(out).toContain('Guía y recorrido')
   expect(out).toContain('href="#/guide"')
   expect(out.indexOf('Guía y recorrido')).toBeLessThan(out.indexOf('cu-skel') === -1 ? Infinity : out.indexOf('cu-skel'))

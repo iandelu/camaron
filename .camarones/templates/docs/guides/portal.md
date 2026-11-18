@@ -104,7 +104,7 @@ What you can do on it, live:
 
 `#/wikis`: one card per repo — pages and when it was updated, or "no wiki yet" / "not cloned" — with **Graph** (the
 OpenWiki graph of connected pages) and **Read the pages** (inside the portal, with its own menu and "Linked from").
-Generating or updating a wiki is the desktop app's **Docs › Generate the wiki**.
+Generating or updating a wiki is the desktop app's **Docs › Wikis**, on the repo's card (**Generate the wiki** or **Update**).
 
 <!-- portal:#/wikis -->
 
@@ -170,13 +170,6 @@ used files, packages and, per file, what it uses and who uses it — with a sear
 
 **Data** (`#/data`, live): each repo's tables and collections read from the code, with the ER diagram and their fields.
 
-**Libraries** (`#/libs`, live): the same board as the desktop app's. One line per library with the version the repos
-use and the latest stable one, the vulnerable ones first, each naming the repos it is in; filters (category, repo,
-scope, only vulnerable, only outdated) that stay in view while you scroll, and no sideways scroll. Opening a library
-shows, per repo, the `camaron bump` command with the proposed version, ready to copy (the portal runs nothing on your
-machine), then its advisories and why it is there. Scanning and looking up newer versions happen in the desktop app or
-with `camaron inventory --cves --latest`. `#/libs/<repo>` opens it for one repo.
-
 <!-- portal:#/c4 -->
 
 ## Plan
@@ -206,6 +199,13 @@ repo not found) with git's line beneath; tokens are saved in the desktop app.
 last check. Rows link to Review, Libraries or KPIs; checking again is done in the app or with `camaron health`.
 `#/health/<repo>` is one repo in full: its SonarQube gate and nine figures, coverage and the reports that give it, its
 vulnerable libraries, its technical debt by the page it comes from and the pages that cite its code and are out of date.
+
+**Libraries** (`#/libs`, live): the same board as the desktop app's. One line per library with the version the repos
+use and the latest stable one, the vulnerable ones first, each naming the repos it is in; filters (category, repo,
+scope, only vulnerable, only outdated) that stay in view while you scroll, and no sideways scroll. Opening a library
+shows, per repo, the `camaron bump` command with the proposed version, ready to copy (the portal runs nothing on your
+machine), then its advisories and why it is there. Scanning and looking up newer versions happen in the desktop app or
+with `camaron inventory --cves --latest`. `#/libs/<repo>` opens it for one repo.
 
 **KPIs** (`#/kpis`, live): is the documentation working? **Plan from zero** (what the plan cost), pages and C4 elements
 confirmed, pages out of date, searches with no answer, units done, AI cost this month, golden questions, trust per repo
@@ -251,9 +251,9 @@ The portal renders Markdown with a few extras; agents read the same files as pla
 | `#/docs`, `#/docs/<path>`, `#/new` | Docs home, a page, a new page |
 | `#/wikis`, `#/wiki/<repo>`, `#/wiki/<repo>/<page>` | Wikis, a wiki's graph, a wiki page |
 | `#/kanban`, `#/kanban/<ID>`, `#/stories` | Board, a card, Stories |
-| `#/c4`, `#/c4/<view>`, `#/code`, `#/data`, `#/libs` | Architecture |
+| `#/c4`, `#/c4/<view>`, `#/code`, `#/data` | Architecture |
 | `#/pipeline`, `#/interview`, `#/sync` | Plan |
-| `#/health`, `#/health/<repo>`, `#/kpis`, `#/ci` | Quality |
+| `#/health`, `#/health/<repo>`, `#/libs`, `#/libs/<repo>`, `#/kpis`, `#/ci` | Quality |
 | `#/review`, `#/search/<words>`, `#/ask/<question>` | Review, search, Ask |
 
 Old addresses (`#/doc/…`, `#/status`, `#/wikis/<repo>`) still work.

@@ -3,21 +3,35 @@ import { Aviso, Button, Chip, HealthBoard, Skeleton, sonarConnectHash } from '@c
 import { severities } from '@camaron/ui/result.js'
 import { ago } from '../jobs.js'
 import { openSession, sessionNote } from '../plan.js'
-import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, seconds } from '../quality.js'
-import { useAgents, useCmd, useJob, useStore } from '../hooks.js'
-import { AgentPicker, Failed, Fold, JobOutput, Page, ResultView, UnitRow } from '../parts.jsx'
+import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, secretsVerdict, seconds } from '../quality.js'
+import { useAgents, useCmd, useHash, useJob, useStore } from '../hooks.js'
+import { LIBS, viewOf } from '../nav.js'
+import { AgentPicker, Failed, Fold, JobOutput, ResultView, UnitRow } from '../parts.jsx'
+import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
+import LibrariesView from './Libs.jsx'
 import { SEV, sevWord } from '@camaron/ui/libs.jsx'
 import { lang, t } from '../i18n.js'
 
-// Quality is the project's health board (ui/src/health.jsx) on the snapshot of `camaron health`: machine, docs and code
-// in one view. The board draws the figures and the rows; each row this app owns opens on the control that used to be a
-// card of its own (BOARD_ACTIONS), and the rest of the commands stay folded below. KPIs are the portal's.
-const CARDS = { doctor: Doctor, drift: Drift, fresh: Fresh, evals: Evals, context: Context, blocks: Blocks, ab: Ab, libs: Libs }
+// Quality has two views, one address each: the project's health board (#/quality) and its libraries (#/quality/libs).
+// The board (ui/src/health.jsx) is the snapshot of `camaron health`: machine, docs and code in one view. It draws the
+// figures and the rows; each row this app owns opens on the control that used to be a card of its own (BOARD_ACTIONS),
+// among them the secret scan, the method hooks and the libraries' summary, and the rest of the commands stay folded
+// below. KPIs are the portal's.
+const CARDS = { doctor: Doctor, drift: Drift, fresh: Fresh, evals: Evals, context: Context, blocks: Blocks, ab: Ab, secrets: Secrets, hooks: Hooks, libs: Libs }
 const LINKS = { review: '../#/review' }
 const repoHref = (r) => '../#/health/' + encodeURIComponent(r)
 
 export default function Quality({ srv, jobs }) {
+  const view = viewOf(useHash(), 'quality')
+  return (
+    <Place section="quality" view={view} wide={view === 'libs'}>
+      {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
+    </Place>
+  )
+}
+
+function Health({ srv, jobs }) {
   const [user, setUser] = useState('')
   useEffect(() => { srv.get('app/info').then((i) => setUser(i.user), () => {}) }, [])
   const [snap, setSnap] = useState(undefined)             // undefined: not read yet; null: never built
@@ -48,17 +62,15 @@ export default function Quality({ srv, jobs }) {
     return [id, () => <Body {...p} />]
   }))
   const loading = !error && (snap === undefined || (snap === null && build.running))      // the first read, or the first build
-  return (
-    <Page title={t('nav.quality')}>
-      {error ? <Failed title={t('q.healthFailed')} detail={error} onRetry={() => { setError(''); load().then((s) => { if (s === null) refresh() }) }} /> : null}
-      {snap === undefined || loading ? (loading ? <Skeleton lines={6} /> : null) : (
-        <HealthBoard snapshot={snap} actions={actions} links={LINKS} repoHref={repoHref} connectHref={sonarConnectHash} onRefresh={refresh} refreshing={build.running} />
-      )}
-      {snap === null && !build.running ? <JobOutput c={build} /> : null}
-      <div className="row"><Button size="sm" variant="ghost" href="../#/kpis">{t('q.kpis')}</Button></div>
-      <Commands srv={srv} jobs={jobs} section="quality" />
-    </Page>
-  )
+  return (<>
+    {error ? <Failed title={t('q.healthFailed')} detail={error} onRetry={() => { setError(''); load().then((s) => { if (s === null) refresh() }) }} /> : null}
+    {snap === undefined || loading ? (loading ? <Skeleton lines={6} /> : null) : (
+      <HealthBoard snapshot={snap} actions={actions} links={LINKS} repoHref={repoHref} connectHref={sonarConnectHash} onRefresh={refresh} refreshing={build.running} />
+    )}
+    {snap === null && !build.running ? <JobOutput c={build} /> : null}
+    <div className="row"><Button size="sm" variant="ghost" href="../#/kpis">{t('q.kpis')}</Button></div>
+    <Commands srv={srv} jobs={jobs} section="quality" />
+  </>)
 }
 
 const now = () => Date.now() / 1000
@@ -206,7 +218,7 @@ function Evals({ srv, jobs, user }) {
       {unit ? <ul className="dk-units"><UnitRow u={unit} all={plan.units} srv={srv} a={a} plan={plan} onChanged={load} /></ul> : null}
       <div className="row">
         {confirmed ? <Button size="sm" variant="primary" disabled={act.running} onClick={() => run({ action: 'run', json: true })}>{t('q.ask', { n: confirmed })}</Button> : null}
-        {!unit && noAgent ? <Button size="sm" href="#/machine">{t('next.machine')}</Button> : null}
+        {!unit && noAgent ? <Button size="sm" href="#/settings">{t('next.machine')}</Button> : null}
         {!unit && !noAgent ? (<>
           <Button size="sm" variant={confirmed ? 'ghost' : 'primary'} disabled={act.running || !a.agent} onClick={propose}>{t('q.propose', { agent: a.label(a.agent) })}</Button>
           <AgentPicker a={a} />
@@ -239,8 +251,8 @@ function Ab({ srv, jobs }) {
   )
 }
 
-// The libraries row of the board: the count and the worst findings, and the way to the Libraries section, where each
-// one opens on why it is there, its advisories and an update.
+// The libraries row of the board: the count and the worst findings, and the way to the Libraries view, where each one
+// opens on why it is there, its advisories and an update.
 function Libs({ srv }) {
   const [inv, setInv] = useState(null)
   const [error, setError] = useState('')
@@ -256,11 +268,69 @@ function Libs({ srv }) {
           {inv.vulns ? (sev.length ? sev.map(([s, n]) => <Chip key={s} state={SEV[s]}>{`${n} ${sevWord(s, n)}`}</Chip>) : <Chip state="ok">{t('q.cvClean')}</Chip>)
             : <span className="muted small">{t('q.cvNever')}</span>}
           <span className="dk-grow"></span>
-          <Button size="sm" variant="primary" href="#/libs">{t('q.libsOpen')}</Button>
+          <Button size="sm" variant="primary" href={`#/${LIBS}`}>{t('q.libsOpen')}</Button>
         </div>
       ) : !error ? <Skeleton lines={1} /> : null}
     </div>
   )
+}
+
+// The secret scan (`check --secrets`: gitleaks over the docs and the wikis): it runs when the row opens and again on
+// request. A finding makes the command fail, so the verdict is read from what it printed, never from how it ended.
+function Secrets({ srv, jobs }) {
+  const c = useCmd(srv, jobs, { quiet: true })
+  const scan = () => c.run('check', { secrets: true })
+  useEffect(() => { scan() }, [])
+  const status = c.job?.status
+  const verdict = status === 'done' || status === 'failed' ? secretsVerdict(c.job.lines) : null
+  const crashed = status === 'stopped' || (status === 'failed' && verdict?.state === 'clean')
+  return (
+    <div className="dk-body dk-run">
+      <p className="muted small">{t('q.secretsWhat')}</p>
+      <div className="row"><Button size="sm" disabled={c.running} onClick={scan}>{t('q.secretsScan')}</Button></div>
+      {c.running ? <Skeleton lines={1} /> : verdict && !crashed ? <SecretsResult verdict={verdict} /> : null}
+      {c.error || crashed ? <JobOutput c={c} /> : null}
+    </div>
+  )
+}
+
+export function SecretsResult({ verdict }) {
+  if (verdict.state === 'clean') return <p className="small" role="status"><Chip state="ok">{t('q.ok')}</Chip> {t('q.secretsClean')}</p>
+  const places = <ul className="dk-units">{verdict.items.map((x) => <li key={x} className="dk-unit"><code>{x}</code></li>)}</ul>
+  return verdict.state === 'found'
+    ? <Aviso tone="error" title={t('q.secretsFound', { n: verdict.items.length })}>{places}</Aviso>
+    : <Aviso tone="warn" title={t('q.secretsSkipped')}>{places}</Aviso>
+}
+
+// The method hooks (`hooks`): the switch, and what they saw (`hooks report`), which says whether the agents read the docs
+// before they edit code. Their trust is Team's: the hooks that came with the team's repo wait there for an approval.
+function Hooks({ srv, jobs }) {
+  const c = useCmd(srv, jobs, { quiet: true })
+  const act = useCmd(srv, jobs)
+  const load = () => c.run('hooks', { state: 'report', json: true })
+  useEffect(() => { load() }, [])
+  const r = c.job?.result
+  const flip = async () => { await act.run('hooks', { state: r.enabled ? 'off' : 'on' }); load() }
+  return (
+    <div className="dk-body dk-run">
+      <p className="muted small">{t('q.hooksWhat')}</p>
+      {r ? <label className="dk-check"><input type="checkbox" checked={!!r.enabled} disabled={act.running} onChange={flip} />{t('q.hooksSwitch')}</label>
+        : <JobOutput c={c} />}
+      <HooksReport r={r} />
+      <JobOutput c={act} />
+    </div>
+  )
+}
+
+export function HooksReport({ r }) {
+  const rep = r?.report
+  if (!rep) return null
+  const seen = rep.prompts || rep.edit_sessions
+  return (<>
+    <p className="small">{seen ? t('q.hooksSeen', { prompts: rep.prompts, withDocs: rep.prompts_with_docs, first: rep.consulted_first,
+      sessions: rep.edit_sessions, share: hooksShare(rep), stops: rep.stops }) : t('q.hooksNone')}</p>
+    {r.gate === false ? <p className="muted small">{t('q.hooksGateOff')}</p> : null}
+  </>)
 }
 
 // Pages whose cited code changed (suspect) or is gone (stale): "still holds", or a unit that refreshes them.

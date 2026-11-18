@@ -3,10 +3,14 @@
 // where a window comes back, which project a window may switch to. No Electron, no I/O: `node --test` on every OS.
 const path = require('node:path')
 
-const SECTIONS = ['summary', 'plan', 'interviews', 'team', 'quality', 'docs', 'machine', 'kitdev', 'start']
+// The renderer's places (nav.js PROJECT, MACHINE and the wizard) and the old section names it still redirects (MOVED).
+const SECTIONS = ['flow', 'board', 'quality', 'docs', 'settings', 'guide', 'kitdev', 'start']
+const MOVED = ['summary', 'plan', 'decisions', 'interviews', 'team', 'machine', 'libs']
 
-// A project's window: the app served by that project's own server (same origin as its API, the token as the key).
-const projectUrl = (origin, section = 'summary') => `${origin}/desktop/#/${SECTIONS.includes(section) ? section : 'summary'}`
+// A project's window: the app served by that project's own server (same origin as its API, the token as the key). An old
+// name opens as it is: the renderer sends it where it moved.
+const projectUrl = (origin, section = 'flow') =>
+  `${origin}/desktop/#/${SECTIONS.includes(section) || MOVED.includes(section) ? section : 'flow'}`
 
 // The app lives under /desktop/ on its project's server; anything else on that origin is the portal (the reader), which
 // opens in the system browser. True for a same-origin address outside the app; false for another origin (the external
@@ -67,4 +71,4 @@ function oneAtATime(inFlight, key, start) {
   return p
 }
 
-module.exports = { SECTIONS, projectUrl, outsideApp, withPortalToken, hubFile, DEFAULT_BOUNDS, MIN, bounds, switchable, samePath, rail, oneAtATime }
+module.exports = { SECTIONS, MOVED, projectUrl, outsideApp, withPortalToken, hubFile, DEFAULT_BOUNDS, MIN, bounds, switchable, samePath, rail, oneAtATime }

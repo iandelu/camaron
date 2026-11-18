@@ -3,8 +3,11 @@
 // leave any field out, so nothing here assumes one.
 
 // Inside the section: the list, the new-decision form, the candidates, or one ADR (the server's four-digit number).
+export const ADR_BASE = '#/docs/decisions'
+
+// The legacy #/decisions/… is read too until the section's own links move.
 export function route(hash) {
-  const seg = String(hash ?? '').split('?')[0].replace(/\/+$/, '').match(/^#\/decisions\/([^/]+)$/)?.[1]
+  const seg = String(hash ?? '').split('?')[0].replace(/\/+$/, '').match(/^#\/(?:docs\/)?decisions\/([^/]+)$/)?.[1]
   if (seg === 'new' || seg === 'candidates') return { view: seg }
   return /^\d{4}$/.test(seg ?? '') ? { view: 'adr', id: seg } : { view: 'list' }
 }

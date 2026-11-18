@@ -3,11 +3,11 @@ import { Aviso, Button, LibrariesBoard, Skeleton } from '@camaron/ui'
 import { Suggestions } from '@camaron/ui/libs.jsx'
 import { latestOf, matrix, outdated } from '@camaron/ui/libs.js'
 import { useCmd } from '../hooks.js'
-import { Failed, JobOutput, Page } from '../parts.jsx'
+import { Failed, JobOutput } from '../parts.jsx'
 import { inventoryArgs, lookupProgress, scanProgress } from '../quality.js'
 import { t } from '../i18n.js'
 
-// Libraries: the shared board (@camaron/ui LibrariesBoard, the same screen as the portal's) with the app's commands:
+// Libraries, a view of Quality (the page and its tabs are Quality's): the shared board (@camaron/ui LibrariesBoard, the same screen as the portal's) with the app's commands:
 // a vulnerability scan, a lookup of newer versions (`inventory --latest`), a reread, and `bump` on a new branch of a
 // repo with its own package manager, never committed. A scan or a lookup shows what it reads and ends on a tick; back
 // here while one runs, the section attaches to it.
@@ -29,14 +29,14 @@ export default function Libs({ srv, jobs }) {
     if (args) run(args)
   }, [])
   return (
-    <Page title={t('nav.libs')} wide>
+    <>
       {error ? <Failed title={t('q.cvFailed')} detail={error} onRetry={load} /> : null}
       {inv ? (
         <LibrariesBoard inv={inv} actions={<Actions c={c} run={run} />}
           status={closed ? null : <ScanStatus c={c} mode={mode} onClose={() => setClosed(true)} />}
           renderUpdate={(row, p) => <Update row={row} proposal={p} srv={srv} jobs={jobs} onChanged={load} />} />
       ) : !error ? <Skeleton lines={3} /> : null}
-    </Page>
+    </>
   )
 }
 

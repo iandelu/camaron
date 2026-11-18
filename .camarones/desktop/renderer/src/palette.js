@@ -1,15 +1,19 @@
 import { inPanel, sectionFor } from './catalog.js'
+import { VIEWS } from './nav.js'
 
 // The ⌘K palette and the `g` shortcuts, pure: which letter goes where, what the palette lists, how a query picks.
 
-export const GO = { s: 'summary', b: 'board', a: 'decisions', p: 'plan', i: 'interviews', t: 'team', q: 'quality', l: 'libs', d: 'docs', m: 'machine', h: 'guide', k: 'kitdev' }
+export const GO = { f: 'flow', b: 'board', q: 'quality', d: 'docs', m: 'settings', h: 'guide', k: 'kitdev' }
+// Letters that go straight to a view (or keep an old habit) rather than to a section.
+export const ALIASES = { s: 'flow', p: 'flow/plan', a: 'docs/decisions', i: 'docs/interviews', t: 'docs' }
 export const keyFor = (section) => Object.keys(GO).find((k) => GO[k] === section)
 const CHORD_MS = 1500
 
-// `g` and then a letter within CHORD_MS: the section the letter names, if this window has it. pending is when the g
-// was pressed (0: none).
+// `g` and then a letter within CHORD_MS: the place the letter names, if this window has its section. pending is when
+// the g was pressed (0: none).
 export function chord(pending, key, at, available) {
-  if (pending && at - pending <= CHORD_MS && GO[key] && available.includes(GO[key])) return { pending: 0, go: GO[key] }
+  const go = GO[key] || ALIASES[key]
+  if (pending && at - pending <= CHORD_MS && go && available.includes(go.split('/')[0])) return { pending: 0, go }
   return { pending: key === 'g' ? at : 0, go: null }
 }
 
@@ -21,7 +25,8 @@ export const typing = (el) => !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagNa
 export function entries({ sections, projects = [], commands = [], guide = [], t, lang = 'es' }) {
   return [
     { id: 'sections', label: t('pal.sections'),
-      items: sections.map((s) => ({ id: `go:${s}`, label: t('nav.' + s), keys: ['g', keyFor(s)], href: `#/${s}` })) },
+      items: sections.flatMap((s) => [{ id: `go:${s}`, label: t('nav.' + s), keys: ['g', keyFor(s)], href: `#/${s}` },
+        ...(VIEWS[s] || []).slice(1).map((v) => ({ id: `go:${s}/${v}`, label: t('nav.' + v), sub: t('nav.' + s), href: `#/${s}/${v}` }))]) },
     { id: 'projects', label: t('pal.projects'),
       items: projects.filter((p) => !p.current && p.exists).map((p) => ({ id: `project:${p.path}`, label: p.name, sub: t('pal.switch'), project: p })) },
     { id: 'actions', label: t('pal.actions'), items: [

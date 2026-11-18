@@ -1,0 +1,8 @@
+title = "camaron"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated bundles of the portal and the desktop app: minified vendor code (built from the pinned lockfiles) with look-alikes of an API key"
+paths = ['''\.camarones/(portal/app-build|desktop/renderer-build)/''']

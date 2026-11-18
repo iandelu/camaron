@@ -27,10 +27,10 @@ test('each unit has the one action that moves it', () => {
   expect(unitAction(u('b', 'blocked'))).toEqual({ kind: 'retry', label: 'unit.retry' })
   expect(unitAction(u('g', 'doing'))).toEqual({ kind: 'agent', mode: 'continue', label: 'unit.continue' })
   expect(unitAction(u('r', 'todo', { ready: true }))).toEqual({ kind: 'agent', mode: 'new', label: 'unit.start' })
-  expect(unitAction(u('setup', 'todo', { ready: true, runner: 'wizard' }))).toEqual({ kind: 'link', href: '#/machine', label: 'next.machine' })
+  expect(unitAction(u('setup', 'todo', { ready: true, runner: 'wizard' }))).toEqual({ kind: 'link', href: '#/settings', label: 'next.machine' })
   expect(unitAction(u('w', 'todo'))).toBeNull()
   expect(unitAction(u('d', 'done'))).toEqual({ kind: 'redo', label: 'unit.redo' })
-  expect(unitAction(u('s', 'doing', { runner: 'wizard', type: 'answers' }))).toEqual({ kind: 'link', href: '#/interviews', label: 'next.answers' })
+  expect(unitAction(u('s', 'doing', { runner: 'wizard', type: 'answers' }))).toEqual({ kind: 'link', href: '#/docs/interviews', label: 'next.answers' })
 })
 
 test('each unit has a tone: running yellow, done green, ready white, blocked red, awaiting you, waiting dim', () => {
@@ -104,7 +104,7 @@ test('a session opened on the canvas takes you to its terminal', async () => {
   const srv = { post: async (name, body) => ({ where: 'canvas', terminal: { id: 't-a-1' }, model: 'opus', name, body }) }
   const res = await openSession(srv, { unit: 'a', agent: 'claude' }, (h) => went.push(h))
   expect([res.name, res.body.unit]).toEqual(['app/terminals', 'a'])
-  expect(went).toEqual(['#/plan?term=t-a-1'])
+  expect(went).toEqual(['#/flow/plan?term=t-a-1'])
   expect(sessionNote(res, 'Claude Code')).toEqual({ key: 'next.onCanvas', vars: { agent: 'Claude Code (opus)' } })
 })
 
@@ -112,7 +112,7 @@ test('an already open session takes you to its terminal', async () => {
   const went = []
   const srv = { post: async () => { throw Object.assign(new Error('open'), { status: 409, data: { terminal: 't-a-1' } }) } }
   const res = await openSession(srv, { unit: 'a' }, (h) => went.push(h))
-  expect(went).toEqual(['#/plan?term=t-a-1'])
+  expect(went).toEqual(['#/flow/plan?term=t-a-1'])
   expect(sessionNote(res, 'x').key).toBe('pty.already')
 })
 
@@ -161,11 +161,11 @@ test('taking a unit lands on its terminal, one already open included', async () 
   const srv = { post: async (name, body) => { asked.push([name, body]); return { terminal: { id: 't-a-1' }, where: 'canvas' } } }
   const res = await takeOver(srv, 'a:b', { lang: 'en' }, (h) => went.push(h))
   expect(asked).toEqual([['app/units/a%3Ab/takeover', { lang: 'en' }]])
-  expect(went).toEqual(['#/plan?term=t-a-1'])
+  expect(went).toEqual(['#/flow/plan?term=t-a-1'])
   expect(res.terminal.id).toBe('t-a-1')
   const open = { post: async () => { throw Object.assign(new Error('x'), { status: 409, data: { error: 'open', terminal: 't-a-1' } }) } }
   expect(await takeOver(open, 'a', {}, (h) => went.push(h))).toEqual({ already: true, terminal: { id: 't-a-1' } })
-  expect(went).toEqual(['#/plan?term=t-a-1', '#/plan?term=t-a-1'])
+  expect(went).toEqual(['#/flow/plan?term=t-a-1', '#/flow/plan?term=t-a-1'])
 })
 
 test("a handoff's refusals are said in the app's language", async () => {

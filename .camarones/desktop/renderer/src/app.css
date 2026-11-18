@@ -65,10 +65,84 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 /* the sections: cards of one task each, the plan's units as rows, folds for what waits, the catalog's forms */
 .dk-body { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }   /* a card's body, inside a health row */
 .dk-run { gap: .6rem; }
+/* the health header (sections/DocsHealth.jsx): a wrapping strip; the tone only tints, the words say it; the stale-wikis chip is a button */
+.dk-health { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-height: 1.75rem; }
+.dk-health > .cu-skel { flex: 1; max-width: 22rem; }
+.dk-hchip { --tone: var(--color-ink-soft); display: inline-flex; align-items: center; gap: .4rem; min-height: 1.75rem; padding: 0 .6rem;
+  border: 1px solid var(--color-rule); border-radius: var(--consola-radio-chico); background: var(--color-canvas-elevated);
+  color: var(--tone); font: inherit; font-size: var(--text-meta); }
+.dk-hchip.is-ok { --tone: var(--color-estado-bien); }
+.dk-hchip.is-warn { --tone: var(--color-estado-aviso); }
+.dk-hchip.is-info { --tone: var(--color-acento-texto); }
+button.dk-hchip { cursor: pointer; }
+button.dk-hchip:hover { border-color: var(--tone); }
+.dk-wikis { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; align-items: start; }
+.dk-wikis > * { animation: dk-rise var(--duration-normal) var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
+/* a wiki card: --state tints its icon and word; the running one has a static ring on a pseudo-element that fades in and out
+   (opacity only), so the pulse never replaces the card's own rise (one `animation` per element) */
+.dk-wiki { --state: var(--color-ink-dim); position: relative; min-width: 0; }
+.dk-wiki.is-fresh { --state: var(--color-estado-bien); }
+.dk-wiki.is-stale, .dk-wiki.is-old { --state: var(--color-estado-aviso); }
+.dk-wiki.is-failed { --state: var(--color-estado-mal); }
+.dk-wiki.is-generating { --state: var(--color-aurora-amber); --tone: var(--color-aurora-amber); }
+.dk-wiki.is-generating::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 30%, transparent); animation: dk-wiki-pulse 1.6s ease-in-out infinite; }
+@keyframes dk-wiki-pulse { 50% { opacity: 1; } }
+.dk-wiki p { margin: 0; }
+.dk-wiki-head { flex-wrap: nowrap; align-items: flex-start; min-width: 0; }
+.dk-wiki-head .dk-ico { color: var(--state); margin-top: .1em; }
+.dk-wiki.is-generating .dk-ico { animation: dk-glow 1.2s ease-in-out infinite; }
+.dk-wiki.is-done .dk-ico { animation: dk-tick-pop var(--duration-normal) var(--ease-out-soft) both; }
+.dk-wiki-name { min-width: 0; overflow-wrap: anywhere; }
+.dk-wiki-status { min-height: 1.5em; color: var(--color-ink-soft); overflow-wrap: anywhere; }
+.dk-wiki-word { color: var(--state); }
+.dk-wiki.is-generating .dk-wiki-word { color: var(--color-ink); }
+.dk-wiki .cu-btn--primary .cu-thinking { --cu-think-base: color-mix(in srgb, var(--color-on-accent) 72%, var(--color-accent));
+  --cu-think-glint: var(--color-on-accent); }
+/* the unanswered questions (sections/DocsMisses.jsx): one row each, the question taking the room (it wraps), then its count and two small buttons */
+.dk-misses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.dk-miss { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.dk-miss-q { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.dk-miss-n { font-variant-numeric: tabular-nums; }
+/* the Docs chat (sections/DocsChat.jsx): while open, a column beside the page that the page's grid gives room to (the page side
+   shrinks, never the panel); the conversation scrolls inside the panel and the shrimp with its words sits over the composer. The
+   panel takes its rectangle from the main pane (the --dk-main anchor, as the maximised terminal does), so it is as tall as the
+   pane whatever the jobs panel under it does; docked, it stands over the grid's empty column with the pane's padding as its
+   margin. It scrolls itself only in a pane too short for its controls. */
+.dk-docs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.dk-docs.with-chat { grid-template-columns: minmax(0, 1fr) 24rem; }
+.dk-docs > .dk-page { min-width: 0; }
+.dk-ask { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; max-width: 40rem; }
+.dk-ask-label { flex-basis: 100%; }                /* the entry's visible name, on its own line above the field */
+.dk-chat { position: fixed; position-anchor: --dk-main; inset: anchor(top) anchor(right) anchor(bottom) auto; width: 24rem; margin: 1.75rem 2rem;
+  display: flex; flex-direction: column; gap: .6rem; overflow-y: auto;
+  padding: .9rem; border: 1px solid var(--color-rule); border-radius: var(--consola-radio-tarjeta); background: var(--color-canvas-elevated);
+  animation: dk-rise var(--duration-normal) var(--ease-out-soft) both; }
+.dk-chat:focus-visible { outline: 2px solid var(--color-acento-texto); outline-offset: 2px; }
+.dk-chat > :not(.dk-chat-list) { flex: none; }
+.dk-chat-head { flex-wrap: nowrap; gap: .25rem; }
+.dk-chat-title { flex: 1; min-width: 0; margin: 0; font-size: var(--text-body); }
+.dk-chat-pick { width: 100%; }
+.dk-chat-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: .75rem; overflow-wrap: anywhere; }
+.dk-chat-list > p { margin: 0; }
+.dk-chat-q { align-self: flex-end; max-width: 85%; padding: .45rem .7rem; border-radius: var(--consola-radio-control); background: var(--color-canvas);
+  white-space: pre-wrap; }
+.dk-chat-status { display: flex; align-items: flex-end; gap: .5rem; min-height: 2.5rem; padding-top: .6rem; }
+.dk-chat-form { display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
+.dk-chat-field { width: 100%; min-height: 3.5rem; max-height: 10rem; padding: .45rem .65rem; line-height: 1.4; resize: vertical; }
+.dk-chat-field[aria-disabled="true"] { opacity: .6; }
+/* a window too narrow for both: the panel is a drawer over the page, the pane's right edge from its top to its bottom (so never
+   over the title bar, where the window controls are, nor the jobs bar or the status bar), above the page, below the tour */
+@media (max-width: 68rem) {
+  .dk-docs.with-chat { grid-template-columns: minmax(0, 1fr); }
+  .dk-chat { z-index: 20; width: min(24rem, 100vw); margin: 0;
+    border-width: 0 0 0 1px; border-radius: 0; background: var(--color-canvas-elevated); box-shadow: var(--sombra-menu); }
+}
 .dk-slots { display: flex; flex-direction: column; gap: .2rem; }
 .dk-inline { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-narrow { min-width: 4rem; }
 .dk-skill-icon { flex: none; width: 1.75rem; font-size: 1.25rem; line-height: 1; text-align: center; }
+.dk-ico { width: 1rem; height: 1rem; flex: none; vertical-align: -.15em; }
 .dk-check { display: inline-flex; align-items: center; gap: .5rem; min-height: 1.5rem; cursor: pointer; }
 .dk-check input { width: 1rem; height: 1rem; flex: none; accent-color: var(--color-ink); }
 .dk-check .cu-flag, .cu-field-label .cu-flag { white-space: nowrap; }
@@ -92,6 +166,7 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 .dk-out details { width: 100%; }
 .dk-out .dk-log { max-height: 14rem; }
 .dk-answer { margin: 0; white-space: pre-wrap; }
+.dk-answer-rest { visibility: hidden; }            /* not revealed yet: it keeps its room, so the answer never grows as it fills in */
 .dk-cmds { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: .75rem; }
 .dk-cmd { gap: .6rem; }
 .dk-cmd.careful { border-color: var(--color-estado-mal); }
@@ -150,6 +225,28 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 @keyframes dk-tick-pop { from { opacity: 0; transform: scale(.5); } }
 @keyframes dk-tick-ripple { from { opacity: .5; transform: scale(1); } to { opacity: 0; transform: scale(1.8); } }
 @keyframes dk-tick-draw { from { stroke-dashoffset: 1; } }
+/* The shrimp (sections/Shrimp.jsx): the favicon's drawing, still but for the one part a state moves, by transform or opacity only. The antennae
+   turn about the head end of their own box. The tail keeps its own origin, the apex of its fan, and repeats its group's translate(…) because a CSS
+   transform replaces that attribute (the favicon's own value: style.test.js checks it). */
+.dk-shrimp-box { position: relative; display: inline-flex; flex: none; }
+.dk-shrimp { width: 2.5rem; height: 2.5rem; flex: none; }
+.dk-shrimp .shrimp-antennae { transform-box: fill-box; transform-origin: 1% 72%; }
+.dk-shrimp .shrimp-tail { transform-origin: 0 0; }
+.dk-shrimp.thinking .shrimp-antennae { animation: dk-shrimp-sway 1.6s ease-in-out infinite; }
+.dk-shrimp.answering .shrimp-tail { animation: dk-shrimp-flick .5s ease-in-out infinite; }
+/* the thinking dots rise above the head (the drawing's left third), over the box, so they never push what sits beside it */
+.dk-shrimp-dots { position: absolute; left: .35rem; bottom: 100%; display: inline-flex; gap: .2rem; }
+.dk-shrimp-dots i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--color-ink-dim); animation: dk-shrimp-dot 1.2s ease-in-out infinite; }
+.dk-shrimp-dots i:nth-child(2) { animation-delay: .15s; }
+.dk-shrimp-dots i:nth-child(3) { animation-delay: .3s; }
+/* both rest at the favicon's pose at 0% and 100%, so a state starts and ends without a snap */
+@keyframes dk-shrimp-sway { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+@keyframes dk-shrimp-flick {
+  0%, 100% { transform: translate(31.7px, 48.5px) rotate(0deg); }
+  25% { transform: translate(31.7px, 48.5px) rotate(-10deg); }
+  75% { transform: translate(31.7px, 48.5px) rotate(10deg); }
+}
+@keyframes dk-shrimp-dot { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-.25rem); } }
 .dk-bump .row { flex-wrap: nowrap; }
 .dk-bump-v { width: 7rem; }
 .dk-advisories { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; white-space: normal; }
@@ -422,6 +519,11 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 .dk-bd-id { font-size: var(--text-meta); }
 .dk-bd-title { line-height: 1.3; overflow-wrap: anywhere; }
 .dk-bd-bar { justify-content: flex-end; }
+.dk-bd-add { position: relative; }
+.dk-bd-menu { position: absolute; right: 0; top: calc(100% + .25rem); z-index: 5; min-width: 16rem; display: grid; padding: .25rem;
+  border: 1px solid var(--color-ink-dim); border-radius: var(--consola-radio-chico); background: var(--color-canvas-elevated); }
+.dk-bd-menuitem { display: grid; gap: .1rem; text-align: left; padding: .5rem .6rem; border: 0; background: none; color: var(--color-ink); cursor: pointer; font: inherit; }
+.dk-bd-menuitem:hover, .dk-bd-menuitem:focus-visible { background: color-mix(in srgb, var(--color-ink) 8%, transparent); outline: none; box-shadow: inset 0 0 0 2px var(--color-acento-texto); }
 .dk-bd-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
 /* on a full page the board fills what is left of the window: the columns reach its bottom, the panel stays at the top */
 .dk-page.full > .dk-bd-wrap { flex: 1; }
@@ -448,6 +550,7 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 
 /* a page whose title carries its actions beside it (parts.jsx Page `actions`) */
 .dk-page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; }
+.dk-page-h { font-size: var(--text-h2); margin: 0; }
 .dk-page-acts { flex-wrap: nowrap; }
 
 /* Decisiones (sections/Decisions.jsx, sections/adr/): the list as one ruled panel under its filters, the decisions the
@@ -588,7 +691,8 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 
 /* The review (sections/adr/Review.jsx): the parts beside the one in view, the attendees and the decision under them,
    the keys at the foot. Its type comes from --rv-*: the console's sizes here, the display ones while presenting. */
-.dk-rv-screen { --rv-q: var(--text-h2); --rv-h: var(--text-h3); --rv-body: var(--text-body-sm); --rv-opt: var(--text-body);
+.dk-rv-screen { display: flex; flex-direction: column; gap: 1.25rem;
+                --rv-q: var(--text-h2); --rv-h: var(--text-h3); --rv-body: var(--text-body-sm); --rv-opt: var(--text-body);
                 --rv-small: var(--text-meta); }
 .dk-rv { display: grid; grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr); gap: 1rem 1.5rem; align-items: start; }
 .dk-rv-nav { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
@@ -686,7 +790,8 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 .dk-rv-sum { margin: 0 0 .75rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; font-size: var(--text-body-sm); }
 .dk-rv-dlg-acts { justify-content: flex-end; margin-top: 1rem; }
 
-/* Presenting (P; Esc leaves): a screen shared in a meeting. The app around the review goes. The header's row stays,
+/* Presenting (P; Esc leaves): a screen shared in a meeting. The app around the review goes, and so do the Docs page's
+   title, team strip and tabs around it (the page that holds the review is the one that grows). The header's row stays,
    empty: it is the window's title bar, which drags the window and has the system's controls drawn over it. One part per
    screen under a strip of the parts' marks, in the theme's display sizes (CAMARON.md, the fifth approved exception); a
    part taller than the screen scrolls in its pane, so the attendees, the decision and the keys stay in view. */
@@ -695,10 +800,13 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 .dk:has(.dk-present) .dk-top { border-bottom: 0; }
 .dk:has(.dk-present) .dk-main { display: flex; flex-direction: column; padding: 0 clamp(1.25rem, 4vw, 4rem) 1.25rem; }
 .dk-rv-root:has(> .dk-present), .dk-rv-screen.dk-present { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.dk-rv-screen.dk-present { --rv-q: var(--text-display-md); --rv-h: var(--text-h1); --rv-body: var(--text-h3); --rv-opt: var(--text-h2);
+.dk-rv-screen.dk-present { gap: 1rem; --rv-q: var(--text-display-md); --rv-h: var(--text-h1); --rv-body: var(--text-h3); --rv-opt: var(--text-h2);
                            --rv-small: var(--text-body); }
-.dk-present .dk-page { flex: 1; min-height: 0; width: 100%; max-width: 90rem; margin: 0 auto; gap: 1rem; }
-.dk-present .dk-page h1 { font-size: var(--text-h2); }
+.dk-page:has(.dk-present) { flex: 1; min-height: 0; width: 100%; max-width: 90rem; margin: 0 auto; gap: 1rem; }
+.dk-page:has(.dk-present) > :is(h1, [data-tour="docs-team"], .dk-guide-tabs) { display: none; }
+/* the Docs chat's grid steps aside so the page stays the pane's flex child; its panel goes with the rest of the app */
+.dk-docs:has(.dk-present) { display: contents; }
+.dk:has(.dk-present) .dk-chat { display: none; }
 .dk-present :is(.dk-adr-steps, .dk-adr-path, .dk-rv-whole) { display: none; }
 .dk-present .dk-rv { display: flex; flex-direction: column; align-items: stretch; flex: 1; min-height: 0; }
 .dk-present .dk-rv-nav { flex: none; flex-direction: row; flex-wrap: wrap; align-items: center; }
@@ -740,10 +848,14 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
   .dk-scan.done, .dk-scan-repos li.done, .dk-scan-repos li.current i { animation: none; }
   .dk-bar span, .dk-bar i, .dk-bar.indeterminate i { animation: none; transition: none; }
   .dk-tick * { animation: none; }
+  .dk-wikis > *, .dk-wiki.is-generating::after, .dk-wiki.is-generating .dk-ico, .dk-wiki.is-done .dk-ico { animation: none; }
   .dk-adr-filter, .dk-adr-row, .dk-adr-kind { transition: none; }
   .dk-rv-pane { animation: none; }
   .dk-term.tone-running { animation: none; }
   .dk-tour-ring { transition: none; }
+  .dk-shrimp.thinking .shrimp-antennae, .dk-shrimp.answering .shrimp-tail, .dk-shrimp-dots i { animation: none; }
+  .dk-shrimp-dots { display: none; }
+  .dk-chat { animation: none; }
 }
 
 /* The guide (sections/Guide.jsx): tabs per guide, a search, the chapter index beside the text */
@@ -794,7 +906,6 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
 @media (max-width: 760px) { .dk-guide { grid-template-columns: minmax(0, 1fr); } .dk-guide-index { position: static; } }
 
 /* The guided tour (Tour.jsx): four dim bands around the target, a ring on it and the bubble */
-.dk-stack { display: flex; flex-direction: column; gap: 1.25rem; }
 .dk-tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 .dk-tour-dim { position: fixed; background: color-mix(in oklch, var(--color-canvas) 72%, transparent); pointer-events: auto; }
 .dk-tour-ring { position: fixed; border: 2px solid var(--color-acento-texto); border-radius: var(--consola-radio-chico);

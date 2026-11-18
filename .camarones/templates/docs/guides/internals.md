@@ -138,9 +138,9 @@ The API serves the portal and the app; it is not a stable public interface (the 
 | Architecture | `GET c4/view?id`; `POST c4/element`, `c4/confirm`, `c4/relation`, `c4/remove` |
 | Board and stories | `GET kanban`, `kanban/item?id`, `kanban/waves`, `stories`, `stories/item`, `stories/files`; `POST stories/analyze`; with a token: `POST kanban/init`, `add`, `move`, `assign`, `link`, `archive`, `stories/save`, `stories/suggest` |
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (server-sent events), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
-| Quality | `GET health`, `kpis`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
+| Quality | `GET health`, `kpis`, `misses`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Machine work (app token) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
-| The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
+| The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `chat/models`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `chat` (a Docs chat turn, a quiet job the app follows), `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
 Long work is a **job**: `GET jobs` lists them, `GET jobs/<id>?since=n` reads its lines from line `n`.
 
@@ -334,7 +334,7 @@ which copies it into `cam-docs/.camarones/plugins/` and pins version, origin and
 
 The kit works out whether a plugin runs code instead of trusting its manifest. Anything that runs code or steers agents
 and arrived with the team's repo — plugins, hooks, MCP servers, settings, skills — is not loaded until you approve it on
-your machine (`camaron trust`, or Team in the app). The approval covers every file, so any change asks again. What the
+your machine (`camaron trust`, or Settings › Trust in the app). The approval covers every file, so any change asks again. What the
 kit itself installed is recognised without asking, and `camaron repair` restores it if someone edits or deletes it.
 A link committed to the repo (a symlink or junction: `.claude`, a settings file, `.mcp.json`…) is one item, shown with
 where it points: the kit never reads what is behind it or writes through it, and where it writes a file of its own
@@ -354,7 +354,7 @@ Optional skill packs come from `lib/skills_catalog.yaml`: each pinned to a commi
 and of cam-docs; the kit remembers the rules it wrote (`.camarones/.cache/skills-denied.json`) and never removes yours.
 Trust asks nothing about deny rules: they only take access away.
 
-<!-- go:team -->
+<!-- go:settings/skills -->
 
 ## Pages written without AI
 
