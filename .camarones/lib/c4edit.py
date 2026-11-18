@@ -192,6 +192,7 @@ def _details(texts: dict[str, str], el: dict) -> dict:
             props[m.group(1)] = unquote(m.group(2))
         elif re.match(r"^\s*metadata\s*\{", lines[i]):
             meta |= _block_meta(lines, depths, i, i)
+    meta |= _inline_meta(inline)                     # a one-line element: `x = database 'X' { metadata { … } }`
     el = {**el, "tags": tags, "technology": props.get("technology", ""), "metadata": meta}
     if not el["headerDescription"] and "description" in props:
         el["description"] = props["description"]

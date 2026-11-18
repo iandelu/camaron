@@ -382,3 +382,25 @@ def test_repeated_metadata_blocks_are_read_as_one_and_a_confirm_leaves_one_block
     assert text.count("metadata") == 1
     assert c4edit.index()["elements"]["shop.api"]["metadata"] == {
         "repo": "api", "code": ["api:pom.xml"], "confirmed-by": "ana", "confirmed-at": "2026-10-23"}
+
+
+def test_metadata_on_a_one_line_element_is_read_and_kept_on_confirm(arch):
+    from lib import c4edit
+    one_line = "    billing = service 'Billing' { #ai-draft metadata { code 'orders:src/Pay.java' } }"
+    (arch / "model.c4").write_text(MODEL.replace("    billing = service 'Billing'", one_line), encoding="utf-8",
+                                   newline="\n")
+    el = c4edit.index()["elements"]["shop.billing"]
+    assert el["metadata"] == {"code": "orders:src/Pay.java"} and el["tags"] == ["ai-draft"]
+    c4edit.confirm(["shop.billing"], by="ana", today="2026-11-18")
+    el = c4edit.index()["elements"]["shop.billing"]
+    assert el["metadata"] == {"code": "orders:src/Pay.java", "confirmed-by": "ana", "confirmed-at": "2026-11-18"}
+    assert el["tags"] == ["confirmed"] and el["end"] > el["start"]
+    block = (arch / "model.c4").read_text(encoding="utf-8").split("\n")[el["start"]:el["end"] + 1]
+    assert block == ["    billing = service 'Billing' {",
+                     "      #confirmed",
+                     "      metadata {",
+                     "        code 'orders:src/Pay.java'",
+                     "        confirmed-by 'ana'",
+                     "        confirmed-at '2026-11-18'",
+                     "      }",
+                     "    }"]

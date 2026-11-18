@@ -154,6 +154,11 @@ def test_an_anchor_stamped_before_its_code_existed_recovers_once_it_does(c4, kit
     assert c4.c4_states()["elements"]["shop.later"]["state"] == "suspect"
 
 
+def test_a_one_line_element_is_checked_against_its_anchors(c4, kit):
+    model(kit, MODEL.replace(DB, f"    db = database 'Orders DB' {{ metadata {{ code 'api:{API}' }} }}\n"))
+    assert c4.c4_states()["elements"]["shop.db"]["state"] == "fresh"
+
+
 def test_a_repo_not_in_the_workspace_is_broken(c4, kit):
     model(kit, MODEL.replace(GHOST, GHOST + element("stray", "nope:src/A.java")))
     st = c4.c4_states()["elements"]["shop.stray"]
