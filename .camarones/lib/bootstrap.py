@@ -40,6 +40,11 @@ def _code() -> object:
     return graphify
 
 
+def _repo_facts() -> object:
+    from lib.adapters import repo_facts
+    return repo_facts
+
+
 def _wiki_engine() -> object:
     from lib.adapters import openwiki
     return openwiki
@@ -175,6 +180,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "export_site": _export_site,
     "workspace": _workspace,
     "repos": _repos,
+    "repo_facts": _repo_facts,
     "doc_state": _doc_state,
     "docs": _docs,
     "vendor": _vendor,

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from datetime import date, datetime, timedelta, timezone
 from itertools import combinations
 from pathlib import Path
 
@@ -61,6 +62,39 @@ TEXT = {
                     "Commits convencionales", "Con clave de ticket"),
            "footer": "Se regenera con `camaron history --months {m}`; sin bots ni lockfiles."},
 }
+
+
+def weekly(stamps: list[int], today: date, weeks: int = 12) -> list[dict]:
+    """Commits per ISO week (Monday start, UTC), `weeks` buckets oldest first, the last one today's week."""
+    monday = today - timedelta(days=today.weekday())
+    starts = [monday - timedelta(weeks=weeks - 1 - i) for i in range(weeks)]
+    counts = dict.fromkeys(starts, 0)
+    for at in stamps:
+        day = datetime.fromtimestamp(at, timezone.utc).date()
+        week = day - timedelta(days=day.weekday())
+        if week in counts:
+            counts[week] += 1
+    return [{"start": d.isoformat(), "n": n} for d, n in counts.items()]
+
+
+def activity(repo: str, weeks: int = 12, today: date | None = None) -> dict | None:
+    """The human commits of the last `weeks` per week, how many people wrote them and the latest one; None when git
+    cannot read the repo."""
+    log = out(["git", "-C", str(repo_dir(repo)), "log", f"--since={weeks * 7 + 7}.days", "--no-merges",
+               "--format=%aN%x09%at%x09%s"])
+    if not log and out(["git", "-C", str(repo_dir(repo)), "rev-parse", "--is-inside-work-tree"]) != "true":
+        return None
+    rows = []
+    for line in log.splitlines():
+        author, _, rest = line.partition("\t")
+        at, _, subject = rest.partition("\t")
+        if at.isdigit() and not BOT.search(author):
+            rows.append((author, int(at), subject))
+    today = today or datetime.now(timezone.utc).date()
+    buckets = weekly([at for _, at, _ in rows], today, weeks)
+    last = max(rows, key=lambda r: r[1], default=None)
+    return {"weeks": buckets, "total": sum(w["n"] for w in buckets), "people": len({a for a, _, _ in rows}),
+            "last": {"author": last[0], "at": last[1], "subject": last[2]} if last else None}
 
 
 def commits(repo: str, months: int) -> list[dict]:
