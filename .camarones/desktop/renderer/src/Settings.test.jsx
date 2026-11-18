@@ -68,6 +68,20 @@ test('Kit holds the kit and uninstall cards', () => {
   expect(out).toContain('data-tour="mc-uninstall"')
 })
 
+// The kit card needs the machine read (its version): when that read fails, Kit says so with a way out, as General does,
+// and uninstall stays (it reads nothing).
+test('Kit says the machine read failed and offers Retry; uninstall stays', () => {
+  const out = render('#/settings/kit', { m: null, error: 'HTTP 500: boom', onRetry: () => {} })
+  expect(out).toContain('No he podido leer esta máquina')
+  expect(out).toContain('HTTP 500: boom')
+  expect(out).toMatch(/>Reintentar<\/button>/)
+  expect(out).not.toContain('cu-skel')
+  expect(out).not.toContain('data-tour="mc-kit"')
+  expect(out).toContain('data-tour="mc-uninstall"')
+  setLang('en')
+  expect(render('#/settings/kit', { m: null, error: 'boom' })).toContain('I could not read this machine')
+})
+
 test('the Trust tab carries the pending count', () => {
   expect(render('#/settings', { pending: 2 })).toContain('Confianza · 2')
   expect(render('#/settings')).not.toContain('Confianza ·')

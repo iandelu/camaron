@@ -3,6 +3,8 @@ import { Aviso, Button, Card, Skeleton, fetchSay, shareOk, shareSay } from '@cam
 import { useCmd } from '../hooks.js'
 import { Failed, JobOutput } from '../parts.jsx'
 import { stripState } from '../docs.js'
+import { ago } from '../jobs.js'
+import { seconds } from '../quality.js'
 import { t } from '../i18n.js'
 
 // The team's repo (remote) and sharing (app.share.sync_status / app.share.share): sharing is the team action —
@@ -75,15 +77,17 @@ export function FetchNote({ fetched, remote }) {
   return <Aviso tone="warn" title={t('tm.fetchFailed')} detail={said.detail}>{said.key ? t(said.key, said.vars) : null}</Aviso>
 }
 
-// Docs' head: where the team repo stands in one sentence (GET sync, read once), Share now, and the repo card folded
-// below. The strip reads; the repo card, as before, saves the remote and switches auto-share.
-export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs, onChanged, repoKey = 0 }) {
+// Docs' head: where the team repo stands in one sentence (GET sync, read once), when it was last shared, Share now, and
+// the repo card folded below. The strip reads; the repo card, as before, saves the remote and switches auto-share.
+export function TeamStripView({ sync, result, busy, onShare, onRetry, srv, jobs, onChanged, repoKey = 0, now = Date.now() }) {
   const st = stripState(sync)
+  const last = sync?.remote ? seconds(sync.last_share) : null
   return (
     <div className="dk-run" data-tour="docs-team">
       {sync?.error ? <Aviso tone="warn" title={t(st.key)} action={<Button size="sm" onClick={onRetry}>{t('retry')}</Button>} /> : (
         <div className="row">
           <span className={'cu-chip' + (st.tone === 'none' ? '' : ` cu-chip--${st.tone}`)} role="status">{t(st.key, st.vars)}</span>
+          {last ? <span className="muted small">{t('strip.last', { when: ago(last, now / 1000, t) })}</span> : null}
           <span className="dk-grow"></span>
           {sync?.remote ? <Button size="sm" variant="primary" disabled={!!busy} onClick={onShare}>{t('ts.share')}</Button> : null}
         </div>)}

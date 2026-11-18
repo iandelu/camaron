@@ -21,7 +21,7 @@ test('a share that cannot resolve the host says which one and to check the VPN, 
     .toContain('I can&#x27;t reach gitlab-central.example.space: check the connection, VPN or proxy.')
 })
 
-test('refused credentials link to saving a token for that host in Machine', () => {
+test('refused credentials link to saving a token for that host in Settings › Tokens', () => {
   const out = share({ status: 'error', reason: 'no-token', host: 'git.acme', detail: 'fatal: Authentication failed' })
   expect(out).toContain('git.acme pide iniciar sesión')
   expect(out).toContain('href="#/settings/tokens?host=git.acme"')
@@ -79,6 +79,19 @@ test('Docs keeps its tabs and the portal buttons when the team repo cannot be re
     expect(out).toContain('Leer la documentación')
     expect(out).toMatch(/aria-current="page"[^>]*>Leer</)
   } finally { delete globalThis.location }
+})
+
+// GET sync carries the last share (lib/app/share.py, ISO with its offset): the strip says how long ago, in words.
+test('the strip says when this project last shared, and nothing before the first share', () => {
+  const now = Date.parse('2026-11-18T10:05:00+01:00')
+  const sync = { remote: 'git@h:t/d.git', behind: 0, ahead: 0, pending: [], last_share: '2026-11-18T10:00:00+01:00' }
+  expect(strip({ sync, now })).toContain('Última vez compartido: hace 5 min')
+  expect(strip({ sync: { ...sync, last_share: '2026-11-16T09:00:00+01:00' }, now })).toContain('Última vez compartido: hace 2 d')
+  expect(strip({ sync: { ...sync, last_share: null }, now })).not.toContain('Última vez')
+  expect(strip({ sync: { ...sync, last_share: 'not a date' }, now })).not.toContain('Última vez')
+  expect(strip({ sync: { error: 'offline' }, now })).not.toContain('Última vez')
+  setLang('en')
+  expect(strip({ sync, now })).toContain('Last shared 5 min ago')
 })
 
 test('the strip remounts the repo card when its key changes, and hands it onChanged', () => {

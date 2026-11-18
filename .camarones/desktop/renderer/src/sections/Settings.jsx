@@ -30,6 +30,7 @@ export function SettingsView({ view, m, error = '', pending = 0, fill, srv, jobs
         : view === 'plugins' ? <Plugins srv={srv} jobs={jobs} />
         : view === 'trust' ? <Trust srv={srv} jobs={jobs} tick={tick} onChange={onSkillsChange} />
         : (<>
+          {error ? <Failed title={t('mc.failed')} detail={error} onRetry={onRetry} /> : null}
           {m ? <Kit {...p} app={app} /> : error ? null : <Skeleton lines={3} />}
           <Uninstall srv={srv} jobs={jobs} app={app} />
         </>)}
