@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, openPortal, portalUrl, startBuild, startWiki,
-  wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiState, wikisRead } from './docs.js'
+  wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -95,6 +95,26 @@ test('Generate posts the body; Build posts the C4 or graph body to build', async
   await startBuild(srv, web.graph)
   expect(posts).toEqual([['wiki', { repo: 'api' }], ['wiki', { repo: 'web', choose: true, starter: true }],
     ['build', { what: 'c4' }], ['build', { what: 'wiki-graph', repo: 'web' }]])
+})
+
+// Update is the same POST wiki with `mode`; a state whose action has no mode sends the block's body untouched.
+test('the wiki request is the block body plus the action\'s mode, only when it has one', () => {
+  const [api, web] = wikiBlocks(index, wikis)
+  expect(wikiRequest(api, wikiAction('stale'))).toEqual({ repo: 'api', mode: 'update' })
+  expect(wikiRequest(api, wikiAction('old'))).toEqual({ repo: 'api', mode: 'update' })
+  expect(wikiRequest(api, wikiAction('failed'))).toEqual({ repo: 'api' })
+  expect(wikiRequest(web, wikiAction('none'))).toEqual({ repo: 'web', choose: true, starter: true })
+  expect(wikiRequest(api, {})).toEqual({ repo: 'api' })
+  expect(wikiRequest(api)).toEqual({ repo: 'api' })
+  expect(api.body).toEqual({ repo: 'api' })                                            // the block is not mutated
+})
+
+test('startWiki posts the request of the action it is given', async () => {
+  const posts = []
+  const srv = { post: async (path, body) => { posts.push([path, body]); return { id: '9' } } }
+  const [api] = wikiBlocks(index, wikis)
+  await startWiki(srv, api, wikiAction('stale'))
+  expect(posts).toEqual([['wiki', { repo: 'api', mode: 'update' }]])
 })
 
 test('the portal opens in the browser with its address', () => {

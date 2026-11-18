@@ -66,6 +66,27 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 .dk-body { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }   /* a card's body, inside a health row */
 .dk-run { gap: .6rem; }
 .dk-wikis { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; align-items: start; }
+.dk-wikis > * { animation: dk-rise var(--duration-normal) var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
+/* a wiki card: --state tints its icon and word; the running one pulses on a pseudo-element so the pulse never replaces
+   the card's own rise (one `animation` per element) */
+.dk-wiki { --state: var(--color-ink-dim); position: relative; min-width: 0; }
+.dk-wiki.is-fresh { --state: var(--color-estado-bien); }
+.dk-wiki.is-stale, .dk-wiki.is-old { --state: var(--color-estado-aviso); }
+.dk-wiki.is-failed { --state: var(--color-estado-mal); }
+.dk-wiki.is-generating { --state: var(--color-aurora-amber); --tone: var(--color-aurora-amber); }
+.dk-wiki.is-generating::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  animation: dk-pulse 1.6s ease-in-out infinite; }
+.dk-wiki p { margin: 0; }
+.dk-wiki-head { flex-wrap: nowrap; align-items: flex-start; min-width: 0; }
+.dk-wiki-head .dk-ico { color: var(--state); margin-top: .1em; }
+.dk-wiki.is-generating .dk-ico { animation: dk-glow 1.2s ease-in-out infinite; }
+.dk-wiki.is-done .dk-ico { animation: dk-tick-pop var(--duration-normal) var(--ease-out-soft) both; }
+.dk-wiki-name { min-width: 0; overflow-wrap: anywhere; }
+.dk-wiki-status { min-height: 1.5em; color: var(--color-ink-soft); overflow-wrap: anywhere; }
+.dk-wiki-word { color: var(--state); }
+.dk-wiki.is-generating .dk-wiki-word { color: var(--color-ink); }
+.dk-wiki .cu-btn--primary .cu-thinking { --cu-think-base: color-mix(in srgb, var(--color-on-accent) 72%, var(--color-accent));
+  --cu-think-glint: var(--color-on-accent); }
 .dk-slots { display: flex; flex-direction: column; gap: .2rem; }
 .dk-inline { display: inline-flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-narrow { min-width: 4rem; }
@@ -742,6 +763,7 @@ button.dk-rv-why { min-height: 1.5rem; cursor: pointer; text-decoration: underli
   .dk-scan.done, .dk-scan-repos li.done, .dk-scan-repos li.current i { animation: none; }
   .dk-bar span, .dk-bar i, .dk-bar.indeterminate i { animation: none; transition: none; }
   .dk-tick * { animation: none; }
+  .dk-wikis > *, .dk-wiki.is-generating::after, .dk-wiki.is-generating .dk-ico, .dk-wiki.is-done .dk-ico { animation: none; }
   .dk-adr-filter, .dk-adr-row, .dk-adr-kind { transition: none; }
   .dk-rv-pane { animation: none; }
   .dk-term.tone-running { animation: none; }

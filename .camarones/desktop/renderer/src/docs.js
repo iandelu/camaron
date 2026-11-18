@@ -98,8 +98,11 @@ export const wikisRead = (prev, got) => (got.error
   ? { rows: prev.rows, loading: false, failed: true }
   : { rows: got.rows, loading: false, failed: false })
 
+// What POST wiki takes for a card's action: the block's body, plus the action's `mode` when it has one (Update).
+export const wikiRequest = (block, action = {}) => ({ ...block.body, ...(action.mode ? { mode: action.mode } : {}) })
+
 export const startBuild = (srv, card) => srv.post('build', card.body)
-export const startWiki = (srv, block) => srv.post('wiki', block.body)
+export const startWiki = (srv, block, action) => srv.post('wiki', wikiRequest(block, action))
 
 // One wiki runs at a time (routes/analysis.py wiki(): another repo's start is refused with 409 busy). From the jobs
 // store's running list: the repo whose wiki runs, when it is not `repo` ('' otherwise), so Generate closes on the

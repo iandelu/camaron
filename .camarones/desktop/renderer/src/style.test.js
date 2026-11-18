@@ -61,3 +61,17 @@ test('the scan\'s bar and tick do not move for who asked for less motion, and th
   expect(reduced).toMatch(/\.dk-bar i[^{]*\{[^}]*animation:\s*none/)
   expect(rule('.dk-tick-check')).toMatch(/stroke-dashoffset:\s*0\b/)
 })
+
+// The wiki cards: they rise in one after another, the one that runs pulses and glows (on a pseudo-element, so the
+// pulse never replaces the card's own rise), a finished one pops its icon in, and all of it stands still for who asked
+// for less motion. A long repo name cannot push the card out of its grid track.
+test('the wiki cards\' motion is staggered, tone-driven and off for who asked for less motion', () => {
+  expect(css).toMatch(/\.dk-wikis > \*\s*\{[^}]*animation:\s*dk-rise[^}]*animation-delay:\s*calc\(var\(--i,\s*0\)\s*\*\s*40ms\)/)
+  expect(css).toMatch(/\.dk-wiki\.is-generating\s*\{[^}]*--tone:\s*var\(--color-aurora-amber\)/)
+  expect(css).toMatch(/\.dk-wiki\.is-generating::after\s*\{[^}]*animation:\s*dk-pulse/)
+  expect(css).toMatch(/\.dk-wiki\.is-generating \.dk-ico\s*\{[^}]*animation:\s*dk-glow/)
+  expect(css).toMatch(/\.dk-wiki\.is-done \.dk-ico\s*\{[^}]*animation:\s*dk-tick-pop/)
+  expect(css).toMatch(/\.dk-wiki\s*\{[^}]*min-width:\s*0/)
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'))
+  expect(reduced).toMatch(/\.dk-wikis > \*[^{]*\.dk-wiki\.is-generating::after[^{]*\.dk-wiki\.is-generating \.dk-ico[^{]*\.dk-wiki\.is-done \.dk-ico[^{]*\{\s*animation:\s*none/)
+})

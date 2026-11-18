@@ -21,6 +21,7 @@ test('every key a component names exists', () => {
     'adr.review.status': ['pending', 'approved', 'edited', 'deferred', 'chosen'],     // lib/adr.py PART_ACTIONS, a point once chosen
     'adr.sec': ['context', 'drivers', 'options', 'decision', 'consequences', 'confirmation', 'diagram', 'evidence', 'decided_by'],
     'adr.cat': ['data', 'cache', 'messaging', 'security', 'framework', 'deploy', 'c4'],   // lib/adr_pack.py CATEGORIES + deploy, c4
+    'docs.w': ['none', 'generating', 'fresh', 'stale', 'old', 'failed', 'blocked', 'pages.one', 'pages.many', 'written', 'brief.ai', 'brief.starter'],   // docs.js wikiState + the card's figures
     'adr.pack': ['files', 'neighbours', 'pages', 'adrs', 'commits', 'c4', 'libraries', 'questions'].flatMap((p) => [`${p}.one`, `${p}.many`]) }
   for (const [f, ks] of Object.entries(families)) for (const k of ks) expect(S.es[`${f}.${k}`], `${f}.${k}`).toBeTruthy()
 })

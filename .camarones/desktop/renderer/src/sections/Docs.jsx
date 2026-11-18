@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card } from '@camaron/ui'
-import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiBlocks, wikiBusyWith,
-  wikiError, wikisRead } from '../docs.js'
+import { Aviso, Button, Card, Thinking } from '@camaron/ui'
+import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiAction, wikiBlocks,
+  wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
+import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
 import { JobOutput, Page } from '../parts.jsx'
 import { t } from '../i18n.js'
+import { DocsIcon } from './DocsIcons.jsx'
 
 // Reading is the portal's, on this same server one folder up: these buttons open it in the system browser (never an
 // href the window would follow). The portal has no app token (only the board's), so what it shows but cannot run is
@@ -27,8 +29,8 @@ export default function Docs({ srv, jobs, app, index }) {
       <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
       <div className="dk-wikis" data-tour="docs-wikis">
-        {wikiBlocks(index, rows).map((b) => (             // a failed read is said once, above: the blocks do not repeat it
-          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
+        {wikiBlocks(index, rows).map((b, i) => (          // a failed read is said once, above: the blocks do not repeat it
+          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
             onView={() => open(b.hash)} onDone={reload} />))}
       </div>
       <Ask srv={srv} open={open} />
@@ -82,33 +84,70 @@ export function BuildCard({ title, hint, build, onBuild, onView }) {
   )
 }
 
-// One block per repo: Generate runs POST wiki (it chooses the repo and writes the starter brief, which the hint says),
-// and once there are pages — already, or after this run — the graph can be built and the wiki viewed in the portal.
-// Generate is closed, with the reason, for a repo that is not cloned or without a wiki engine (the portal's canGenerate),
-// and while another repo's wiki runs (busyWith: that repo).
-const WHY = { notCloned: 'docs.notCloned', noEngine: 'docs.noEngine', unread: 'docs.wikiUnread' }
-export function WikiBlock({ srv, jobs, block, loading = false, busyWith = '', onView, onDone }) {
-  const gen = useJob(srv, jobs, async () => startWiki(srv, block))
+// One block per repo: its card runs POST wiki (Generate chooses the repo and writes the starter brief, Update asks for mode
+// `update`) and the graph build, and opens the wiki in the portal. Wiring only: what the card shows is WikiCard's.
+export function WikiBlock({ srv, jobs, block, loading = false, busyWith = '', index = 0, onView, onDone }) {
+  const gen = useJob(srv, jobs, async (action) => startWiki(srv, block, action))
   const graph = useJob(srv, jobs, () => startBuild(srv, block.graph))
+  const run = async (action) => { if ((await gen.run(action))?.status === 'done') onDone?.() }
+  const build = async () => { if ((await graph.run())?.status === 'done') onDone?.() }
+  return <WikiCard block={block} gen={gen} graph={graph} loading={loading} busyWith={busyWith} index={index} now={Date.now() / 1000}
+    onGenerate={run} onUpdate={run} onGraph={build} onView={onView} />
+}
+
+// Why Generate is closed: a repo that is not cloned or without a wiki engine (the portal's canGenerate), or wikis not read.
+const WHY = { notCloned: 'docs.notCloned', noEngine: 'docs.noEngine', unread: 'docs.wikiUnread' }
+
+// The status line's figures, from the row; what the row does not know is left out, never shown as a zero.
+const figures = ({ pages, at, brief }, now) => [
+  pages > 0 && t(pages === 1 ? 'docs.w.pages.one' : 'docs.w.pages.many', { n: pages }),
+  pages > 0 && at > 0 && t('docs.w.written', { when: ago(at, now, t) }),
+  brief && t(`docs.w.brief.${brief}`),
+].filter(Boolean)
+
+// One repo's wiki as a card: its state (icon and word), one primary action, and View beside it once there are pages. `gen` and
+// `graph` are useJob states; `now` is epoch seconds, as the rows' `at`. Before the wikis are read (`loading`, or the tree
+// fallback's `blocked: 'unread'`) its row is only defaults, so it says nothing about freshness and closes its action. A reason of
+// its own (not cloned, no engine) or another repo's run (busyWith) closes what writes pages, never View.
+export function WikiCard({ block, gen, graph, loading = false, busyWith = '', index = 0, now, onGenerate, onUpdate, onGraph, onView }) {
   const title = t('docs.wikiBlock', { repo: block.repo })
   const graphTitle = t('docs.wiki', { repo: block.repo })
-  const go = buildFailed(gen) ? t('retry') : t('docs.generate')
-  const run = async () => { if ((await gen.run())?.status === 'done') onDone?.() }
-  const again = buildFailed(graph) ? t('retry') : t('docs.build')
   const pages = block.hasWiki || gen.job?.status === 'done'
+  const own = wikiState({ ...block, hasWiki: pages }, { running: gen.running, failed: buildFailed(gen) })
+  const unread = (loading || block.blocked === 'unread') && own !== 'generating'
+  const state = unread ? 'unread' : own === 'none' && block.blocked ? 'blocked' : own
+  const action = wikiAction(unread || state === 'blocked' ? 'none' : state)
+  const writes = !!action.kind && action.kind !== 'view'
   const why = (block.blocked && !(block.blocked === 'unread' && loading) ? t(WHY[block.blocked]) : '')
-    || (busyWith ? t('docs.wikiBusy', { repo: busyWith }) : '')
+    || (busyWith && writes ? t('docs.wikiBusy', { repo: busyWith }) : '')
+  const label = action.label && t(action.label)
+  const line = unread || state === 'generating' ? [] : figures(block.info, now)
+  const showGraph = pages && !unread && (!block.info.graph || block.info.graphStale || !!graph.job || !!graph.error)
+  const again = buildFailed(graph) ? t('retry') : t(block.info.graph ? 'docs.graphRebuild' : 'docs.graphBuild')
+  const go = () => (action.kind === 'view' ? onView() : action.kind === 'update' ? onUpdate(action) : onGenerate(action))
   return (
-    <Card className="dk-run">
-      <div className="row"><span className="eyebrow">{title}</span><span className="dk-grow"></span>
-        <Button size="sm" variant="primary" disabled={gen.running || !!block.blocked || !!busyWith} aria-label={`${go}: ${title}`} onClick={() => run()}>{go}</Button>
-        {pages ? <Button size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${title}`} onClick={onView}>{t('docs.view')}</Button> : null}</div>
-      <p className="muted small">{why || t('docs.generateHint')}</p>
+    <Card className={`dk-run dk-wiki is-${state}${gen.job?.status === 'done' ? ' is-done' : ''}`} data-wiki-state={state}
+      style={{ '--i': Math.min(index, 8) }}>
+      <div className="row dk-wiki-head"><DocsIcon name={unread ? 'wikis' : state} /><span className="eyebrow dk-wiki-name">{title}</span></div>
+      <p className="dk-wiki-status small">
+        {unread ? null : <strong className="dk-wiki-word">{t(`docs.w.${state}`)}</strong>}
+        {line.length ? <span className="muted">{` · ${line.join(' · ')}`}</span> : null}
+      </p>
+      {why ? <p className="muted small">{why}</p> : null}
+      <div className="row">
+        {state === 'generating'
+          ? <Button size="sm" variant="primary" disabled aria-busy="true" aria-label={`${t('docs.generating')}: ${title}`}>
+            <Thinking timer>{t('docs.generating')}</Thinking></Button>
+          : <Button size="sm" variant="primary" disabled={unread || (writes && (!!block.blocked || !!busyWith))}
+            aria-label={`${label}: ${title}`} onClick={go}>{label}</Button>}
+        {pages && action.kind !== 'view'
+          ? <Button size="sm" variant="ghost" aria-label={`${t('docs.view')}: ${title}`} onClick={onView}>{t('docs.view')}</Button> : null}
+      </div>
       <JobOutput c={shownJob(gen, wikiError)} />
-      {pages ? (
+      {showGraph ? (
         <>
           <div className="row"><span className="muted small">{graphTitle}</span><span className="dk-grow"></span>
-            <Button size="sm" disabled={graph.running} aria-label={`${again}: ${graphTitle}`} onClick={() => graph.run()}>{again}</Button></div>
+            <Button size="sm" disabled={graph.running} aria-label={`${again}: ${graphTitle}`} onClick={onGraph}>{again}</Button></div>
           <p className="muted small">{t('docs.wikiHint')}</p>
           <JobOutput c={shownJob(graph)} />
         </>
