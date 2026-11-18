@@ -31,12 +31,40 @@ test('the picker is one select: a group per agent, an option per model, the valu
 })
 
 test('a local model says so and the CLI\'s own default is worded in the app\'s language', () => {
-  expect(select(panel())).toContain('>ollama/llama3:8b (local)</option>')
-  expect(select(panel())).toContain('>por defecto</option>')
-  expect(select(panel())).not.toContain('>default<')
+  expect(select(panel())).toContain('>OpenCode · ollama/llama3:8b (local)</option>')
+  expect(select(panel())).toContain('>Gemini · por defecto</option>')
+  expect(select(panel())).not.toMatch(/default</)
   setLang('en')
-  expect(select(panel())).toContain('>default</option>')
+  expect(select(panel())).toContain('>Gemini · default</option>')
   expect(select(panel())).toMatch(/aria-label="Agent and model"/)
+})
+
+// A closed select shows only its option's text, never the group's label: each option names its agent as well as its model.
+test('every option names its agent and its model', () => {
+  const texts = (out) => [...select(out).matchAll(/<option[^>]*>([^<]*)<\/option>/g)].map((m) => m[1])
+  expect(texts(panel())).toEqual(['Claude Code · haiku', 'Claude Code · sonnet', 'OpenCode · ollama/llama3:8b (local)', 'Gemini · por defecto'])
+  setLang('en')
+  expect(texts(panel())).toEqual(['Claude Code · haiku', 'Claude Code · sonnet', 'OpenCode · ollama/llama3:8b (local)', 'Gemini · default'])
+})
+
+// lib/chat.py words a configured default (Codex's model, a command runner's model in prefs) as label "default" with its id.
+test('a default entry with a model names it, in the app\'s language', () => {
+  const codex = [{ runner: 'codex', label: 'Codex', models: [{ id: 'gpt-5.6-terra', label: 'default', local: false }] }]
+  const out = select(panel({ runners: codex, choice: { runner: 'codex', model: 'gpt-5.6-terra' } }))
+  expect(out).toContain('<option value="codex|gpt-5.6-terra" selected="">Codex · por defecto (gpt-5.6-terra)</option>')
+  expect(out).not.toMatch(/default/)
+  setLang('en')
+  expect(select(panel({ runners: codex, choice: { runner: 'codex', model: 'gpt-5.6-terra' } }))).toContain('>Codex · default (gpt-5.6-terra)</option>')
+})
+
+test('two agents that both have a default entry read apart, and the chosen one is named', () => {
+  const two = [{ runner: 'fake', label: 'Fake', models: [{ id: '', label: 'default', local: false }] },
+    { runner: 'broken', label: 'Broken', models: [{ id: '', label: 'default', local: false }] }]
+  const chosen = (runner) => select(panel({ runners: two, choice: { runner, model: '' } })).match(/<option [^>]*selected=""[^>]*>([^<]*)</)[1]
+  expect(chosen('fake')).toBe('Fake · por defecto')
+  expect(chosen('broken')).toBe('Broken · por defecto')
+  setLang('en')
+  expect(chosen('broken')).toBe('Broken · default')
 })
 
 test('the option shown is the store\'s choice', () => {
@@ -88,10 +116,20 @@ test('no agent on this machine: the way out is Machine, the composer is closed, 
   expect(panel({ runners: [], choice: null })).toContain('No agent that can answer is installed on this machine.')
 })
 
-test('ask.ai off: the existing sentence, and the composer closed', () => {
+test('ask.ai off: the existing sentence, the composer closed, and the picker shown but off', () => {
   const out = panel({ ai: false })
   expect(out).toContain('Aquí no hay IA para responder')
   expect(field(out)).toContain('disabled')
+  expect(select(out)).toMatch(/^<select[^>]*disabled=""/)
+  expect(select(panel())).not.toMatch(/^<select[^>]*disabled/)
+})
+
+// The chat answers on the picker's model, not on ask.model: the timeout's advice points at the picker.
+test('a turn that timed out points at the picker, not at workspace.yaml', () => {
+  const slow = (lang) => { setLang(lang); return panel({ messages: [ask, reply(undefined, { error: 'no answer within 90 s: claude is slow' })] }) }
+  expect(slow('es')).toContain('La IA no ha respondido a tiempo (90 s). Reintenta, o elige arriba un modelo más rápido.')
+  expect(slow('en')).toContain('The AI did not answer in time (90 s). Try again, or pick a faster model above.')
+  for (const lang of ['es', 'en']) expect(slow(lang)).not.toMatch(/ask\.model|workspace\.yaml/)
 })
 
 test('without a choice the composer stays closed', () => {

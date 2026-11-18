@@ -473,14 +473,18 @@ model you pick.
   code. Each answer says who wrote it and lists its sources as buttons that open the page in the portal. The last few
   turns go along as context, so a follow-up can be short. When no page answers, it says so and the question joins
   **Unanswered questions**. If the agent gives nothing (it is not signed in, or does not have that model), the turn
-  fails and says why. An answer waits up to 90 seconds.
-- The picker at the top of the panel lists, for each agent installed on this machine, the models it can be asked for:
-  Claude's haiku, sonnet and opus; the model Codex is configured with; the models Ollama has, for OpenCode (only when
-  both are installed, otherwise OpenCode's default); or the single default of a command agent. The kit installs no
-  model: an agent that is not on this machine is not listed. The first chat opens on the agent and model Ask's AI answer
-  uses (the one routed for small jobs; `ask.model` in `workspace.yaml` sets the model), so it costs the same. After a turn
-  that worked, the pick is kept on this machine (`chat` in `~/.camarones.json`) and the next chat opens on it. The
-  picker is closed while an answer is being written.
+  fails and says why. An answer waits up to 90 seconds; past that the turn fails and suggests a faster model from the
+  picker.
+- The picker at the top of the panel lists, for each agent installed on this machine, the models it can be asked for,
+  each option naming the agent and the model (`Claude Code · haiku`): Claude's haiku, sonnet and opus; Codex's single
+  default entry, which names the model set for Codex in **Machine** (`Codex · default (gpt-5.6-terra)`); the models
+  Ollama has, for OpenCode (only when both are installed, otherwise OpenCode's default); or the single default of a
+  command agent. The kit installs no model: an agent that is not on this machine is not listed. The first chat opens on
+  the agent and model Ask's AI answer uses (the one routed for small jobs; `ask.model` in `workspace.yaml` sets the
+  model), so it costs the same when Ask's model is one the picker offers; otherwise it opens on that agent's cheapest
+  entry, or on the first agent's when Ask's agent is not installed. After a turn that worked, the pick is kept on this
+  machine (`chat` in `~/.camarones.json`) and the next chat opens on it. The pick cannot be changed while an answer is
+  being written, nor while `ask.ai` is off.
 - A small shrimp under the conversation shows where the turn is: it thinks while the answer is awaited (the label reads
   "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
   When your system asks for reduced motion the shrimp stays still and the answer simply appears.

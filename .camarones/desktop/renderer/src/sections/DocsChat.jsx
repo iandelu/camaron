@@ -94,7 +94,8 @@ export function ChatPanel({ state, reveal = null, refs = {}, onSend, onPick, onC
         <Button size="sm" variant="ghost" disabled={!state.messages.length} onClick={onClear}>{t('docs.chat.clear')}</Button>
         <Button size="sm" variant="ghost" onClick={onClose}>{t('docs.chat.close')}</Button>
       </div>
-      {state.runners?.length ? <Picker runners={state.runners} choice={state.choice} disabled={state.running} onPick={onPick} /> : null}
+      {state.runners?.length
+        ? <Picker runners={state.runners} choice={state.choice} disabled={state.running || state.ai === false} onPick={onPick} /> : null}
       <Notices state={state} onRetry={onRetry} />
       <div className="dk-chat-list" ref={refs.list} role="log" aria-live="polite" aria-busy={reveal ? 'true' : undefined}
         aria-label={t('docs.chat.messages')}>
@@ -119,10 +120,11 @@ export function ChatPanel({ state, reveal = null, refs = {}, onSend, onPick, onC
   )
 }
 
-// One select: a group per installed agent, an option per model, valued `runner|model` (a model id never holds a `|`). The entry
-// whose model the CLI decides has id '' and is worded "default"; a local model says so.
+// One select: a group per installed agent, an option per model, valued `runner|model` (a model id never holds a `|`). A closed
+// select shows only the option's text, so each names its agent too. The entry whose model the CLI decides has id '' and is
+// worded "default"; a configured default (lib/chat.py's label "default" with an id, Codex's) names its model; a local one says so.
 const modelName = (m) => {
-  const name = m.id === '' ? t('docs.chat.default') : m.label
+  const name = m.id === '' ? t('docs.chat.default') : m.label === 'default' && !m.local ? t('docs.chat.defaultIs', { model: m.id }) : m.label
   return m.local ? t('docs.chat.local', { model: name }) : name
 }
 function Picker({ runners, choice, disabled, onPick }) {
@@ -136,7 +138,7 @@ function Picker({ runners, choice, disabled, onPick }) {
       disabled={disabled} onChange={pick}>
       {runners.map((r) => (
         <optgroup key={r.runner} label={r.label}>
-          {r.models.map((m) => <option key={m.id} value={`${r.runner}|${m.id}`}>{modelName(m)}</option>)}
+          {r.models.map((m) => <option key={m.id} value={`${r.runner}|${m.id}`}>{`${r.label} · ${modelName(m)}`}</option>)}
         </optgroup>))}
     </select>
   )

@@ -491,15 +491,19 @@ el agente y el modelo que elijas.
   que no lee el código. Cada respuesta dice quién la escribió y enlaza sus fuentes con botones que abren la página en el
   portal. Los últimos turnos van como contexto, así que una pregunta de seguimiento puede ser corta. Cuando ninguna
   página responde, lo dice y la pregunta pasa a **Preguntas sin respuesta**. Si el agente no da nada (no ha iniciado
-  sesión, o no tiene ese modelo), el turno falla y dice por qué. Una respuesta espera hasta 90 segundos.
+  sesión, o no tiene ese modelo), el turno falla y dice por qué. Una respuesta espera hasta 90 segundos; pasado ese
+  tiempo el turno falla y sugiere elegir un modelo más rápido en el selector.
 - El selector de arriba del panel lista, de cada agente instalado en esta máquina, los modelos a los que se puede
-  preguntar: haiku, sonnet y opus de Claude; el modelo con el que está configurado Codex; los modelos que tiene Ollama,
-  para OpenCode (solo si están instalados los dos; si no, el modelo por defecto de OpenCode); o el único modelo por
-  defecto de un agente de comando. El kit no instala ningún modelo: un agente que no está en esta máquina no aparece. El
-  primer chat se abre con el agente y el modelo que usa la respuesta con IA de Preguntar (el enrutado para trabajos
-  pequeños; `ask.model` en `workspace.yaml` fija el modelo), así que cuesta lo mismo. Tras un turno que funcionó, la
-  elección se guarda en esta máquina (`chat` en `~/.camarones.json`) y el siguiente chat se abre con ella. El selector
-  se cierra mientras se escribe una respuesta.
+  preguntar, y cada opción nombra el agente y el modelo (`Claude Code · haiku`): haiku, sonnet y opus de Claude; la
+  única entrada por defecto de Codex, que nombra el modelo fijado para Codex en **Máquina** (`Codex · por defecto
+  (gpt-5.6-terra)`); los modelos que tiene Ollama, para OpenCode (solo si están instalados los dos; si no, el modelo por
+  defecto de OpenCode); o el único modelo por defecto de un agente de comando. El kit no instala ningún modelo: un agente
+  que no está en esta máquina no aparece. El primer chat se abre con el agente y el modelo que usa la respuesta con IA de
+  Preguntar (el enrutado para trabajos pequeños; `ask.model` en `workspace.yaml` fija el modelo), así que cuesta lo mismo
+  cuando el modelo de Preguntar es uno de los que ofrece el selector; si no, se abre con la entrada más barata de ese
+  agente, o con la del primer agente cuando el agente de Preguntar no está instalado. Tras un turno que funcionó, la
+  elección se guarda en esta máquina (`chat` en `~/.camarones.json`) y el siguiente chat se abre con ella. La elección
+  no se puede cambiar mientras se escribe una respuesta, ni mientras `ask.ai` está desactivado.
 - Un camarón pequeño bajo la conversación enseña en qué punto está el turno: piensa mientras se espera la respuesta (la
   etiqueta dice «Pelando tus docs…») y habla mientras el texto se va mostrando por pasos («Contestando…»); un clic en
   el texto lo muestra entero. Si tu sistema pide menos movimiento, el camarón se queda quieto y la respuesta aparece sin
