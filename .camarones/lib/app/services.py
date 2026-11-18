@@ -9,6 +9,7 @@ from collections.abc import Callable, Mapping
 from types import ModuleType
 
 from lib.ports.agent_config import AgentConfig
+from lib.ports.arch_scanner import ArchScanner
 from lib.ports.code_indexer import CodeIndexer
 from lib.ports.container_runtime import ContainerRuntime
 from lib.ports.diagram_engine import DiagramEngine
@@ -35,6 +36,7 @@ class Services:
     agent_config: AgentConfig
     toolchain: Toolchain
     code: CodeIndexer
+    arch_scan: ArchScanner
     wiki_engine: WikiEngine
     containers: ContainerRuntime
     vcs: Vcs

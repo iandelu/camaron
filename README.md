@@ -493,7 +493,7 @@ también `docs/architecture/messaging.md`. `camaron history` escribe `docs/overv
 commits, quién trabaja dónde, ficheros que cambian juntos, tickets entre repos). `radar` deja el stack y las
 herramientas en `docs/overview/tooling.md` y `stack` corrige uno mal detectado. `schemas` lee tablas y colecciones de
 migraciones (Flyway, Liquibase), entidades (JPA, SQLAlchemy, Django, TypeORM, Prisma), Mongo y Firestore.
-`arch-draft` propone un borrador C4 (entiende proyectos Firebase).
+`arch-draft` propone un borrador C4 (entiende proyectos Firebase); cada elemento y relación que respalda el código lleva su `metadata { code [...] }` (`repo:ruta#Ln`), así que `arch-verify` no lo marca `no-evidence`. Los modelos existentes no se reescriben: lo recibes en tu próximo `arch-draft --save`.
 
 **El C4 en un repo.** Si un repo de servicio ya tiene su propio modelo LikeC4, `cam-docs` no hace otro: `project.architecture: <repo>:<ruta>` en `.camarones/workspace.yaml` (por ejemplo `api:docs/architecture`) lo convierte en el modelo del proyecto. El portal lista sus vistas, el explorador C4 se construye desde él, el editor de Arquitectura cambia sus `.c4` (que commiteas en ese repo), `check` comprueba las fuentes `c4:` contra él, el MCP `likec4` lo lee y `arch-draft` no escribe un borrador aparte. `check` avisa si la clave nombra un repo que no existe o una carpeta que aún no está; sin la clave, todo sigue en `docs/architecture/`.
 

@@ -40,6 +40,11 @@ def _code() -> object:
     return graphify
 
 
+def _arch_scan() -> object:
+    from lib import quickarch
+    return quickarch
+
+
 def _wiki_engine() -> object:
     from lib.adapters import openwiki
     return openwiki
@@ -162,6 +167,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "agent_config": _agent_config,
     "toolchain": _toolchain,
     "code": _code,
+    "arch_scan": _arch_scan,
     "wiki_engine": _wiki_engine,
     "containers": _containers,
     "vcs": _vcs,

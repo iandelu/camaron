@@ -126,6 +126,14 @@ def _source(blob: str, at: int) -> str | None:
     return blob[i + 5:blob.index("\n", i + 1)] if i >= 0 else None
 
 
+def _anchor(repo: str, blob: str, at: int) -> str | None:
+    """`repo:path#Ln` for the line a match sits on (spec §5.1), counted from its file's `### <path>` header."""
+    i = blob.rfind("\n### ", 0, max(at, 0) + 1)
+    if at < 0 or i < 0:
+        return None
+    return f"{repo}:{blob[i + 5:blob.index(chr(10), i + 1)]}#L{blob.count(chr(10), i + 1, at)}"
+
+
 def _functions_dir(repo: Path) -> str | None:
     """The repo's Cloud Functions folder: firebase.json's `functions.source` (default `functions`) with firebase-functions."""
     try:
@@ -167,7 +175,9 @@ def scan() -> dict:
     names = [r["name"] for r in ws["repos"] if repo_dir(r["name"]).is_dir()]
     kinds = {r["name"]: r.get("kind", "service") for r in ws["repos"]}
     fixed = {r["name"]: r["stack"] for r in ws["repos"] if r.get("stack")}    # stack confirmed by a human or an agent
-    model = {"repos": {}, "dbs": {}, "brokers": set(), "idps": set(), "edges": [], "caches": set(), "sources": set()}
+    model = {"repos": {}, "dbs": {}, "brokers": set(), "idps": set(), "edges": [], "caches": set(), "sources": set(),
+             "evidence": {}, "edge_evidence": {}}
+    proof: dict[str, set] = {}
     blobs = {}
     for n in names:
         repo = repo_dir(n)
@@ -175,11 +185,13 @@ def scan() -> dict:
         blobs[n] = blob
         model["sources"] |= {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         model["repos"][n] = {"kind": kinds.get(n, "service"), "tech": fixed.get(n) or stack(repo, blob)}
+        proof[n] = {f"{n}:{m}" for m in MANIFESTS if (repo / m).is_file()}
         if src := _functions_dir(repo):                    # Cloud Functions: a container of their own
             fn = f"{n} Cloud Functions"
             blobs[n], blobs[fn] = _split(blob, src)
             lang = "TypeScript" if (repo / src / "tsconfig.json").is_file() else "Node.js"
             model["repos"][fn] = {"kind": "service", "tech": f"Cloud Functions · {lang}", "repo": n}
+            proof[fn] = {f"{n}:{src}/package.json"}
     owner = {n: r.get("repo", n) for n, r in model["repos"].items()}
     projects = {n: _firebase_project(repo_dir(n), blobs[n]) for n in names}
     found_projects = {p for p in projects.values() if p}
@@ -187,15 +199,20 @@ def scan() -> dict:
     for n, blob in blobs.items():
         low = blob.lower()
 
-        def cite(at: int, n=n, blob=blob) -> None:
+        def cite(at: int, node: str | None = None, n=n, blob=blob) -> str | None:
             if at >= 0 and (path := _source(blob, at)):
                 model["sources"].add(f"{owner[n]}:{path}")
+                anchor = _anchor(owner[n], blob, at)
+                if anchor and node:
+                    proof.setdefault(node, set()).add(anchor)
+                return anchor
+            return None
         for label, hints in FIREBASE.items():
             hit = next((low.find(h) for h in hints if h in low), -1)
             if hit >= 0:
                 proj = projects.get(owner[n]) or default_project
                 model["dbs"].setdefault(f"{label}:{proj}", {"label": label, "name": proj, "users": set()})["users"].add(n)
-                cite(hit)
+                cite(hit, f"{label}:{proj}")
         # datastores (explicit URLs first → shared DB detection by host/name)
         found_db = False
         for pat, label in DB_PATTERNS:
@@ -205,33 +222,37 @@ def scan() -> dict:
                     host, db = g[0], g[1]
                     key = f"{label}:{db}" if host in ("localhost", "127.0.0.1", "db", "postgres", "mysql", "mongo") else f"{label}:{host}/{db}"
                     model["dbs"].setdefault(key, {"label": label, "name": db, "users": set()})["users"].add(n)
-                    cite(m.start())
+                    cite(m.start(), key)
                     found_db = True
         if not found_db:
             for dep, label in DEP_DB.items():
                 if label and dep in low:
                     key = f"{label}:{n}"
                     model["dbs"].setdefault(key, {"label": label, "name": f"{n} db", "users": set()})["users"].add(n)
-                    cite(low.find(dep))
+                    cite(low.find(dep), key)
                     break
         if any(d in low for d in CACHE_DEPS):
             model["caches"].add(n)
+            model["edge_evidence"][(n, "cache", "caches")] = cite(min(low.find(d) for d in CACHE_DEPS if d in low), "cache")
         for label, deps in (("RabbitMQ", RABBIT_DEPS), ("Kafka", KAFKA_DEPS)):
             if any(d in low for d in deps):
                 model["brokers"].add(label)
-                cite(min(low.find(d) for d in deps if d in low))
+                where = cite(min(low.find(d) for d in deps if d in low), label)
                 pubs = {m for p in PUBLISH for m in re.findall(p, blob)}
                 subs = {m for p in CONSUME for m in re.findall(p, blob)}
                 if pubs:
                     model["edges"].append((n, label, "async", "publishes " + ", ".join(sorted(pubs)[:3])))
+                    model["edge_evidence"][(n, label, "publishes " + ", ".join(sorted(pubs)[:3]))] = where
                 if subs:
                     model["edges"].append((label, n, "async", "delivers " + ", ".join(sorted(subs)[:3])))
+                    model["edge_evidence"][(label, n, "delivers " + ", ".join(sorted(subs)[:3]))] = where
                 if not pubs and not subs:
                     model["edges"].append((n, label, "async", "uses"))
+                    model["edge_evidence"][(n, label, "uses")] = where
         for key, label in IDP_HINTS:
             if key in low:
                 model["idps"].add(label)
-                cite(low.find(key))
+                model["edge_evidence"][(n, label, "authenticates with")] = cite(low.find(key), label)
                 model["edges"].append((n, label, "sync", "authenticates with"))
         # HTTP calls to sibling repos: their name used as a host / service reference
         for other in names:
@@ -241,17 +262,33 @@ def scan() -> dict:
                 re.search(rf"{re.escape(other)}[.-]?(url|host|base-?url|endpoint|uri)", low)
             if hit:
                 model["edges"].append((n, other, "sync", "calls (HTTP)"))
-                cite(hit.start())
+                model["edge_evidence"][(n, other, "calls (HTTP)")] = cite(hit.start())
     functions = [n for n, r in model["repos"].items() if r.get("repo")]
     for n in names:                                       # apps calling Cloud Functions (httpsCallable, cloud_functions)
         low = blobs[n].lower()
         if functions and any(h in low for h in FUNCTION_CALLS):
             for fn in [f for f in functions if owner[f] == n] or functions:
                 model["edges"].append((n, fn, "sync", "calls"))
+                hint = min(low.find(h) for h in FUNCTION_CALLS if h in low)
+                model["edge_evidence"][(n, fn, "calls")] = _anchor(owner[n], blobs[n], hint)
     for key, d in model["dbs"].items():
         for u in sorted(d["users"]):
             model["edges"].append((u, key, "sync", "reads/writes"))
+            mine = sorted(a for a in proof.get(key, ()) if a.startswith(f"{owner[u]}:"))
+            model["edge_evidence"][(u, key, "reads/writes")] = mine[0] if mine else None
+    model["evidence"] = {k: sorted(v) for k, v in proof.items() if v}
+    model["edge_evidence"] = {k: v for k, v in model["edge_evidence"].items() if v}
     return model
+
+
+def _code_meta(anchors, pad: str) -> list[str]:
+    """`metadata { code [...] }` (up to 3 anchors, sorted) as the lines an element block carries; none without any."""
+    top = sorted(anchors or ())[:3]
+    return [f"{pad}metadata {{ code [{', '.join(repr(q(a)) for a in top)}] }}"] if top else []
+
+
+def _relation_proof(anchor: str | None) -> str:
+    return f" {{ metadata {{ code '{q(anchor)}' }} }}" if anchor else ""
 
 
 def render_c4(model: dict, project: str) -> dict[str, str]:
@@ -259,29 +296,32 @@ def render_c4(model: dict, project: str) -> dict[str, str]:
     sys_id = ident(project) or "system"
     ids = {n: ident(n) for n in model["repos"]}
     kind_map = {"service": "service", "webapp": "webapp", "mobileApp": "mobileApp", "library": "component", "infra": "component"}
+    evidence, proofs = model.get("evidence") or {}, model.get("edge_evidence") or {}
     lines = ["// Camarones first-look draft — generated by a static scan (no AI). Review it; everything is #ai-draft.",
              "model {", "  user = actor 'User' 'Uses the system' { #ai-draft }", "", f"  {sys_id} = system '{q(project)}' {{"]
     for n, r in model["repos"].items():
         lines += [f"    {ids[n]} = {kind_map.get(r['kind'], 'service')} '{q(n)}' {{", "      #ai-draft",
-                  f"      technology '{q(r['tech'])}'", f"      metadata {{ repo '{q(r.get('repo', n))}' }}", "    }"]
+                  f"      technology '{q(r['tech'])}'", f"      metadata {{ repo '{q(r.get('repo', n))}' }}",
+                  *_code_meta(evidence.get(n), "      "), "    }"]
     ext_ids = {}
     for key, d in model["dbs"].items():
         i = ident(f"db {d['label']} {d['name']}")
         ext_ids[key] = f"{sys_id}.{i}"
         shared = " #shared-db" if len(d["users"]) > 1 else ""
         lines += [f"    {i} = database '{q(d['label'])}: {q(d['name'])}' {{", f"      #ai-draft{shared}",
-                  f"      technology '{q(d['label'])}'", "    }"]
+                  f"      technology '{q(d['label'])}'", *_code_meta(evidence.get(key), "      "), "    }"]
     for b in sorted(model["brokers"]):
         i = ident(b)
         ext_ids[b] = f"{sys_id}.{i}"
-        lines += [f"    {i} = queue '{q(b)}' {{", "      #ai-draft", f"      technology '{q(b)}'", "    }"]
+        lines += [f"    {i} = queue '{q(b)}' {{", "      #ai-draft", f"      technology '{q(b)}'", *_code_meta(evidence.get(b), "      "), "    }"]
     if model["caches"]:
-        lines += ["    cache = database 'Redis cache' {", "      #ai-draft", "      technology 'Redis'", "    }"]
+        lines += ["    cache = database 'Redis cache' {", "      #ai-draft", "      technology 'Redis'",
+                  *_code_meta(evidence.get("cache"), "      "), "    }"]
     lines.append("  }")
     for idp in sorted(model["idps"]):
         i = ident(idp)
         ext_ids[idp] = i
-        lines += [f"  {i} = externalSystem '{q(idp)}' {{ #ai-draft }}"]
+        lines += [f"  {i} = externalSystem '{q(idp)}' {{", "    #ai-draft", *_code_meta(evidence.get(idp), "    "), "  }"]
     lines.append("")
     front = [n for n, r in model["repos"].items() if r["kind"] in ("webapp", "mobileApp")] or list(model["repos"])[:1]
     for n in front:
@@ -293,9 +333,9 @@ def render_c4(model: dict, project: str) -> dict[str, str]:
         if k in seen:
             continue
         seen.add(k)
-        lines.append(f"  {ref(a)} -[{kind}]-> {ref(b)} '{q(label)}'")
+        lines.append(f"  {ref(a)} -[{kind}]-> {ref(b)} '{q(label)}'{_relation_proof(proofs.get(k))}")
     for n in model["caches"]:
-        lines.append(f"  {ref(n)} -[sync]-> {sys_id}.cache 'caches'")
+        lines.append(f"  {ref(n)} -[sync]-> {sys_id}.cache 'caches'{_relation_proof(proofs.get((n, 'cache', 'caches')))}")
     lines.append("}")
     # top-level `include *` = actors, the system and every external system, so elements added later (the AI
     # refinement, by hand) show up in the context view without anyone having to remember to edit it
