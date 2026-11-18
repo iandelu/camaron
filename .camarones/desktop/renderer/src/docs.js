@@ -99,6 +99,15 @@ export const wikisRead = (prev, got) => (got.error
   ? { rows: prev.rows, loading: false, failed: true }
   : { rows: got.rows, loading: false, failed: false })
 
+// GET viewers (what the C4 explorer and the graphs are), read on mount and again after the C4 build: the answer goes to `set`,
+// null when the read failed, and nothing once the section is gone (`isAlive`). Resolves when it has landed.
+export const readViewers = (srv, isAlive, set) => srv.get('viewers').then(
+  (viewers) => { if (isAlive()) set(viewers) },
+  () => { if (isAlive()) set(null) })
+
+// What the section keeps of a read: a failed one (null) leaves the last answer, so a chip does not vanish when a reload fails.
+export const viewersRead = (prev, got) => got ?? prev
+
 // What POST wiki takes for a card's action: the block's body, plus the action's `mode` when it has one (Update).
 export const wikiRequest = (block, action = {}) => ({ ...block.body, ...(action.mode ? { mode: action.mode } : {}) })
 

@@ -1,8 +1,15 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, expect, test } from 'vitest'
-import Docs, { AnswerView, BuildCard, WikiBlock, WikiCard, WikiGrid, WikisUnread } from './sections/Docs.jsx'
-import { wikiBlocks } from './docs.js'
+import { afterEach, expect, test, vi } from 'vitest'
+import Docs, { AnswerView, Build, BuildCard, WikiBlock, WikiCard, WikiGrid, WikisUnread } from './sections/Docs.jsx'
+import { c4Card, wikiBlocks } from './docs.js'
 import { setLang } from './i18n.js'
+
+// A test can stand in for useJob (the hooks need a renderer with effects, which static markup is not); the rest of the module is real.
+const stub = vi.hoisted(() => ({ job: null }))
+vi.mock('./hooks.js', async (original) => {
+  const real = await original()
+  return { ...real, useJob: (...args) => stub.job ?? real.useJob(...args) }
+})
 
 const srv = { get: () => new Promise(() => {}), post: () => new Promise(() => {}) }
 // Every repo of the project is in `repos`; only api and ui have wiki pages yet.
@@ -10,7 +17,7 @@ const index = { repos: ['api', 'web', 'ui'], docs: [{ path: 'repos/api/index.md'
   { path: 'index.md', space: 'docs' }] }
 const render = (idx = index) => renderToStaticMarkup(<Docs srv={srv} jobs={null} app={{ openExternal: () => {} }} index={idx} />)
 
-afterEach(() => { delete globalThis.location; setLang('es') })
+afterEach(() => { delete globalThis.location; stub.job = null; setLang('es') })
 
 // Reading is the portal's, in the system browser: buttons that call app.openExternal, never a link the window follows.
 test('Docs opens the portal through the browser and offers the C4 build', () => {
@@ -52,6 +59,34 @@ test('each read action has its icon before its words', () => {
   const buttons = row.match(/<button.*?<\/button>/g)
   expect(buttons).toHaveLength(3)
   buttons.forEach((b, i) => expect(b).toMatch(new RegExp(`^<button[^>]*><svg[^>]*class="dk-ico".*?</svg>${['Leer la documentación', 'Revisar borradores', 'Buscar o preguntar'][i]}</button>$`)))
+})
+
+// The header's C4 chip is read once, so the C4 card tells the section when its build ends: only a build that ends `done` does
+// (a failed or stopped one built nothing new to read). Build's own element is BuildCard, whose Build button runs it.
+test('the C4 card tells the section once its build is done, and only then', async () => {
+  const wired = async (end) => {
+    const run = vi.fn(() => Promise.resolve(end))
+    stub.job = { job: null, error: '', running: false, run }
+    const onDone = vi.fn()
+    const card = Build({ srv, jobs: null, card: c4Card, title: 'C4', hint: 'h', onView: () => {}, onDone })
+    expect(card.props.build).toBe(stub.job)
+    await card.props.onBuild()
+    expect(run).toHaveBeenCalledTimes(1)
+    return onDone
+  }
+  expect((await wired({ status: 'done', rc: 0 })).mock.calls).toHaveLength(1)
+  expect((await wired({ status: 'failed', rc: 1 })).mock.calls).toHaveLength(0)
+  expect((await wired({ status: 'failed', rc: 1, stopped: true })).mock.calls).toHaveLength(0)
+  expect((await wired(null)).mock.calls).toHaveLength(0)                       // the run was lost (the section went away, or POST failed)
+})
+
+test('the C4 card still builds and views, and runs without a listener', async () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs' }
+  const out = render()
+  expect(out).toMatch(/aria-label="Construir: Construir el explorador C4">Construir<\/button>/)
+  expect(out).toMatch(/aria-label="Ver: Construir el explorador C4">Ver<\/button>/)
+  stub.job = { job: null, error: '', running: false, run: () => Promise.resolve({ status: 'done' }) }
+  await expect(Build({ srv, jobs: null, card: c4Card, title: 'C4', hint: 'h', onView: () => {} }).props.onBuild()).resolves.toBeUndefined()
 })
 
 // One block per repo, with or without a wiki. Nothing is read yet here (the wikis load after the first render), so every

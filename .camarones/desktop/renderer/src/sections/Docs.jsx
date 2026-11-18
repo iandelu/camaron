@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
-import { answerView, askBody, askError, buildFailed, c4Card, docsHealth, openPortal, startBuild, startWiki, wikiAction, wikiBlocks,
-  wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
+import { answerView, askBody, askError, buildFailed, c4Card, docsHealth, openPortal, readViewers, startBuild, startWiki, viewersRead, wikiAction,
+  wikiBlocks, wikiBusyWith, wikiError, wikiState, wikisRead } from '../docs.js'
 import { useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
@@ -19,7 +19,7 @@ const NO_JOBS = { get: () => NONE, subscribe: () => () => {} }
 export default function Docs({ srv, jobs, app, index }) {
   const open = (hash) => openPortal(app, location.origin, hash)
   const wikis = useWikis(srv)
-  const viewers = useViewers(srv)
+  const { viewers, reload: reloadViewers } = useViewers(srv)
   const { running } = useStore(jobs || NO_JOBS)
   const drafts = index?.summary?.draft || 0
   return (
@@ -30,7 +30,8 @@ export default function Docs({ srv, jobs, app, index }) {
         <Button onClick={() => open('#/review')}><DocsIcon name="review" />{drafts > 0 ? `${t('docs.review')} · ${drafts}` : t('docs.review')}</Button>
         <Button variant="ghost" onClick={() => open('#/search')}><DocsIcon name="search" />{t('docs.search')}</Button>
       </div>
-      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)} /></div>
+      <div data-tour="docs-c4"><Build srv={srv} jobs={jobs} card={c4Card} title={t('docs.c4')} hint={t('docs.c4Hint')} onView={() => open(c4Card.hash)}
+        onDone={reloadViewers} /></div>
       <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={running} open={open} />
       <Ask srv={srv} open={open} />
     </Page>
@@ -67,17 +68,18 @@ function useWikis(srv) {
   return { ...state, reload }
 }
 
-// GET viewers (what the C4 explorer and the graphs are), read once; null until read and when it failed, so the header says
-// nothing of the C4 rather than a zero.
+// GET viewers, read once and again after the C4 build (`reload`); null until read and when the first read failed, so the header
+// says nothing of the C4 rather than a zero. A failed reload keeps the last answer (viewersRead).
 function useViewers(srv) {
   const [viewers, setViewers] = useState(null)
   const alive = useRef(true)
+  const reload = () => readViewers(srv, () => alive.current, (got) => setViewers((prev) => viewersRead(prev, got)))
   useEffect(() => {
     alive.current = true
-    srv.get('viewers').then((v) => { if (alive.current) setViewers(v) }, () => {})
+    reload()
     return () => { alive.current = false }
   }, [])
-  return viewers
+  return { viewers, reload }
 }
 
 // GET wikis failed: said once, with a Retry. `kept`: the cards still show the last good read.
@@ -86,10 +88,12 @@ export function WikisUnread({ kept, onRetry }) {
     action={<Button size="sm" onClick={onRetry}>{t('retry')}</Button>} />
 }
 
-// A build job of the project server (POST build, token-gated) followed to its end.
-function Build({ srv, jobs, card, ...rest }) {
+// A build job of the project server (POST build, token-gated) followed to its end; `onDone` only when it ended `done`, so what
+// the section read about the result (the header's C4 chip) is read again.
+export function Build({ srv, jobs, card, onDone, ...rest }) {
   const build = useJob(srv, jobs, () => startBuild(srv, card))
-  return <BuildCard build={build} onBuild={() => build.run()} {...rest} />
+  const run = async () => { if ((await build.run())?.status === 'done') onDone?.() }
+  return <BuildCard build={build} onBuild={run} {...rest} />
 }
 
 // A job's state with a rejection said in the person's language (the POST failed before there was a job).

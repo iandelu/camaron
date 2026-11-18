@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest'
-import { answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, openPortal, portalUrl, startBuild, startWiki,
-  wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
+import { expect, test, vi } from 'vitest'
+import { answerView, askBody, askError, buildFailed, c4Card, citeHash, docsHealth, openPortal, portalUrl, readViewers, startBuild, startWiki,
+  viewersRead, wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRepos, wikiRequest, wikiState, wikisRead } from './docs.js'
 import { setLang, t } from './i18n.js'
 
 // The portal is the reader, on the project's own server one folder up from /desktop/; the window opens it in the
@@ -218,6 +218,46 @@ test('a failed read of the wikis keeps the last good rows and says it failed', (
   expect(wikisRead(start, { error: true })).toEqual({ rows: null, loading: false, failed: true })
   expect(wikisRead(read, { error: true })).toEqual({ rows, loading: false, failed: true })
   expect(wikisRead({ rows, loading: false, failed: true }, { rows: [] })).toEqual({ rows: [], loading: false, failed: false })
+})
+
+// GET viewers, read on mount and again after the C4 build: the answer goes to `set`, a failed read gives null (the header then
+// says nothing of the C4), and nothing is set once the section is gone (`isAlive`).
+const viewersAnswer = { c4: { exists: true, stale: false, model: true } }
+const fakeSrv = (get) => ({ get: vi.fn(get) })
+
+test('a read of the viewers hands the answer over; a failed one hands over null', async () => {
+  const set = vi.fn()
+  const srv = fakeSrv(() => Promise.resolve(viewersAnswer))
+  await readViewers(srv, () => true, set)
+  expect(srv.get).toHaveBeenCalledWith('viewers')
+  expect(set.mock.calls).toEqual([[viewersAnswer]])
+  const failed = vi.fn()
+  await readViewers(fakeSrv(() => Promise.reject(new Error('Failed to fetch'))), () => true, failed)
+  expect(failed.mock.calls).toEqual([[null]])
+})
+
+test('a read that lands after the section is gone sets nothing, whichever way it ends', async () => {
+  const set = vi.fn()
+  await readViewers(fakeSrv(() => Promise.resolve(viewersAnswer)), () => false, set)
+  await readViewers(fakeSrv(() => Promise.reject(new Error('x'))), () => false, set)
+  expect(set).not.toHaveBeenCalled()
+  let alive = true
+  let land
+  const late = readViewers(fakeSrv(() => new Promise((resolve) => { land = resolve })), () => alive, set)   // gone while the read is in flight
+  alive = false
+  land(viewersAnswer)
+  await late
+  expect(set).not.toHaveBeenCalled()
+})
+
+// The reload after a build keeps what was read until the new answer lands, and a failed reload keeps it too: a chip never
+// disappears because the read behind it did. `readViewers` still says null on a failure; this decides what to keep.
+test('a failed reload of the viewers keeps the last answer; a new answer replaces it', () => {
+  const stale = { c4: { exists: true, stale: true, model: true } }
+  expect(viewersRead(null, viewersAnswer)).toBe(viewersAnswer)
+  expect(viewersRead(stale, viewersAnswer)).toBe(viewersAnswer)
+  expect(viewersRead(stale, null)).toBe(stale)
+  expect(viewersRead(null, null)).toBeNull()                                  // a failed first read: still nothing to say
 })
 
 // The GET wikis row's own facts ride on the block (the card reads them): an unread row (the tree fallback) carries the defaults.
