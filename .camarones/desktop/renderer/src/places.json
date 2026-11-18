@@ -1,0 +1,20 @@
+{
+  "views": {
+    "flow": ["summary", "plan"],
+    "quality": ["health", "libs"],
+    "docs": ["read", "wikis", "decisions", "interviews"],
+    "settings": ["general", "tokens", "skills", "plugins", "trust", "kit"]
+  },
+  "zones": { "flow/plan": ["generate"], "quality": ["check", "analyze"], "docs": ["team", "interviews"], "settings": ["machine"] },
+  "panels": {
+    "flow/plan": ["run", "autopilot", "docs"],
+    "quality": ["doctor", "eval", "ab", "inventory", "health", "fresh", "blocks", "hooks"],
+    "docs": ["remote", "share"],
+    "docs/interviews": ["interview"],
+    "settings": ["setup", "config", "sync", "detect", "stack", "profile", "repair"],
+    "settings/kit": ["self-update", "uninstall"],
+    "settings/skills": ["skills"],
+    "settings/plugins": ["plugins"],
+    "settings/trust": ["trust"]
+  }
+}

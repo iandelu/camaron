@@ -5,7 +5,7 @@ import { ago } from '../jobs.js'
 import { openSession, sessionNote } from '../plan.js'
 import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, secretsVerdict, seconds } from '../quality.js'
 import { useAgents, useCmd, useHash, useJob, useStore } from '../hooks.js'
-import { LIBS, qualityView } from '../nav.js'
+import { LIBS, viewOf } from '../nav.js'
 import { AgentPicker, Failed, Fold, JobOutput, Page, ResultView, UnitRow } from '../parts.jsx'
 import Commands from './Commands.jsx'
 import LibrariesView from './Libs.jsx'
@@ -22,7 +22,7 @@ const LINKS = { review: '../#/review' }
 const repoHref = (r) => '../#/health/' + encodeURIComponent(r)
 
 export default function Quality({ srv, jobs }) {
-  const view = qualityView(useHash())
+  const view = viewOf(useHash(), 'quality')
   return (
     <Page title={t('nav.quality')} wide={view === 'libs'}>
       <QualityViews view={view} />
