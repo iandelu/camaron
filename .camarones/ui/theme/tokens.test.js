@@ -87,3 +87,12 @@ test('fonts are self-hosted', () => {
   expect(css).toMatch(/url\(["']?fonts\/Inter\.woff2/)
   expect(css).toMatch(/url\(["']?fonts\/BigShoulders\.woff2/)
 })
+
+test('the chart series colour and ordinal ramp are fixed per theme', () => {
+  const light = tokens('light')
+  expect([light['--series'], ...[1, 2, 3, 4].map((i) => light[`--ordinal-${i}`])])
+    .toEqual(['#7039e6', '#b3a0fb', '#9475f5', '#7039e6', '#5126b0'])
+  for (const dark of [tokens('dark'), declarations(block(block(css, '@media (prefers-color-scheme: dark)'), ':root:not([data-theme="light"])'))])
+    expect([dark['--series'], ...[1, 2, 3, 4].map((i) => dark[`--ordinal-${i}`])])
+      .toEqual(['#a48bf0', '#5b3aa8', '#7c5cd6', '#a48bf0', '#d4c8ff'])
+})
