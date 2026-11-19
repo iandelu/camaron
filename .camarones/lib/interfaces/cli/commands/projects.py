@@ -42,8 +42,11 @@ class Init(Command):
 class Join(Command):
     def configure(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("url")
-        parser.add_argument("folder", nargs="?", type=Path)
+        parser.add_argument("folder", nargs="?", type=Path,
+                            help="the folder where your repos are (or will be); cam-docs goes inside it")
         parser.add_argument("--no-open", action="store_true")
+        parser.add_argument("--set-aside", action="store_true",
+                            help="a cam-docs made here and never shared is renamed to cam-docs.local-<date> first")
 
     def run(self, args: argparse.Namespace, cli: CliContext) -> int:
         return 0                                    # launch.prelaunch joined it and restarted the script there

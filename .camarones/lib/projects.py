@@ -3,10 +3,11 @@
 Registry lives at ~/.camarones/projects.json — outside any project, next to the global kit copy."""
 from __future__ import annotations
 
-import json, os, re, urllib.parse
+import datetime as dt, json, os, re, urllib.parse
 from pathlib import Path
 
 from .common import CAM_DIR, HOME, IS_WIN, docs_root, find_project_marker, run
+from .core.remotes import remote_key
 
 REGISTRY_DIR = HOME / ".camarones"
 REGISTRY_FILE = REGISTRY_DIR / "projects.json"
@@ -69,6 +70,23 @@ class Taken(ValueError):
     remote). A ValueError, so every existing caller keeps working; the CLI prints it as the code `taken` for the app."""
 
 
+STRAY = {"es": {"detail": "{dest} es un cam-docs que se hizo aquí y nunca se compartió (sin remoto ni commits).",
+                "q": "¿Lo aparto como {aside} (no se borra nada) y traigo el del equipo?",
+                "hint": "Para apartarlo como {aside} y traer el del equipo, vuelve a ejecutarlo con --set-aside."},
+         "en": {"detail": "{dest} is a cam-docs made here and never shared (no remote, no commits).",
+                "q": "Set it aside as {aside} (nothing is deleted) and bring in the team's?",
+                "hint": "To set it aside as {aside} and bring in the team's, run it again with --set-aside."}}
+
+
+class Stray(Taken):
+    """<workspace>/cam-docs is a project the kit made on this machine and never shared (C1): it is set aside only on
+    the person's say-so (`join(..., set_aside=True)`), as `aside` next to it; nothing is deleted."""
+
+    def __init__(self, dest: Path):
+        self.aside = _aside(dest).name
+        super().__init__(_tr(STRAY)["detail"].format(dest=dest))
+
+
 def create(name: str, at: Path | None = None, url: str = "") -> Path:
     """Make <at>/<name>/cam-docs/ (a new workspace folder for the repos, with its docs folder) and register it.
     The wizard's first-run flow (app/templates.py init_templates) does the actual bootstrap once it's opened.
@@ -87,22 +105,6 @@ def clean_remote(url: str) -> str:
         return u
     p = urllib.parse.urlsplit(u)
     return urllib.parse.urlunsplit((p.scheme, p.netloc, p.path.rstrip("/") or p.path, "", ""))
-
-
-def remote_key(url: str) -> str:
-    """What a git remote points at, so the scp, https, ssh:// and token-in-URL spellings of one repo compare equal."""
-    u = url.strip()
-    m = re.match(r"^[\w.+-]+@([^:/]+):(?!//)(.+)$", u)                  # git@host:group/repo.git
-    if m:
-        host, path = m.groups()
-    else:
-        p = urllib.parse.urlparse(u)
-        if not p.hostname:                                             # local path or file:// (tests, shared drives)
-            from urllib.request import url2pathname                    # lazy: it loads http.client on every start
-            local = url2pathname(p.path) if p.scheme == "file" else u
-            return os.path.normcase(str(Path(local).resolve()))
-        host, path = p.hostname, p.path
-    return f"{host.lower()}/{path.strip('/').removesuffix('.git').strip('/').lower()}"
 
 
 def _git(*args: str, cwd: Path | None = None, url: str = "", check: bool = False):
@@ -216,16 +218,51 @@ def _last_line(r) -> str:
     return lines[-1] if lines else f"exit {r.returncode}"
 
 
-def join(url: str, workspace: Path | None = None, name: str | None = None) -> tuple[Path, bool]:
+def stray(dest: Path) -> bool:
+    """A Camarón project here with no remote and no commit: made on this machine and never shared."""
+    if not _is_project(dest):
+        return False
+    if not (dest / ".git").exists():
+        return True
+    return not origin_of(dest) and _git("rev-parse", "--verify", "--quiet", "HEAD", cwd=dest).returncode != 0
+
+
+def _aside(dest: Path) -> Path:
+    to = dest.with_name(f"{dest.name}.local-{dt.date.today():%Y%m%d}")
+    return to if not to.exists() else dest.with_name(f"{to.name}-{dt.datetime.now():%H%M%S}")
+
+
+def put_aside(dest: Path) -> Path:
+    """C1: rename a stray cam-docs next to itself (cam-docs.local-<date>) and forget its registry row."""
+    to = _aside(dest)
+    dest.rename(to)
+    unregister(dest)
+    return to
+
+
+def _search_here(root: Path, workspace: Path) -> None:
+    """C2: the team's docs are already on this machine at `root`: the folder picked becomes one of its folders to
+    search for repos, so they are linked there instead of cloned again."""
+    from .harness.ctx import Ctx
+    ctx = Ctx.for_root(root)
+    if workspace.is_dir() and workspace.resolve() != ctx.workspace.resolve():
+        from .app import repos_here
+        repos_here.add_search(workspace, cache=ctx.cache)
+
+
+def join(url: str, workspace: Path | None = None, name: str | None = None,
+         set_aside: bool = False) -> tuple[Path, bool]:
     """The team's cam-docs repo at `url` becomes <workspace>/cam-docs. Returns (docs root, joined): joined = it
     already holds a Camarón project, so only this machine needs setting up. Never does the work twice: a registered
-    project or a local cam-docs with that remote is reused (fast-forwarded), an empty remote becomes the origin of a
-    fresh local project, and only otherwise is the repo cloned."""
+    project or a local cam-docs with that remote is reused (fast-forwarded; the folder picked is added to its search
+    folders), an empty remote becomes the origin of a fresh local project, and only otherwise is the repo cloned. A
+    cam-docs made here and never shared raises `Stray` unless `set_aside`."""
     url = clean_remote(url)
     key, workspace = remote_key(url), (workspace or Path.cwd())
     for r in list_registered():                                     # already cloned somewhere on this machine
         root = Path(r["path"])
         if (root / ".git").exists() and origin_of(root) and remote_key(origin_of(root)) == key:
+            _search_here(root, workspace)
             return _reuse(root, url, name)
     dest = workspace / CAM_DIR
     if (dest / ".git").exists():
@@ -244,6 +281,10 @@ def join(url: str, workspace: Path | None = None, name: str | None = None) -> tu
         _git("remote", "remove", "origin", cwd=dest)
         _git("remote", "add", "origin", url, cwd=dest, check=True)
         return dest, _is_project(dest)
+    if stray(dest):
+        if not set_aside:
+            raise Stray(dest)
+        put_aside(dest)
     if (dest / ".git").exists() or (dest.exists() and (not dest.is_dir() or any(dest.iterdir()))):
         raise Taken(f"{dest} ya existe y no está vacía — elige otra carpeta.")
     workspace.mkdir(parents=True, exist_ok=True)

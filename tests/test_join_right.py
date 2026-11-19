@@ -2,8 +2,14 @@
 workspace.yaml stay the team's; what this machine installs or leaves out is kept in the git-ignored cache."""
 from __future__ import annotations
 
+import datetime as dt
+import importlib
+import json
+
+import pytest
+
 from conftest import load_kit, wire_project
-from test_team_repo import bare, git, publish
+from test_team_repo import bare, cli, git, publish
 
 QUIET = lambda _: None  # noqa: E731
 
@@ -111,3 +117,96 @@ def test_the_wizard_join_repos_step_searches_another_folder(kit, fake_wizard, tm
     (kit.ws / "web").rename(elsewhere / "frontend")
     fake_wizard(["search", str(elsewhere), "go"]).fr_join_repos(kit.services.workspace.workspace())
     assert kit.services.links._is_link(kit.ws / "web")
+
+
+# ---------- C1: a cam-docs the kit made here and never shared ----------
+def stray_folder(kit, tmp_path):
+    """The case seen on a real machine: Continue on the repos folder made a project there, never shared."""
+    ws = tmp_path / "IdeaProjects"
+    (ws / "operator-adapter").mkdir(parents=True)
+    git(ws / "operator-adapter", "init", "-q")
+    root = kit.onboard.start(ws)
+    (root / "notes.md").write_text("# mine\n", encoding="utf-8")
+    return ws, root
+
+
+def files(root):
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*"))
+
+
+def test_a_stray_cam_docs_is_refused_until_set_aside(kit, tmp_path):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    ws, stray = stray_folder(kit, tmp_path)
+    had = files(stray)
+    with pytest.raises(kit.projects.Stray) as e:
+        kit.projects.join(str(remote), ws)
+    assert e.value.aside == f"cam-docs.local-{dt.date.today():%Y%m%d}"
+    assert files(stray) == had and not (stray / ".git").exists()           # nothing happened before the click
+    root, ok = kit.projects.join(str(remote), ws, set_aside=True)
+    assert ok and root == (ws / "cam-docs").resolve()
+    assert files(ws / e.value.aside) == had
+    assert git(root, "remote", "get-url", "origin") == str(remote)
+
+
+@pytest.mark.parametrize("why", ["commit", "remote"])
+def test_a_cam_docs_with_commits_or_a_remote_is_never_set_aside(kit, tmp_path, why):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    ws, stray = stray_folder(kit, tmp_path)
+    git(stray, "init", "-q")
+    if why == "commit":
+        git(stray, "add", "-A")
+        git(stray, "commit", "-q", "-m", "ours")
+    else:
+        git(stray, "remote", "add", "origin", "https://example.com/other/docs.git")
+    with pytest.raises(kit.projects.Taken) as e:
+        kit.projects.join(str(remote), ws, set_aside=True)
+    assert not isinstance(e.value, kit.projects.Stray)
+    assert sorted(p.name for p in ws.iterdir()) == ["cam-docs", "operator-adapter"]
+
+
+def test_inspect_marks_a_stray_project(kit, tmp_path):
+    ws, stray = stray_folder(kit, tmp_path)
+    assert kit.onboard.inspect(ws)["stray"] is True
+    git(stray, "init", "-q")
+    git(stray, "add", "-A")
+    git(stray, "commit", "-q", "-m", "ours")
+    assert kit.onboard.inspect(ws)["stray"] is False
+    assert kit.onboard.inspect(ws / "operator-adapter")["stray"] is False
+
+
+def test_cli_join_says_stray_then_sets_it_aside(kit, tmp_path):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    ws, _ = stray_folder(kit, tmp_path)
+    r = cli(None, tmp_path, "join", str(remote), str(ws), "--no-open")
+    assert r.returncode == 1
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["error"] == "stray" and out["aside"].startswith("cam-docs.local-")
+    r = cli(None, tmp_path, "join", str(remote), str(ws), "--no-open", "--set-aside")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert json.loads(r.stdout.strip().splitlines()[-1])["path"] == str((ws / "cam-docs").resolve())
+
+
+# ---------- C2: the team's docs already registered elsewhere on this machine ----------
+def test_join_opens_the_teams_docs_registered_elsewhere_and_searches_the_folder(kit, tmp_path):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    first, _ = kit.projects.join(str(remote), tmp_path / "first")
+    second = tmp_path / "second"
+    second.mkdir()
+    root, ok = kit.projects.join(str(remote), second)
+    assert ok and root == first.resolve() and not (second / "cam-docs").exists()
+    repos_here = importlib.import_module("lib.app.repos_here")
+    assert repos_here.load(first / ".camarones" / ".cache")["search"] == [str(second.resolve())]
+
+
+def test_cli_join_says_where_the_teams_docs_already_are(kit, tmp_path):
+    remote = bare(tmp_path)
+    publish(kit, remote)
+    first, _ = kit.projects.join(str(remote), tmp_path / "first")
+    (tmp_path / "second").mkdir()
+    r = cli(None, tmp_path, "join", str(remote), str(tmp_path / "second"), "--no-open")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert json.loads(r.stdout.strip().splitlines()[-1])["elsewhere"] == str(first.resolve())

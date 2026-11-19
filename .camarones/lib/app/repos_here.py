@@ -1,4 +1,4 @@
-"""Where each of the team's repos is on this machine, found by its remote (projects.remote_key), not its folder name.
+"""Where each of the team's repos is on this machine, found by its remote (remote_key), not its folder name.
 A clone kept under another folder name, at the workspace's first level or in a folder this machine names, gets
 <workspace>/<name> linked to it, so the kit, the agents and every doc path keep reading <workspace>/<name>. A
 <workspace>/<name> holding something else is never touched. The links and the search folders are this machine's, kept
@@ -8,9 +8,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from lib import projects
 from lib.app import services
 from lib.common import CACHE, CAM_DIR, WORKSPACE, load_json, save_json
+from lib.core.remotes import remote_key
 from lib.ports import Log
 
 FILE = "repos-here.json"
@@ -44,7 +44,7 @@ def _origin(d: Path) -> str:
 
 
 def _same(a: str, b: str) -> bool:
-    return bool(a and b) and projects.remote_key(a) == projects.remote_key(b)
+    return bool(a and b) and remote_key(a) == remote_key(b)
 
 
 def _clones(folders: list[Path]) -> dict[str, Path]:
@@ -59,7 +59,7 @@ def _clones(folders: list[Path]) -> dict[str, Path]:
             if d.name.startswith(".") or d.name == CAM_DIR or not (d / ".git").exists():
                 continue
             if o := _origin(d):
-                out.setdefault(projects.remote_key(o), d.resolve())
+                out.setdefault(remote_key(o), d.resolve())
     return out
 
 
@@ -90,7 +90,7 @@ def find(log: Log = print) -> dict:
             add(name, url, "taken" if os.path.lexists(dst) else "missing")
         else:
             clones = _clones([WORKSPACE, *map(Path, data["search"])]) if clones is None else clones
-            found = clones.get(projects.remote_key(url))
+            found = clones.get(remote_key(url))
             if found and links.link(dst, found, log):
                 data["links"][name] = str(found)
                 _exclude(name, data)

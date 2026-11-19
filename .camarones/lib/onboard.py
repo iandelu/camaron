@@ -123,7 +123,8 @@ def _has_repos(f: Path) -> bool:
 def inspect(folder: Path) -> dict:
     """What `folder` is, first match wins: project · repo · umbrella · code · empty. Returns `case`, `kind`,
     `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (detect_repos
-    rows), `siblings` (repo case: the other repos next to it) and `warning`: `home` when the workspace is the user's home or a
+    rows), `siblings` (repo case: the other repos next to it), `stray` (a project made here and never shared:
+    no remote, no commit) and `warning`: `home` when the workspace is the user's home or a
     filesystem root and no project is there yet (wins over the rest), else `no-git` for code without a repository. A picked `cam-docs` folder
     is read as the workspace it belongs to, and a folder inside a git repository as that repository. Code with a manifest
     at its top reports the workspace it will have once `git_init` makes it a repo: its parent."""
@@ -158,7 +159,8 @@ def inspect(folder: Path) -> dict:
         siblings = [r for r in repos if r["name"] != f.name]
         repos = [r for r in repos if r["name"] == f.name]
     return {"case": case, "kind": kind, "workspace": str(workspace), "docs_root": str(root or workspace / CAM_DIR),
-            "name": workspace.name, "repos": repos, "siblings": siblings, "warning": warning}
+            "name": workspace.name, "repos": repos, "siblings": siblings, "warning": warning,
+            "stray": bool(root and root.name == CAM_DIR and projects.stray(root))}
 
 
 # ---------- first-run state: one implementation for the CLI wizard and the app ----------
