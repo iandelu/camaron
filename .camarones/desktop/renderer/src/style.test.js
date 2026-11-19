@@ -68,3 +68,42 @@ test('presenting a review hides the Docs chrome around it and keeps the height c
   expect(css).not.toMatch(/\.dk-present \.dk-page\b/)
   expect(rule('.dk-rv-screen')).toMatch(/display:\s*flex[\s\S]*flex-direction:\s*column/)
 })
+
+// An at-rule's blocks (balanced braces), each with where it sits in the stylesheet and its body.
+const blocks = (at) => {
+  const out = []
+  for (let i = css.indexOf(at); i !== -1; i = css.indexOf(at, i + 1)) {
+    const open = css.indexOf('{', i)
+    let depth = 1
+    let j = open + 1
+    for (; depth && j < css.length; j++) depth += css[j] === '{' ? 1 : css[j] === '}' ? -1 : 0
+    out.push({ start: i, end: j, body: css.slice(open + 1, j - 1) })
+  }
+  return out
+}
+
+// The repo page: its tiles, stack pills and C4 boxes rise only for who did not ask for less motion, by moving and fading.
+test('the repo page moves only inside prefers-reduced-motion: no-preference, by transform and opacity alone', () => {
+  const motion = blocks('@media (prefers-reduced-motion: no-preference)')
+  const inside = motion.map((b) => b.body).join('\n')
+  const outside = motion.reduceRight((s, b) => s.slice(0, b.start) + s.slice(b.end), css)
+  expect(inside).toMatch(/(?:^|[\s,}])\.dk-tile\s*\{[^}]*animation:/)
+  for (const [, sel, body] of outside.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/\.dk-(tile|rp-)/.test(sel)) expect(body, sel.trim()).not.toMatch(/(?:^|[\s;])(?:animation|transition|transform)[\w-]*\s*:/)
+  }
+  const names = new Set([...inside.matchAll(/\.dk-(?:tile|rp-[\w-]+)[^{]*\{[^}]*animation:\s*([\w-]+)/g)].map((m) => m[1]))
+  expect(names.size).toBeGreaterThan(0)
+  for (const name of names) {
+    const frames = blocks(`@keyframes ${name} `).map((b) => b.body).join('')
+    expect(frames, name).not.toBe('')
+    for (const [, prop] of frames.matchAll(/([\w-]+)\s*:/g)) expect(['transform', 'opacity'], `${name}: ${prop}`).toContain(prop)
+  }
+})
+
+test('the bento is a 12-column grid that becomes one column under 1000 px', () => {
+  expect(rule('.dk-bento')).toMatch(/display:\s*grid/)
+  expect(rule('.dk-bento')).toMatch(/grid-template-columns:\s*repeat\(12,\s*minmax\(0,\s*1fr\)\)/)
+  const narrow = blocks('@media (max-width: 1000px)').map((b) => b.body).join('\n')
+  expect(narrow).toMatch(/\.dk-bento\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+  expect(narrow).toMatch(/\.dk-tile[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/)
+})
