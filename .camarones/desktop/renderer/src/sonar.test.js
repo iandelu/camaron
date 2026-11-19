@@ -42,6 +42,15 @@ test('the estimate of a repo, from what the kit knows without a server', () => {
   expect(estimate(null, 'web').coverage).toBeNull()
 })
 
+test('a block that could not be read has no source and says why', () => {
+  const s = { repos: { gone: { cloned: true, sonar: { error: 'token no válido' } }, kept: { cloned: true, sonar: { used: true, error: 'token no válido', server: { gate: 'OK', at: '2026-11-18T11:00:00Z' } } } } }
+  const [gone, kept] = sonarRows(s, t, now)
+  expect(gone).toMatchObject({ source: null, unread: true, error: t('hb.sonarErr.token') })
+  expect(kept.source).toBe('sonar')
+  expect(kept.error).toContain(t('hb.sonarErr.token'))
+  expect(sourceCounts([gone, kept])).toEqual({ sonar: 1, estimated: 0 })
+})
+
 test('filters and counts', () => {
   const rows = sonarRows(snap, t, now)
   expect(filterSonar(rows, { repo: 'web' }).map((r) => r.name)).toEqual(['web'])

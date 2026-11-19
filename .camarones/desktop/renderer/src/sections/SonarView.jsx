@@ -41,7 +41,8 @@ export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onO
             <tr>
               <td><a href={repoHref(r.name)}><b>{r.name}</b></a></td>
               <td>{r.source === 'sonar' ? (
-                r.link ? <a href={r.link} target="_blank" rel="noreferrer">{t('sq.open') + ' ↗'}</a> : t('sq.sonar'))
+                <>{r.link ? <a href={r.link} target="_blank" rel="noreferrer">{t('sq.open') + ' ↗'}</a> : t('sq.sonar')}
+                  {r.error ? <div className="muted small">{r.error}</div> : null}</>)
                 : r.source === 'estimated' ? (
                   <button type="button" className="dk-link" aria-expanded={open === r.name} onClick={() => onOpen(open === r.name ? '' : r.name)}>
                     {open === r.name ? t('sq.hide') : t('sq.show')}</button>)

@@ -11,6 +11,7 @@ const serverOf = (repo) => (object(repo?.sonar?.server) ? repo.sonar.server : nu
 
 export function sonarSource(block) {
   if (!object(block) || block.cloned === false || typeof block.error === 'string') return null
+  if (object(block.sonar) && sonarGone(block.sonar)) return null
   return serverOf(block) ? 'sonar' : 'estimated'
 }
 

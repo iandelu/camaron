@@ -61,6 +61,21 @@ test('a repo filter keeps only its row; an unread row says why', () => {
   expect(all).toContain('boom')
 })
 
+test('an unreadable Sonar block shows its reason, no estimate toggle, and is counted in neither source', () => {
+  const s = { ...snapshot, repos: { ...snapshot.repos, gone: { cloned: true, sonar: { error: 'token no válido' } } } }
+  const out = draw({ snapshot: s })
+  expect(out).toContain('Sin leer')
+  expect(out).toContain('Token no válido')
+  expect(out).toMatch(/aria-pressed="false"[^>]*>Estimado · 1</)
+  expect(out.match(/Ver estimación/g)).toHaveLength(1)
+})
+
+test('figures kept from an earlier read show why the last read failed', () => {
+  const s = structuredClone(snapshot)
+  s.repos.api.sonar.error = 'token no válido'
+  expect(draw({ snapshot: s })).toContain('Token no válido')
+})
+
 test('with no snapshot it says so and points to Health', () => {
   const out = draw({ snapshot: null })
   expect(out).toContain('Aún no hay foto de salud del proyecto.')
