@@ -1,7 +1,7 @@
 {
   "views": {
     "flow": ["summary", "plan"],
-    "quality": ["health", "libs"],
+    "quality": ["health", "sonar", "libs"],
     "docs": ["read", "wikis", "decisions", "interviews"],
     "settings": ["general", "tokens", "skills", "plugins", "trust", "kit"]
   },

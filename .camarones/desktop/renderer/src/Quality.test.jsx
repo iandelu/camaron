@@ -11,6 +11,12 @@ const drift = [
   { path: 'chub/.mcp.json', state: 'not linked', what: 'workspace link', why: 'missing' },
 ]
 
+test('at #/quality/sonar the SonarQube tab is current', () => {
+  globalThis.location = { hash: '#/quality/sonar' }
+  const out = renderToStaticMarkup(<Quality srv={{ get: () => new Promise(() => {}), post: () => new Promise(() => {}) }} jobs={null} />)
+  expect(out).toMatch(/aria-current="page"[^>]*>SonarQube</)
+})
+
 test('each kit file that is off says what and why, and whether Repair can fix it', () => {
   const out = renderToStaticMarkup(<DriftList items={drift} repaired={false} />)
   expect(out).toContain('chub/CLAUDE.md')

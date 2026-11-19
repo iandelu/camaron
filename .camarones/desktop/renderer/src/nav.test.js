@@ -6,7 +6,7 @@ test('a project has four places; this machine has its own, Kit dev only in a kit
   expect(MACHINE).toEqual(['settings', 'guide', 'kitdev'])
   expect(sections({ kitdev: false }).machine).toEqual(['settings', 'guide'])
   expect(sections({ kitdev: true }).machine).toEqual(MACHINE)
-  expect(PLACES).toEqual(['flow', 'flow/plan', 'board', 'quality', 'quality/libs', 'docs', 'docs/wikis', 'docs/decisions',
+  expect(PLACES).toEqual(['flow', 'flow/plan', 'board', 'quality', 'quality/sonar', 'quality/libs', 'docs', 'docs/wikis', 'docs/decisions',
     'docs/interviews', 'settings', 'settings/tokens', 'settings/skills', 'settings/plugins', 'settings/trust', 'settings/kit', 'guide', 'kitdev'])
 })
 

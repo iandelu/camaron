@@ -5,28 +5,29 @@ import { ago } from '../jobs.js'
 import { openSession, sessionNote } from '../plan.js'
 import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, secretsVerdict, seconds } from '../quality.js'
 import { useAgents, useCmd, useHash, useJob, useStore } from '../hooks.js'
-import { LIBS, viewOf } from '../nav.js'
+import { LIBS, repoHref, viewOf } from '../nav.js'
 import { AgentPicker, Failed, Fold, JobOutput, ResultView, UnitRow } from '../parts.jsx'
 import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
 import LibrariesView from './Libs.jsx'
+import SonarView from './SonarView.jsx'
 import { SEV, sevWord } from '@camaron/ui/libs.jsx'
 import { lang, t } from '../i18n.js'
 
-// Quality has two views, one address each: the project's health board (#/quality) and its libraries (#/quality/libs).
+// Quality has three views, one address each: the project's health board (#/quality), SonarQube's figures per repo
+// (#/quality/sonar) and its libraries (#/quality/libs).
 // The board (ui/src/health.jsx) is the snapshot of `camaron health`: machine, docs and code in one view. It draws the
 // figures and the rows; each row this app owns opens on the control that used to be a card of its own (BOARD_ACTIONS),
 // among them the secret scan, the method hooks and the libraries' summary, and the rest of the commands stay folded
 // below. KPIs are the portal's.
 const CARDS = { doctor: Doctor, drift: Drift, fresh: Fresh, evals: Evals, context: Context, blocks: Blocks, ab: Ab, secrets: Secrets, hooks: Hooks, libs: Libs }
 const LINKS = { review: '../#/review' }
-const repoHref = (r) => '../#/health/' + encodeURIComponent(r)
 
 export default function Quality({ srv, jobs }) {
   const view = viewOf(useHash(), 'quality')
   return (
     <Place section="quality" view={view} wide={view === 'libs'}>
-      {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
+      {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} /> : view === 'sonar' ? <SonarView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
     </Place>
   )
 }
