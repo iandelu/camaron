@@ -193,3 +193,9 @@ def test_the_portal_page_says_its_code_changed(kit, fresh):
     assert d["fresh"] == "suspect" and d["freshness"]["changed"] == [f"api:{API}#L3-L5"]
     core = (kit.kit_dir / "portal" / "app" / "src" / "i18n" / "portal.js").read_text(encoding="utf-8")
     assert core.count("'banner.suspect'") == 2 and core.count("'banner.stale'") == 2          # en + es
+
+
+def test_by_repo_counts_each_page_under_every_repo_it_cites(kit, fresh):
+    page(kit, "flows/a.md", [f"api:{API}"])
+    page(kit, "flows/b.md", ["api:x", "web:y"])
+    assert fresh.by_repo() == {"api": {"fresh": 1, "suspect": 0, "stale": 1}, "web": {"fresh": 0, "suspect": 0, "stale": 1}}

@@ -201,6 +201,16 @@
   },
   {
     "method": "GET",
+    "path": "/api/app/repo",
+    "access": "app"
+  },
+  {
+    "method": "GET",
+    "path": "/api/app/repos",
+    "access": "app"
+  },
+  {
+    "method": "GET",
     "path": "/api/app/summary",
     "access": "app"
   },

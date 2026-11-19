@@ -249,6 +249,18 @@ def states() -> dict[str, dict]:
     return _settle(pages, out)
 
 
+def by_repo() -> dict[str, dict]:
+    """Each repo's pages by state: a page counts once under every repo its own (non-doc) sources cite. Unverified pages
+    are left out."""
+    pages, out = _pages(), {}
+    for logical, st in states().items():
+        if st["state"] == "unverified" or logical not in pages:
+            continue
+        for repo in {parse(s)[0] for s in _sources(pages[logical][0]) if kind(s) != "doc"} - {None, ""}:
+            out.setdefault(repo, {"fresh": 0, "suspect": 0, "stale": 0})[st["state"]] += 1
+    return out
+
+
 def _settle(pages: dict, own: dict) -> dict[str, dict]:
     """L3: a cited page passes on its state. Repeated until nothing changes, so chains and cycles settle."""
     docs_of = {logical: [s for s in _sources(fm) if kind(s) == "doc"] for logical, (fm, _) in pages.items()}
