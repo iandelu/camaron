@@ -5,7 +5,7 @@ import { repoHref, repoOf, withRepo } from '../nav.js'
 import { estimate, filterSonar, reposError, sonarRows, sourceCounts } from '../sonar.js'
 import { lang, t } from '../i18n.js'
 
-const COLS = ['sq.repo', 'sq.source', 'sq.gate', 'sq.coverage', 'sq.bugs', 'sq.vulns', 'sq.debt']
+const COLS = ['sq.repo', 'sq.source', 'sq.gate', 'sq.coverage', 'sq.bugs', 'sq.vulns', 'sq.debt', 'sq.action']
 
 export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onOpen, onRefresh, refreshing, now }) {
   const l = lang()
@@ -46,11 +46,8 @@ export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onO
             <tr>
               <td><a href={repoHref(r.name)}><b>{r.name}</b></a></td>
               <td>{r.source === 'sonar' ? (
-                <>{r.link ? <a href={r.link} target="_blank" rel="noreferrer">{t('sq.open') + ' ↗'}</a> : t('sq.sonar')}
-                  {r.error ? <div className="muted small">{r.error}</div> : null}</>)
-                : r.source === 'estimated' ? (
-                  <button type="button" className="dk-link" aria-expanded={open === r.name} onClick={() => onOpen(open === r.name ? '' : r.name)}>
-                    {open === r.name ? t('sq.hide') : t('sq.show')}</button>)
+                <><Chip>{t('sq.sonar')}</Chip>{r.error ? <div className="muted small">{r.error}</div> : null}</>)
+                : r.source === 'estimated' ? <Chip state="info">{t('sq.estimated')}</Chip>
                   : r.unread ? <span><Chip state="warn">{t('sq.unread')}</Chip> <span className="muted small">{r.error}</span></span>
                     : <span className="muted small">{t('sq.notCloned')}</span>}</td>
               <td>{r.gateState ? <Chip state={r.gateState}>{r.gate}</Chip> : r.gate}</td>
@@ -58,6 +55,10 @@ export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onO
               <td>{r.bugs}</td>
               <td>{r.vulns}</td>
               <td>{r.debt}</td>
+              <td>{r.source === 'sonar' && r.link ? <a href={r.link} target="_blank" rel="noreferrer">{t('sq.open') + ' ↗'}</a>
+                : r.source === 'estimated' ? (
+                  <button type="button" className="dk-link" aria-expanded={open === r.name} onClick={() => onOpen(open === r.name ? '' : r.name)}>
+                    {open === r.name ? t('sq.hide') : t('sq.show')}</button>) : null}</td>
             </tr>
             {open === r.name && r.source === 'estimated' ? <tr className="dk-sq-est"><td colSpan={COLS.length}><Estimate snapshot={snapshot} row={r} /></td></tr> : null}
           </Fragment>))}</tbody>
@@ -76,8 +77,11 @@ function Estimate({ snapshot, row }) {
         <div><span className="muted small">{t('sq.estCoverage')}</span>
           <b>{e.coverage ? `${e.coverage.percent} %` : t('sq.estNoReport')}</b>
           {e.coverage ? <span className="muted small">{[t('sq.estReport'), e.coverage.at.slice(0, 10)].filter(Boolean).join(' · ')}</span> : null}</div>
-        <div><span className="muted small">{t('sq.estLibs')}</span><b>{e.vulns.total}</b>
-          <a className="small" href={withRepo('quality/libs', row.name)}>{t('sq.estLibsGo', { high: e.vulns.high })}</a></div>
+        <div><span className="muted small">{t('sq.estLibs')}</span>
+          {e.vulns ? <><b>{e.vulns.total}</b>
+            <a className="small" href={withRepo('quality/libs', row.name)}>{t('sq.estLibsGo', { high: e.vulns.high })}</a></>
+            : <><span className="small">{t('rp.libsNever')}</span>
+              <a className="small" href={withRepo('quality/libs', row.name)}>{t('rp.toLibs')}</a></>}</div>
         <div><span className="muted small">{t('sq.estStale')}</span><b>{e.stale}</b>
           <a className="small" href={withRepo('docs/wikis', row.name)}>{t('sq.estStaleGo')}</a></div>
         <div><span className="small">{t('sq.estCannot')}</span></div>

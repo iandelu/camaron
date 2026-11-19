@@ -51,8 +51,13 @@ test('a failed block is unread with its reason', () => {
 })
 
 test('the estimate of a repo, from what the kit knows without a server', () => {
-  expect(estimate(snap, 'web')).toEqual({ coverage: { percent: 64, at: '2026-11-15' }, vulns: { total: 5, high: 1 }, stale: 2, suspect: 0, host: '' })
+  expect(estimate({ ...snap, inventory: { scanned: true } }, 'web')).toEqual({ coverage: { percent: 64, at: '2026-11-15' }, vulns: { total: 5, high: 1 }, stale: 2, suspect: 0, host: '' })
   expect(estimate(null, 'web').coverage).toBeNull()
+})
+
+test('the estimate has no vulnerability figure when the inventory was never scanned', () => {
+  expect(estimate({ ...snap, inventory: { scanned: false } }, 'web').vulns).toBeNull()
+  expect(estimate({ ...snap, inventory: { scanned: true } }, 'web').vulns).toEqual({ total: 5, high: 1 })
 })
 
 test('a block that could not be read has no source and says why', () => {

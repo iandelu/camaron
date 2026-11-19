@@ -128,6 +128,16 @@ test('the Activity tile: twelve weekly bars with their numbers, and the last com
   expect(none).not.toContain('cu-bars')
 })
 
+test('the Activity tile with no commits says so instead of drawing empty bars, and keeps the last commit', () => {
+  const quiet = { weeks: WEEKS.map((start) => ({ start, n: 0 })), total: 0, people: 0, last: { author: 'Ana', at: secondsAgo(2000), subject: 'Inicio' } }
+  const out = render({ activity: quiet })
+  expect(out).toContain('Ningún commit en las últimas 12 semanas.')
+  expect(out).not.toContain('cu-bars')
+  expect(out).toContain('«Inicio» · Ana')
+  setLang('en')
+  expect(render({ activity: { ...quiet, last: null } })).toContain('No commits in the last 12 weeks.')
+})
+
 test('the Libraries tile: vulnerabilities by severity with their words, and how many libraries', () => {
   const out = render()
   expect(out).toContain('cu-hbars')

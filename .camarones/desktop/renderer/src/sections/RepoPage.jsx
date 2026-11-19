@@ -138,7 +138,10 @@ function ActivityTile({ activity, now }) {
   const last = activity?.last
   return (
     <Tile span="s8" i={2} id="rp-activity" icon="activity" title={t('rp.activity')} aside={aside}>
-      {bars ? (<>
+      {activity && !activity.total ? (<>
+        <p className="muted small">{t('rp.noCommits')}</p>
+        {last ? <p className="muted small">{t('rp.last', { subject: last.subject, author: last.author, ago: fmtAgo(iso(last.at), now, words) })}</p> : null}
+      </>) : bars ? (<>
         <Bars values={bars.values} tips={bars.tips} label={t('rp.activityLabel', { n: activity.total, max: Math.max(0, ...bars.values) })} />
         <div className="dk-rp-months" aria-hidden="true">{bars.months.map((m, i) => <span key={i}>{m}</span>)}</div>
         {last ? <p className="muted small">{t('rp.last', { subject: last.subject, author: last.author, ago: fmtAgo(iso(last.at), now, words) })}</p> : null}

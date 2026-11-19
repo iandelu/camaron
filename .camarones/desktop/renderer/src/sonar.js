@@ -54,7 +54,9 @@ export function estimate(snapshot, name) {
   const cov = object(repo?.coverage) && num(repo.coverage.percent) ? { percent: repo.coverage.percent, at: typeof repo.coverage.at === 'string' ? repo.coverage.at : '' } : null
   const v = object(repo?.vulns) && typeof repo.vulns.error !== 'string' ? repo.vulns : {}
   const pages = (key) => list(snapshot?.docs?.[key]).filter((p) => list(p?.repos).includes(name)).length
-  return { coverage: cov, vulns: { total: Object.values(v).filter(num).reduce((a, b) => a + b, 0), high: num(v.high) ? v.high : 0 },
+  const vulns = snapshot?.inventory?.scanned === false ? null
+    : { total: Object.values(v).filter(num).reduce((a, b) => a + b, 0), high: num(v.high) ? v.high : 0 }
+  return { coverage: cov, vulns,
     stale: pages('stale'), suspect: pages('suspect'), host: typeof repo?.sonar?.host === 'string' ? repo.sonar.host : '' }
 }
 

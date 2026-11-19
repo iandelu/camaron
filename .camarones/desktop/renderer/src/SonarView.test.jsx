@@ -15,6 +15,7 @@ const snapshot = {
     bad: { error: 'boom' },
   },
   docs: { stale: [{ path: 'a.md', repos: ['web'] }], suspect: [] },
+  inventory: { scanned: true },
 }
 const now = Date.parse('2026-11-18T12:00:00Z')
 const draw = (p = {}) => renderToStaticMarkup(<SonarTable snapshot={snapshot} repo="" source="" open="" onRepo={() => {}} onSource={() => {}} onOpen={() => {}}
@@ -30,6 +31,7 @@ test('the table has its columns and opens SonarQube for a sonar-backed repo', ()
   const out = draw()
   for (const h of ['Repo', 'Fuente', 'Puerta', 'Cobertura', 'Bugs', 'Vulnerab. código', 'Deuda']) expect(out).toContain(`>${h}</th>`)
   expect(out).toMatch(/<a[^>]*href="https:\/\/sonar\.example\.com\/dashboard\?id=api"[^>]*>Abrir en SonarQube ↗/)
+  expect(out).toMatch(/<td><a href="#\/flow\/repo\/api"><b>api<\/b><\/a><\/td><td>(<span[^>]*>)?SonarQube/)
   expect(out).toMatch(/href="https:\/\/sonar\.example\.com\/dashboard\?id=api"[^>]*target="_blank"[^>]*rel="noreferrer"/)
   expect(out).toContain('href="#/flow/repo/api"')
   expect(out).toContain('Leído hace 1 h')
@@ -88,4 +90,25 @@ test('with no snapshot it says so and points to Health', () => {
   const out = draw({ snapshot: null })
   expect(out).toContain('Aún no hay foto de salud del proyecto.')
   expect(out).toContain('href="#/quality"')
+})
+
+test('the source column names the source as a chip; the estimate toggle sits in the last column', () => {
+  const rows = draw().match(/<tr>[\s\S]*?<\/tr>/g)
+  const web = rows.find((r) => r.includes('#/flow/repo/web'))
+  const cells = web.match(/<td>[\s\S]*?<\/td>/g)
+  expect(cells[1]).toMatch(/cu-chip--info[^>]*>Estimado</)
+  expect(cells[1]).not.toContain('Ver estimación')
+  expect(cells.at(-1)).toContain('Ver estimación')
+  const api = rows.find((r) => r.includes('#/flow/repo/api')).match(/<td>[\s\S]*?<\/td>/g)
+  expect(api[1]).not.toContain('Abrir en SonarQube')
+  expect(api.at(-1)).toContain('Abrir en SonarQube ↗')
+})
+
+test('the estimate does not claim zero vulnerabilities when no scan ever ran', () => {
+  const s = { ...snapshot, inventory: { scanned: false } }
+  const out = draw({ snapshot: s, open: 'web' })
+  expect(out).toContain('Aún no se han buscado vulnerabilidades.')
+  expect(out).toContain('href="#/quality/libs?repo=web"')
+  expect(out).not.toContain('0 altas')
+  expect(draw({ open: 'web' })).toContain('1 altas')
 })
