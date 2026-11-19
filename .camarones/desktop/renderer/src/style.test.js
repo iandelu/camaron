@@ -107,3 +107,17 @@ test('the bento is a 12-column grid that becomes one column under 1000 px', () =
   expect(narrow).toMatch(/\.dk-bento\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/)
   expect(narrow).toMatch(/\.dk-tile[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/)
 })
+
+test('a repo card in the Summary grid takes no 12-column bento span', () => {
+  expect(css).toMatch(/\.dk-rc-grid\s*>\s*\.dk-tile\s*\{[^}]*grid-column:\s*auto/)
+})
+
+test('the Wikis stack is a full-width column: the 14 rem width belongs to the Machine stack input only', () => {
+  expect(css).not.toMatch(/\.dk-stack\s*\{[^}]*\bwidth:/)
+  expect(css).toMatch(/\.dk-stack-in\s*\{[^}]*width:\s*14rem/)
+  expect(readFileSync(new URL('./sections/Machine.jsx', import.meta.url), 'utf-8')).toContain('dk-stack-in')
+})
+
+test('the repo chip leaves a gap before its clear control', () => {
+  expect(css).toMatch(/\.dk-bd-repo-x\s*\{[^}]*margin-inline-start/)
+})

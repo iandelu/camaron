@@ -61,8 +61,8 @@ export function RepoChip({ repo, clear }) {
   const [before, after] = t('bd.repo', { repo: '\n' }).split('\n')
   return (
     <p className="row dk-bd-repo">
-      <Chip>{before}<a href={repoHref(repo)}>{repo}</a>{after}
-        <a href={clear} aria-label={t('bd.repoClear', { repo })}> {'\u00d7'}</a></Chip>
+      <Chip><span>{before}<a href={repoHref(repo)}>{repo}</a>{after}</span>
+        <a className="dk-bd-repo-x" href={clear} aria-label={t('bd.repoClear', { repo })}>{'\u00d7'}</a></Chip>
     </p>
   )
 }

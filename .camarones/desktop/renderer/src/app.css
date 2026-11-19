@@ -153,7 +153,7 @@ a.dk-stat-n:hover { color: var(--color-acento-texto); }
 .dk-bump .row { flex-wrap: nowrap; }
 .dk-bump-v { width: 7rem; }
 .dk-advisories { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; white-space: normal; }
-.dk-stack { width: 14rem; max-width: 100%; }
+.dk-stack-in { width: 14rem; max-width: 100%; }
 .dk-build { min-width: 9rem; }
 .dk-stats-sm { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
 .dk-stats-sm > div { display: flex; flex-direction: column; gap: .2rem; }
@@ -887,6 +887,8 @@ a.dk-tile:focus-visible { outline: 2px solid var(--color-acento-texto); outline-
 .dk-rc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; }
 .dk-rc-head h2 { margin: 0; }
 .dk-rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .875rem; }
+.dk-rc-grid > .dk-tile { grid-column: auto; }
+.dk-bd-repo-x { margin-inline-start: .5rem; }
 .dk-rc-card h3 { margin: 0; font-size: var(--text-body); font-weight: 600; overflow-wrap: anywhere; }
 .dk-rc-stack { display: flex; align-items: center; gap: .5rem; color: var(--color-ink-soft); }
 .dk-rc-stack svg { width: 1rem; height: 1rem; flex: none; }
