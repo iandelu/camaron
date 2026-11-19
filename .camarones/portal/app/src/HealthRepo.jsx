@@ -1,5 +1,5 @@
 import { t } from './i18n.js'
-import { Aviso, fmtAgo, gateState, gateWord, safeUrl, sonarReason, sourceWord, stateWord, uiText } from '@camaron/ui'
+import { Aviso, TrustPill, fmtAgo, gateState, gateWord, safeUrl, sonarReason, sourceWord, stateWord, uiText } from '@camaron/ui'
 import { evidenceHref, repoPage } from './healthRepo.js'
 
 const DASH = '—'
@@ -127,7 +127,7 @@ function Debt({ page }) {
           return (
             <div key={source} className="hr-source">
               <h3>{source ? <a href={docHref(source)}>{source}</a> : DASH}
-                {trust ? <> <span className={`pill trust ${trust}`}>{uiText(`hb.trust.${trust}`) === `hb.trust.${trust}` ? trust : uiText(`hb.trust.${trust}`)}</span></> : null}</h3>
+                {trust ? <> <TrustPill trust={trust}>{uiText(`hb.trust.${trust}`) === `hb.trust.${trust}` ? trust : uiText(`hb.trust.${trust}`)}</TrustPill></> : null}</h3>
               <ul className="list">{items.map((d, i) => (
                 <li key={`${d.item}${i}`}>
                   <b>{text(d.item)}</b>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getJSON } from './api.js'
 import { t } from './i18n.js'
+import { TrustPill } from '@camaron/ui'
 import { core } from './core.js'
 import { drawMermaid, render } from './content/doc.js'
 
@@ -60,7 +61,7 @@ export default function Ask({ arg }) {
             <article className="cited" key={s.cite}>
               <div className="cited-head">
                 <a href={link(s.cite)}>{s.cite}</a>
-                <span className={`pill trust ${s.trust}`}>{s.trust}</span>
+                {s.trust ? <TrustPill trust={s.trust}>{core.t('trust.' + s.trust)}</TrustPill> : null}
                 {s.withheld_for_agents ? <span className="withheld">{t('withheld')}</span> : null}
               </div>
               <Section text={(s.tldr ? s.tldr + '\n\n' : '') + s.text} path={s.cite.split('#')[0]} />

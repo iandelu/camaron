@@ -35,7 +35,9 @@ máquina, así que están en la app de escritorio. El portal enseña su resultad
 
 **Cabecera**: el nombre del proyecto (vuelve a Inicio), dónde estás (`Arquitectura › Modelo C4 › index`), **Buscar**
 (<kbd>⌘</kbd> <kbd>K</kbd> / <kbd>Ctrl</kbd> <kbd>K</kbd>, o <kbd>/</kbd>), las cifras de confianza (confirmadas,
-borradores, por reconfirmar, peticiones de cambio sin aplicar), el idioma y ◐ para claro u oscuro.
+borradores, por reconfirmar, peticiones de cambio sin aplicar; borradores y por reconfirmar abren **Revisión**), el
+idioma y ◐ para claro u oscuro. La confianza de una página se ve igual en todas las vistas: Borrador en gris con borde
+discontinuo, Pendiente de reconfirmar en ámbar, Confirmada en verde.
 
 **Menú lateral**: Inicio y siete zonas —Docs, Tablero, Historias, Arquitectura, Plan, Calidad y Revisión—. La zona en la
 que estás abre sus vistas; debajo de las zonas, el panel de lo que estás mirando (el árbol de páginas en Docs, las

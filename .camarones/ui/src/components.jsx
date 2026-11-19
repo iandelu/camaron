@@ -29,6 +29,14 @@ export function Chip({ state, children }) {
   return <span className={cls('cu-chip', state && `cu-chip--${state}`)}>{children}</span>
 }
 
+// A page's trust (draft, confirmed, needs-reconfirm) drawn the same in every view (DESIGN.md, Trust Pill): draft
+// quiet, needs-reconfirm amber, confirmed green, always with its word; a link when it leads somewhere.
+export function TrustPill({ trust, href, children }) {
+  if (children == null || children === '') throw new Error('TrustPill needs its word, not only a colour')
+  const className = cls('cu-trust', trust && `cu-trust--${trust}`)
+  return href ? <a className={className} href={href}>{children}</a> : <span className={className}>{children}</span>
+}
+
 export function Keys({ keys }) {
   return <span className="cu-keys">{keys.map((k) => <kbd key={k} className="cu-kbd">{k}</kbd>)}</span>
 }
@@ -37,7 +45,7 @@ export function Card({ as: Tag = 'section', className, children, ...rest }) {
   return <Tag className={cls('cu-card', className)} {...rest}>{children}</Tag>
 }
 
-// tone: info | warn | error. An error interrupts (alert) and shows the server's message as it is (detail).
+// tone: note (no colour) | info | warn | error. An error interrupts (alert) and shows the server's message as it is (detail).
 export function Aviso({ tone = 'info', title, detail, action, children }) {
   return (
     <div className={`cu-aviso cu-aviso--${tone}`} role={tone === 'error' ? 'alert' : 'status'}>
