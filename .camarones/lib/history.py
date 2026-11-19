@@ -82,6 +82,9 @@ def activity(repo: str, weeks: int = 12, today: date | None = None) -> dict | No
     cannot read the repo."""
     today = today or datetime.now(timezone.utc).date()
     since = (today - timedelta(days=weeks * 7 + 7)).isoformat()
+    monday = today - timedelta(days=today.weekday())
+    first, end = monday - timedelta(weeks=weeks - 1), monday + timedelta(weeks=1)
+    inside = lambda at: first <= datetime.fromtimestamp(at, timezone.utc).date() < end  # noqa: E731 - the buckets' window
     log = out(["git", "-C", str(repo_dir(repo)), "log", f"--since={since}", "--no-merges",
                "--format=%aN%x09%at%x09%s"])
     if not log and out(["git", "-C", str(repo_dir(repo)), "rev-parse", "--is-inside-work-tree"]) != "true":
@@ -90,7 +93,7 @@ def activity(repo: str, weeks: int = 12, today: date | None = None) -> dict | No
     for line in log.splitlines():
         author, _, rest = line.partition("\t")
         at, _, subject = rest.partition("\t")
-        if at.isdigit() and not BOT.search(author):
+        if at.isdigit() and not BOT.search(author) and inside(int(at)):
             rows.append((author, int(at), subject))
     buckets = weekly([at for _, at, _ in rows], today, weeks)
     last = max(rows, key=lambda r: r[1], default=None)

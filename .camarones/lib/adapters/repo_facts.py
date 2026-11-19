@@ -3,6 +3,7 @@ count and code-graph size. Read from the checkout, the stored inventory and the 
 from __future__ import annotations
 
 import json
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,8 @@ CONTAINERS = {"docker": "Docker", "compose": "Docker Compose", "helm": "Helm"}
 PIPELINES = {"gitlab-ci": "GitLab CI", "github-actions": "GitHub Actions", "jenkins": "Jenkins",
              "azure-pipelines": "Azure Pipelines"}
 EMPTY = {"head": None, "stack": [], "build": None, "activity": None}
+_LOCKS: dict[str, threading.Lock] = {}
+_LOCKS_GUARD = threading.Lock()
 
 
 def build_tool(path: Path) -> str | None:
@@ -35,10 +38,15 @@ def build_tool(path: Path) -> str | None:
     return "go" if has("go.mod") else None
 
 
-def _head(path: Path) -> dict | None:
-    branch = out(["git", "-C", str(path), "rev-parse", "--abbrev-ref", "HEAD"])
+def _tip(path: Path) -> tuple[str, str] | None:
+    """HEAD's full sha and branch in one git call: the cache key, the only process a cache hit costs."""
+    lines = out(["git", "-C", str(path), "rev-parse", "HEAD", "--abbrev-ref", "HEAD"]).splitlines()
+    return (lines[0], lines[1]) if len(lines) == 2 and all(lines) else None
+
+
+def _head(path: Path, branch: str) -> dict | None:
     line = out(["git", "-C", str(path), "log", "-1", "--format=%h%x09%at%x09%aN%x09%s"])
-    if not branch or not line:
+    if not line:
         return None
     sha, at, author, subject = (line.split("\t", 3) + ["", "", "", ""])[:4]
     return {"branch": branch, "sha": sha[:7], "at": int(at) if at.isdigit() else 0, "subject": subject, "author": author}
@@ -57,10 +65,14 @@ def _data(path: Path) -> list[str]:
     return list(dict.fromkeys(labels))
 
 
-def _stack(name: str, path: Path, build: str | None) -> list[dict]:
+def _override(name: str) -> str:
     row = next((r for r in workspace.workspace()["repos"] if r["name"] == name), {})
-    text = row.get("stack") or quickarch.stack(path, quickarch.repo_blob(path))
-    first, *rest = [p.strip() for p in text.split(" · ") if p.strip()]
+    return row.get("stack") or ""
+
+
+def _stack(name: str, path: Path, build: str | None, override: str) -> list[dict]:
+    text = override or quickarch.stack(path, quickarch.repo_blob(path))
+    first, *rest = [p.strip() for p in text.split(" · ") if p.strip()] or ["?"]
     pills = [{"role": "language", "label": first}] if first != "?" else []
     pills += [{"role": "framework", "label": p} for p in rest]
     if build:
@@ -77,18 +89,35 @@ def _week() -> str:
     return f"{iso.year}-W{iso.week:02d}"
 
 
+def _lock(name: str) -> threading.Lock:
+    with _LOCKS_GUARD:
+        return _LOCKS.setdefault(name, threading.Lock())
+
+
 def facts(name: str) -> dict:
     path = repo_dir(name)
-    head = _head(path) if path.is_dir() else None
-    if head is None:
+    if not path.is_dir():
         return dict(EMPTY)
-    key = {"head": head["sha"], "week": _week()}
+    with _lock(name):            # the server is threaded: two requests at once scan the repo once
+        return _facts(name, path)
+
+
+def _facts(name: str, path: Path) -> dict:
+    tip = _tip(path)
+    if tip is None:
+        return dict(EMPTY)
+    override = _override(name)
+    key = {"head": tip[0], "branch": tip[1], "week": _week(), "stack": override}
     cache = CACHE / "repos" / f"{name}.json"
     stored = fsutil.load_json(cache, {})
     if stored.get("key") == key and "facts" in stored:
         return stored["facts"]
+    head = _head(path, tip[1])
+    if head is None:
+        return dict(EMPTY)
     build = build_tool(path)
-    found = {"head": head, "stack": _stack(name, path, build), "build": build, "activity": history.activity(name)}
+    found = {"head": head, "stack": _stack(name, path, build, override), "build": build,
+             "activity": history.activity(name)}
     try:
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps({"key": key, "facts": found}), encoding="utf-8", newline="\n")

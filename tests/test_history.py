@@ -126,6 +126,7 @@ def test_activity_counts_humans_and_names_the_last_one(kit):
     api = kit.ws / "fresh"
     api.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=api, check=True, capture_output=True)
+    dated_commit(api, "Cleo", "before the first week", "2026-08-30T12:00:00Z")
     dated_commit(api, "Ana", "one", "2026-11-02T10:00:00Z")
     dated_commit(api, "Bob", "two", "2026-11-09T10:00:00Z")
     dated_commit(api, "Ana", "three", "2026-11-12T10:00:00Z")

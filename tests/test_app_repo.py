@@ -105,6 +105,16 @@ def test_a_repo_not_cloned(wired, dash):
     assert r["cloned"] is False and r["head"] is None and r["activity"] is None and r["stack"] == []
 
 
+def test_a_repo_not_cloned_claims_no_library_state(wired, dash):
+    shutil.rmtree(wired.ws / "worker")
+    snapshot(wired, {"api": {"cloned": True, "libraries": 3, "vulns": {"high": 1}},
+                     "worker": {"cloned": False, "libraries": 0, "vulns": {}}}, inventory={"at": "x", "scanned": True})
+    assert dash.repo("worker")["libs"] == {"total": None, "vulns": {}, "scanned": False, "outdated": None}
+    cards = {r["name"]: r for r in dash.repos()["repos"]}
+    assert cards["worker"]["libs"] == {"vulns": {}, "scanned": False}
+    assert cards["api"]["libs"] == {"vulns": {"high": 1}, "scanned": True}
+
+
 def test_no_snapshot_yet(wired, dash, monkeypatch):
     cards = [{"status": "Ready", "repos": ["api"]}]
     monkeypatch.setattr(importlib.import_module("lib.kanban.ops"), "list_items", lambda **kw: {"cards": cards})

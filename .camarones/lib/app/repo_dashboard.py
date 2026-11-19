@@ -55,6 +55,10 @@ def _vulns(snap_repo: dict, snap: dict) -> dict:
             "scanned": bool(isinstance(inv, dict) and inv.get("scanned"))}
 
 
+# With no checkout here nothing was scanned for this repo, whatever the inventory says: unknown, never clean.
+UNCLONED_VULNS = {"vulns": {}, "scanned": False}
+
+
 def _libs(snap_repo: dict, snap: dict, name: str) -> dict:
     total = snap_repo.get("libraries")
     return {"total": total if isinstance(total, int) and not isinstance(total, bool) else None,
@@ -126,7 +130,8 @@ def repo(name: str) -> dict | None:
             "head": facts.get("head"), "stack": facts.get("stack") or [], "build": facts.get("build"),
             "sonar": _sonar(block.get("sonar"), block.get("coverage")) if cloned and block else None,
             "trend": _guard(lambda: _trend(name), []), "activity": facts.get("activity"),
-            "libs": _libs(block, snap or {}, name), "docs": _guard(lambda: _docs(freshness.by_repo().get(name, {}))),
+            "libs": _libs(block, snap or {}, name) if cloned else {"total": None, **UNCLONED_VULNS, "outdated": None},
+            "docs": _guard(lambda: _docs(freshness.by_repo().get(name, {}))),
             "wiki": _wiki(wiki), "c4": _guard(lambda: _c4(name)),
             "graph": _guard(lambda: svc.repo_facts.graph_nodes(name)) if cloned else None,
             "work": _guard(lambda: _work(name), {"columns": [{"status": s, "n": 0} for s in ops.STATUSES], "total": 0}),
@@ -155,7 +160,7 @@ def repos() -> dict:
             "name": name, "cloned": cloned, "state": _state(snap, name),
             "stack": (_guard(lambda: svc.repo_facts.facts(name)) or {}).get("stack", []) if cloned else [],
             "sonar": {k: sonar[k] for k in ("source", "gate", "coverage", "coverageSource")} if sonar else None,
-            "libs": _vulns(block, snap or {}),
+            "libs": _vulns(block, snap or {}) if cloned else dict(UNCLONED_VULNS),
             "wiki": {k: v for k, v in (_wiki(wikis.get(name)) or {}).items() if k in ("pages", "at", "unit")} or None,
             "docs": {k: docs[k] for k in ("total", "suspect", "stale")} if docs else None})
     return {"at": snap.get("at") if snap else None, "repos": rows}

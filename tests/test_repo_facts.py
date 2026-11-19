@@ -83,6 +83,60 @@ def test_facts_are_cached_per_head(rf, kit, monkeypatch):
     assert len(calls) == 2
 
 
+def test_two_requests_at_once_read_the_repo_once(rf, kit, monkeypatch):
+    import threading, time
+    from lib import quickarch
+    commit(kit.ws / "api", {"pom.xml": POM})
+    calls, real = [], quickarch.repo_blob
+
+    def slow(p):
+        calls.append(p)
+        time.sleep(0.2)
+        return real(p)
+    monkeypatch.setattr(quickarch, "repo_blob", slow)
+    got = []
+    threads = [threading.Thread(target=lambda: got.append(rf.facts("api"))) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(calls) == 1 and len(got) == 2 and got[0] == got[1]
+
+
+def test_a_cache_hit_costs_one_git_process_and_follows_the_branch(rf, kit, monkeypatch):
+    from lib.core import process
+    commit(kit.ws / "api", {"pom.xml": POM})
+    first = rf.facts("api")
+    seen, real = [], process.run
+    monkeypatch.setattr(process, "run", lambda cmd, *a, **kw: seen.append(cmd) or real(cmd, *a, **kw))
+    assert rf.facts("api") == first
+    assert len(seen) == 1
+    monkeypatch.setattr(process, "run", real)
+    git(kit.ws / "api", "checkout", "-q", "-b", "feature")
+    assert rf.facts("api")["head"]["branch"] == "feature"
+
+
+def test_editing_the_stack_override_shows_at_once(rf, kit):
+    from lib.adapters.stores import workspace
+    commit(kit.ws / "api", {"pom.xml": POM})
+    assert rf.facts("api")["stack"][0] == {"role": "language", "label": "Java 17"}
+    ws = workspace.workspace()
+    next(r for r in ws["repos"] if r["name"] == "api")["stack"] = "Kotlin · Ktor"
+    workspace.save_workspace(ws)
+    assert rf.facts("api")["stack"][:2] == [{"role": "language", "label": "Kotlin"}, {"role": "framework", "label": "Ktor"}]
+
+
+def test_an_override_of_only_separators_draws_no_language_pill(rf, kit):
+    from lib.adapters.stores import workspace
+    ws = workspace.workspace()
+    next(r for r in ws["repos"] if r["name"] == "api")["stack"] = " · "
+    workspace.save_workspace(ws)
+    commit(kit.ws / "api", {"pom.xml": POM})
+    stack = rf.facts("api")["stack"]
+    assert not any(p["role"] in ("language", "framework") for p in stack)
+    assert {"role": "build", "label": "Maven"} in stack
+
+
 def test_a_repo_not_cloned_has_no_facts(rf, kit):
     assert rf.facts("missing") == {"head": None, "stack": [], "build": None, "activity": None}
 
