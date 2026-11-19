@@ -90,17 +90,26 @@ and tells you what it found before it touches anything:
 | An empty folder | New project | Creates a project with no code yet: you document the design first |
 | Your home folder or a disk root | — | Refuses, and says why: `cam-docs` and the repo analysis would land there |
 
+For one repo or a folder of repos with no `cam-docs` yet, the card asks **Does your team already keep its
+documentation in a cam-docs repo?** with nothing picked, and **Continue** waits for an answer. **Yes, join it** asks the
+team's URL and joins it into this same folder, as the join below does. **No, start a new one** goes on as today. A
+project that was made here and never shared (no remote, no commits) asks it too.
+
 You can change the **Project name** (it starts as the folder's name) and press **Continue**, which runs
 `camaron projects --adopt` and opens the project's window.
 
 ### Join my team's documentation
 
-Paste the URL of the team's **cam-docs** repo — the documentation's, not the code's — and pick where to put it.
+Paste the URL of the team's **cam-docs** repo — the documentation's, not the code's — then pick the folder where your
+repos are (or will be): `cam-docs` goes inside it.
 The app runs `camaron join … --no-open` with your own git credentials first. If the host asks for credentials git
 does not have, an https URL gets a token field ("GitLab: read_repository + write_repository · GitHub: repo"); the
 token travels only in an environment variable, and is saved in the system keychain once git gets in with it. An SSH
 URL asks you to set up your SSH key instead. Other refusals are said in words: no access, not found, no network, or a
-folder that already has another `cam-docs`.
+folder that already has another `cam-docs`. A `cam-docs` the kit made there and never shared is a question instead:
+**Set it aside and join** renames it to `cam-docs.local-<date>` next to it (nothing is deleted) and brings in the team's;
+nothing happens without that click. When this machine already has the team's docs in another folder, the app says so
+and opens them, and looks for your repos in the folder you picked too.
 
 ### Recent
 
@@ -114,16 +123,16 @@ same step, in either of them. Until it is finished, the Summary offers **Continu
 
 | Step | What happens |
 |---|---|
-| Repos | The repos to document: the ones already in the project are ticked, the ones found in the folder are not. Add a code repo by URL (its name and branch fill in). At least one is needed, except in an empty folder |
-| Tools | What this machine has and lacks: required tools ticked and locked, the recommended ones picked when missing (one agent CLI is enough), plus the kit's pinned tools |
+| Repos | The repos to document: the ones already in the project are ticked, the ones found in the folder are not. Add a code repo by URL (its name and branch fill in). At least one is needed, except in an empty folder. On a join it is read-only: each team repo is *here*, *linked from* a clone you keep under another folder name, *missing* (Install clones it) or its folder is *taken* (left as it is); **Search another folder…** is remembered for this machine only |
+| Tools | What this machine has and lacks: required tools ticked and locked, the recommended ones picked when missing (one agent CLI is enough), plus the kit's pinned tools. On a join it lists the team's tools, and one left out is left out on this machine only: its row says what that costs, and the team's plan does not change |
 | Install | Starts by itself: installs what you picked, saves the components, writes the templates, sets the project up and syncs the plan, with a progress bar and the live log. **Cancel** stops between steps. Repos that could not be cloned show the Tokens card right there, with their host filled in |
 | Stack | Each repo's stack as read from its manifests; the pencil fixes a wrong one. Never blocks |
 | Architecture | A first C4 draft from static analysis, no AI: repos, databases and brokers, relations. **Save draft**, **View diagram ↗**, **Save and improve with AI** (opens your agent in a terminal on the C4 model) or **Skip** |
 | Ready | Closes the first run with a checkpoint commit. **Go to the next step** lands on the Summary |
 
 A new project in an **empty folder** goes Repos → Tools → Install → Ready (nothing to read yet). A project you
-**joined** goes Tools → Install → Ready, since the team already decided the rest — and skips the wizard entirely when
-this machine already has every repo and tool.
+**joined** goes Repos → Tools → Install → Ready, since the team already decided the rest; it never changes the team's
+repos, components or plan, and skips the wizard entirely when this machine already has every repo and tool.
 
 ## Flow
 

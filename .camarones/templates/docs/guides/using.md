@@ -57,10 +57,14 @@ the wizard; you can switch between them halfway.
 
 ## Joining your team
 
-When your team already has a `cam-docs` repo: in the app's start screen, **Join my team's documentation** and paste
-its URL (the docs repo, not the code's). From a terminal: `camaron join <url>`. The kit clones it, or reuses the copy you
-already have, and only prepares your machine — the team already chose the repos, the stack, the architecture and the
-plan, and the sessions go on where they were.
+When your team already has a `cam-docs` repo, either door of the app's start screen gets you there: **Pick a folder**
+on your repos asks whether the team already keeps its docs in a `cam-docs` repo (answer **Yes** and paste its URL), or
+**Join my team's documentation** asks the URL, then the folder where your repos are. From a terminal:
+`camaron join <url> [folder-with-your-repos]`. The kit clones it, or reuses the copy you already have, and only prepares
+your machine — the team already chose the repos, the stack, the architecture and the plan, a join changes none of it, and
+the sessions go on where they were. Repos are found by their remote, not their folder name: a clone you keep under
+another name is linked under the team's name instead of cloned again. Leaving a tool out at the join only affects your
+machine.
 
 What came with the team's repo and runs code or steers agents (hooks, MCP servers, settings, skills, plugins) waits
 until you approve it on your machine: **Settings › Trust**, or `camaron trust`.
