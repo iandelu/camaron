@@ -35,9 +35,21 @@ test('the header counts the repos with the health age and links to Health', () =
 
 test('with no health snapshot the header says so beside the link', () => {
   const out = render({ ...data, at: null })
-  expect(out).toContain('Aún no hay foto de salud.')
+  expect(out).toContain('aún no hay foto de salud')
   expect(out).not.toContain('salud hace')
   expect(out).toContain('Ver la salud completa')
+})
+
+test('an estimated card says Estimado before its coverage; a Sonar-backed one does not', () => {
+  const est = render({ ...data, repos: [mk('api', { sonar: { source: 'estimated', coverage: 64, coverageSource: 'report' } })] })
+  expect(est).toMatch(/cu-chip--info">Estimado<\/span> 64 % · informe/)
+  expect(render()).not.toContain('Estimado')
+})
+
+test('one repo reads "1 repo", with or without health', () => {
+  expect(render({ ...data, repos: [mk('api')] })).toContain('1 repo · salud hace 5 min')
+  expect(render({ at: null, repos: [mk('api')] })).toContain('1 repo · aún no hay foto de salud')
+  expect(render({ ...data, at: null })).toContain('3 repos · aún no hay foto de salud')
 })
 
 test('while it loads, a skeleton', () => {

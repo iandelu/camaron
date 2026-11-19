@@ -545,6 +545,7 @@ export const S = {
     'tour.flow.4.t': 'Cómo va', 'tour.flow.4.b': 'El plan, las páginas que esperan revisión y los trabajos en curso.',
     // the repo cards on Flow › Summary (sections/RepoCards.jsx)
     'rc.title': 'Repos', 'rc.count': '{n} repos · salud {ago}', 'rc.health': 'Ver la salud completa', 'rc.sonar': 'SonarQube',
+    'rc.count1': '1 repo · salud {ago}', 'rc.countNone': '{n} repos · aún no hay foto de salud', 'rc.countNone1': '1 repo · aún no hay foto de salud',
     'rc.libs': 'Librerías', 'rc.wiki': 'Wiki', 'rc.docs': 'Docs', 'rc.report': 'informe', 'rc.noCoverage': 'sin cobertura',
     'rc.vulns': '{n} vulnerabilidades', 'rc.vuln': '1 vulnerabilidad', 'rc.clean': 'Sin vulnerabilidades', 'rc.unscanned': 'Sin revisar',
     'rc.wikiPages': '{n} páginas · {ago}', 'rc.wikiNone': 'Sin generar', 'rc.wikiRunning': 'Generándose…',
@@ -1150,6 +1151,7 @@ export const S = {
     'tour.flow.4.t': 'Where it stands', 'tour.flow.4.b': 'The plan, the pages waiting for review and the jobs running.',
     // the repo cards on Flow › Summary (sections/RepoCards.jsx)
     'rc.title': 'Repos', 'rc.count': '{n} repos · health {ago}', 'rc.health': 'See all of Health', 'rc.sonar': 'SonarQube',
+    'rc.count1': '1 repo · health {ago}', 'rc.countNone': '{n} repos · no health snapshot yet', 'rc.countNone1': '1 repo · no health snapshot yet',
     'rc.libs': 'Libraries', 'rc.wiki': 'Wiki', 'rc.docs': 'Docs', 'rc.report': 'report', 'rc.noCoverage': 'no coverage',
     'rc.vulns': '{n} vulnerabilities', 'rc.vuln': '1 vulnerability', 'rc.clean': 'No vulnerabilities', 'rc.unscanned': 'Not checked',
     'rc.wikiPages': '{n} pages · {ago}', 'rc.wikiNone': 'Not generated', 'rc.wikiRunning': 'Generating…',

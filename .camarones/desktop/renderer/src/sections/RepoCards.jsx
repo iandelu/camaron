@@ -15,7 +15,9 @@ export function RepoCardsView({ data, now = Date.now() }) {
     <section className="dk-rc" aria-labelledby="rc-title">
       <div className="dk-rc-head">
         <h2 id="rc-title" className="eyebrow">{t('rc.title')}</h2>
-        <span className="muted small">{data.at ? t('rc.count', { n, ago: fmtAgo(data.at, now, words) }) : `${n} repos · ${t('rp.noHealth')}`}</span>
+        <span className="muted small">{data.at
+          ? t(n === 1 ? 'rc.count1' : 'rc.count', { n, ago: fmtAgo(data.at, now, words) })
+          : t(n === 1 ? 'rc.countNone1' : 'rc.countNone', { n })}</span>
         <span className="dk-grow" />
         <a className="small" href="#/quality">{t('rc.health')}</a>
       </div>
@@ -33,7 +35,8 @@ export function RepoCardsView({ data, now = Date.now() }) {
               {c.stack ? <p className="dk-rc-stack small"><Icon name="language" /><span>{c.stack}</span></p> : null}
               <dl className="dk-rc-facts">
                 {facts.map(([k, text, tone]) => (
-                  <div key={k}><dt>{t(k)}</dt><dd className={tone ? `dk-rc-${tone}` : undefined}>{text}</dd></div>))}
+                  <div key={k}><dt>{t(k)}</dt><dd className={tone ? `dk-rc-${tone}` : undefined}>
+                    {k === 'rc.sonar' && c.sonar.kind === 'estimated' ? <><Chip state="info">{t('sq.estimated')}</Chip>{' '}</> : null}{text}</dd></div>))}
               </dl>
               <span className="dk-tile-to">{t('rc.open')}</span>
             </a>
