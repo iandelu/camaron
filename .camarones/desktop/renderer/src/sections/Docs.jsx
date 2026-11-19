@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card } from '@camaron/ui'
 import { route as adrRoute } from '../adr.js'
-import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, wikiBlocks, wikiBusyWith,
+import { answerView, askBody, askError, buildFailed, c4Card, openPortal, startBuild, startWiki, focusRepo, wikiBlocks, wikiBusyWith,
   wikiError, wikisRead } from '../docs.js'
 import { useHash, useJob, useStore } from '../hooks.js'
 import { errorLine } from '../onboarding.js'
-import { JobOutput } from '../parts.jsx'
-import { viewOf } from '../nav.js'
+import { Fold, JobOutput } from '../parts.jsx'
+import { repoOf, viewOf } from '../nav.js'
 import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
 import Decisions from './Decisions.jsx'
@@ -27,7 +27,7 @@ export default function Docs({ srv, jobs, app, index }) {
   const open = (to) => openPortal(app, location.origin, to)
   return (
     <Place section="docs" view={view} wide={view === 'decisions' && adrRoute(hash).view === 'adr'} head={<TeamStrip srv={srv} jobs={jobs} />}>
-      {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} open={open} index={index} />
+      {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} open={open} index={index} repo={repoOf(hash)} />
         : view === 'decisions' ? <Decisions srv={srv} />
         : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
         : <ReadView srv={srv} jobs={jobs} open={open} />}
@@ -51,16 +51,19 @@ function ReadView({ srv, jobs, open }) {
   )
 }
 
-function WikisView({ srv, jobs, open, index }) {
+function WikisView({ srv, jobs, open, index, repo = '' }) {
   const { rows, loading, failed, reload } = useWikis(srv)
   const { running } = useStore(jobs || NO_JOBS)
+  const { first, rest } = focusRepo(wikiBlocks(index, rows), repo)
+  const block = (b) => (                                // a failed read is said once, above: the blocks do not repeat it
+    <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
+      onView={() => open(b.hash)} onDone={reload} />)
   return (
     <>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
       <div className="dk-stack" data-tour="docs-wikis">
-        {wikiBlocks(index, rows).map((b) => (             // a failed read is said once, above: the blocks do not repeat it
-          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} loading={loading || failed} busyWith={wikiBusyWith(running, b.repo)}
-            onView={() => open(b.hash)} onDone={reload} />))}
+        {first ? block(first) : null}
+        {first && rest.length ? <Fold label={t('docs.otherWikis', { n: rest.length })}>{rest.map(block)}</Fold> : rest.map(block)}
       </div>
     </>
   )

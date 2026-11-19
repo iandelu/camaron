@@ -28,10 +28,11 @@ export function counts(rows) {
 }
 
 // The rows of one filter whose title, number or repos hold every word of the query, accents and case aside.
-export function filterRows(rows, filter, q) {
+export function filterRows(rows, filter, q, repo = '') {
   const words = norm(q).split(/\s+/).filter(Boolean)
   return (rows || []).filter((r) => {
     if (filter !== 'all' && r.chip !== filter) return false
+    if (repo && !(r.repos || []).includes(repo)) return false
     const text = norm(`${r.title} ${r.id} ${(r.repos || []).join(' ')}`)
     return words.every((w) => text.includes(w))
   })

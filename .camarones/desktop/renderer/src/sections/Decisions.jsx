@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { Skeleton } from '@camaron/ui'
 import { ADR_BASE, route, screen, stale, startScreen, viewOf } from '../adr.js'
 import { useHash } from '../hooks.js'
+import { repoOf } from '../nav.js'
 import { Failed, Page } from '../parts.jsx'
 import { lang, t } from '../i18n.js'
 import { AdrListView } from './adr/AdrList.jsx'
@@ -18,7 +19,8 @@ export { AdrListView, CandidatesView, EvidenceView, LegacyView, NewFormView, Rev
 const go = (hash) => { location.hash = hash }
 
 export default function Decisions({ srv }) {
-  const r = route(useHash())
+  const hash = useHash()
+  const r = route(hash)
   const [list, setList] = useState(null)                // GET app/adr: {adrs, next}
   const [listError, setListError] = useState('')
   const [cands, setCands] = useState(null)
@@ -74,7 +76,7 @@ export default function Decisions({ srv }) {
   }
   if (listError) return <Page title={t('nav.decisions')}><Failed title={t('adr.failed')} detail={listError} onRetry={() => { setListError(''); loadList() }} /></Page>
   if (!list) return <Page title={t('nav.decisions')}><Skeleton lines={6} /></Page>
-  return <AdrListView rows={list.adrs} filter={filter} q={q} onFilter={setFilter} onQ={setQ} candidates={cands} />
+  return <AdrListView rows={list.adrs} filter={filter} q={q} onFilter={setFilter} onQ={setQ} candidates={cands} repo={repoOf(hash)} />
 }
 
 // One ADR, opened at its phase (adr.js `viewOf`). Its state (adr.js `screen`) lives and dies with it: Decisions keys it

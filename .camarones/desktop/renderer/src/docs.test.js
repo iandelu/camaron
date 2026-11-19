@@ -207,3 +207,11 @@ test('the team strip says where the team repo stands, one state at a time', () =
   expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['a'] })).toEqual({ key: 'strip.ahead', vars: { n: 2 }, tone: 'warn' })
   expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
 })
+
+test('focusRepo puts the asked repo first and keeps the others; none or unknown leaves them all', async () => {
+  const { focusRepo } = await import('./docs.js')
+  const blocks = [{ repo: 'api' }, { repo: 'web' }]
+  expect(focusRepo(blocks, 'web')).toEqual({ first: { repo: 'web' }, rest: [{ repo: 'api' }] })
+  expect(focusRepo(blocks, 'zzz')).toEqual({ first: null, rest: blocks })
+  expect(focusRepo(blocks, '')).toEqual({ first: null, rest: blocks })
+})

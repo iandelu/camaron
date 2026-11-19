@@ -129,3 +129,8 @@ test('a finished lookup ticks, counts the newer ones and names the registries it
   expect(out).toContain(t('lb.lookedWhat', { checked: 40, n: 1 }))
   expect(out).toContain(t('lb.lookFailedShort', { registries: 'npm' }))
 })
+
+test('?repo= starts the board on that repo: the facet has it selected', () => {
+  const out = renderToStaticMarkup(<Libs srv={srv} jobs={null} repo="web" initial={{ libraries: rows }} />)
+  expect(out).toMatch(/<option[^>]*value="web"[^>]*selected|<option[^>]*selected[^>]*value="web"/)
+})

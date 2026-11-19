@@ -41,6 +41,12 @@ export const wikiBlocks = (tree, wikis) => {
   return (tree?.repos || []).map((repo) => block(repo, withWiki.includes(repo), 'unread'))
 }
 
+// The asked repo's block first, the rest apart; a repo with no block asks for nothing.
+export const focusRepo = (blocks, repo) => {
+  const first = repo ? blocks.find((b) => b.repo === repo) || null : null
+  return { first, rest: first ? blocks.filter((b) => b !== first) : blocks }
+}
+
 // GET wikis read again ({rows} or {error}): a failure keeps the last good rows (none after a failed first read) and
 // sets `failed`, for which the section offers a Retry.
 export const wikisRead = (prev, got) => (got.error

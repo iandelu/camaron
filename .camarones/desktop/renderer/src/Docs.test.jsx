@@ -194,3 +194,12 @@ test('at #/docs/interviews the Entrevistas tab is current and the Read buttons a
   expect(out).toMatch(/aria-current="page"[^>]*>Entrevistas</)
   expect(out).not.toContain('Leer la documentación')
 })
+
+test('?repo= on Wikis: that repo first, the others folded; an unknown repo folds nothing', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis?repo=web' }
+  const out = render()
+  expect(out).toContain('Las otras wikis (2)')
+  expect(out.indexOf('wiki/web')).toBeLessThan(out.indexOf('Las otras wikis'))
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis?repo=zzz' }
+  expect(render()).not.toContain('Las otras wikis')
+})

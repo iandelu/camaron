@@ -365,3 +365,17 @@ test('Docs widens for an open ADR, not for the list', () => {
     expect(docs('#/docs')).toMatch(/^<div class="dk-page">/)
   } finally { delete globalThis.location }
 })
+
+test('?repo= lists only that repo\'s ADRs, counts them, and offers the way out', () => {
+  const rows = [row(), row({ id: '0013', repos: ['web'] })]
+  const out = list({ rows, repo: 'api' })
+  expect(out).toContain('0012')
+  expect(out).not.toContain('0013')
+  expect(out).toContain('Repo: ')
+  expect(out).toContain('href="#/docs/decisions"')
+  expect(out).toContain('aria-label="Quitar el filtro de api"')
+  expect(out).toMatch(/Todas <span[^>]*>1</)
+  const none = list({ rows, repo: 'zzz' })
+  expect(none).toContain('Ningún ADR nombra zzz.')
+  expect(none).toContain('href="#/docs/decisions"')
+})

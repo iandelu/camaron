@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
 import { applyFilters, columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
 import { addChoices, cardAt, childrenOf, fit, gateMessage, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
-import { Failed, Page } from '../parts.jsx'
+import { Failed, Page, RepoChip } from '../parts.jsx'
 import { AddForm, StoryPanel, known, label } from './BoardPanels.jsx'
 import { openPortal } from '../docs.js'
 import { useHash } from '../hooks.js'
-import { repoHref, repoOf } from '../nav.js'
+import { repoOf } from '../nav.js'
 import { lang, t } from '../i18n.js'
 
 export { AddForm, StoryPanel }
@@ -203,7 +203,7 @@ export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, no
           </div>
         ) : null}
       </div></div>
-      {repo ? <RepoFilter repo={repo} /> : null}
+      {repo ? <RepoChip repo={repo} clear="#/board" /> : null}
       {board.problems?.length ? <Aviso tone="warn" title={t('bd.problems')}>{board.problems.map((p) => `${p.path}: ${p.error}`).join(' · ')}</Aviso> : null}
       {notice ? <Aviso tone="error" title={t('bd.moveFailed')} detail={notice} /> : null}
       {!board.cards.length ? <p className="muted">{repo ? t('bd.repoEmpty', { repo }) : t('bd.empty')}</p> : null}
@@ -227,16 +227,6 @@ export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, no
       </div>
       <p className="sr-only" aria-live="polite" role="status">{say}</p>
     </>
-  )
-}
-
-function RepoFilter({ repo }) {
-  const [before, after] = t('bd.repo', { repo: '\n' }).split('\n')
-  return (
-    <p className="row dk-bd-repo">
-      <Chip>{before}<a href={repoHref(repo)}>{repo}</a>{after}
-        <a href="#/board" aria-label={t('bd.repoClear', { repo })}> {'\u00d7'}</a></Chip>
-    </p>
   )
 }
 

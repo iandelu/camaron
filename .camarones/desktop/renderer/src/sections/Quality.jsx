@@ -5,7 +5,7 @@ import { ago } from '../jobs.js'
 import { openSession, sessionNote } from '../plan.js'
 import { BOARD_ACTIONS, doctorRows, driftWhy, fixableDrift, hooksShare, secretsVerdict, seconds } from '../quality.js'
 import { useAgents, useCmd, useHash, useJob, useStore } from '../hooks.js'
-import { LIBS, repoHref, viewOf } from '../nav.js'
+import { LIBS, repoHref, repoOf, viewOf } from '../nav.js'
 import { AgentPicker, Failed, Fold, JobOutput, ResultView, UnitRow } from '../parts.jsx'
 import { Place } from '../Place.jsx'
 import Commands from './Commands.jsx'
@@ -24,10 +24,11 @@ const CARDS = { doctor: Doctor, drift: Drift, fresh: Fresh, evals: Evals, contex
 const LINKS = { review: '../#/review' }
 
 export default function Quality({ srv, jobs }) {
-  const view = viewOf(useHash(), 'quality')
+  const hash = useHash()
+  const view = viewOf(hash, 'quality')
   return (
     <Place section="quality" view={view} wide={view === 'libs'}>
-      {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} /> : view === 'sonar' ? <SonarView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
+      {view === 'libs' ? <LibrariesView srv={srv} jobs={jobs} repo={repoOf(hash)} /> : view === 'sonar' ? <SonarView srv={srv} jobs={jobs} /> : <Health srv={srv} jobs={jobs} />}
     </Place>
   )
 }
