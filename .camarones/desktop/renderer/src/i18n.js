@@ -576,6 +576,7 @@ export const S = {
     'tour.libs.1.t': 'Buscar vulnerabilidades', 'tour.libs.1.b': 'Compara cada librería con la base de datos de OSV, sin conexión; Releer del código vuelve a leer los manifiestos.',
     'tour.libs.2.t': 'Filtros', 'tour.libs.2.b': 'Por categoría, servicio o ámbito, o solo las vulnerables.',
     'tour.libs.3.t': 'Librería × servicio', 'tour.libs.3.b': 'Las peores primero. Abre una para ver por qué está, por qué está marcada y Actualizar en una rama nueva.',
+    'rp.commit': 'commit', 'rp.commits': 'commits',
   },
   en: {
     'nav.summary': 'Summary', 'nav.plan': 'Plan', 'nav.interviews': 'Interviews',
@@ -1147,6 +1148,7 @@ export const S = {
     'tour.libs.1.t': 'Scan for vulnerabilities', 'tour.libs.1.b': 'Checks every library against OSV\'s offline database; Reread from the code reads the manifests again.',
     'tour.libs.2.t': 'Filters', 'tour.libs.2.b': 'By category, service or scope, or only the vulnerable ones.',
     'tour.libs.3.t': 'Library × service', 'tour.libs.3.b': 'The worst first. Open one to see why it is there, why it is flagged, and Update on a new branch.',
+    'rp.commit': 'commit', 'rp.commits': 'commits',
   },
 }
 
