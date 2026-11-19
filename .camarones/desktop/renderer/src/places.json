@@ -5,6 +5,7 @@
     "docs": ["read", "wikis", "decisions", "interviews"],
     "settings": ["general", "tokens", "skills", "plugins", "trust", "kit"]
   },
+  "pages": { "flow": ["repo"] },
   "zones": { "flow/plan": ["generate"], "quality": ["check", "analyze"], "docs": ["team", "interviews"], "settings": ["machine"] },
   "panels": {
     "flow/plan": ["run", "autopilot", "docs"],

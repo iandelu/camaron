@@ -7,6 +7,9 @@ export const MACHINE = ['settings', 'guide', 'kitdev']
 // The views of a place (tabs), the first one its default: it has no segment in the address.
 export const VIEWS = places.views
 
+// Addressable views that draw no tab and are not places (the repo page).
+export const PAGES = places.pages
+
 // Kit dev is the bench of a checkout of the kit (lib/kitdev.py): only there.
 export const sections = ({ kitdev }) => ({ project: PROJECT, machine: kitdev ? MACHINE : MACHINE.filter((s) => s !== 'kitdev') })
 
@@ -51,8 +54,9 @@ export function sectionOf(hash, flags) {
 export function viewOf(hash, section) {
   const views = VIEWS[section]
   if (!views) return ''
+  const known = [...views, ...(PAGES[section] || [])]
   const [, first, second] = current(hash).match(/^#\/([\w-]+)(?:\/([\w-]+))?/) || []
-  return first === section && views.includes(second) ? second : views[0]
+  return first === section && known.includes(second) ? second : views[0]
 }
 
 export function placeOf(hash, flags) {
@@ -60,6 +64,25 @@ export function placeOf(hash, flags) {
   const v = viewOf(hash, s)
   return v && v !== VIEWS[s][0] ? `${s}/${v}` : s
 }
+
+const REPO_NAME = /^[\w.-]+$/
+
+// The repo a window is filtered to by ?repo=<name>; '' when absent or not a plain name.
+export function repoOf(hash) {
+  const name = new URLSearchParams(String(hash || '').split('?')[1] || '').get('repo') || ''
+  return REPO_NAME.test(name) ? name : ''
+}
+
+// The <name> of #/flow/repo/<name>, or null when the address is not that page or the name is not plain.
+export function repoPage(hash) {
+  const raw = String(hash || '').split('?')[0].match(/^#\/flow\/repo\/([^/]+)$/)?.[1]
+  let name = ''
+  try { name = raw ? decodeURIComponent(raw) : '' } catch { return null }
+  return REPO_NAME.test(name) ? name : null
+}
+
+export const repoHref = (name) => '#/flow/repo/' + encodeURIComponent(name)
+export const withRepo = (place, name) => `#/${place}?repo=${encodeURIComponent(name)}`
 
 // What #/settings/tokens?host=<h>&kind=<k> asks the Tokens card to fill in (Quality links there for a repo's SonarQube).
 export const TOKEN_KINDS = ['gitlab', 'github', 'sonarqube']
