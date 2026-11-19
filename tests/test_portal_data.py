@@ -226,6 +226,38 @@ def test_a_translation_without_a_description_keeps_the_page_s(serve_mod):
     assert serve_mod.serve.read("flows/checkout.md", "es")["description"] == ""     # neither has one
 
 
+# ---------- a translation's sources: the evidence a reviewer checks, in every language ----------
+ORDERS_SOURCED = "---\ntitle: Orders\nx-sources:\n  - api:src/Orders.java\n  - api:src/Cart.java\n---\n# Orders\n"
+
+
+def test_a_translation_without_sources_keeps_the_page_s(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", ORDERS_SOURCED)
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\n---\n# Pedidos\n")
+    es, en = serve_mod.serve.read("orders.md", "es"), serve_mod.serve.read("orders.md")
+    assert es["sources"] == ["api:src/Orders.java", "api:src/Cart.java"]
+    assert es["sourceInfo"] == en["sourceInfo"]
+
+
+def test_a_translation_with_its_own_sources_keeps_them(serve_mod):
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", ORDERS_SOURCED)
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\nx-sources:\n  - api:src/Orders.java\n---\n# Pedidos\n")
+    assert serve_mod.serve.read("orders.md", "es")["sources"] == ["api:src/Orders.java"]
+
+
+def test_static_export_carries_the_page_s_sources_into_its_translation(serve_mod, monkeypatch):
+    serve_mod.services.components.set_components(["agents"])
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor_file", lambda *_a: None)
+    monkeypatch.setattr(serve_mod.services.vendor, "vendor", lambda _site: (0, []))
+    root = serve_mod.root / "docs"
+    page(root, "orders.md", ORDERS_SOURCED)
+    page(root / "i18n" / "es", "orders.md", "---\ntitle: Pedidos\n---\n# Pedidos\n")
+    site = serve_mod.services.export_site.export_site(log=lambda _: None)
+    es = json.loads((site / "api" / "doc" / "es" / "orders.md.json").read_text(encoding="utf-8"))
+    assert es["sources"] == ["api:src/Orders.java", "api:src/Cart.java"]
+
+
 def test_static_export_carries_the_translation_s_description(serve_mod, monkeypatch):
     serve_mod.services.components.set_components(["agents"])
     monkeypatch.setattr(serve_mod.services.vendor, "vendor_file", lambda *_a: None)

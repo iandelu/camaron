@@ -35,7 +35,9 @@ máquina, así que están en la app de escritorio. El portal enseña su resultad
 
 **Cabecera**: el nombre del proyecto (vuelve a Inicio), dónde estás (`Arquitectura › Modelo C4 › index`), **Buscar**
 (<kbd>⌘</kbd> <kbd>K</kbd> / <kbd>Ctrl</kbd> <kbd>K</kbd>, o <kbd>/</kbd>), las cifras de confianza (confirmadas,
-borradores, por reconfirmar, peticiones de cambio sin aplicar), el idioma y ◐ para claro u oscuro.
+borradores, por reconfirmar, peticiones de cambio sin aplicar; borradores y por reconfirmar abren **Revisión**), el
+idioma y ◐ para claro u oscuro. La confianza de una página se ve igual en todas las vistas: Borrador en gris con borde
+discontinuo, Pendiente de reconfirmar en ámbar, Confirmada en verde.
 
 **Menú lateral**: Inicio y siete zonas —Docs, Tablero, Historias, Arquitectura, Plan, Calidad y Revisión—. La zona en la
 que estás abre sus vistas; debajo de las zonas, el panel de lo que estás mirando (el árbol de páginas en Docs, las
@@ -89,9 +91,9 @@ cuestionarios).
 - avisos cuando es un borrador de IA, hay que reconfirmarla, cita código que cambió o ya no existe, o su traducción
   falta o está desactualizada;
 - **En esta página** (el índice), **Anterior / Siguiente** y la tarjeta de **Fuentes**: los ficheros que cita, por repo,
-  cada uno con su frescura. Al pasar el ratón ves qué los cambió (commits, PR o MR, claves de ticket). Un clic abre las
-  líneas en tu editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA, WebStorm, PyCharm) o, en el exportado, en el
-  repositorio.
+  cada uno con su frescura (una traducción sin fuentes propias muestra las de la página). Al pasar el ratón ves qué los
+  cambió (commits, PR o MR, claves de ticket). Un clic abre las líneas en tu editor (VS Code, Cursor, Windsurf,
+  VSCodium, IntelliJ IDEA, WebStorm, PyCharm) o, en el exportado, en el repositorio.
 
 Lo que puedes hacer en ella, en vivo:
 

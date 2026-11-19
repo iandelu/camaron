@@ -8,10 +8,10 @@ export function pageBanners(d, row, lang) {
   const i18n = lang ? (row.i18n || {})[lang] : ''
   if (lang && !d.exists) out.push({ tone: 'info', key: 'noTranslation' })
   if (lang && d.exists && i18n === 'outdated') out.push({ tone: 'warn', key: 'outdatedTranslation' })
-  if (d.trust === 'needs-reconfirm') out.push({ tone: 'info', key: 'banner.needs-reconfirm' })
+  if (d.trust === 'needs-reconfirm') out.push({ tone: 'warn', key: 'banner.needs-reconfirm' })
   if (d.fresh === 'suspect' || d.fresh === 'stale')
     out.push({ tone: 'warn', key: 'banner.' + d.fresh, code: [...(d.freshness?.missing || []), ...(d.freshness?.changed || [])].join(', ') })
-  if (d.trust === 'draft' && row.space !== 'notes') out.push({ tone: 'warn', key: 'banner.draft', draft: true })
+  if (d.trust === 'draft' && row.space !== 'notes') out.push({ tone: 'note', key: 'banner.draft', draft: true })   // quiet: every fresh project is drafts
   for (const { id, title, path, kind, implementation } of d.decisions || [])
     out.push({ tone: 'info', key: kind === 'new' && implementation === 'pending' ? 'banner.adrPending' : 'banner.adr', adr: { id, title, path } })
   return out

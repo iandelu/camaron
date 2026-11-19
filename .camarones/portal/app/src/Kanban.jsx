@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getJSON, postJSON } from './api.js'
 import { lang, t } from './i18n.js'
-import { Skeleton } from '@camaron/ui'
+import { Skeleton, TrustPill } from '@camaron/ui'
 import Failed from './Failed.jsx'
 import { applyFilters, blockedText, columns, dropAnchor, keyMove, parentOf, parseArg, STATUS_LABELS, waveOf } from './kanban.js'
 
@@ -118,7 +118,7 @@ function Detail({ id, onClose }) {
                 return (
                   <li key={l.link}>
                     {l.path ? <a href={`#/docs/${l.path}${sec ? `::${sec}` : ''}`}>{l.title || l.path}{sec ? ` § ${sec}` : ''}</a> : <code>{l.link}</code>}
-                    {l.trust ? <span className={`pill trust ${l.trust}`}>{known(`kbtr.${l.trust}`, l.trust)}</span> : null}
+                    {l.trust ? <TrustPill trust={l.trust}>{known(`kbtr.${l.trust}`, l.trust)}</TrustPill> : null}
                     {l.fresh === 'suspect' || l.fresh === 'stale' ? <span className="pill warn">{t(`kbf.${l.fresh}`)}</span> : null}
                     {l.changed ? <span className="pill warn">{t('kbChanged')}</span> : null}
                     {l.missing ? <span className="pill bad">{t('kbMissing')}</span> : null}

@@ -77,19 +77,27 @@ def _is_decision(row: dict) -> bool:
 
 def read(path: str, lang: str = "") -> dict:
     """A page as the reader sees it in `lang`: a translation gives its own title and `description` (the lede), and a
-    translation with no description keeps the page's."""
+    translation with no description keeps the page's. One with no `x-sources` keeps the page's too: the evidence a
+    reviewer checks must not vanish in another language."""
     f = doc_file(path, lang)
     raw = f.read_text(encoding="utf-8") if f.exists() else ""
     fm, body = frontmatter.split_fm(raw)
+    sources = fm.get("x-sources") or (_page_sources(path) if lang else [])
     row = next((r for r in services.current().doc_status.collect() if r["path"] == path), {})
     return {"path": path, "lang": lang, "file": rel_file(f), "raw": raw, "exists": f.exists(),
             "sha": page_versions.text_sha(raw), "body_sha": frontmatter.body_sha(body),     # what a save / confirm names
             "title": fm.get("title") or frontmatter.first_heading(body) or Path(path).stem,
             "description": fm.get("description") or row.get("description") or "", "trust": row.get("trust"),
-            "owner": row.get("owner"), "sources": fm.get("x-sources") or [], "confirmed": fm.get("x-confirmed"),
+            "owner": row.get("owner"), "sources": sources, "confirmed": fm.get("x-confirmed"),
             "fresh": row.get("fresh"), "freshness": row.get("freshness"),
-            "sourceInfo": _source_info(path, fm.get("x-sources") or [], row.get("freshness")),
+            "sourceInfo": _source_info(path, sources, row.get("freshness")),
             "feedback": [l for l in services.current().docs.pending_feedback() if f"`{row.get('file')}`" in l]}
+
+
+def _page_sources(path: str) -> list:
+    """The original page's `x-sources`, for a translation that has none of its own."""
+    f = doc_file(path, "")
+    return (frontmatter.split_fm(f.read_text(encoding="utf-8"))[0].get("x-sources") or []) if f.exists() else []
 
 
 def _source_info(path: str, refs: list, state: dict | None) -> list[dict]:

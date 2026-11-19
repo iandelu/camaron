@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Brand, Breadcrumbs, Chip, Keys, SkipLink } from '@camaron/ui'
+import { Brand, Breadcrumbs, Chip, Keys, SkipLink, TrustPill } from '@camaron/ui'
 import '@camaron/ui/ui.css'
 import Native from '../Native.jsx'
 import Palette from '../views/Palette.jsx'
@@ -157,13 +157,16 @@ function ZoneNav({ index, mode, t }) {
   )
 }
 
-// The docs' trust, in words: what is confirmed, what is a draft, what needs another look.
-function Summary({ s, feedback, t }) {
+// The docs' trust, in words: what is confirmed, what is a draft, what needs another look. What waits for a person
+// leads to Review; a count of zero is not shown.
+const trustN = (t, trust, n) => t(`trustN.${trust}.${n === 1 ? 'one' : 'many'}`, { n })
+export function Summary({ s, feedback, t }) {
   return (
     <span className="summary">
-      <Chip state="ok">{`${s.confirmed || 0} ${t('trust.confirmed')}`}</Chip>
-      {s.draft > 0 && <Chip state="warn">{`${s.draft} ${t('trust.draft')}`}</Chip>}
-      {s['needs-reconfirm'] > 0 && <Chip state="info">{`${s['needs-reconfirm']} ${t('trust.needs-reconfirm')}`}</Chip>}
+      {s.confirmed > 0 && <TrustPill trust="confirmed">{trustN(t, 'confirmed', s.confirmed)}</TrustPill>}
+      {s['needs-reconfirm'] > 0 && (
+        <TrustPill trust="needs-reconfirm" href="#/review">{trustN(t, 'needs-reconfirm', s['needs-reconfirm'])}</TrustPill>)}
+      {s.draft > 0 && <TrustPill trust="draft" href="#/review">{trustN(t, 'draft', s.draft)}</TrustPill>}
       {feedback > 0 && <Chip>{`${feedback} ${t('changeRequests')}`}</Chip>}
     </span>
   )
