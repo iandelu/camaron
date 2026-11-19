@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
 import { applyFilters, columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
-import { addChoices, cardAt, childrenOf, fit, gateMessage, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
+import { addChoices, cardAt, childrenOf, fit, gateMessage, menuStep, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
 import { Failed, Page, RepoChip } from '../parts.jsx'
 import { AddForm, StoryPanel, known, label } from './BoardPanels.jsx'
 import { openPortal } from '../docs.js'
@@ -157,6 +157,12 @@ export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, no
     document.addEventListener('mousedown', away)
     return () => { document.removeEventListener('keydown', esc); document.removeEventListener('mousedown', away) }
   }, [menu, onMenu])
+  const onMenuKey = (e) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+    const items = [...list.current.querySelectorAll('[role="menuitem"]')]
+    e.preventDefault()
+    items[menuStep(items.indexOf(document.activeElement), e.key, items.length)]?.focus()
+  }
   const readOnly = writable ? null : <Aviso tone="info" title={t('bd.readOnly')} />
   if (!board.enabled) {
     return (
@@ -194,7 +200,7 @@ export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, no
         <Button variant="primary" disabled={!writable} aria-haspopup="menu" aria-expanded={menu} ref={toggle}
           onClick={() => onMenu(!menu)}>{t('bd.add')}</Button>
         {menu ? (
-          <div className="dk-bd-menu" role="menu" ref={list}>
+          <div className="dk-bd-menu" role="menu" ref={list} onKeyDown={onMenuKey}>
             {addChoices(board.types).map((c) => (
               <button key={c.type} type="button" role="menuitem" className="dk-bd-menuitem" onClick={() => onChoose(c)}>
                 <b>{known(`bd.type.${c.type}`, c.type)}</b>
