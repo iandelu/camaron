@@ -56,11 +56,12 @@ def test_a_join_leaves_cam_docs_clean(kit, tmp_path, monkeypatch):
     team = kit.services.workspace.workspace()["project"].get("components")
     mate = joined(kit, tmp_path)
     offline(mate, monkeypatch)
+    head = git(mate.root, "rev-parse", "HEAD")
     mate.onboard.save_position(mate.root, "tools", "join")
     mate.onboard.install_tools([], [], QUIET)                       # every kit tool left out on this machine
     assert mate.onboard.run_setup(QUIET)
     mate.onboard.done()
-    assert git(mate.root, "status", "--porcelain") == ""
+    assert git(mate.root, "status", "--porcelain") == "" and git(mate.root, "rev-parse", "HEAD") == head
     assert mate.services.workspace.workspace()["project"].get("components") == team
 
 
@@ -71,12 +72,13 @@ def test_unticking_openwiki_on_a_join_leaves_the_plan_and_the_teams_choice(kit, 
     monkeypatch.setattr(mate.services.setup, "install_tools", lambda log=print, comps=None: None)
     plan, yaml_file = mate.plan.PLAN.read_bytes(), mate.root / ".camarones" / "workspace.yaml"
     yaml_before = yaml_file.read_bytes()
+    head = git(mate.root, "rev-parse", "HEAD")
     mate.onboard.save_position(mate.root, "tools", "join")
     mate.onboard.install_tools([], ["agents"], QUIET)                 # OpenWiki (and the rest) not on this machine
     assert mate.onboard.run_setup(QUIET)
     mate.onboard.done()
     assert mate.plan.PLAN.read_bytes() == plan and yaml_file.read_bytes() == yaml_before
-    assert git(mate.root, "status", "--porcelain") == ""
+    assert git(mate.root, "status", "--porcelain") == "" and git(mate.root, "rev-parse", "HEAD") == head
     assert mate.services.components.here() == ["agents"]
     assert "openwiki" in mate.services.components.components()
 

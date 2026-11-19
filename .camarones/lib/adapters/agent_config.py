@@ -62,13 +62,16 @@ def claude_config() -> Path:
 
 
 def repo_mcp_entry(name: str) -> dict | None:
-    """The `camarones` MCP server Claude Code has for this repo's folder in its local scope, if any."""
+    """The `camarones` MCP server Claude Code has for this repo's folder in its local scope, if any. Several of Claude
+    Code's folders can resolve to one clone (one registered under the team's name, now a link to it): the one holding
+    the server counts."""
     data = load_json(claude_config(), {}) if claude_config().is_file() else {}
     want = os.path.normcase(str(repo_dir(name).resolve()))
     for folder, cfg in (data.get("projects") or {}).items():
         if os.path.normcase(str(Path(folder).resolve())) == want and isinstance(cfg, dict):
             entry = (cfg.get("mcpServers") or {}).get("camarones")
-            return entry if isinstance(entry, dict) else None
+            if isinstance(entry, dict):
+                return entry
     return None
 
 
