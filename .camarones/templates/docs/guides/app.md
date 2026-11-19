@@ -153,7 +153,9 @@ unit, then pages waiting for review, then nothing ("All caught up"). Its button 
 
 When you open the window the Summary brings in the team's work by itself (never uploads) and shows the outcome in one
 line; if the team's changes clash with yours it changes nothing, names the files and offers **Open a terminal here**.
-Offline, it says you are working with the latest you brought in.
+Offline, it says you are working with the latest you brought in; any other failure says it could not bring in the
+team's changes, with what went wrong beneath. A clash leaves the line once you have the team's work (resolved in a
+terminal, or uploaded since), and an unreachable repo once an upload has reached it.
 
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
@@ -373,14 +375,18 @@ a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the
 
 **The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have
 changes to bring in or to upload, or never shared; a line — n to bring in · m to upload · last time … (the last upload
-or bring-in that left you in step), plus n unsaved when you have changed pages — and three actions, the useful one as
+or bring-in that left you in step), plus n unsaved when you have changed pages (never the files the kit writes on its
+own: the doc status, `llms.txt`, the freshness fingerprints, the usage counters) — and three actions, the useful one as
 the primary button: **Bring in changes** (`camaron pull`, the team's work rebased in), **Upload changes**
 (`camaron push`, a checkpoint, then yours pushed; it refuses when the team has new changes, so bring them in first) and
 **Sync with the team** (`camaron share`, bring in then upload). Its fold, **Team repo**, holds the URL: paste it and
 **Save** (`camaron remote`). With a remote it shows the same line and actions, **Check** (asks the remote what is new)
 and **Upload on save** (`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched;
 something that looks like a secret is not published. When the team's changes clash with yours, a rebase is left half
-way, or your unsaved changes had to go to git's stash, it says so and offers **Open a terminal here**. An action or a
+way, or your unsaved changes had to go to git's stash, it says so and offers **Open a terminal here**. Uploading or
+syncing while the window is still bringing in the team's work, or over a rebase or merge left half way, touches nothing
+and says so. Asking the team's server gives up after a minute, and ssh never stops to ask for a passphrase or a host key
+(unless you set ssh up for git yourself). An action or a
 check that fails says why — the server cannot be reached (connection, VPN or proxy), it wants a token or refuses yours,
 the repo is not there — with git's own line beneath; a token problem links to **Settings › Tokens** for that server.
 

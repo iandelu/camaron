@@ -153,6 +153,7 @@ T = {
         "sh_do_push": "⬆ Subir los míos",
         "sh_do_share": "⇅ Sincronizar (traer y subir)",
         "sh_behind": "El equipo tiene cambios nuevos: tráelos primero o sincroniza.",
+        "sh_busy": "Estos docs se están poniendo al día con el equipo ahora mismo: prueba en un momento.",
         "cu_pulled": "✔ Traje {n} cambio(s) del equipo.",
         "cu_up_to_date": "✔ Ya tienes lo último del equipo.",
         "cu_conflict": "No he podido traer los cambios del equipo: chocan con los tuyos en {files}. No he tocado nada.",
@@ -161,6 +162,7 @@ T = {
         "cu_busy_git": "Hay un rebase o un merge a medias en cam-docs: termínalo o cancélalo en una terminal.",
         "cu_busy_run": "Hay una ejecución del autopiloto usando los docs: trae los cambios del equipo cuando termine.",
         "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
+        "cu_unknown": "✖ No he podido traer los cambios del equipo: {detail}",
         "cu_graphs_stale": "{n} grafo(s) de código desactualizado(s): los rehace la app o «{cli} pull».",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "Te unes a «{name}»: el equipo ya eligió repos, stack y arquitectura, y el plan sigue donde lo dejaron. "
@@ -528,6 +530,7 @@ T = {
         "sh_do_push": "⬆ Upload mine",
         "sh_do_share": "⇅ Sync with the team (bring in and upload)",
         "sh_behind": "The team has new changes: bring them in first, or sync with the team.",
+        "sh_busy": "These docs are catching up with the team right now: try again in a moment.",
         "cu_pulled": "✔ Brought in {n} change(s) from the team.",
         "cu_up_to_date": "✔ You already have the team's latest.",
         "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
@@ -536,6 +539,7 @@ T = {
         "cu_busy_git": "A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.",
         "cu_busy_run": "An autopilot run is using the docs: bring in the team's changes once it ends.",
         "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
+        "cu_unknown": "✖ Couldn't bring in the team's changes: {detail}",
         "cu_graphs_stale": "{n} code graph(s) out of date: the app or “{cli} pull” rebuilds them.",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "You're joining “{name}”: the team already picked the repos, stack and architecture, and the plan carries "
@@ -2386,10 +2390,11 @@ class W:
             return self.t("cu_busy_run" if r.get("detail") == "run" else "cu_busy"), "grey62"
         if st == "error":
             reason = (r.get("reason") or "").replace("-", "_")
-            if reason in ("network", "not_found"):
+            if reason == "network":
                 return self.t("cu_offline"), "yellow"
-            key = "sh_err_" + reason if ("sh_err_" + reason) in T[self.lang] else "sh_err_unknown"
-            return self.t(key, host=r.get("host") or url, url=url), "red"
+            if reason in ("", "unknown") or "sh_err_" + reason not in T[self.lang]:      # an internal error: its own words
+                return self.t("cu_unknown", detail=r.get("detail") or ""), "red"
+            return self.t("sh_err_" + reason, host=r.get("host") or url, url=url), "red"
         return None
 
     def do_share(self) -> None:
@@ -2435,11 +2440,13 @@ class W:
             self.add_token(r["host"])
         ok = r["status"] in ("pushed", "up-to-date", "nothing", "pulled")
         key = "sh_" + r["status"].replace("-", "_")
-        unknown = what != "pull" and r["status"] != "behind" and key not in T[self.lang]
+        unknown = what != "pull" and r["status"] not in ("behind", "busy") and key not in T[self.lang]
         if what == "pull":
             line = self._pull_line(r, url) or (self.t("sh_nothing"), "")
         elif r["status"] == "behind":
             line = self.t("sh_behind"), "red"
+        elif r["status"] == "busy":                                # a catch-up, or git half way: nothing was touched
+            line = (self.t("cu_busy_git"), "yellow") if r.get("detail") == "git" else (self.t("sh_busy"), "grey62")
         elif unknown:
             line = self.t("sh_err_unknown"), "red"
         else:

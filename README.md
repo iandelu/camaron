@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.93.0-ff875f?style=flat-square" alt="Versión 4.93.0">
+  <img src="https://img.shields.io/badge/version-4.93.1-ff875f?style=flat-square" alt="Versión 4.93.1">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -219,14 +219,18 @@ un solo elemento, y el kit nunca lee ni escribe a través de él. Si en la carpe
 `.claude/` o tu `CLAUDE.md`, `setup` y `repair` no los reemplazan: enlazan dentro lo del kit y añaden a tu `CLAUDE.md`
 dos líneas que importan sus reglas (`@AGENTS.md`); `uninstall` las quita y deja lo tuyo. Al abrir un proyecto (la ventana de la app o el
 asistente de la terminal) se trae solo el trabajo del equipo y nunca se sube: si choca con el tuyo no toca nada y dice
-qué ficheros; sin conexión se abre igual. Tras traer, el explorador C4 se reconstruye si estaba desactualizado y los
+qué ficheros; sin conexión se abre igual. Tras traer, el explorador C4 se reconstruye si estaba desactualizado (un
+modelo con errores conserva el que tenías) y los
 grafos de los repos cuyo HEAD se movió, en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
 desactualizados; los rehace `camaron pull`). Subir es un paso explícito, con tres acciones en
 la franja del equipo de **Docs**, en **Plan › Sincronizar** del portal y en el menú de la terminal: **Traer cambios** (`camaron pull`),
 **Subir cambios** (`camaron push`, se niega si el equipo tiene cambios nuevos) y **Sincronizar** (`camaron share`, traer
 y subir); con `camaron share --auto on` (**Subir al guardar**) cada checkpoint se sube solo, en esta máquina. Un conflicto se
-deshace sin tocar nada, y algo que parece un secreto no se publica. Si no llega al servidor del equipo o le faltan
-credenciales, te dice por qué (la VPN o el proxy, el token de ese servidor) y debajo lo que respondió git.
+deshace sin tocar nada, y algo que parece un secreto no se publica; subir o sincronizar mientras se trae el trabajo
+del equipo, o sobre un rebase a medias, no toca nada y lo dice. Si no llega al servidor del equipo (se rinde al minuto, y
+ssh nunca se para a pedir una frase de paso) o le faltan credenciales, te dice por qué (la VPN o el proxy, el token de
+ese servidor) y debajo lo que respondió git. «N sin guardar» cuenta solo tus páginas, nunca los ficheros que el kit
+escribe por su cuenta.
 
 ## El día a día en cinco pasos
 

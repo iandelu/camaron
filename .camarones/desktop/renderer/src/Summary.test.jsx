@@ -41,17 +41,19 @@ test('a catch-up that hit a conflict warns, names the files and opens a terminal
   expect(post).toHaveBeenCalledWith('app/terminal', {})
 })
 
-test('offline warns with a link to the team strip in Docs; pulled is a quiet status line; up to date shows nothing', () => {
-  const offline = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'error', reason: 'unknown', detail: 'fatal: odd' } }} />)
-  expect(offline).toContain('No llego al repo del equipo')
-  expect(offline).not.toContain('Abrir una terminal')
+test('an unexplained error warns with its own words and a link to the team strip; pulled is a quiet status line; up to date shows nothing', () => {
+  const failed = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'error', reason: 'unknown', detail: 'KeyError: odd' } }} />)
+  expect(failed).toContain('No he podido traer los cambios del equipo.')
+  expect(failed).toContain('KeyError: odd')
+  expect(failed).not.toContain('No llego al repo')
+  expect(failed).not.toContain('Abrir una terminal')
   const pulled = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)
   expect(pulled).toContain('role="status"')
-  expect(pulled).toContain('He traído 3 cambio(s) del equipo.')
+  expect(pulled).toContain('He traído 3 cambios del equipo.')
   expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'up-to-date' } }} />)).toBe('')
   expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={null} />)).toBe('')
   setLang('en')
-  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)).toContain('Brought in 3 change(s) from the team.')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'pulled', commits: 3 } }} />)).toContain('Brought in 3 changes from the team.')
 })
 
 test('changes kept in the stash warn and open a terminal, in both languages', () => {

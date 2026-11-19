@@ -113,8 +113,16 @@ test('on open, each case the person must act on is worded; only an unexplained e
     .toMatchObject({ key: 'sy.err.network', vars: { host: 'git.acme', url: REMOTE }, tone: 'warn', detail: 'fatal: x' })
   expect(cu({ status: 'error', reason: 'network', detail: '' }).vars.host).toBe('gitlab-central.example.space')
   expect(cu({ status: 'error', reason: 'no-token', host: 'git.acme', detail: '' }).token).toBe('git.acme')
-  expect(cu({ status: 'error', reason: 'unknown', detail: 'fatal: odd' })).toEqual({ key: 'cu.offline', vars: {}, tone: 'warn' })
-  expect(cu({ status: 'error', detail: 'boom' }).key).toBe('cu.offline')
+  expect(cu({ status: 'error', reason: 'unknown', detail: 'KeyError: x' })).toEqual({ key: 'cu.unknown', vars: {}, tone: 'warn', detail: 'KeyError: x' })
+  expect(cu({ status: 'error', detail: 'detached HEAD: check out a branch first' }))
+    .toMatchObject({ key: 'cu.unknown', detail: 'detached HEAD: check out a branch first' })
+})
+
+test('an upload beside a catch-up, or over a rebase left half way, says what holds the docs', () => {
+  expect(pushSay({ status: 'busy', detail: 'catch-up' }).key).toBe('sy.push.busy')
+  expect(pushSay({ status: 'busy', detail: 'git' }).key).toBe('sy.push.busyGit')
+  expect(shareSay({ status: 'busy', detail: 'catch-up' }).key).toBe('sy.busy')
+  expect(shareSay({ status: 'busy', detail: 'git' }).key).toBe('sy.busyGit')
 })
 
 test('the last time in step is the server\'s last_sync, or the last share from an older server', () => {
@@ -122,4 +130,11 @@ test('the last time in step is the server\'s last_sync, or the last share from a
   expect(lastSync({ last_share: '2026-11-18T09:00:00+01:00' })).toBe('2026-11-18T09:00:00+01:00')
   expect(lastSync({ last_sync: null, last_share: null })).toBe(null)
   expect(lastSync(null)).toBe(null)
+})
+
+test('one change brought in is said in the singular, on Traer and on open', () => {
+  expect(pullSay({ status: 'pulled', commits: 1 }).key).toBe('sy.pull.pulled.one')
+  expect(pullSay({ status: 'pulled', commits: 2 }).key).toBe('sy.pull.pulled')
+  expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 1 } }).key).toBe('cu.pulled.one')
+  expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 4 } }).key).toBe('cu.pulled')
 })

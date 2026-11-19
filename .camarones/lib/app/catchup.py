@@ -20,6 +20,25 @@ def last() -> dict | None:
     return load_json(LAST, None)
 
 
+def _after(a: str | None, b: str | None) -> bool:
+    try:
+        return dt.datetime.fromisoformat(a) > dt.datetime.fromisoformat(b)
+    except (TypeError, ValueError):
+        return False
+
+
+def standing(sync: dict) -> dict | None:
+    """The last catch-up while what it reported still holds, against `sync` (share.sync_status): a clash is over once
+    this machine has the team's work, a failure to reach the team once an upload has reached it since."""
+    c = last()
+    pull = (c or {}).get("pull") or {}
+    if pull.get("status") == "conflict" and sync.get("behind") == 0:
+        return None
+    if pull.get("status") == "error" and _after(sync.get("last_share"), c.get("at")):
+        return None
+    return c
+
+
 def rebuild_c4(log: Log = print) -> str:
     c4 = services.current().viewers.viewers()["c4"]
     if not c4["model"] or "likec4" not in services.current().components.components() or not which("likec4"):

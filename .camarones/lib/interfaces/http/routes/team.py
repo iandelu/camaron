@@ -54,7 +54,8 @@ def api_interview(who: str = "") -> dict:
 
 
 def sync_with_catch_up(req: Request, fetch: bool = False) -> dict:
-    return {**req.services.share.sync_status(fetch=fetch), "catch_up": req.services.catchup.last()}
+    sync = req.services.share.sync_status(fetch=fetch)
+    return {**sync, "catch_up": req.services.catchup.standing(sync)}
 
 
 @route("GET", "/api/sync")

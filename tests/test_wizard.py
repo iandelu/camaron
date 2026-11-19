@@ -376,6 +376,9 @@ def pulled(status, **kw):
     (pulled("busy", detail="git"), "cu_busy_git", {}),
     (pulled("busy", detail="run"), "cu_busy_run", {}),
     (pulled("error", reason="network", host="h"), "cu_offline", {}),
+    (pulled("error", reason="unknown", detail="KeyError: x"), "cu_unknown", {"detail": "KeyError: x"}),
+    (pulled("error", detail="detached HEAD: check out a branch first"), "cu_unknown",
+     {"detail": "detached HEAD: check out a branch first"}),
     ({"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""}, "cu_busy", {}),
 ])
 def test_catch_up_says_what_happened(kit, fake_wizard, monkeypatch, said, result, key, vars):
@@ -421,6 +424,22 @@ def test_a_sync_conflict_says_the_sh_line_and_does_not_raise(kit, fake_wizard, m
     w = fake_wizard(["share", True])
     w.do_share()
     assert w.t("sh_conflict", detail="origin/main") in said
+
+
+@pytest.mark.parametrize("action", ["push", "share"])
+@pytest.mark.parametrize("detail, key", [("catch-up", "sh_busy"), ("git", "cu_busy_git")])
+def test_a_busy_upload_says_what_holds_the_docs(kit, fake_wizard, monkeypatch, said, action, detail, key):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, action, lambda log=print: {"status": "busy", "detail": detail})
+    w = fake_wizard([action, True, False])
+    w.do_share()
+    assert w.t(key) in said and w.t("sh_err_unknown") not in said
+
+
+def test_a_pull_from_a_repo_not_found_says_so_not_offline(kit, fake_wizard):
+    w = fake_wizard([])
+    line = w._pull_line({"status": "error", "reason": "not-found", "host": "h"}, "https://h/team.git")
+    assert line == (w.t("sh_err_not_found", url="https://h/team.git", host="h"), "red")
 
 
 def test_the_busy_run_line_promises_no_automatic_catch_up(kit):
