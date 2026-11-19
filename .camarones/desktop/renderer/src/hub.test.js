@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { adoptSay, card, errorKey, JOIN0, joinOnce, joinStep, names } from './hub.js'
+import { adoptSay, canGo, card, errorKey, JOIN0, joinOnce, joinStep, names } from './hub.js'
 import { S, setLang, t } from './i18n.js'
 
 // What `camaron projects --inspect --json` prints (lib/onboard.py inspect).
@@ -148,4 +148,39 @@ test('a network failure with no host does not say "the server" as a name', () =>
   setLang('en')
   expect(t('hub.networkNoHost')).toMatch(/^I can't reach the server\./)
   setLang('es')
+})
+
+
+// C7 (spec 2026-11-18 §6.2): a folder of repos, or one repo, with no cam-docs yet asks whether the team already has its
+// docs; so does a project made here and never shared (C1). Nothing is preselected: Continue waits for an answer.
+test('the found card asks the team question for repos without cam-docs and for a stray project', () => {
+  expect(card(found({ case: 'umbrella', repos: [repo('api')] })).team).toBe(true)
+  expect(card(found({ case: 'repo', repos: [repo('api')] })).team).toBe(true)
+  expect(card(found({ case: 'project', stray: true })).team).toBe(true)
+  for (const f of [found(), found({ case: 'project' }), found({ case: 'code', warning: 'no-git' }),
+    found({ case: 'umbrella', repos: [repo('api')], warning: 'home' })]) expect(card(f).team).toBeFalsy()
+  known('hub.teamQ'); known('hub.teamYes'); known('hub.teamNo')
+})
+
+test('Continue waits for the team answer, and Yes for its URL', () => {
+  const c = card(found({ case: 'umbrella', repos: [repo('api')] }))
+  expect(canGo(c, '', '')).toBe(false)
+  expect(canGo(c, 'yes', '  ')).toBe(false)
+  expect(canGo(c, 'yes', 'https://gitlab.com/shop/cam-docs.git')).toBe(true)
+  expect(canGo(c, 'no', '')).toBe(true)
+  expect(canGo(card(found()), '', '')).toBe(true)                             // no question: as before
+  expect(canGo(card(found({ case: 'code', warning: 'no-git' })), 'no', '')).toBe(false)
+})
+
+test('a stray cam-docs asks before anything is set aside, and the retry says so', async () => {
+  const s = joinStep({ ...JOIN0, dir: '/w/shop' }, { error: 'stray', aside: 'cam-docs.local-20261119', detail: 'd' })
+  expect(s).toMatchObject({ stray: true, aside: 'cam-docs.local-20261119', dir: '/w/shop', showToken: false,
+    say: { key: 'hub.stray', vars: { aside: 'cam-docs.local-20261119' }, error: false } })
+  known('hub.stray'); known('hub.strayGo')
+  const calls = []
+  const hub = { join: async (...a) => { calls.push(a); return { ok: true } } }
+  await joinOnce(hub, { ...s, setAside: true }, 'https://gitlab.com/t/cam-docs.git', undefined)
+  expect(calls).toEqual([['https://gitlab.com/t/cam-docs.git', undefined, '/w/shop', true]])
+  await joinOnce(hub, JOIN0, 'u', undefined)
+  expect(calls[1]).toEqual(['u', undefined, undefined])
 })

@@ -486,9 +486,14 @@ def set_repos(rows: list) -> dict:
 
 def join_repos() -> dict:
     """The join's repos step: what this machine has of each team repo, found by its remote. Read-only for the team's
-    list; a clone kept under another folder name is linked (repos_here)."""
+    list; a clone kept under another folder name is linked (repos_here). Each row's `where` is its clone as the person
+    reads it: `./<folder>` beside the workspace, else the full path."""
     from .app import repos_here
-    return repos_here.find(log=lambda _: None)
+    res, ws = repos_here.find(log=lambda _: None), WORKSPACE.resolve()
+    for r in res["rows"]:
+        p = Path(r["path"]) if r["path"] else None
+        r["where"] = "" if p is None else f"./{p.name}" if p.parent == ws else str(p)
+    return res
 
 
 def search(folder: str) -> dict:

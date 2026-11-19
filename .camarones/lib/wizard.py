@@ -1226,15 +1226,12 @@ class W:
 
     def fr_join_repos(self, ws: dict):
         """A join's repos step: each team repo with what this machine has of it. The list stays the team's."""
-        def where(path: str) -> str:
-            p = Path(path)
-            return f"./{p.name}" if p.parent == WORKSPACE.resolve() else path
         while True:
             res = onboard.join_repos()
             tbl = Table(title=self.t("jr_title"), title_justify="left", border_style="grey42", show_header=False)
             for r in res["rows"]:
                 state = "jr_unlinked" if r["state"] == "missing" and r["path"] else f"jr_{r['state']}"
-                tbl.add_row(f"[{ORANGE}]{r['name']}[/]", self.t(state, path=where(r["path"])), r["url"] or "(local)")
+                tbl.add_row(f"[{ORANGE}]{r['name']}[/]", self.t(state, path=r["where"]), r["url"] or "(local)")
             self.say(f"[grey62]{self.t('jr_lead')}[/]")
             console.print(tbl if res["rows"] else f"  {self.t('repos_none')}")
             c = self.sel(self.t("menu"), [Choice(self.t("r_continue"), "go"), Choice(self.t("jr_search"), "search")],

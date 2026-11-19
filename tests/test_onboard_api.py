@@ -409,6 +409,7 @@ def test_the_join_repos_route_lists_what_this_machine_has(app_server, kit, tmp_p
     join_mode(kit)
     res = call(f"{app_server}/api/app/onboard/repos-here", token=TOKEN)[1]
     assert {r["name"]: r["state"] for r in res["rows"]} == {"api": "linked", "web": "here", "worker": "here"}
+    assert [r["where"] for r in res["rows"]] == ["./api-svc", "", ""]
 
 
 def test_the_search_route_remembers_the_folder_for_this_machine_only(app_server, kit, tmp_path):

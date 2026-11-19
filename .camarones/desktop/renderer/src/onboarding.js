@@ -27,7 +27,9 @@ const missingRequired = (rows) => (rows || []).filter((r) => r.kind === 't_requi
 // tools {rows, picked}, setup {result, requiredOk}, arch {saved}; stack and intro never block.
 export function canContinue(stepId, data = {}) {
   const no = (reason) => ({ ok: false, reason })
-  if (stepId === 'repos' && data.kind !== 'greenfield' && !(data.rows || []).some((r) => r.checked)) return no('obNeedRepo')
+  if (stepId === 'repos' && data.mode !== 'join' && data.kind !== 'greenfield' && !(data.rows || []).some((r) => r.checked)) {
+    return no('obNeedRepo')
+  }
   if (stepId === 'tools') {
     const picked = new Set(data.picked || [])
     if (missingRequired(data.rows).some((r) => !picked.has(r.id))) return no('obNeedRequired')
@@ -60,6 +62,14 @@ export function repoFromUrl(raw, name = '', branch = '') {
   if (!url || url.startsWith('-')) return null
   const n = (name || '').trim() || urlName(url)
   return n ? { name: n, url, branch: (branch || '').trim() || 'main', kind: 'service', checked: true, added: true } : null
+}
+
+// A join's repos step: what this machine has of one team repo (GET app/onboard/repos-here's row), as the i18n key, its
+// vars and whether it is ready (here, or linked from a clone under another folder name).
+const REPO_STATE = { here: 'obRepoHere', linked: 'obRepoLinked', missing: 'obRepoMissing', taken: 'obRepoTaken' }
+export function repoState(row) {
+  const key = row.state === 'missing' && row.where ? 'obRepoUnlinked' : REPO_STATE[row.state] || 'obRepoMissing'
+  return { key, vars: { path: row.where || '' }, ok: ['here', 'linked'].includes(row.state) }
 }
 
 // POST app/onboard/repos's list: the ticked rows with the workspace's keys only.
