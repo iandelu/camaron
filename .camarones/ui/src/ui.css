@@ -97,10 +97,10 @@ main[tabindex="-1"]:focus { outline: none; }
 .cu-tone-warn { background: var(--color-estado-aviso); }
 .cu-tone-bad { background: var(--color-estado-mal); }
 
-.cu-spark { display: block; width: 100%; height: auto; overflow: visible; }
-.cu-spark-axis { stroke: var(--color-rule); stroke-width: 1; }
+.cu-spark { display: block; width: 100%; max-width: 20rem; height: auto; overflow: visible; }
+.cu-spark-axis { stroke: var(--color-rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .cu-spark-area { fill: var(--series); opacity: .12; }
-.cu-spark-line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cu-spark-line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .cu-spark-dot { fill: var(--series); stroke: var(--color-canvas); stroke-width: 2; }
 .cu-spark-hit { fill: transparent; }
 

@@ -76,3 +76,11 @@ test('chart animations run only without reduced motion and move only transform a
   for (const [, body] of css.matchAll(/@keyframes cu-(?:grow-y|grow-x|fade|pop)\s*\{([\s\S]*?\})\s*\}/g))
     for (const [, prop] of body.matchAll(/([\w-]+)\s*:/g)) expect(['transform', 'opacity']).toContain(prop)
 })
+
+// The sparkline's viewBox scales with its tile: capped in width, and its strokes never scale, so the marks stay thin.
+test('the sparkline keeps thin marks however wide its tile is', () => {
+  const css = read('ui.css')
+  expect(css).toMatch(/\.cu-spark\s*\{[^}]*max-width:\s*20rem/)
+  for (const cls of ['cu-spark-line', 'cu-spark-axis'])
+    expect(css, cls).toMatch(new RegExp(`\\.${cls}\\s*\\{[^}]*vector-effect:\\s*non-scaling-stroke`))
+})
