@@ -135,7 +135,7 @@ export default function Board({ srv, app }) {
   ) : null
   return (
     <Page title={t('nav.board')} full>
-      <BoardView board={shown} repo={repo} lang={lang()} kb={kb} notice={notice} say={say} open={open} dragging={dragging} over={over} side={side}
+      <BoardView board={shown} all={board.cards} repo={repo} lang={lang()} kb={kb} notice={notice} say={say} open={open} dragging={dragging} over={over} side={side}
         onMove={move} onOpen={openCard} menu={menu} onMenu={setMenu} onChoose={choose} onKey={onKey} onInit={init} onDrag={drag} onOver={setOver} />
     </Page>
   )
@@ -143,7 +143,7 @@ export default function Board({ srv, app }) {
 
 // What the board draws, from its data alone (the test renders it): the columns as they are, with a grabbed card
 // where it would land.
-export function BoardView({ board, repo = '', lang: l, kb, notice = '', say = '', open = null, dragging = null, over = null, side = null,
+export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, notice = '', say = '', open = null, dragging = null, over = null, side = null,
   onMove, onOpen, menu = false, onMenu = () => {}, onChoose = () => {}, onKey, onInit, onDrag, onOver }) {
   const writable = !!board.writable
   const toggle = useRef(null)
@@ -169,7 +169,7 @@ export function BoardView({ board, repo = '', lang: l, kb, notice = '', say = ''
       </>
     )
   }
-  const byId = new Map(board.cards.map((c) => [c.id, c]))
+  const byId = new Map(all.map((c) => [c.id, c]))
   const cols = columns(fit(board.cards, board.statuses), board.statuses)
   const drawn = placed(cols, kb)
 

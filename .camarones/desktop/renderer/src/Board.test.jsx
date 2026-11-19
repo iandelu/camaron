@@ -210,3 +210,11 @@ test('?repo= with no card touching it says so and still offers the way out', () 
   expect(out).toContain('href="#/board"')
   expect(view(board([]), 'en', { repo: 'zzz' })).toContain('No card touches zzz.')
 })
+
+test('?repo=: a card whose epic sits outside the filter shows no parent mark', () => {
+  const epic = card({ id: 'WI-1', type: 'epic', repos: ['web'] })
+  const child = card({ id: 'WI-3', repos: ['api'], parent: 'WI-1' })
+  const out = view(board([child]), 'es', { repo: 'api', all: [epic, child] })
+  expect(out).toContain('WI-3')
+  expect(out).not.toContain('↳')
+})
