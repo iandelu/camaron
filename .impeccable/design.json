@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T00:38:57.435Z",
+  "title": "Design System: Camarón",
+  "extensions": {
+    "colorMeta": {
+      "printers-ink": {
+        "role": "primary",
+        "displayName": "Printer's Ink",
+        "canonical": "#0a0a0a",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(25% 0.000 0)",
+          "oklch(35% 0.000 0)",
+          "oklch(45% 0.000 0)",
+          "oklch(55% 0.000 0)",
+          "oklch(68% 0.000 0)",
+          "oklch(82% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ],
+        "dark": "#f2f1ec",
+        "note": "The accent: highest-contrast ink, not a hue."
+      },
+      "signal-violet": {
+        "role": "primary",
+        "displayName": "Signal Violet",
+        "canonical": "#6d28d9",
+        "tonalRamp": [
+          "oklch(15% 0.084 293)",
+          "oklch(25% 0.144 293)",
+          "oklch(35% 0.204 293)",
+          "oklch(45% 0.240 293)",
+          "oklch(55% 0.228 293)",
+          "oklch(68% 0.168 293)",
+          "oklch(82% 0.096 293)",
+          "oklch(95% 0.029 293)"
+        ],
+        "dark": "#b9a3ff",
+        "note": "Links, focus ring, info labels. Never a fill."
+      },
+      "shrimp-coral": {
+        "role": "tertiary",
+        "displayName": "Shrimp Coral",
+        "canonical": "#ff8a5b",
+        "tonalRamp": [
+          "oklch(15% 0.052 42)",
+          "oklch(25% 0.090 42)",
+          "oklch(35% 0.128 42)",
+          "oklch(45% 0.150 42)",
+          "oklch(55% 0.142 42)",
+          "oklch(68% 0.105 42)",
+          "oklch(82% 0.060 42)",
+          "oklch(95% 0.018 42)"
+        ],
+        "note": "The mark's colour; background and wash only."
+      },
+      "aurora-cyan": {
+        "role": "tertiary",
+        "displayName": "Aurora Cyan",
+        "canonical": "#6ec8ff",
+        "tonalRamp": [
+          "oklch(15% 0.042 237)",
+          "oklch(25% 0.072 237)",
+          "oklch(35% 0.102 237)",
+          "oklch(45% 0.120 237)",
+          "oklch(55% 0.114 237)",
+          "oklch(68% 0.084 237)",
+          "oklch(82% 0.048 237)",
+          "oklch(95% 0.014 237)"
+        ],
+        "note": "Home hero wash only."
+      },
+      "aurora-violet": {
+        "role": "tertiary",
+        "displayName": "Aurora Violet",
+        "canonical": "#b89aff",
+        "tonalRamp": [
+          "oklch(15% 0.049 294)",
+          "oklch(25% 0.084 294)",
+          "oklch(35% 0.119 294)",
+          "oklch(45% 0.140 294)",
+          "oklch(55% 0.133 294)",
+          "oklch(68% 0.098 294)",
+          "oklch(82% 0.056 294)",
+          "oklch(95% 0.017 294)"
+        ],
+        "note": "Home hero wash only."
+      },
+      "aurora-pink": {
+        "role": "tertiary",
+        "displayName": "Aurora Pink",
+        "canonical": "#ff9ec4",
+        "tonalRamp": [
+          "oklch(15% 0.042 355)",
+          "oklch(25% 0.072 355)",
+          "oklch(35% 0.102 355)",
+          "oklch(45% 0.120 355)",
+          "oklch(55% 0.114 355)",
+          "oklch(68% 0.084 355)",
+          "oklch(82% 0.048 355)",
+          "oklch(95% 0.014 355)"
+        ],
+        "note": "Home hero wash only."
+      },
+      "aurora-amber": {
+        "role": "tertiary",
+        "displayName": "Aurora Amber",
+        "canonical": "#ffb56b",
+        "tonalRamp": [
+          "oklch(15% 0.042 68)",
+          "oklch(25% 0.072 68)",
+          "oklch(35% 0.102 68)",
+          "oklch(45% 0.120 68)",
+          "oklch(55% 0.114 68)",
+          "oklch(68% 0.084 68)",
+          "oklch(82% 0.048 68)",
+          "oklch(95% 0.014 68)"
+        ],
+        "note": "Hero wash; the glow of live work in the desktop app."
+      },
+      "warm-paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#fafaf7",
+        "tonalRamp": [
+          "oklch(15% 0.002 100)",
+          "oklch(25% 0.004 100)",
+          "oklch(35% 0.005 100)",
+          "oklch(45% 0.006 100)",
+          "oklch(55% 0.006 100)",
+          "oklch(68% 0.004 100)",
+          "oklch(82% 0.002 100)",
+          "oklch(95% 0.001 100)"
+        ],
+        "dark": "#121211"
+      },
+      "paper-raised": {
+        "role": "neutral",
+        "displayName": "Paper Raised",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(25% 0.000 0)",
+          "oklch(35% 0.000 0)",
+          "oklch(45% 0.000 0)",
+          "oklch(55% 0.000 0)",
+          "oklch(68% 0.000 0)",
+          "oklch(82% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ],
+        "dark": "#1b1b19"
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "canonical": "#4a4a4a",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(25% 0.000 0)",
+          "oklch(35% 0.000 0)",
+          "oklch(45% 0.000 0)",
+          "oklch(55% 0.000 0)",
+          "oklch(68% 0.000 0)",
+          "oklch(82% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ],
+        "dark": "#c4c3bd"
+      },
+      "ink-dim": {
+        "role": "neutral",
+        "displayName": "Ink Dim",
+        "canonical": "#6b6b6b",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(25% 0.000 0)",
+          "oklch(35% 0.000 0)",
+          "oklch(45% 0.000 0)",
+          "oklch(55% 0.000 0)",
+          "oklch(68% 0.000 0)",
+          "oklch(82% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ],
+        "dark": "#9a9993"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "rgba(10, 10, 10, 0.08)",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(25% 0.000 0)",
+          "oklch(35% 0.000 0)",
+          "oklch(45% 0.000 0)",
+          "oklch(55% 0.000 0)",
+          "oklch(68% 0.000 0)",
+          "oklch(82% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ],
+        "dark": "rgba(242, 241, 236, 0.1)"
+      },
+      "state-good": {
+        "role": "state",
+        "displayName": "State Good",
+        "canonical": "#166534",
+        "tonalRamp": [
+          "oklch(15% 0.038 150)",
+          "oklch(25% 0.066 150)",
+          "oklch(35% 0.093 150)",
+          "oklch(45% 0.110 150)",
+          "oklch(55% 0.104 150)",
+          "oklch(68% 0.077 150)",
+          "oklch(82% 0.044 150)",
+          "oklch(95% 0.013 150)"
+        ],
+        "dark": "#6fcf8f"
+      },
+      "state-warn": {
+        "role": "state",
+        "displayName": "State Warn",
+        "canonical": "#92400e",
+        "tonalRamp": [
+          "oklch(15% 0.045 50)",
+          "oklch(25% 0.078 50)",
+          "oklch(35% 0.111 50)",
+          "oklch(45% 0.130 50)",
+          "oklch(55% 0.123 50)",
+          "oklch(68% 0.091 50)",
+          "oklch(82% 0.052 50)",
+          "oklch(95% 0.016 50)"
+        ],
+        "dark": "#f0b36b"
+      },
+      "state-bad": {
+        "role": "state",
+        "displayName": "State Bad",
+        "canonical": "#b91c1c",
+        "tonalRamp": [
+          "oklch(15% 0.066 27)",
+          "oklch(25% 0.114 27)",
+          "oklch(35% 0.162 27)",
+          "oklch(45% 0.190 27)",
+          "oklch(55% 0.180 27)",
+          "oklch(68% 0.133 27)",
+          "oklch(82% 0.076 27)",
+          "oklch(95% 0.023 27)"
+        ],
+        "dark": "#ff8f8f"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The Home hero title only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Every portal page title, in Big Shoulders."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings inside a doc page, with a rule above."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Portal reading text in a 48rem column."
+      },
+      "body-sm": {
+        "displayName": "Body small",
+        "purpose": "The desktop app's base size; buttons and fields."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase eyebrows and group titles."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Figures, versions, paths, commands, keys."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "«camarón», lowercase, with the project name under it."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sombra-menu",
+        "value": "0 12px 28px -18px rgba(0, 0, 0, 0.35)",
+        "purpose": "Menus, the command palette, popovers."
+      },
+      {
+        "name": "sombra-hover",
+        "value": "0 24px 48px -24px rgba(10, 10, 10, 0.18)",
+        "purpose": "A floating card under the pointer."
+      },
+      {
+        "name": "sombra-modal",
+        "value": "0 40px 80px -24px rgba(10, 10, 10, 0.4)",
+        "purpose": "Dialogs."
+      },
+      {
+        "name": "state-rail",
+        "value": "inset 3px 0 0 <state colour>",
+        "purpose": "Marks a row's state without lifting it."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 2px solid var(--color-acento-texto); outline-offset: 2px",
+        "purpose": "The one focus ring of both apps."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-soft",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing for state changes."
+      },
+      {
+        "name": "ease-in-out-soft",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Movements that start and end at rest."
+      },
+      {
+        "name": "duration-quick",
+        "value": "200ms",
+        "purpose": "Hover and press feedback."
+      },
+      {
+        "name": "duration-normal",
+        "value": "400ms",
+        "purpose": "Panels and reveals."
+      },
+      {
+        "name": "duration-slow",
+        "value": "800ms",
+        "purpose": "Rare, larger transitions."
+      },
+      {
+        "name": "thinking",
+        "value": "1.4s linear infinite shimmer",
+        "purpose": "A working agent's label; still under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "portal-sm",
+        "value": "640px"
+      },
+      {
+        "name": "portal-md",
+        "value": "900px"
+      },
+      {
+        "name": "portal-lg",
+        "value": "1200px"
+      },
+      {
+        "name": "desktop-narrow",
+        "value": "68rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action of a screen: solid ink.",
+      "html": "<button class=\"ds-btn-primary\">Confirmar página</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; font: 500 .9375rem/1 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); cursor: pointer; transition: background-color 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), opacity 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), transform 100ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)); background: var(--color-accent, #0a0a0a); color: var(--color-on-accent, #ffffff); border-color: var(--color-accent, #0a0a0a); } .ds-btn-primary:hover { opacity: .88; } .ds-btn-primary:active { transform: scale(.98); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The default button: raised paper, 1px rule.",
+      "html": "<button class=\"ds-btn\">Ver portal</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; font: 500 .9375rem/1 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); cursor: pointer; transition: background-color 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), opacity 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), transform 100ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)); background: var(--color-canvas-elevated, #ffffff); color: var(--color-ink, #0a0a0a); } .ds-btn:hover { background: var(--color-canvas, #fafaf7); } .ds-btn:active { transform: scale(.98); } .ds-btn:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "A quiet action beside a primary one.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; font: 500 .9375rem/1 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); cursor: pointer; transition: background-color 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), opacity 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), transform 100ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)); background: transparent; border-color: transparent; color: var(--color-ink-soft, #4a4a4a); } .ds-btn-ghost:hover { color: var(--color-ink, #0a0a0a); background: var(--color-canvas-elevated, #ffffff); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive actions; outlined in State Bad, never filled.",
+      "html": "<button class=\"ds-btn-danger\">Desinstalar</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; font: 500 .9375rem/1 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); cursor: pointer; transition: background-color 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), opacity 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), transform 100ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)); background: transparent; border-color: currentColor; color: var(--color-estado-mal, #b91c1c); } .ds-btn-danger:hover { background: var(--color-canvas-elevated, #ffffff); } .ds-btn-danger:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label above, field one step below the card.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Nombre del proyecto</span><input class=\"ds-input\" value=\"camaron-dev\"></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: .35rem; } .ds-field-label { font: 500 .8125rem var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); color: var(--color-ink, #0a0a0a); } .ds-input { min-height: 2.5rem; padding: 0 .75rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; background: var(--color-canvas, #fafaf7); color: var(--color-ink, #0a0a0a); font: 400 .9375rem var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); } .ds-input:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "State Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "The word is the state; colour only tints the text.",
+      "html": "<span class=\"ds-chips\"><span class=\"ds-chip ds-chip--ok\">confirmada</span><span class=\"ds-chip ds-chip--warn\">reconfirmar</span><span class=\"ds-chip ds-chip--bad\">falló</span><span class=\"ds-chip ds-chip--info\">en curso</span></span>",
+      "css": ".ds-chips { display: inline-flex; gap: .4rem; flex-wrap: wrap; } .ds-chip { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 .5rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 3px; background: var(--color-canvas-elevated, #ffffff); font: 400 .8125rem var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); color: var(--color-ink-soft, #4a4a4a); } .ds-chip--ok { color: var(--color-estado-bien, #166534); } .ds-chip--warn { color: var(--color-estado-aviso, #92400e); } .ds-chip--bad { color: var(--color-estado-mal, #b91c1c); } .ds-chip--info { color: var(--color-acento-texto, #6d28d9); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat raised paper with a 1px rule; no shadow at rest.",
+      "html": "<div class=\"ds-card\"><strong class=\"ds-card-title\">Plan de documentación</strong><span class=\"ds-card-body\">24 de 27 unidades hechas. Siguiente: refrescar las páginas cuyo código cambió.</span><button class=\"ds-card-btn\">Abrir plan</button></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: .75rem; padding: 1rem 1.1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 6px; background: var(--color-canvas-elevated, #ffffff); max-width: 22rem; font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); } .ds-card-title { font-size: .9375rem; font-weight: 600; color: var(--color-ink, #0a0a0a); } .ds-card-body { font-size: .8125rem; color: var(--color-ink-soft, #4a4a4a); } .ds-card-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; font: 500 .9375rem/1 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); cursor: pointer; transition: background-color 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), opacity 200ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)), transform 100ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)); align-self: flex-start; background: var(--color-accent, #0a0a0a); color: var(--color-on-accent, #ffffff); border-color: var(--color-accent, #0a0a0a); } .ds-card-btn:hover { opacity: .88; } .ds-card-btn:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Section Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "The desktop app's section list: active row is raised with an inset ring.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-eyebrow\">Proyecto</span><a class=\"ds-nav-item\" href=\"#\">Resumen</a><a class=\"ds-nav-item is-on\" href=\"#\" aria-current=\"page\">Plan</a><a class=\"ds-nav-item\" href=\"#\">Calidad</a><a class=\"ds-nav-item\" href=\"#\">Equipo</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 13rem; font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); } .ds-eyebrow { padding: .5rem .75rem .25rem; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-dim, #6b6b6b); } .ds-nav-item { display: flex; align-items: center; min-height: 2.25rem; padding: 0 .75rem; border-radius: 3px; color: var(--color-ink-soft, #4a4a4a); text-decoration: none; font-size: .9375rem; } .ds-nav-item:hover { background: var(--color-canvas-elevated, #ffffff); color: var(--color-ink, #0a0a0a); } .ds-nav-item.is-on { background: var(--color-canvas-elevated, #ffffff); color: var(--color-ink, #0a0a0a); font-weight: 500; box-shadow: inset 0 0 0 1px var(--color-rule, rgba(10,10,10,.08)); } .ds-nav-item:focus-visible { outline: 2px solid var(--color-acento-texto, #6d28d9); outline-offset: 2px; }"
+    },
+    {
+      "name": "Trust Pill",
+      "kind": "custom",
+      "description": "Signature: a page's trust state, the product's promise made visible.",
+      "html": "<span class=\"ds-trusts\"><span class=\"ds-trust ds-trust--confirmed\">confirmada</span><span class=\"ds-trust ds-trust--draft\">borrador</span><span class=\"ds-trust ds-trust--reconfirm\">reconfirmar</span></span>",
+      "css": ".ds-trusts { display: inline-flex; gap: .5rem; flex-wrap: wrap; } .ds-trust { display: inline-flex; align-items: center; gap: .3rem; padding: .05rem .6rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-radius: 4px; background: var(--color-canvas-elevated, #ffffff); font: 400 .78rem var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); white-space: nowrap; } .ds-trust--confirmed { color: var(--color-estado-bien, #166534); border-color: color-mix(in srgb, var(--color-estado-bien, #166534) 35%, var(--color-rule, rgba(10,10,10,.08))); } .ds-trust--draft { color: var(--color-ink-dim, #6b6b6b); border-style: dashed; } .ds-trust--reconfirm { color: var(--color-estado-aviso, #92400e); border-color: color-mix(in srgb, var(--color-estado-aviso, #92400e) 40%, var(--color-rule, rgba(10,10,10,.08))); }"
+    },
+    {
+      "name": "Health Tile",
+      "kind": "custom",
+      "description": "Signature: quality at a glance, a state rail and figures in mono.",
+      "html": "<div class=\"ds-tile ds-tile--warn\"><div class=\"ds-tile-head\"><span class=\"ds-tile-name\">Librerías</span><span class=\"ds-tile-word\">Aviso</span></div><dl class=\"ds-tile-figs\"><div><dt>vulnerables</dt><dd>3</dd></div><div><dt>al día</dt><dd>142</dd></div></dl></div>",
+      "css": ".ds-tile { display: flex; flex-direction: column; gap: .6rem; padding: .85rem 1rem; max-width: 18rem; border: 1px solid var(--color-rule, rgba(10,10,10,.08)); border-left-width: 3px; border-radius: 6px; background: var(--color-canvas-elevated, #ffffff); font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif); } .ds-tile--warn { border-left-color: var(--color-estado-aviso, #92400e); } .ds-tile-head { display: flex; align-items: baseline; gap: .5rem; } .ds-tile-name { flex: 1; font-size: .9375rem; font-weight: 500; color: var(--color-ink, #0a0a0a); } .ds-tile-word { font-size: .8125rem; font-weight: 600; color: var(--color-estado-aviso, #92400e); } .ds-tile-figs { display: flex; gap: 1.5rem; margin: 0; } .ds-tile-figs dt { font-size: .6875rem; letter-spacing: .04em; color: var(--color-ink-dim, #6b6b6b); } .ds-tile-figs dd { margin: 0; font: 500 1.35rem/1.1 var(--font-mono, ui-monospace, Menlo, Consolas, monospace); color: var(--color-ink, #0a0a0a); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ink Console",
+    "overview": "Near-black ink on warm paper, at a console's density. Camarón's two surfaces, the portal where people read and the desktop app where they operate, share one theme (`.camarones/ui/theme/tokens.css`) and one component kit (`.camarones/ui`). Hierarchy comes from space, 1px rules and type weight, not from colour or shadow. The accent is not a hue: it is the highest-contrast ink the canvas allows, so a primary action reads as a solid black block in light mode and a solid paper block in dark mode.\n\nColour speaks only about state. Green, amber and red appear next to the word they qualify (confirmed, stale, failed), and the one chromatic voice outside state is Signal Violet: links, the focus ring and informational labels. The aurora colours are weather, not ink: soft radial washes behind the Home hero and an amber glow while something is running. Motion happens only when something changes, with transform and opacity alone.\n\nBig Shoulders, a condensed impact face, carries the wordmark and page titles; Inter carries everything people read and operate. The look started from Cofundo's visual language, adapted for Camarón in `.claude/skills/cofundo-design-system/CAMARON.md`; this file records what ships today.",
+    "keyCharacteristics": [
+      "Ink on warm paper, light theme canonical, dark theme derived with the same token names.",
+      "Console density: `-sm` and meta sizes in views; display sizes only on the Home hero.",
+      "Nearly square corners: 3px, 4px, 6px. Nothing rounder.",
+      "Flat at rest; shadows only for what floats.",
+      "State colour always beside its word; text at 4.5:1 in both themes.",
+      "No icon system: text glyphs, with a short list of approved inline-SVG exceptions.",
+      "Fonts self-hosted, no third-party requests."
+    ],
+    "rules": [
+      {
+        "name": "The Ink-Not-Hue Rule",
+        "body": "The accent is the highest-contrast ink, not a colour. Primary actions are solid ink; a hue never marks importance.",
+        "section": "colors"
+      },
+      {
+        "name": "The State-Wears-Its-Word Rule",
+        "body": "A state colour never stands alone. The dot, the 3px rail or the coloured chip text always sits beside the word that names the state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Aurora-Is-Weather Rule",
+        "body": "Aurora colours are backgrounds and glows only, never text. On the aurora wash, muted text steps up from Ink Dim to Ink Soft to keep 4.5:1.",
+        "section": "colors"
+      },
+      {
+        "name": "The Console Density Rule",
+        "body": "Views use body-small, meta (0.8125rem) and micro (0.6875rem). Display sizes belong to the Home hero and to the desktop ADR review's presentation mode (`P` to enter), nowhere else.",
+        "section": "typography"
+      },
+      {
+        "name": "The Figures-in-Mono Rule",
+        "body": "Counts, versions, costs and paths are set in mono, so numbers line up and read as data.",
+        "section": "typography"
+      },
+      {
+        "name": "The Space-Before-Shadow Rule",
+        "body": "Resting surfaces never cast a shadow. If two areas need separating, use space or a 1px rule first.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do take every value from `.camarones/ui/theme/tokens.css` (`--color-*`, `--text-*`, `--consola-radio-*`, `--sombra-*`, `--ease-*`, `--duration-*`); views never hold a raw colour.",
+      "Do keep text at 4.5:1 in both themes, and step muted text up to Ink Soft on the aurora wash.",
+      "Do put the state's word beside every state colour: dot, rail, chip or tile.",
+      "Do use the one focus ring: 2px solid Signal Violet, 2px offset.",
+      "Do keep corners at 3px (small parts), 4px (controls) and 6px (cards, dialogs).",
+      "Do give every control at least a 24px target; default buttons and fields are 40px.",
+      "Do move only `transform` and `opacity`, with `--ease-out-soft` and 200 / 400 / 800ms, and stand still under `prefers-reduced-motion`.",
+      "Do serve fonts from `.camarones/ui/theme/fonts/` and nothing from a CDN."
+    ],
+    "donts": [
+      "Don't draw 99px pills or radii above 6px; the legacy `.pill`, `.count` and `.chip` rules are drift.",
+      "Don't set text in an aurora colour or in Shrimp Coral.",
+      "Don't use display sizes outside the Home hero and the ADR presentation mode.",
+      "Don't give resting cards a shadow.",
+      "Don't add an icon set or let emoji stand in for words; inline SVG only in the exceptions listed in `CAMARON.md`.",
+      "Don't draw the shrimp a second time: the favicon (`portal/app/public/favicon.svg`) is the one drawing of the mark.",
+      "Don't tell a state by colour alone."
+    ]
+  }
+}
