@@ -33,6 +33,19 @@ test('an estimated row has the report coverage and dashes elsewhere', () => {
   expect(web.coverageNote).toContain(t('hb.source.report'))
 })
 
+test('a sonar-backed row with no server coverage shows the report figure, as Health and the repo page do', () => {
+  const s = { repos: { api: { cloned: true, coverage: { percent: 64, source: 'report', at: '2026-11-15' },
+    sonar: { used: true, server: { gate: 'OK', coverage: null, bugs: 1, vulnerabilities: 0, debt_minutes: 0, at: '2026-11-18T11:00:00Z' } } } } }
+  const [api] = sonarRows(s, t, now)
+  expect(api).toMatchObject({ source: 'sonar', coverage: '64 %', gate: t('hb.gate.OK') })
+  expect(api.coverageNote).toContain(t('hb.source.report'))
+  expect(api.coverageNote).not.toContain(t('hb.source.sonar'))
+})
+
+test('a repos block that could not be read draws no row', () => {
+  expect(sonarRows({ repos: { error: 'no pude leer workspace.yaml' } }, t, now)).toEqual([])
+})
+
 test('a failed block is unread with its reason', () => {
   expect(sonarRows(snap, t, now)[3]).toMatchObject({ unread: true, error: 'boom' })
 })

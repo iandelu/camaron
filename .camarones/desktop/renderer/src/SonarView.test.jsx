@@ -76,6 +76,14 @@ test('figures kept from an earlier read show why the last read failed', () => {
   expect(draw({ snapshot: s })).toContain('Token no válido')
 })
 
+test('a repos block that could not be read says so with its message and draws no fake row', () => {
+  const out = draw({ snapshot: { at: snapshot.at, repos: { error: 'no pude leer workspace.yaml' } } })
+  expect(out).toContain('Sin leer')
+  expect(out).toContain('no pude leer workspace.yaml')
+  expect(out).not.toContain('#/flow/repo/error')
+  expect(out).not.toContain('<tbody>')
+})
+
 test('with no snapshot it says so and points to Health', () => {
   const out = draw({ snapshot: null })
   expect(out).toContain('Aún no hay foto de salud del proyecto.')

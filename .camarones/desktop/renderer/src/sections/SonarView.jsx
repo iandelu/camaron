@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { Button, Chip, EmptyState, Skeleton, fmtAgo, sonarConnectHash, uiText } from '@camaron/ui'
 import { useCmd, useHash } from '../hooks.js'
 import { repoHref, repoOf, withRepo } from '../nav.js'
-import { estimate, filterSonar, sonarRows, sourceCounts } from '../sonar.js'
+import { estimate, filterSonar, reposError, sonarRows, sourceCounts } from '../sonar.js'
 import { lang, t } from '../i18n.js'
 
 const COLS = ['sq.repo', 'sq.source', 'sq.gate', 'sq.coverage', 'sq.bugs', 'sq.vulns', 'sq.debt']
@@ -16,8 +16,9 @@ export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onO
   }
   const counts = sourceCounts(all)
   const rows = filterSonar(all, { repo, source })
+  const unread = reposError(snapshot)
   const pick = (v) => onSource(source === v ? '' : v)
-  return (<>
+  const filters = (
     <div className="row dk-sq-filters">
       <label className="dk-sq-field"><span className="muted small">{t('sq.repo')}</span>
         <select className="cu-input" value={repo} onChange={(e) => onRepo(e.target.value)}>
@@ -33,6 +34,10 @@ export function SonarTable({ snapshot, repo, source, open, onRepo, onSource, onO
       <span className="muted small">{t('sq.read', { ago: fmtAgo(snapshot.at, now, words) })}</span>
       <Button size="sm" variant="ghost" disabled={refreshing} onClick={onRefresh}>{t('sq.again')}</Button>
     </div>
+  )
+  if (unread) return <>{filters}<p className="row"><Chip state="warn">{t('sq.unread')}</Chip> <span className="muted small">{unread}</span></p></>
+  return (<>
+    {filters}
     <div className="dk-scroll dk-sq-box">
       <table className="dk-table">
         <thead><tr>{COLS.map((k) => <th key={k} scope="col">{t(k)}</th>)}</tr></thead>

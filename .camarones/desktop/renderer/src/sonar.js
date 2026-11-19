@@ -9,6 +9,15 @@ const list = (x) => (Array.isArray(x) ? x : [])
 
 const serverOf = (repo) => (object(repo?.sonar?.server) ? repo.sonar.server : null)
 
+// The snapshot's coverage is already server-first (a server with no coverage metric falls back to the repo's report).
+const coverageOf = (repo, t) => (object(repo.coverage) && num(repo.coverage.percent)
+  ? { coverage: percent(repo.coverage.percent),
+      coverageNote: [sourceWord(repo.coverage.source, t), typeof repo.coverage.at === 'string' ? repo.coverage.at.slice(0, 10) : ''].filter(Boolean).join(' · ') }
+  : null)
+
+// The message of a repos block that could not be read at all (`{error}` in place of the repos), else ''.
+export const reposError = (snapshot) => (object(snapshot?.repos) && typeof snapshot.repos.error === 'string' ? snapshot.repos.error : '')
+
 export function sonarSource(block) {
   if (!object(block) || block.cloned === false || typeof block.error === 'string') return null
   if (object(block.sonar) && sonarGone(block.sonar)) return null
@@ -17,7 +26,7 @@ export function sonarSource(block) {
 
 export function sonarRows(snapshot, t, now) {
   const repos = snapshot?.repos
-  if (!object(repos)) return []
+  if (!object(repos) || reposError(snapshot)) return []
   return Object.entries(repos).map(([name, repo]) => {
     const row = { name, source: sonarSource(repo), gate: DASH, gateState: null, coverage: DASH, coverageNote: '', bugs: DASH, vulns: DASH,
       debt: DASH, link: null, host: '', connect: null, error: '', unread: false }
@@ -31,14 +40,11 @@ export function sonarRows(snapshot, t, now) {
     if (sonar?.used) row.link = safeUrl(sonar.link)
     const server = serverOf(repo)
     if (server) {
-      Object.assign(row, { gate: gateWord(server.gate, t), gateState: gateState(server.gate), coverage: percent(server.coverage),
+      Object.assign(row, { gate: gateWord(server.gate, t), gateState: gateState(server.gate),
         bugs: figure(server.bugs), vulns: figure(server.vulnerabilities), debt: fmtDebt(server.debt_minutes) })
-      row.coverageNote = sourceWord('sonar', t)
+      Object.assign(row, num(server.coverage) ? { coverage: percent(server.coverage), coverageNote: sourceWord('sonar', t) } : coverageOf(repo, t))
       if (typeof sonar.error === 'string') row.error = sonarReason(sonar.error, t) + ' · ' + fmtAgo(server.at, now, t)
-    } else if (object(repo.coverage) && num(repo.coverage.percent)) {
-      row.coverage = percent(repo.coverage.percent)
-      row.coverageNote = [sourceWord(repo.coverage.source, t), typeof repo.coverage.at === 'string' ? repo.coverage.at.slice(0, 10) : ''].filter(Boolean).join(' · ')
-    }
+    } else Object.assign(row, coverageOf(repo, t))
     return row
   })
 }
