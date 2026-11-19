@@ -1852,6 +1852,19 @@
       ],
       "required": false,
       "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "set_aside",
+      "nargs": 0,
+      "options": [
+       "--set-aside"
+      ],
+      "required": false,
+      "type": null
      }
     ],
     "exclusive_groups": [],

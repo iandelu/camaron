@@ -431,3 +431,17 @@ def test_a_join_cannot_change_the_teams_repos(app_server, kit):
     join_mode(kit)
     assert post(app_server, "repos", {"repos": [{"name": "other"}]}) == (400, {"error": "join"})
     assert [r["name"] for r in kit.services.workspace.workspace()["repos"]] == ["api", "web", "worker"]
+
+
+def test_linking_the_repos_does_not_end_a_join_halfway(app_server, kit, tmp_path):
+    """Found on the sandbox: the repos step links the clones kept under other names, and a machine that already has
+    every tool it keeps is then "ready"; the join must go on to its tools step, not turn into a finished first run."""
+    from test_repos_here import team_repos
+    team_repos(kit, tmp_path)
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    kit.plan.sync()                                         # the team's plan came with the clone
+    kit.services.components.set_machine([])                 # nothing to install here: only the repos were missing
+    assert call(f"{app_server}/api/app/onboard/state", token=TOKEN)[1]["mode"] == "join"
+    assert call(f"{app_server}/api/app/onboard/repos-here", token=TOKEN)[1]["linked"] == ["api"]
+    code, st = post(app_server, "step", {"id": "tools"})
+    assert code == 200 and st["mode"] == "join" and st["step"] == "tools"

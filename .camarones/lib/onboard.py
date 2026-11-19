@@ -489,6 +489,10 @@ def join_repos() -> dict:
     list; a clone kept under another folder name is linked (repos_here). Each row's `where` is its clone as the person
     reads it: `./<folder>` beside the workspace, else the full path."""
     from .app import repos_here
+    from .common import ROOT
+    saved = load_json(firstrun_file(ROOT), {})
+    if not saved and mode(saved) == "join":     # linking may make this machine ready: the first run stays a join
+        save_position(ROOT, "repos", "join")
     res, ws = repos_here.find(log=lambda _: None), WORKSPACE.resolve()
     for r in res["rows"]:
         p = Path(r["path"]) if r["path"] else None

@@ -97,7 +97,7 @@ def prelaunch(argv: list[str], entry: str) -> None:
         # The team's cam-docs repo: cloned into <folder or cwd>/cam-docs, or reused if this machine already has it.
         # The wizard then only prepares this machine (tools, repos) — the rest is the team's, already done.
         folder = Path(argv[3]).resolve() if len(argv) > 3 else Path.cwd()
-        dest, joined = _team(projects.join, argv[2], folder, no_open=no_open, set_aside=set_aside)
+        dest, joined = _team(projects.join, argv[2], folder, no_open=no_open, **({"set_aside": True} if set_aside else {}))
         ws = dest.parent if dest.name == CAM_DIR else dest
         elsewhere = {"elsewhere": str(dest)} if ws.resolve() != folder.resolve() else {}
         if elsewhere and not no_open:                               # C2: say it, then open that one
