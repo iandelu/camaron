@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
-import { activityBars, docsParts, libsRows, ROLES, sonarTile, tileLinks, workParts } from './repo.js'
+import { activityBars, docsParts, libsRows, repoCard, ROLES, sonarTile, tileLinks, workParts } from './repo.js'
+import { t } from './i18n.js'
 
 test('each tile links to its window filtered to the repo', () => {
   expect(tileLinks('api')).toEqual({ sonar: '#/quality/sonar?repo=api', libs: '#/quality/libs?repo=api',
@@ -35,4 +36,44 @@ test('libraries, docs and work fold into their rows', () => {
   expect(workParts({ columns, total: 6 }).map((p) => p.n)).toEqual([2, 1, 0, 2, 1])
   expect(workParts({ columns, total: 6 })[4]).toEqual({ key: 'blocked', n: 1, tone: 'warn' })
   expect(ROLES).toEqual(['language', 'framework', 'build', 'data', 'container', 'ci'])
+})
+
+const NOW = Date.parse('2026-11-19T12:00:00Z')
+const row = (o = {}) => ({ name: 'api', cloned: true, state: 'ok', stack: [{ role: 'language', label: 'Java 17' }], sonar: null,
+  libs: { vulns: {}, scanned: true }, wiki: null, docs: null, ...o })
+const card = (o) => repoCard(row(o), t, NOW)
+
+test('a card reads Sonar from the server or from the estimate, and says so', () => {
+  const ok = card({ sonar: { source: 'sonar', gate: 'OK', coverage: 78, coverageSource: 'sonar' } }).sonar
+  expect(ok).toMatchObject({ kind: 'sonar', gateState: 'ok' })
+  expect(ok.text).toContain('Aprobado')
+  expect(ok.text).toContain('78 %')
+  expect(card({ sonar: { source: 'estimated', coverage: 64, coverageSource: 'report' } }).sonar)
+    .toMatchObject({ kind: 'estimated', text: '64 % · informe' })
+  expect(card({ sonar: { source: 'estimated', coverage: null } }).sonar.text).toBe('sin cobertura')
+  expect(card({ sonar: null }).sonar).toMatchObject({ kind: 'none', text: '—' })
+})
+
+test('a card counts vulnerabilities and says when nothing was checked', () => {
+  expect(card({ libs: { vulns: { high: 1, medium: 1 }, scanned: true } }).libs).toEqual({ text: '2 vulnerabilidades', tone: 'bad' })
+  expect(card({ libs: { vulns: { medium: 1 }, scanned: true } }).libs).toEqual({ text: '1 vulnerabilidad', tone: 'warn' })
+  expect(card({ libs: { vulns: {}, scanned: true } }).libs.text).toBe('Sin vulnerabilidades')
+  expect(card({ libs: { vulns: {}, scanned: false } }).libs.text).toBe('Sin revisar')
+})
+
+test('a card says what the wiki and the docs stand at', () => {
+  expect(card({ wiki: { pages: 42, at: '2026-11-17T12:00:00Z' } }).wiki).toBe('42 páginas · hace 2 d')
+  expect(card({ wiki: { pages: 0 } }).wiki).toBe('Sin generar')
+  expect(card({ wiki: null }).wiki).toBe('Sin generar')
+  expect(card({ wiki: { pages: 3, at: null, unit: 'doing' } }).wiki).toBe('Generándose…')
+  expect(card({ docs: { total: 9, stale: 3, suspect: 0 } }).docs).toEqual({ text: '3 desactualizadas', tone: 'warn' })
+  expect(card({ docs: { total: 9, stale: 1, suspect: 0 } }).docs.text).toBe('1 desactualizada')
+  expect(card({ docs: { total: 4, stale: 0, suspect: 0 } }).docs.text).toBe('Al día')
+  expect(card({ docs: { total: 0 } }).docs.text).toBe('Sin páginas')
+})
+
+test('a card links to the repo page; a repo not cloned has no state', () => {
+  expect(card().href).toBe('#/flow/repo/api')
+  expect(card({ cloned: false, state: 'ok' }).state).toBe('Sin estado')
+  expect(card({ state: 'ok' }).state).toBe('Sano')
 })

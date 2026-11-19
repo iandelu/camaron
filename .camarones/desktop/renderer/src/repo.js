@@ -1,5 +1,6 @@
-import { S } from './i18n.js'
-import { withRepo } from './nav.js'
+import { fmtAgo, gateState, gateWord, sourceWord, stateWord, uiText } from '@camaron/ui'
+import { S, lang } from './i18n.js'
+import { repoHref, withRepo } from './nav.js'
 
 export const ROLES = ['language', 'framework', 'build', 'data', 'container', 'ci']
 
@@ -53,4 +54,39 @@ export const workParts = (work) => {
     { key: 'done', n: n('Done'), ordinal: 4 },
     { key: 'blocked', n: n('Blocked'), tone: 'warn' },
   ]
+}
+
+const pct = (n) => `${new Intl.NumberFormat(lang(), { maximumFractionDigits: 1 }).format(n)} %`
+
+// One repo's card on Flow › Summary: four short facts, each a word plus (where colour means state) a tone. `t` is the
+// renderer's; the kit's own words (gate, state, ago) come from the kit.
+export function repoCard(row, t, now) {
+  const kit = (k) => uiText(k, lang())
+  const known = (n) => typeof n === 'number'
+  let sonar = { kind: 'none', text: '—', gateState: null }
+  if (row.sonar) {
+    const { source, gate, coverage, coverageSource } = row.sonar
+    if (source === 'sonar') {
+      const parts = [gate ? gateWord(gate, kit) : '', known(coverage) ? pct(coverage) : ''].filter((p) => p && p !== '—')
+      sonar = { kind: 'sonar', text: parts.join(' · ') || '—', gateState: gateState(gate) }
+    } else {
+      const from = coverageSource ? (coverageSource === 'report' ? t('rc.report') : sourceWord(coverageSource, kit)) : ''
+      sonar = { kind: 'estimated', gateState: null, text: known(coverage) ? [pct(coverage), from].filter(Boolean).join(' · ') : t('rc.noCoverage') }
+    }
+  }
+  const vulns = Object.values(row.libs?.vulns || {}).reduce((s, n) => s + n, 0)
+  const severe = (row.libs?.vulns?.critical || 0) + (row.libs?.vulns?.high || 0)
+  const libs = !row.libs?.scanned ? { text: t('rc.unscanned'), tone: null }
+    : vulns ? { text: vulns === 1 ? t('rc.vuln') : t('rc.vulns', { n: vulns }), tone: severe ? 'bad' : 'warn' }
+      : { text: t('rc.clean'), tone: 'ok' }
+  const wiki = row.wiki?.unit === 'doing' ? t('rc.wikiRunning')
+    : row.wiki?.pages ? t('rc.wikiPages', { n: row.wiki.pages, ago: fmtAgo(row.wiki.at, now, kit) }) : t('rc.wikiNone')
+  const stale = (row.docs?.stale || 0) + (row.docs?.suspect || 0)
+  const docs = !row.docs?.total ? { text: t('rc.noPages'), tone: null }
+    : stale ? { text: stale === 1 ? t('rc.stale1') : t('rc.stale', { n: stale }), tone: 'warn' } : { text: t('rc.fresh'), tone: 'ok' }
+  return {
+    name: row.name, href: repoHref(row.name), state: stateWord('code', row.cloned ? row.state : null, kit), stateTone: row.cloned ? row.state : null,
+    stack: (row.stack || []).filter((p) => ROLES.includes(p.role)).map((p) => p.label).join(' · '),
+    sonar, libs, wiki, docs,
+  }
 }
