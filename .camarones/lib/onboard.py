@@ -208,7 +208,7 @@ def local_ready() -> bool:
     """This machine already has what setup gives: every repo with a URL cloned and the chosen kit tools."""
     if missing_repos():
         return False
-    return all(services.current().toolchain.tool_ok(k) for k in services.current().components.KIT_TOOLS if k in services.current().components.components())
+    return all(services.current().toolchain.tool_ok(k) for k in services.current().components.KIT_TOOLS if k in services.current().components.here())
 
 
 def mode(saved: dict) -> str:
@@ -216,6 +216,12 @@ def mode(saved: dict) -> str:
     from .common import WS_FILE
     shared = plan.PLAN.exists() and WS_FILE.exists()          # team work that came with the repo (or pre-2.4)
     return first_run_mode(saved, shared, local_ready=bool(shared and not saved) and local_ready())
+
+
+def joining() -> bool:
+    """This project's first run is a join: its tools step chooses for this machine only, and its setup writes no plan."""
+    from .common import ROOT
+    return mode(load_json(firstrun_file(ROOT), {})) == "join"
 
 
 def state() -> dict:
@@ -317,8 +323,10 @@ def tool_rows() -> list[dict]:
         rec = v["need"] or k in ("docker", "java") or (k == "claude" and not have_agent)
         rows.append({"id": k, "label": v["hint"], "ok": v["ok"], "kind": kind, "rec": rec, "sys": True,
                      "found": v.get("found", ""), "note": v.get("note", "")})
-    chosen = services.current().components.components()
+    chosen, join = services.current().components.components(), joining()
     for k, label in {**services.current().components.KIT_TOOLS, **services.current().components.EXTRAS}.items():
+        if join and k not in chosen:                       # a join picks among the team's components only
+            continue
         installed = services.current().toolchain.tool_ok(k) if k in services.current().components.KIT_TOOLS else (k in chosen)
         rows.append({"id": k, "label": label, "ok": installed, "kind": "t_kit", "rec": True, "sys": False,
                      "found": VERSIONS.get(k, "") if installed and k in services.current().components.KIT_TOOLS else "", "note": ""})
@@ -339,9 +347,11 @@ def install_choice(rows: list[dict], choice: str, picked: list[str] | None = Non
 
 
 def install_tools(system: list[str], components: list[str], log, cancelled: Callable[[], bool] | None = None) -> list[str]:
-    """Save the chosen components, install the system tools in order and refresh PATH; returns the ones that failed.
-    `cancelled` is asked before each install: once it says yes, the rest are left alone."""
-    services.current().components.set_components(components)
+    """Save the chosen components (on a join: this machine's choice, never the team's), install the system tools in
+    order and refresh PATH; returns the ones that failed. `cancelled` is asked before each install: once it says yes,
+    the rest are left alone."""
+    c = services.current().components
+    (c.set_machine if joining() else c.set_components)(components)
     failed = []
     for k in system:
         if cancelled and cancelled():
@@ -358,16 +368,20 @@ def install_tools(system: list[str], components: list[str], log, cancelled: Call
 def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
     """The setup step's work: templates, `app.setup.setup`, the plan for this workspace (also when setup failed, so the
     portal has one) and the `setup` unit marked done when it worked. True when setup succeeded. `cancelled` (the app's
-    cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done."""
+    cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done.
+    A join leaves the team's plan as it is: the setup that ran is this machine's (install_state)."""
     if cancelled and cancelled():
         return False
+    join = joining()
     services.current().templates.init_templates(services.current().workspace.workspace()["project"]["name"], log=lambda _: None)  # `log` counts setup's own steps
     try:
         ok = services.current().setup.setup(log=log)
     finally:
-        plan.sync()                        # a setup that raised still leaves the plan in place
+        if not join:
+            plan.sync()                    # a setup that raised still leaves the plan in place
     if ok and not (cancelled and cancelled()):
-        plan.set_status("setup", "done", "first run")
+        if not join:
+            plan.set_status("setup", "done", "first run")
         from . import install_state
         install_state.mark_setup()
         return True

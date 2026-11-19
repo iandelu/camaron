@@ -23,7 +23,7 @@ def last() -> dict | None:
 
 def rebuild_c4(log: Log = print) -> str:
     c4 = services.current().viewers.viewers()["c4"]
-    if not c4["model"] or "likec4" not in services.current().components.components() or not which("likec4"):
+    if not c4["model"] or "likec4" not in services.current().components.here() or not which("likec4"):
         return "skipped"
     if c4["exists"] and not c4["stale"]:
         return "fresh"
