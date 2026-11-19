@@ -277,7 +277,10 @@ def setup(ci: bool = False, log: Log = print, comps: list[str] | None = None) ->
         raise RuntimeError("missing prerequisites: " + ", ".join(missing))
     install_tools(log, comps)
     log("syncing repositories…")
-    failed = services.current().repos.sync_repos(lambda m: log(m.strip()))
+    from lib.app import repos_here
+    here = repos_here.find(lambda m: log(m.strip()))     # a clone under another name is linked, never cloned again
+    left = [r["name"] for r in here["rows"] if r["state"] == "taken" or (r["state"] == "missing" and r["path"])]
+    failed = services.current().repos.sync_repos(lambda m: log(m.strip()), skip=left)
     if failed:
         raise RuntimeError('Repository sync failed: ' + ', '.join(failed))
     log(f"✔ {len(services.current().workspace.repo_names())} repo(s) in sync")
