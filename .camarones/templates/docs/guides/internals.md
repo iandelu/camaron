@@ -69,7 +69,7 @@ back out. A file of yours in the way that cannot be combined (your own `AGENTS.m
 and `repair` list it as yours, not as something to fix.
 
 `.camarones/.cache/` holds what can be rebuilt: run logs (`runs/<run>/events.jsonl`), the exported site (`site/`), the
-board's index (`board.db`), the health snapshot and backups of replaced kit files; and what the app's sessions leave on
+board's index (`board.db`), the health snapshot and the coverage of its last 26 builds (`health/history.jsonl`), each repo's stack and activity (`repos/<name>.json`, per HEAD and ISO week) and backups of replaced kit files; and what the app's sessions leave on
 this machine: each one's prompt (`prompts/`), each unit's session record (`sessions/`) and the canvas's terminals
 (`terminals/`). Each coding change's record (`changes/<id>.json`: its branches, docs worktree, phase, PRs and the card
 moves the kit made) lives there too, so a change is seen on this machine only.
@@ -140,7 +140,7 @@ The API serves the portal and the app; it is not a stable public interface (the 
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (server-sent events), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
 | Quality | `GET health`, `kpis`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Machine work (app token) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
-| The app (app token) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
+| The app (app token) | `GET app/info`, `catalog`, `summary`, `repos` (every repo's card), `repo?name=` (one repo's dashboard; 404 for a repo not in the project), `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (server-sent events), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (a session, on the canvas or in a window; its old name `agent` still works), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
 Long work is a **job**: `GET jobs` lists them, `GET jobs/<id>?since=n` reads its lines from line `n`.
 

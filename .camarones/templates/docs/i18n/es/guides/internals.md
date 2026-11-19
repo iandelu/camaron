@@ -69,7 +69,7 @@ configuración de agentes en `trust`, lo quitan. Un fichero tuyo en medio que no
 `AGENTS.md`, por ejemplo) se queda como está: `doctor` y `repair` lo listan como tuyo, no como algo por arreglar.
 
 `.camarones/.cache/` guarda lo que se puede reconstruir: los registros de las ejecuciones (`runs/<run>/events.jsonl`),
-la web exportada (`site/`), el índice del tablero (`board.db`), la foto de la salud y copias de los ficheros del kit
+la web exportada (`site/`), el índice del tablero (`board.db`), la foto de la salud y la cobertura de sus últimos 26 chequeos (`health/history.jsonl`), el stack y la actividad de cada repo (`repos/<nombre>.json`, por HEAD y semana ISO) y copias de los ficheros del kit
 sustituidos; y lo que dejan en esta máquina las sesiones de la app: el prompt de cada una (`prompts/`), el registro de
 la sesión de cada unidad (`sessions/`) y las terminales del lienzo (`terminals/`). También el registro de cada cambio de
 código (`changes/<id>.json`: sus ramas, el worktree de la documentación, la fase, las PR y los movimientos de tarjeta que
@@ -142,7 +142,7 @@ La API sirve al portal y a la app; no es una interfaz pública estable (esa es l
 | Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (eventos enviados por el servidor), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
 | Calidad | `GET health`, `kpis`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Trabajo en la máquina (token de la app) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
-| La app (token de la app) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (eventos enviados por el servidor), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (una sesión, en el lienzo o en una ventana; su nombre antiguo, `agent`, sigue valiendo), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
+| La app (token de la app) | `GET app/info`, `catalog`, `summary`, `repos` (la tarjeta de cada repo), `repo?name=` (el panel de un repo; 404 si no está en el proyecto), `machine`, `guide`, `creds`, `agents`, `terminals`, `terminals/stream` (eventos enviados por el servidor), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `terminals` (una sesión, en el lienzo o en una ventana; su nombre antiguo, `agent`, sigue valiendo), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
 El trabajo largo es un **trabajo**: `GET jobs` los lista y `GET jobs/<id>?since=n` lee sus líneas desde la `n`.
 
