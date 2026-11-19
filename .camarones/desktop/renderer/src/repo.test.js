@@ -26,6 +26,12 @@ test('activity bars carry a tip per week and the months where one starts', () =>
   expect(activityBars(null, 'es')).toBeNull()
 })
 
+test('an advisory with no severity gets its own row, and any other severity folds into it', () => {
+  expect(libsRows({ vulns: { unknown: 1 } }).at(-1)).toEqual({ key: 'unknown', n: 1, tone: null })
+  expect(libsRows({ vulns: { high: 1, unknown: 1, weird: 2 } }).map((r) => r.n)).toEqual([0, 1, 0, 0, 3])
+  expect(libsRows({ vulns: { low: 2 } }).map((r) => r.key)).toEqual(['critical', 'high', 'medium', 'low'])
+})
+
 test('libraries, docs and work fold into their rows', () => {
   expect(libsRows({ vulns: { high: 1, medium: 1, moderate: 2 } }).map((r) => r.n)).toEqual([0, 1, 3, 0])
   expect(libsRows({ vulns: {} }).map((r) => r.tone)).toEqual(['bad', 'bad', 'warn', null])
@@ -68,8 +74,17 @@ test('a card says what the wiki and the docs stand at', () => {
   expect(card({ wiki: { pages: 3, at: null, unit: 'doing' } }).wiki).toBe('Generándose…')
   expect(card({ docs: { total: 9, stale: 3, suspect: 0 } }).docs).toEqual({ text: '3 desactualizadas', tone: 'warn' })
   expect(card({ docs: { total: 9, stale: 1, suspect: 0 } }).docs.text).toBe('1 desactualizada')
+  expect(card({ docs: { total: 9, stale: 3, suspect: 2 } }).docs).toEqual({ text: '3 desactualizadas', tone: 'warn' })
+  expect(card({ docs: { total: 9, stale: 0, suspect: 2 } }).docs).toEqual({ text: '2 por revisar', tone: 'warn' })
+  expect(card({ docs: { total: 9, stale: 0, suspect: 1 } }).docs.text).toBe('1 por revisar')
   expect(card({ docs: { total: 4, stale: 0, suspect: 0 } }).docs.text).toBe('Al día')
   expect(card({ docs: { total: 0 } }).docs.text).toBe('Sin páginas')
+})
+
+test('a repo not cloned here claims no Sonar or library state, whatever the server sent', () => {
+  const c = card({ cloned: false, sonar: null, libs: { vulns: {}, scanned: true } })
+  expect(c.libs).toEqual({ text: 'No está clonado aquí', tone: null })
+  expect(c.sonar).toEqual({ kind: 'none', text: 'No está clonado aquí', gateState: null })
 })
 
 test('a card links to the repo page; a repo not cloned has no state', () => {

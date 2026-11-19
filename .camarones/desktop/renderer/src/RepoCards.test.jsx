@@ -52,6 +52,13 @@ test('one repo reads "1 repo", with or without health', () => {
   expect(render({ ...data, at: null })).toContain('3 repos · aún no hay foto de salud')
 })
 
+test('a repo not cloned here shows no green "No vulnerabilities"', () => {
+  const out = render({ ...data, repos: [mk('db', { cloned: false, state: null, sonar: null, wiki: null, docs: null })] })
+  expect(out).not.toContain('Sin vulnerabilidades')
+  expect(out).not.toContain('dk-rc-ok')
+  expect(out.match(/No está clonado aquí/g)).toHaveLength(2)
+})
+
 test('while it loads, a skeleton', () => {
   const srv = { get: () => new Promise(() => {}) }
   const jobs = { get: () => ({ running: [] }), subscribe: () => () => {} }

@@ -100,10 +100,19 @@ test('one reading draws no trend and says why; no snapshot sends to Quality', ()
   const few = render({ trend: [data.trend[7]] })
   expect(few).toContain(S.es['rp.trendFew'])
   expect(few).not.toContain('cu-spark')
-  const none = render({ sonar: null })
+  const none = render({ sonar: null, at: null })
   expect(none).toContain(S.es['rp.noHealth'])
   expect(none).toMatch(/href="#\/quality"[^>]*>Hacerla en Calidad</)
   expect(none).not.toContain('href="#/quality/sonar?repo=api"')
+})
+
+test('a snapshot with no figures for the repo says so and opens Quality › SonarQube', () => {
+  const out = render({ sonar: null })
+  const tile = out.match(/<a class="dk-tile s4"[\s\S]*?<\/a>/)?.[0] ?? ''
+  expect(tile).toContain(S.es['rp.noFigures'])
+  expect(tile).toContain('href="#/quality/sonar?repo=api"')
+  expect(out).not.toContain(S.es['rp.noHealth'])
+  expect(out).not.toContain(S.es['rp.noHealthGo'])
 })
 
 test('the Activity tile: twelve weekly bars with their numbers, and the last commit', () => {
@@ -130,6 +139,14 @@ test('the Libraries tile: vulnerabilities by severity with their words, and how 
   const never = render({ libs: { ...data.libs, scanned: false } })
   expect(never).toContain(S.es['rp.libsNever'])
   expect(never).not.toContain('cu-hbars')
+})
+
+test('an advisory with no severity counts: its own row and the chip, never "No vulnerabilities"', () => {
+  const out = render({ libs: { ...data.libs, vulns: { unknown: 1 } } })
+  const rows = [...out.matchAll(/cu-hbars-label">([^<]*)<[\s\S]*?cu-hbars-n">(\d+)</g)].map((m) => [m[1], m[2]])
+  expect(rows.at(-1)).toEqual(['Desconocida', '1'])
+  expect(out).toContain('<span class="cu-chip">1 vulnerabilidad</span>')
+  expect(out).not.toContain(S.es['rp.libsClean'])
 })
 
 test('the Documentation tile: its pages by freshness, the wiki, and Review opens the portal', () => {

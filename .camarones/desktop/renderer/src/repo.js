@@ -29,14 +29,21 @@ export const activityBars = (activity, l) => {
   }
 }
 
+const SEVERITY = { critical: 'critical', high: 'high', medium: 'medium', moderate: 'medium', low: 'low' }
+
+// Every advisory lands in a row: one with no score or label (osv's "unknown"), or any other word, gets the unknown row.
 export const libsRows = (libs) => {
-  const v = libs?.vulns || {}
-  return [
-    { key: 'critical', n: v.critical || 0, tone: 'bad' },
-    { key: 'high', n: v.high || 0, tone: 'bad' },
-    { key: 'medium', n: (v.medium || 0) + (v.moderate || 0), tone: 'warn' },
-    { key: 'low', n: v.low || 0, tone: null },
+  const n = { critical: 0, high: 0, medium: 0, low: 0, unknown: 0 }
+  for (const [k, v] of Object.entries(libs?.vulns || {})) {
+    if (typeof v === 'number') n[Object.hasOwn(SEVERITY, k) ? SEVERITY[k] : 'unknown'] += v
+  }
+  const rows = [
+    { key: 'critical', n: n.critical, tone: 'bad' },
+    { key: 'high', n: n.high, tone: 'bad' },
+    { key: 'medium', n: n.medium, tone: 'warn' },
+    { key: 'low', n: n.low, tone: null },
   ]
+  return n.unknown ? [...rows, { key: 'unknown', n: n.unknown, tone: null }] : rows
 }
 
 export const docsParts = (docs) => [
@@ -63,8 +70,8 @@ const pct = (n) => `${new Intl.NumberFormat(lang(), { maximumFractionDigits: 1 }
 export function repoCard(row, t, now) {
   const kit = (k) => uiText(k, lang())
   const known = (n) => typeof n === 'number'
-  let sonar = { kind: 'none', text: '—', gateState: null }
-  if (row.sonar) {
+  let sonar = { kind: 'none', text: row.cloned ? '—' : t('sq.notCloned'), gateState: null }
+  if (row.cloned && row.sonar) {
     const { source, gate, coverage, coverageSource } = row.sonar
     if (source === 'sonar') {
       const parts = [gate ? gateWord(gate, kit) : '', known(coverage) ? pct(coverage) : ''].filter((p) => p && p !== '—')
@@ -74,16 +81,21 @@ export function repoCard(row, t, now) {
       sonar = { kind: 'estimated', gateState: null, text: known(coverage) ? [pct(coverage), from].filter(Boolean).join(' · ') : t('rc.noCoverage') }
     }
   }
-  const vulns = Object.values(row.libs?.vulns || {}).reduce((s, n) => s + n, 0)
-  const severe = (row.libs?.vulns?.critical || 0) + (row.libs?.vulns?.high || 0)
-  const libs = !row.libs?.scanned ? { text: t('rc.unscanned'), tone: null }
+  const rows = libsRows(row.libs)
+  const vulns = rows.reduce((s, r) => s + r.n, 0)
+  const severe = rows[0].n + rows[1].n
+  const libs = !row.cloned ? { text: t('sq.notCloned'), tone: null }
+    : !row.libs?.scanned ? { text: t('rc.unscanned'), tone: null }
     : vulns ? { text: vulns === 1 ? t('rc.vuln') : t('rc.vulns', { n: vulns }), tone: severe ? 'bad' : 'warn' }
       : { text: t('rc.clean'), tone: 'ok' }
   const wiki = row.wiki?.unit === 'doing' ? t('rc.wikiRunning')
     : row.wiki?.pages ? t('rc.wikiPages', { n: row.wiki.pages, ago: fmtAgo(row.wiki.at, now, kit) }) : t('rc.wikiNone')
-  const stale = (row.docs?.stale || 0) + (row.docs?.suspect || 0)
+  const stale = row.docs?.stale || 0
+  const suspect = row.docs?.suspect || 0
   const docs = !row.docs?.total ? { text: t('rc.noPages'), tone: null }
-    : stale ? { text: stale === 1 ? t('rc.stale1') : t('rc.stale', { n: stale }), tone: 'warn' } : { text: t('rc.fresh'), tone: 'ok' }
+    : stale ? { text: stale === 1 ? t('rc.stale1') : t('rc.stale', { n: stale }), tone: 'warn' }
+      : suspect ? { text: suspect === 1 ? t('rc.check1') : t('rc.check', { n: suspect }), tone: 'warn' }
+        : { text: t('rc.fresh'), tone: 'ok' }
   return {
     name: row.name, href: repoHref(row.name), state: stateWord('code', row.cloned ? row.state : null, kit), stateTone: row.cloned ? row.state : null,
     stack: (row.stack || []).filter((p) => ROLES.includes(p.role)).map((p) => p.label).join(' · '),

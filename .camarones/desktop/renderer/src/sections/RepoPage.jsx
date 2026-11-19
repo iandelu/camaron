@@ -79,20 +79,21 @@ function Header({ data, now }) {
   )
 }
 
-// With no checkout here the Sonar and library figures are unknown (the server's zeros are not a clean state), and
-// building a snapshot would not change that: the tile says so and still opens its window.
-function NotCloned({ to, ...head }) {
+// A tile with no figures to draw that still opens its window: no checkout here (the figures are unknown, never clean,
+// and building a snapshot would not change that) or a snapshot that holds none for this repo.
+function Note({ text, to, ...head }) {
   return (
     <Tile as="a" {...head}>
-      <p className="muted small">{t('sq.notCloned')}</p>
+      <p className="muted small">{text}</p>
       <span className="dk-tile-to">{to}</span>
     </Tile>
   )
 }
 
-function SonarTile({ cloned, sonar, trend, href }) {
+function SonarTile({ cloned, sonar, trend, at, href }) {
   const head = { span: 's4', i: 1, id: 'rp-sonar', icon: 'sonar', title: t('rp.sonar') }
-  if (!cloned) return <NotCloned {...head} href={href} to={t('rp.toSonar')} />
+  if (!cloned) return <Note {...head} href={href} text={t('sq.notCloned')} to={t('rp.toSonar')} />
+  if (!sonar && at) return <Note {...head} href={href} text={t('rp.noFigures')} to={t('rp.toSonar')} />
   if (!sonar) return (
     <Tile {...head}>
       <p className="muted small">{t('rp.noHealth')}</p>
@@ -147,14 +148,15 @@ function ActivityTile({ activity, now }) {
 }
 
 function LibsTile({ cloned, libs, href }) {
-  if (!cloned) return <NotCloned span="s6" i={3} id="rp-libs" icon="libs" title={t('rp.libs')} href={href} to={t('rp.toLibs')} />
+  if (!cloned) return <Note span="s6" i={3} id="rp-libs" icon="libs" title={t('rp.libs')} href={href} text={t('sq.notCloned')} to={t('rp.toLibs')} />
   const l = lang()
   const rows = libsRows(libs).map((r) => {
     const sev = words(`hb.sev.${r.key}`)
     return { ...r, sev, label: sev.charAt(0).toLocaleUpperCase(l) + sev.slice(1) }
   })
   const n = rows.reduce((sum, r) => sum + r.n, 0)
-  const tone = rows[0].n + rows[1].n ? 'bad' : rows[2].n ? 'warn' : undefined
+  const count = (key) => rows.find((r) => r.key === key)?.n || 0
+  const tone = count('critical') + count('high') ? 'bad' : count('medium') ? 'warn' : undefined
   const aside = !libs?.scanned ? null
     : n ? <Chip state={tone}>{n === 1 ? t('rp.libsVulns1') : t('rp.libsVulns', { n })}</Chip>
       : <Chip state="ok">{t('rp.libsClean')}</Chip>
@@ -263,7 +265,7 @@ export function RepoBento({ data, now, onPortal }) {
     <Shell>
       <div className="dk-bento">
         <Header data={data} now={now} />
-        <SonarTile cloned={data.cloned} sonar={data.sonar} trend={data.trend || []} href={links.sonar} />
+        <SonarTile cloned={data.cloned} sonar={data.sonar} trend={data.trend || []} at={data.at} href={links.sonar} />
         <ActivityTile activity={data.activity} now={now} />
         <LibsTile cloned={data.cloned} libs={data.libs} href={links.libs} />
         <DocsTile docs={data.docs} wiki={data.wiki} href={links.wikis} onPortal={onPortal} />
