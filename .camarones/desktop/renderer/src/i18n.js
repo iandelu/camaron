@@ -387,6 +387,7 @@ export const S = {
     'bd.dod': 'Definición de hecho', 'bd.tasks': 'Tareas', 'bd.noTasks': 'Esta historia aún no tiene tareas.',
     'bd.delete': 'Eliminar', 'bd.deleteAsk': '¿Eliminar {id} del tablero? Su fichero pasa a backlog/archive/tasks.',
     'bd.deleteAskKids': '¿Eliminar {id} del tablero? Su fichero pasa a backlog/archive/tasks; sus tareas se quedan en el tablero.',
+    'bd.repo': 'Repo: {repo}', 'bd.repoClear': 'Quitar el filtro de {repo}', 'bd.repoEmpty': 'Ninguna tarjeta toca {repo}.',
     'bd.deleted': '{id} eliminada del tablero.', 'bd.deleteFailed': 'No se ha eliminado',
     // the Decisiones section (adr.js): the ADR's status chip, the stepper, the list filters, why accept is refused
     'nav.decisions': 'Decisiones',
@@ -958,6 +959,7 @@ export const S = {
     'bd.dod': 'Definition of done', 'bd.tasks': 'Tasks', 'bd.noTasks': 'This story has no tasks yet.',
     'bd.delete': 'Delete', 'bd.deleteAsk': 'Delete {id} from the board? Its file moves to backlog/archive/tasks.',
     'bd.deleteAskKids': 'Delete {id} from the board? Its file moves to backlog/archive/tasks; its tasks stay on the board.',
+    'bd.repo': 'Repo: {repo}', 'bd.repoClear': 'Clear the {repo} filter', 'bd.repoEmpty': 'No card touches {repo}.',
     'bd.deleted': '{id} deleted from the board.', 'bd.deleteFailed': 'It was not deleted',
     // the Decisions section (adr.js): the ADR's status chip, the stepper, the list filters, why accept is refused
     'nav.decisions': 'Decisions',

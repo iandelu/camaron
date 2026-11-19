@@ -68,3 +68,20 @@ export function keyMove(state, key, cols) {
   }
   return s
 }
+
+const SUSPECT = new Set(['suspect', 'stale'])
+const DOCS = {
+  suspect: (c) => (c.links || []).some((l) => SUSPECT.has(l.fresh)),
+  unconfirmed: (c) => (c.links || []).some((l) => l.trust !== 'confirmed'),
+}
+const up = (s) => String(s || '').trim().toUpperCase()
+
+// An empty filter lets everything through; `epic` keeps the epic itself and its stories, `parent` (#/kanban?parent=)
+// the parent itself and its children (a story and its subtasks).
+export function applyFilters(cards, { repo, epic, label, docs, parent } = {}) {
+  return cards.filter((c) => (!repo || (c.repos || []).includes(repo))
+    && (!epic || up(c.epic) === up(epic) || up(c.id) === up(epic))
+    && (!parent || up(c.parent) === up(parent) || up(c.id) === up(parent))
+    && (!label || (c.labels || []).includes(label))
+    && (!docs || !DOCS[docs] || DOCS[docs](c)))
+}

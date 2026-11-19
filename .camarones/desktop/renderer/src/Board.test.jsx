@@ -193,3 +193,20 @@ test('the Add button opens a menu; open, its first item is the story, written in
   expect(out).toContain('Formulario aquí')
   expect(view(b, 'en', { menu: true })).toContain('Written in the portal, in Stories')
 })
+
+test('?repo=: the chip names the repo, links to its page and clears the filter', () => {
+  const out = view(board([card({ id: 'WI-3', repos: ['api'] })]), 'es', { repo: 'api' })
+  expect(out).toContain('Repo: ')
+  expect(out).toContain('href="#/flow/repo/api"')
+  expect(out).toContain('href="#/board"')
+  expect(out).toContain('aria-label="Quitar el filtro de api"')
+  expect(view(board([card({ id: 'WI-3', repos: ['api'] })]), 'en', { repo: 'api' })).toContain('aria-label="Clear the api filter"')
+  expect(view(sample)).not.toContain('Repo: ')
+})
+
+test('?repo= with no card touching it says so and still offers the way out', () => {
+  const out = view(board([]), 'es', { repo: 'zzz' })
+  expect(out).toContain('Ninguna tarjeta toca zzz.')
+  expect(out).toContain('href="#/board"')
+  expect(view(board([]), 'en', { repo: 'zzz' })).toContain('No card touches zzz.')
+})
