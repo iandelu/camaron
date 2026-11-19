@@ -42,6 +42,7 @@ HANDOFF = WORK / "handoff.md"
 LOG = WORK / "log.md"
 DONE = ("done", "dropped")
 NO_WIKI = "No wiki for this repo (wizard → Wikis → choose repos)"
+NO_OPENWIKI = "OpenWiki not selected"
 LIVE_INTERVIEWS = "Interviews are done live, not by team questionnaire"
 OFF_PROFILE = "Not part of the selected profile"
 DISABLED = "Disabled in .camarones/pipeline.yaml"
@@ -252,11 +253,11 @@ def sync() -> dict:
         if u["type"] != "repo-wiki":
             continue
         if comps is not None and "openwiki" not in comps:  # OpenWiki not installed → no repo-wiki units
-            why = "OpenWiki not selected"
+            why = NO_OPENWIKI
         elif u["repo"] not in wiki_repos:                  # a wiki only for the repos the user picked
             why = NO_WIKI
         else:
-            if u.get("notes") == NO_WIKI:                  # chosen again
+            if u.get("notes") in (NO_WIKI, NO_OPENWIKI):   # chosen again, the repo or OpenWiki (C3)
                 u["status"] = "todo" if u["status"] == "dropped" else u["status"]
                 u["notes"] = ""
             continue
