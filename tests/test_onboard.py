@@ -157,7 +157,7 @@ def test_steps_by_mode_and_kind(kit):
     o = kit.onboard
     assert o.steps("new", "legacy") == ("name", "repos", "tools", "setup", "stack", "arch", "intro")
     assert o.steps("new", "greenfield") == ("name", "repos", "tools", "setup", "intro")
-    assert o.steps("join", "legacy") == o.steps("join", "greenfield") == ("tools", "setup", "intro")
+    assert o.steps("join", "legacy") == o.steps("join", "greenfield") == ("repos", "tools", "setup", "intro")
 
 
 def test_steps_unknown_kind_reads_legacy(kit):

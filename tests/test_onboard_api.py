@@ -75,7 +75,7 @@ def test_a_saved_join_resumes_in_the_join_steps(app_server, kit):
     from lib.common import save_json
     save_json(kit.onboard.firstrun_file(kit.root), {"mode": "join", "name": "setup", "step": 3, "done": False})
     st = call(f"{app_server}/api/app/onboard/state", token=TOKEN)[1]
-    assert st["mode"] == "join" and st["steps"] == ["tools", "setup", "intro"] and st["step"] == "setup"
+    assert st["mode"] == "join" and st["steps"] == ["repos", "tools", "setup", "intro"] and st["step"] == "setup"
 
 
 def test_one_function_decides_the_mode_for_the_cli_and_the_app(kit):
@@ -106,7 +106,7 @@ def test_state_and_step_round_trip(app_server, kit):
 def test_step_only_accepts_the_modes_own_steps(app_server, kit):
     from lib.common import save_json
     save_json(kit.onboard.firstrun_file(kit.root), {"mode": "join", "name": "tools", "step": 2, "done": False})
-    assert post(app_server, "step", {"id": "repos"}) == (400, {"error": "step"})
+    assert post(app_server, "step", {"id": "stack"}) == (400, {"error": "step"})
     code, st = post(app_server, "step", {"id": "setup"})
     assert code == 200 and st["step"] == "setup" and st["mode"] == "join"           # a join stays a join
 
@@ -388,3 +388,45 @@ def test_server_starts_on_a_fresh_docs_root(kit, tmp_path):
     finally:
         pr.terminate()
         pr.wait(timeout=10)
+
+
+# ---------- the join's repos step (spec 2026-11-18 §6.2): read-only, found by remote ----------
+def join_mode(kit):
+    from lib.common import save_json
+    save_json(kit.onboard.firstrun_file(kit.root), {"mode": "join", "name": "repos", "step": 1, "done": False})
+
+
+def test_a_new_join_starts_at_the_repos_step(app_server, kit):
+    join_mode(kit)
+    st = call(f"{app_server}/api/app/onboard/state", token=TOKEN)[1]
+    assert st["mode"] == "join" and st["step"] == "repos"
+
+
+def test_the_join_repos_route_lists_what_this_machine_has(app_server, kit, tmp_path):
+    from test_repos_here import team_repos
+    team_repos(kit, tmp_path)
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    join_mode(kit)
+    res = call(f"{app_server}/api/app/onboard/repos-here", token=TOKEN)[1]
+    assert {r["name"]: r["state"] for r in res["rows"]} == {"api": "linked", "web": "here", "worker": "here"}
+
+
+def test_the_search_route_remembers_the_folder_for_this_machine_only(app_server, kit, tmp_path):
+    from test_repos_here import team_repos
+    team_repos(kit, tmp_path)
+    elsewhere = tmp_path / "IdeaProjects"
+    elsewhere.mkdir()
+    (kit.ws / "web").rename(elsewhere / "frontend")
+    join_mode(kit)
+    yaml_before = (kit.root / ".camarones" / "workspace.yaml").read_bytes()
+    code, res = post(app_server, "search", {"folder": str(elsewhere)})
+    assert code == 200 and res["linked"] == ["web"]
+    assert (kit.root / ".camarones" / "workspace.yaml").read_bytes() == yaml_before
+    assert post(app_server, "search", {"folder": "relative/path"}) == (400, {"error": "folder"})
+    assert post(app_server, "search", {"folder": str(tmp_path / "nope")}) == (400, {"error": "folder"})
+
+
+def test_a_join_cannot_change_the_teams_repos(app_server, kit):
+    join_mode(kit)
+    assert post(app_server, "repos", {"repos": [{"name": "other"}]}) == (400, {"error": "join"})
+    assert [r["name"] for r in kit.services.workspace.workspace()["repos"]] == ["api", "web", "worker"]

@@ -88,3 +88,26 @@ def test_a_new_project_tools_step_still_saves_the_teams_choice(kit, monkeypatch)
     kit.onboard.save_position(kit.root, "tools", "new")
     kit.onboard.install_tools([], ["likec4"], QUIET)
     assert kit.services.workspace.workspace()["project"]["components"] == ["likec4"]
+
+
+# ---------- the join's first run in the CLI wizard ----------
+def test_the_wizard_join_repos_step_shows_the_rows_and_writes_no_team_file(kit, fake_wizard, tmp_path, capsys):
+    from test_repos_here import team_repos
+    team_repos(kit, tmp_path)
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    yaml_before = (kit.root / ".camarones" / "workspace.yaml").read_bytes()
+    w = fake_wizard(["go"])
+    assert w.fr_join_repos(kit.services.workspace.workspace()) is None
+    out = capsys.readouterr().out
+    assert w.t("jr_linked", path="./api-svc") in out and w.t("jr_here") in out
+    assert (kit.root / ".camarones" / "workspace.yaml").read_bytes() == yaml_before
+
+
+def test_the_wizard_join_repos_step_searches_another_folder(kit, fake_wizard, tmp_path):
+    from test_repos_here import team_repos
+    team_repos(kit, tmp_path)
+    elsewhere = tmp_path / "IdeaProjects"
+    elsewhere.mkdir()
+    (kit.ws / "web").rename(elsewhere / "frontend")
+    fake_wizard(["search", str(elsewhere), "go"]).fr_join_repos(kit.services.workspace.workspace())
+    assert kit.services.links._is_link(kit.ws / "web")

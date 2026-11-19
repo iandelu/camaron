@@ -20,7 +20,7 @@ from .app import services
 
 STEPS = ("name", "repos", "tools", "setup", "stack", "arch", "intro")   # first-run steps, saved by id
 LEGACY_STEPS = ("name", "repos", "tools", "setup", "arch", "intro")     # firstrun.json before 3.3 kept only the index
-JOIN_STEPS = ("tools", "setup", "intro")   # joining a team's cam-docs: the rest is shared and already decided
+JOIN_STEPS = ("repos", "tools", "setup", "intro")   # a join: repos is read-only, the rest is the team's already
 GREENFIELD_STEPS = ("name", "repos", "tools", "setup", "intro")   # nothing to read yet: no stack scan, no C4 draft
 
 # a file that says "there is code here"; *.csproj is matched by suffix (its name is the project's)
@@ -452,7 +452,10 @@ def go_to(step: str) -> dict:
 def set_repos(rows: list) -> dict:
     """The repos step: validate the rows (`name` required and unique, `url` optional, `branch` defaults to main, `kind`
     to service), keep the extra keys an existing repo already has (stack, wiki…) and save. A legacy project needs at
-    least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate`."""
+    least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate` · `join` (a join never changes the
+    team's list)."""
+    if joining():
+        raise ValueError("join")
     if not isinstance(rows, list):
         raise ValueError("repos")
     ws = services.current().workspace.workspace()
@@ -477,6 +480,24 @@ def set_repos(rows: list) -> dict:
     ws["repos"] = out
     services.current().workspace.save_workspace(ws)
     return state()
+
+
+def join_repos() -> dict:
+    """The join's repos step: what this machine has of each team repo, found by its remote. Read-only for the team's
+    list; a clone kept under another folder name is linked (repos_here)."""
+    from .app import repos_here
+    return repos_here.find(log=lambda _: None)
+
+
+def search(folder: str) -> dict:
+    """*Search another folder*: remembered for this machine only, then the rows again. ValueError `folder` for anything
+    but an existing absolute folder (the app's dialog gives one)."""
+    from .app import repos_here
+    f = Path(str(folder or "").strip())
+    if not str(folder or "").strip() or not f.is_absolute():
+        raise ValueError("folder")
+    repos_here.add_search(f)
+    return join_repos()
 
 
 def setup_job(system: list[str], components: list[str], log, cancelled: Callable[[], bool] | None = None) -> dict:
