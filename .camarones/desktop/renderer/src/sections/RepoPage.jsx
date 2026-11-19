@@ -79,8 +79,20 @@ function Header({ data, now }) {
   )
 }
 
-function SonarTile({ sonar, trend, href }) {
+// With no checkout here the Sonar and library figures are unknown (the server's zeros are not a clean state), and
+// building a snapshot would not change that: the tile says so and still opens its window.
+function NotCloned({ to, ...head }) {
+  return (
+    <Tile as="a" {...head}>
+      <p className="muted small">{t('sq.notCloned')}</p>
+      <span className="dk-tile-to">{to}</span>
+    </Tile>
+  )
+}
+
+function SonarTile({ cloned, sonar, trend, href }) {
   const head = { span: 's4', i: 1, id: 'rp-sonar', icon: 'sonar', title: t('rp.sonar') }
+  if (!cloned) return <NotCloned {...head} href={href} to={t('rp.toSonar')} />
   if (!sonar) return (
     <Tile {...head}>
       <p className="muted small">{t('rp.noHealth')}</p>
@@ -134,7 +146,8 @@ function ActivityTile({ activity, now }) {
   )
 }
 
-function LibsTile({ libs, href }) {
+function LibsTile({ cloned, libs, href }) {
+  if (!cloned) return <NotCloned span="s6" i={3} id="rp-libs" icon="libs" title={t('rp.libs')} href={href} to={t('rp.toLibs')} />
   const l = lang()
   const rows = libsRows(libs).map((r) => {
     const sev = words(`hb.sev.${r.key}`)
@@ -250,9 +263,9 @@ export function RepoBento({ data, now, onPortal }) {
     <Shell>
       <div className="dk-bento">
         <Header data={data} now={now} />
-        <SonarTile sonar={data.sonar} trend={data.trend || []} href={links.sonar} />
+        <SonarTile cloned={data.cloned} sonar={data.sonar} trend={data.trend || []} href={links.sonar} />
         <ActivityTile activity={data.activity} now={now} />
-        <LibsTile libs={data.libs} href={links.libs} />
+        <LibsTile cloned={data.cloned} libs={data.libs} href={links.libs} />
         <DocsTile docs={data.docs} wiki={data.wiki} href={links.wikis} onPortal={onPortal} />
         <ArchTile name={data.name} c4={data.c4} graph={data.graph} onPortal={onPortal} />
         <WorkTile work={data.work} adrs={data.adrs || []} links={links} />

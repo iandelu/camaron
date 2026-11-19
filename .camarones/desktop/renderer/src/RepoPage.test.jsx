@@ -169,11 +169,32 @@ test('the Work tile: the cards by column with their words, and the decisions tha
   expect(render({ work: { columns: [], total: 0 }, adrs: [] })).toContain(S.es['rp.noWork'])
 })
 
+// What GET app/repo sends for a repo with no checkout here: its Sonar and library figures are unknown, not clean.
+const notCloned = { cloned: false, sonar: null, activity: null, head: null, stack: [], graph: null, trend: [],
+  libs: { total: 0, vulns: {}, scanned: true, outdated: null } }
+
 test('a repo not cloned here says so in the header and shows no stack', () => {
-  const out = render({ cloned: false })
+  const out = render(notCloned)
   expect(out).toContain(S.es['rp.notCloned'])
   expect(out).not.toContain('dk-rp-pill')
   expect(out).not.toContain('Java 17')
+})
+
+test('a repo not cloned here claims no Sonar or library state: both tiles only say it is not cloned', () => {
+  const out = render(notCloned)
+  const sonar = out.match(/<a class="dk-tile s4"[\s\S]*?<\/a>/)?.[0] ?? ''
+  const libs = out.match(/<a class="dk-tile s6"[\s\S]*?<\/a>/)?.[0] ?? ''
+  for (const [name, tile] of [['sonar', sonar], ['libs', libs]]) {
+    expect(tile, name).toContain(S.es['sq.notCloned'])
+    expect(tile, name).not.toContain('cu-chip')
+  }
+  expect(sonar).toContain('href="#/quality/sonar?repo=api"')
+  expect(libs).toContain('href="#/quality/libs?repo=api"')
+  expect(out).not.toContain(S.es['rp.libsClean'])
+  expect(out).not.toContain('cu-hbars')
+  expect(out).not.toContain('De 0 librerías')
+  expect(out).not.toContain(S.es['rp.noHealth'])
+  expect(out).not.toContain(S.es['rp.noHealthGo'])
 })
 
 test('the page speaks English too', () => {
