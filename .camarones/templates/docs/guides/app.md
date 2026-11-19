@@ -29,7 +29,7 @@ Each project has its own window, served by that project's own local server (see
 |---|---|
 | Header | The brand (back to Flow), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
 | Rail | One button per project of this machine, with its initials. Another project opens **in this window**: the app starts that project's server, moves the window to it and stops the old one. Stopping it ends the sessions open on its canvas, so when one is live the app asks first: *{n} sessions are open in this project: switching project ends them.* — **Cancel** or **Switch anyway**. A project that is not on disk is greyed out. **+** opens the start screen |
-| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
+| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health, SonarQube and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
 | Main area | The section you are in |
 | Jobs panel and status bar | What runs now and the last jobs, with their output; the status bar shows the first running job and the kit's version |
 
@@ -337,7 +337,7 @@ and **Check everything** (`camaron health --refresh`). Then three areas, each wi
 |---|---|---|---|
 | Machine | Ready · Review · At risk | tools, missing | **Requirements and tools**: what is missing first, each with **Install** (`camaron doctor --install …`), **Install the pinned ones** (`camaron setup`), **Check again**, and kit files out of place with **Repair**. **Kit files**: each file or link that is off, with why; **Repair** puts back the kit's, checks again and says what it could not fix and why. A file of yours that the kit never replaces is listed as kept, not as something to fix |
 | Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them), **With and without cam-docs (AI)** (the same question asked twice), **Secret scan** (gitleaks over the docs and the wikis, `camaron check --secrets`: it runs when you open the row, lists each place it found — never the value — and says plainly when it could not run) and **Hooks for the agents** (the switch for the five Claude Code method hooks, `camaron hooks`, and what they saw: prompts that got docs, sessions that read the docs before their first code edit, edits stopped) |
-| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries view |
+| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the repo's page in the app). **Libraries** → the Libraries view |
 
 A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Settings › Tokens with the
 server filled in. A figure that could not be read shows "—", never 0. Below the board: **See the KPIs** (portal) and
@@ -526,7 +526,7 @@ says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one in
 <!-- go:settings/plugins -->
 
 The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
-whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
+whether it runs code or sends the docs out, and its state here. With none installed, the tab says so. **Enable**/**Disable** only affect this machine.
 
 ### Trust
 

@@ -29,7 +29,7 @@ Cada proyecto tiene su ventana, servida por el servidor local de ese proyecto (v
 |---|---|
 | Cabecera | La marca (vuelve a Flujo), dónde estás (`proyecto › sección`), **Ver portal**, **Buscar o ir a…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) y **⋯**. La cabecera es la barra de la ventana: arrástrala para moverla |
 | Raíl | Un botón por cada proyecto de esta máquina, con sus iniciales. Otro proyecto se abre **en esta ventana**: la app arranca el servidor de ese proyecto, lleva la ventana a él y para el anterior. Pararlo cierra las sesiones abiertas en su lienzo, así que si alguna sigue viva la app pregunta antes: *Hay {n} sesiones abiertas en este proyecto: al cambiar de proyecto se cierran.* — **Cancelar** o **Cambiar igualmente**. Un proyecto que no está en el disco sale apagado. **+** abre la pantalla de inicio |
-| Barra lateral | Cuatro lugares: Flujo (Resumen y Plan), Tablero, Calidad (Salud y Librerías) y Docs (Leer, Wikis, Decisiones y Entrevistas); después, bajo **Esta app**, Ajustes (General, Tokens, Skills, Plugins, Confianza y Kit), Guía y (solo en un checkout del kit) Kit dev. Un lugar con vistas las enseña como pestañas bajo su título. Al pasar por uno ves su atajo |
+| Barra lateral | Cuatro lugares: Flujo (Resumen y Plan), Tablero, Calidad (Salud, SonarQube y Librerías) y Docs (Leer, Wikis, Decisiones y Entrevistas); después, bajo **Esta app**, Ajustes (General, Tokens, Skills, Plugins, Confianza y Kit), Guía y (solo en un checkout del kit) Kit dev. Un lugar con vistas las enseña como pestañas bajo su título. Al pasar por uno ves su atajo |
 | Zona central | La sección en la que estás |
 | Panel de trabajos y barra de estado | Lo que corre ahora y los últimos trabajos, con su salida; la barra de estado enseña el primer trabajo en curso y la versión del kit |
 
@@ -346,7 +346,7 @@ Arriba, un veredicto («Páginas desactualizadas: 3 · Críticas o altas: 2», o
 |---|---|---|---|
 | Máquina | Lista · Revisar · Riesgo | herramientas, faltan | **Requisitos y herramientas**: primero lo que falta, cada cosa con **Instalar** (`camaron doctor --install …`), **Instalar las fijadas** (`camaron setup`), **Volver a comprobar**, y ficheros del kit fuera de su sitio con **Reparar**. **Ficheros del kit**: cada fichero o enlace fuera de su sitio, con su motivo; **Reparar** repone lo del kit, vuelve a comprobar y dice qué no ha podido y por qué. Un fichero tuyo que el kit nunca reemplaza sale como «se queda como está», no como algo por arreglar |
 | Documentación | Al día · Revisar · Riesgo | páginas desactualizadas, por revisar | **Páginas desactualizadas** (cada una con **Sigue valiendo**, o **Añadir una unidad que las actualice**), **Preguntas de control (IA)** (confirmar preguntas de oro, hacerlas, o **Proponer preguntas con {agente}**), **Contexto de cada sesión** (los tokens que carga cada sesión de agente frente al presupuesto), **Páginas por revisar** (portal), **Bloques generados** (actualizarlos), **Con y sin cam-docs (IA)** (la misma pregunta dos veces), **Escaneo de secretos** (gitleaks sobre la documentación y las wikis, `camaron check --secrets`: se ejecuta al abrir la fila, lista cada sitio donde encontró algo —nunca el valor— y dice claro cuando no pudo ejecutarse) y **Hooks para los agentes** (el interruptor de los cinco hooks del método de Claude Code, `camaron hooks`, y lo que han visto: prompts con documentación, sesiones que leyeron la documentación antes de su primera edición de código, ediciones frenadas) |
-| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en el portal). **Librerías** → la vista Librerías |
+| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en la app). **Librerías** → la vista Librerías |
 
 Un repo que usa SonarQube sin token guardado enseña **Conectar SonarQube**, que abre Ajustes › Tokens con el servidor
 escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo del panel: **Ver los KPIs** (portal) y
@@ -373,7 +373,7 @@ Tokens).
 ### Librerías
 
 Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la segunda vista de Calidad
-(`#/quality/libs`).
+(`#/quality/libs`). `?repo=<nombre>` la abre con la faceta de ese repo ya puesta.
 
 <!-- go:quality/libs -->
 <!-- tour:libs -->
@@ -541,7 +541,7 @@ dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno
 <!-- go:settings/plugins -->
 
 Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
-uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
+uno, si ejecuta código o envía la documentación fuera, y su estado aquí. Sin ninguno instalado, la pestaña lo dice. **Activar**/**Desactivar** solo afectan a esta
 máquina.
 
 ### Confianza
