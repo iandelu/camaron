@@ -100,7 +100,7 @@ def test_a_command_inside_its_timeout_answers_as_before(kit):
 
 def test_no_timeout_leaves_subprocess_run_as_it_was(kit, monkeypatch):
     from lib.core import process
-    monkeypatch.setattr(process, "IS_WIN", False)                  # Windows bounds a command its own way (below)
+    monkeypatch.setattr(process, "IS_WIN", False)
     seen = []
 
     def fake(cmd, **kw):
@@ -109,8 +109,30 @@ def test_no_timeout_leaves_subprocess_run_as_it_was(kit, monkeypatch):
     monkeypatch.setattr(process.subprocess, "run", fake)
     assert process.out(["tool"]) == "x"
     assert "timeout" not in seen[0]
-    process.out(["tool"], timeout=4)
-    assert seen[1]["timeout"] == 4
+
+
+def traps_term(marker, then="sys.exit(143)"):
+    return [sys.executable, "-c", "import pathlib, signal, sys, time; signal.signal(signal.SIGTERM, lambda *a: "
+            f"(pathlib.Path(sys.argv[1]).write_text('x'), {then})); time.sleep(30)", str(marker)]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGTERM to send a console program: its tree is killed")
+def test_a_timed_out_command_is_asked_to_stop_before_it_is_killed(kit, tmp_path):
+    from lib.core import process
+    marker = tmp_path / "cleaned"                  # git drops its refs/*.lock on SIGTERM; SIGKILL leaves them behind
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(traps_term(marker), timeout=2, check=False, capture=True)
+    assert marker.exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGTERM to send a console program: its tree is killed")
+def test_a_command_that_will_not_stop_is_killed_after_the_grace(kit, tmp_path, monkeypatch):
+    from lib.core import process
+    monkeypatch.setattr(process, "TERM_GRACE", 0.5)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(traps_term(tmp_path / "m", then="None"), timeout=2, check=False, capture=True)
+    assert time.monotonic() - started < 15
 
 
 # Git for Windows' git.exe is a launcher that starts the real git, which holds the pipes: killing the launcher alone
