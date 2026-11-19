@@ -89,9 +89,9 @@ cuestionarios).
 - avisos cuando es un borrador de IA, hay que reconfirmarla, cita código que cambió o ya no existe, o su traducción
   falta o está desactualizada;
 - **En esta página** (el índice), **Anterior / Siguiente** y la tarjeta de **Fuentes**: los ficheros que cita, por repo,
-  cada uno con su frescura. Al pasar el ratón ves qué los cambió (commits, PR o MR, claves de ticket). Un clic abre las
-  líneas en tu editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA, WebStorm, PyCharm) o, en el exportado, en el
-  repositorio.
+  cada uno con su frescura (una traducción sin fuentes propias muestra las de la página). Al pasar el ratón ves qué los
+  cambió (commits, PR o MR, claves de ticket). Un clic abre las líneas en tu editor (VS Code, Cursor, Windsurf,
+  VSCodium, IntelliJ IDEA, WebStorm, PyCharm) o, en el exportado, en el repositorio.
 
 Lo que puedes hacer en ella, en vivo:
 

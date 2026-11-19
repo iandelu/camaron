@@ -85,8 +85,9 @@ and **Working notes** at the end, folded (discovery, interviews, questionnaires)
 - banners when it is an AI draft, needs re-confirmation, cites code that changed or is gone, or its translation is
   missing or out of date;
 - **On this page** (the outline), **Previous / Next**, and the **Sources** card: the files it cites, by repo, each with
-  its freshness. Hover one to see what changed it (commits, PR or MR, ticket keys). Click to open the lines in your
-  editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA, WebStorm, PyCharm) or, exported, in the repository.
+  its freshness (a translation with no sources of its own shows the page's). Hover one to see what changed it (commits,
+  PR or MR, ticket keys). Click to open the lines in your editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA,
+  WebStorm, PyCharm) or, exported, in the repository.
 
 What you can do on it, live:
 
