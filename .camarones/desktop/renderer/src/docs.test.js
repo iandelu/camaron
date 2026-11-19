@@ -466,6 +466,18 @@ test('the team strip says where the team repo stands, one state at a time', () =
   expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
 })
 
+// GET sync's `changes` leaves out the files the kit rewrites on every read (docs/.status.json): they are never yours to
+// upload. An older server sends only `pending`.
+test('the team strip counts only real changes as yours to upload, never the files the kit rewrites', () => {
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: ['docs/.status.json'], changes: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] }))
+    .toEqual({ key: 'strip.ahead', vars: { n: 2 }, tone: 'warn' })
+  expect(t('strip.ahead', { n: 2 })).toBe('2 cambios por subir')
+  setLang('en')
+  expect(t('strip.ahead', { n: 2 })).toBe('2 changes to upload')
+  setLang('es')
+})
+
 // The health header lives on Read and the wiki cards on Wikis: the stale-wikis chip opens the Wikis tab with this address, and only
 // that tab's address asking for `show=stale` makes the tab look for its first stale card.
 test('the address that asks the Wikis tab for its first stale card', () => {

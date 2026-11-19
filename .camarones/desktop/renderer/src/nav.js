@@ -87,6 +87,9 @@ export function termOf(hash) {
 export const firstRunPending = (state) => state?.done === false
 export const firstRunRoute = (state, hash) => (firstRunPending(state) && sectionOf(hash, {}) !== START ? `#/${START}` : null)
 
+// The window catches up with the team on open, unless the first run is still ahead (the wizard sets the docs up first).
+export const catchUpOnOpen = (state, hash) => !firstRunRoute(state, hash) && !firstRunPending(state)
+
 // Two letters for the rail: the first letters of the first two words, or the first two of a single word.
 export function initials(name) {
   const words = String(name || '').split(/[\s_-]+/).filter(Boolean)

@@ -65,7 +65,7 @@ every command either way.
 | `version` | machine |  |  |  |
 | `wiki` | generate | yes |  |  |
 
-## Portal shows it, the app runs it (16)
+## Portal shows it, the app runs it (18)
 
 | Command | Zone | AI | Destructive | --json |
 |---|---|---|---|---|
@@ -78,6 +78,8 @@ every command either way.
 | `kpis` | check |  |  | yes |
 | `pipeline` | check |  |  | yes |
 | `plan` | generate |  |  | yes |
+| `pull` | team |  |  |  |
+| `push` | team |  |  |  |
 | `remote` | team |  |  |  |
 | `removed` | team |  |  |  |
 | `runs` | generate |  |  | yes |

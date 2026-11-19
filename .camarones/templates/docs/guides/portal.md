@@ -188,10 +188,11 @@ was inferred from the code with its evidence, the options, "Other" and a comment
 form, so both mix, and whoever comes back sees their answers to change them. At the top: who answered, what nobody
 answered and where people disagree.
 
-**Sync** (`#/sync`, live): this `cam-docs` against the team's repo — your commits not shared, theirs not here, when
-this machine last shared, and files not saved yet. **Sync with the team** does what `camaron share` does (a
-checkpoint, the team's work in, yours out); **Check for news** asks the remote. A conflict is undone; a possible secret
-blocks the push. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
+**Team sync** (`#/sync`, live): this `cam-docs` against the team's repo — n to bring in, m to upload, when this machine last
+did, and files not saved yet. **Bring in changes** (`camaron pull`) rebases the team's work in; **Upload changes**
+(`camaron push`) checkpoints and pushes yours, and refuses when the team has new changes; **Sync with the team** does
+what `camaron share` does (bring in, then upload). The useful one is the primary button; **Check for news** asks the
+remote. A conflict is undone; a possible secret blocks the push. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
 repo not found) with git's line beneath; tokens are saved in the desktop app.
 
 <!-- portal:#/pipeline -->

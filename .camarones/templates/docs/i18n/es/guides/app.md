@@ -154,6 +154,10 @@ pelar». Su botón depende de qué paso sea:
 | Construir el portal (`portal`), o no queda nada | **Leer la documentación** |
 | Cualquier otra cosa | **Ver el plan** |
 
+Al abrir la ventana, el Resumen trae solo el trabajo del equipo (nunca sube) y muestra el resultado en una línea; si los
+cambios del equipo chocan con los tuyos, no toca nada, nombra los ficheros y ofrece **Abrir una terminal aquí**. Sin
+conexión, dice que trabajas con lo último que trajiste.
+
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en
@@ -378,13 +382,18 @@ que elijas.
 <!-- tour:docs -->
 
 **La franja del equipo.** Encima de las pestañas, en todas las de Docs, el repo `cam-docs` del equipo: si estás al día,
-tienes cambios por traer o nunca compartiste (y cuándo lo hiciste por última vez), y **Compartir ahora** (un checkpoint,
-después tu trabajo rebasado sobre el del equipo y subido). Su pliegue, **Repo del equipo**, guarda la URL: pégala y
-**Guardar** (`camaron remote`). Con remoto ofrece además **Comprobar** (pregunta al remoto qué hay de nuevo) y
-**Compartir cada vez que se guarda el progreso** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se
-deshace sin tocar nada; algo que parece un secreto no se publica. Un compartir o una comprobación que falla dice por qué
-—no llega al servidor (conexión, VPN o proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de git
-debajo; un problema de token enlaza a **Ajustes › Tokens** para ese servidor.
+tienes cambios por traer o por subir, o nunca compartiste; una línea —n por traer · m por subir · última vez … (la última
+subida o traída que te dejó al día), más n sin guardar cuando has cambiado páginas— y tres acciones, la útil como botón
+principal: **Traer cambios** (`camaron pull`, el trabajo del equipo rebasado dentro), **Subir cambios**
+(`camaron push`, un checkpoint y después lo tuyo subido; se niega si el equipo tiene cambios nuevos, así que tráelos
+primero) y **Sincronizar** (`camaron share`, traer y después subir). Su pliegue, **Repo del equipo**, guarda la URL:
+pégala y **Guardar** (`camaron remote`). Con remoto muestra la misma línea y acciones, **Comprobar** (pregunta al remoto
+qué hay de nuevo) y **Subir al guardar** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se deshace
+sin tocar nada; algo que parece un secreto no se publica. Cuando los cambios del equipo chocan con los tuyos, hay un
+rebase a medias o tus cambios sin guardar tuvieron que ir al stash de git, lo dice y ofrece **Abrir una terminal aquí**.
+Una acción o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o proxy), pide un token o
+rechaza el tuyo, el repo no está— con la línea de git debajo; un problema de token enlaza a **Ajustes › Tokens** para
+ese servidor.
 
 ### Leer
 
@@ -548,7 +557,7 @@ Esta máquina y el kit que lleva (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Bajo
 
 Los servidores guardados con **Probar** y **Borrar**; un formulario (servidor, tipo, token) cuyo **Comprobar y guardar** prueba antes el token contra el servidor (**Guardarlo igualmente** si insistes). Los tokens viven en el llavero del sistema, nunca en el proyecto ni en una línea de comandos. SonarQube solo por https (http solo en localhost)
 
-La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice por qué: un servidor de SonarQube viene de Calidad; uno de la forja, o sin tipo (un compartir que Docs no pudo hacer), dice que para compartir con el equipo falta su token. La antigua `#/machine?host=…&kind=…` sigue llegando a él.
+La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice por qué: un servidor de SonarQube viene de Calidad; uno de la forja, o sin tipo (un paso con el equipo que Docs no pudo dar), dice que para traer o subir cambios con el equipo falta su token. La antigua `#/machine?host=…&kind=…` sigue llegando a él.
 
 ### Skills
 
@@ -629,7 +638,7 @@ instalación global. Es el banco para cambiar el kit:
 | «No he podido arrancar el servidor del proyecto» | El cuadro trae el error del servidor; `camaron doctor` en esa carpeta suele decir qué falta |
 | En el portal del navegador no está el botón que esperabas | Es a propósito: el portal del navegador no ejecuta nada en tu máquina. Hazlo aquí |
 | Quieres que vuelva a descargar Electron | Borra `~/.camarones/desktop` y lanza `camaron app` |
-| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Compartir ahora** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a compartir |
+| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Traer cambios**, **Subir cambios** o **Sincronizar** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a intentarlo |
 
 En Linux con los *user namespaces* restringidos (Ubuntu 24.04 y posteriores) el kit abre la app con `--no-sandbox`;
 sus ventanas solo cargan el servidor local de tu proyecto.

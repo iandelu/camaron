@@ -113,7 +113,7 @@ T = {
         "m_ci": "⚙️  CI (GitLab / GitHub)",
         "m_extra": "➕ Revisiones extra (seguridad, arquitectura) — beta",
         "m_update": "🔄 Actualizar doc tras cambios (sesión con IA)",
-        "m_share": "🤝 Compartir con el equipo (traer y publicar cam-docs)",
+        "m_share": "🤝 Equipo: traer, subir o sincronizar",
         "sh_url": "URL del repo de cam-docs del equipo (GitHub/GitLab; vacío para volver):",
         "sh_confirm": "Traigo lo último del equipo y publico tu trabajo en {url}. ¿Seguimos?",
         "sh_pushed": "✔ Publicado en {url} ({detail}). Tu equipo ya puede pescarlo.",
@@ -148,6 +148,20 @@ T = {
         "us_empty": "Aún no hay estadísticas: aparecen cuando el equipo usa el portal, los agentes (MCP) o la CLI, y llegan al compartir.",
         "us_on": "▶ Activar estadísticas en este equipo",
         "us_off": "⏸ Desactivar estadísticas en este equipo",
+        "sh_pick": "¿Qué hacemos con el equipo?",
+        "sh_do_pull": "⬇ Traer sus cambios",
+        "sh_do_push": "⬆ Subir los míos",
+        "sh_do_share": "⇅ Sincronizar (traer y subir)",
+        "sh_behind": "El equipo tiene cambios nuevos: tráelos primero o sincroniza.",
+        "cu_pulled": "✔ Traje {n} cambio(s) del equipo.",
+        "cu_up_to_date": "✔ Ya tienes lo último del equipo.",
+        "cu_conflict": "No he podido traer los cambios del equipo: chocan con los tuyos en {files}. No he tocado nada.",
+        "cu_stashed": "He traído los cambios del equipo, pero tus cambios sin guardar chocaban con ellos: están a salvo en el stash de git (`git stash list`). Revísalos en una terminal.",
+        "cu_busy": "Ya se está poniendo al día otro proceso: sigo con lo que hay.",
+        "cu_busy_git": "Hay un rebase o un merge a medias en cam-docs: termínalo o cancélalo en una terminal.",
+        "cu_busy_run": "Hay una ejecución del autopiloto usando los docs: trae los cambios del equipo cuando termine.",
+        "cu_offline": "No llego al repo del equipo: trabajas con lo último que trajiste.",
+        "cu_graphs_stale": "{n} grafo(s) de código desactualizado(s): los rehace la app o «{cli} pull».",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "Te unes a «{name}»: el equipo ya eligió repos, stack y arquitectura, y el plan sigue donde lo dejaron. "
                         "Yo solo preparo esta máquina: herramientas y repos. Nada de pelar dos veces la misma gamba.",
@@ -474,7 +488,7 @@ T = {
         "m_ci": "⚙️  CI (GitLab / GitHub)",
         "m_extra": "➕ Extra reviews (security, architecture) — beta",
         "m_update": "🔄 Update docs after changes (AI session)",
-        "m_share": "🤝 Share with the team (pull and publish cam-docs)",
+        "m_share": "🤝 Team: bring in, upload or sync with the team",
         "sh_url": "URL of the team's cam-docs repo (GitHub/GitLab; empty to go back):",
         "sh_confirm": "I'll pull the team's latest and publish your work to {url}. Go ahead?",
         "sh_pushed": "✔ Published to {url} ({detail}). Your team can reel it in now.",
@@ -509,6 +523,20 @@ T = {
         "us_empty": "No stats yet: they appear as the team uses the portal, agents (MCP) or the CLI, and arrive when sharing.",
         "us_on": "▶ Turn stats on for this computer",
         "us_off": "⏸ Turn stats off for this computer",
+        "sh_pick": "What shall we do with the team?",
+        "sh_do_pull": "⬇ Bring in their changes",
+        "sh_do_push": "⬆ Upload mine",
+        "sh_do_share": "⇅ Sync with the team (bring in and upload)",
+        "sh_behind": "The team has new changes: bring them in first, or sync with the team.",
+        "cu_pulled": "✔ Brought in {n} change(s) from the team.",
+        "cu_up_to_date": "✔ You already have the team's latest.",
+        "cu_conflict": "Couldn't bring in the team's changes: they clash with yours in {files}. Nothing was changed.",
+        "cu_stashed": "I brought in the team's changes, but your unsaved changes clashed with them: they are safe in git's stash (`git stash list`). Review them in a terminal.",
+        "cu_busy": "Another process is already catching up: carrying on with what's here.",
+        "cu_busy_git": "A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.",
+        "cu_busy_run": "An autopilot run is using the docs: bring in the team's changes once it ends.",
+        "cu_offline": "Can't reach the team's repo: you're working with the latest you brought in.",
+        "cu_graphs_stale": "{n} code graph(s) out of date: the app or “{cli} pull” rebuilds them.",
         "sh_git_said": "  git: {detail}",
         "join_welcome": "You're joining “{name}”: the team already picked the repos, stack and architecture, and the plan carries "
                         "on where they left it. I'll just set up this machine: tools and repos. No peeling the same shrimp twice.",
@@ -1009,7 +1037,9 @@ class W:
         if mode != "done":
             if not self.first_run(resume_step(state), mode=mode):
                 return
+            self.catch_up()
         else:
+            self.catch_up()
             self.usage_notice()
             time.sleep(0.8)
         usage.record("wizard:open")
@@ -2325,6 +2355,43 @@ class W:
                     self.safe(self.busy, services.current().setup.wire_one, n)
             plan.sync()
 
+    def catch_up(self) -> None:
+        cu = services.current().catchup
+        run = self.safe(self.busy, cu.run)
+        if not run:
+            return
+        if run["status"] == "busy":
+            self.say(self.t("cu_busy"), "grey62")
+            return
+        r = run.get("pull") or {}
+        line = self._pull_line(r)
+        if line:
+            self.say(line[0], line[1])
+        if run["views"]["graphs"]:                       # slow: the app or `camaron pull` rebuilds them, never the way in
+            self.say(self.t("cu_graphs_stale", n=len(run["views"]["graphs"]), cli=cli_cmd()), "grey62")
+
+    def _pull_line(self, r: dict, url: str = "") -> tuple[str, str] | None:
+        st = r.get("status")
+        if st == "pulled":
+            return self.t("cu_pulled", n=r.get("commits", 0)), "green"
+        if st == "up-to-date":
+            return self.t("cu_up_to_date"), "grey62"
+        if st == "conflict":
+            return self.t("cu_conflict", files=", ".join(r.get("files") or []) or r.get("detail", "")), "red"
+        if st == "stashed":
+            return self.t("cu_stashed"), "yellow"
+        if st == "busy":                                 # by what holds the docs: git half way, or an autopilot run
+            if r.get("detail") == "git":
+                return self.t("cu_busy_git"), "yellow"
+            return self.t("cu_busy_run" if r.get("detail") == "run" else "cu_busy"), "grey62"
+        if st == "error":
+            reason = (r.get("reason") or "").replace("-", "_")
+            if reason in ("network", "not_found"):
+                return self.t("cu_offline"), "yellow"
+            key = "sh_err_" + reason if ("sh_err_" + reason) in T[self.lang] else "sh_err_unknown"
+            return self.t(key, host=r.get("host") or url, url=url), "red"
+        return None
+
     def do_share(self) -> None:
         url = services.current().share.docs_remote()
         if not url:
@@ -2332,13 +2399,28 @@ class W:
             if not url:
                 return
             services.current().share.set_remote(url)
-        if not self.yes(self.t("sh_confirm", url=url), default=True):
+        sh = services.current().share
+        what = self.sel(self.t("sh_pick"), [Choice(self.t("sh_do_pull"), "pull"), Choice(self.t("sh_do_push"), "push"),
+                                            Choice(self.t("sh_do_share"), "share")])
+        if not what:
             return
+        if what == "share" and not self.yes(self.t("sh_confirm", url=url), default=True):
+            return
+        cu = services.current().catchup
         while True:
-            r = self.safe(self.busy, services.current().share.share)
+            if what == "pull":                                     # the catch-up routine: its lock, the C4, the last result
+                run = self.safe(self.busy, cu.run)
+                if run and not run.get("pull"):
+                    if run["status"] == "busy":
+                        self.say(self.t("cu_busy"), "grey62")
+                    self.pause()
+                    return
+                r = run and run["pull"]
+            else:
+                r = self.safe(self.busy, getattr(sh, what))
             if not r:
                 return
-            url = services.current().share.docs_remote() or url
+            url = sh.docs_remote() or url
             if r["status"] != "error" or not r.get("reason"):
                 break
             host = r.get("host") or url
@@ -2351,12 +2433,26 @@ class W:
                 return
             self.banner()
             self.add_token(r["host"])
-        ok = r["status"] in ("pushed", "up-to-date", "nothing")
-        self.say(self.t("sh_" + r["status"].replace("-", "_"), url=url, detail=r["detail"], cli=cli_cmd()),
-                 f"bold {ORANGE}" if r["status"] == "pushed" else ("" if ok else "red"))
-        if ok and not services.current().share.AUTO_SHARE.exists():    # asked once; the CLI flag changes it later
+        ok = r["status"] in ("pushed", "up-to-date", "nothing", "pulled")
+        key = "sh_" + r["status"].replace("-", "_")
+        unknown = what != "pull" and r["status"] != "behind" and key not in T[self.lang]
+        if what == "pull":
+            line = self._pull_line(r, url) or (self.t("sh_nothing"), "")
+        elif r["status"] == "behind":
+            line = self.t("sh_behind"), "red"
+        elif unknown:
+            line = self.t("sh_err_unknown"), "red"
+        else:
+            line = self.t(key, url=url, detail=r["detail"], cli=cli_cmd()), \
+                f"bold {ORANGE}" if r["status"] == "pushed" else ("" if ok else "red")
+        self.say(*line)
+        if unknown and r.get("detail"):
+            self.say(self.t("sh_git_said", detail=r["detail"]), "dim")
+        if what == "pull" and run["views"]["graphs"]:
+            self.safe(self.busy, cu.rebuild_graphs, run["views"]["graphs"])
+        if ok and what != "pull" and not sh.AUTO_SHARE.exists():    # asked once; the CLI flag changes it later
             on = bool(self.yes(self.t("sh_auto_ask", cli=cli_cmd()), default=True))
-            services.current().share.set_auto_share(on)
+            sh.set_auto_share(on)
             if on:
                 self.say(self.t("sh_auto_on"), "green")
         self.pause()

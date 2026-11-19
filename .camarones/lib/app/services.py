@@ -49,6 +49,7 @@ class Services:
     viewers: ModuleType
     setup: ModuleType
     share: ModuleType
+    catchup: ModuleType
     wiki: ModuleType
     portal: ModuleType
     export_site: ModuleType

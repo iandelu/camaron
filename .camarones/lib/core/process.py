@@ -69,20 +69,36 @@ def which(name: str) -> str | None:
     return None
 
 
+def _bounded_win(full: list[str], kw: dict, timeout: float) -> subprocess.CompletedProcess:
+    """subprocess.run's timeout, except that the whole tree dies: a child the command started (a .cmd shim's program,
+    the real git behind Git for Windows' launcher) holds the pipes, and subprocess would wait on them after the kill."""
+    if kw.pop("capture_output", False):
+        kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    with subprocess.Popen(full, **kw) as p:
+        try:
+            said, err = p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_tree(p.pid)
+            p.kill()
+            p.communicate()
+            raise
+        return subprocess.CompletedProcess(p.args, p.returncode, said, err)
+
+
 def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool = False,
         capture: bool = False, env: dict | None = None, timeout: float | None = None) -> subprocess.CompletedProcess:
     """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows). With a `timeout`
-    (seconds) a command that runs longer is killed and `subprocess.TimeoutExpired` is raised; on Windows only the
-    direct child dies, so a .cmd shim's own child may outlive it."""
+    (seconds) a command that runs longer is killed and `subprocess.TimeoutExpired` is raised; on Windows the command's
+    own children die with it (taskkill /T)."""
     exe = which(cmd[0]) or cmd[0]
     full = [exe, *cmd[1:]]
     kw: dict = {"cwd": str(cwd) if cwd else None, "env": {**os.environ, **(env or {})}}
-    if timeout is not None:
+    if timeout is not None and not IS_WIN:
         kw["timeout"] = timeout
     if capture or quiet:
         kw.update(capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
-        r = subprocess.run(full, **kw)
+        r = _bounded_win(full, kw, timeout) if timeout is not None and IS_WIN else subprocess.run(full, **kw)
     except OSError as e:
         # a tool that is missing, unreadable, or blocked (e.g. Windows Smart App Control /
         # WinError 4551) must not crash the wizard — treat it like "not available" instead

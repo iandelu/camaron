@@ -151,6 +151,10 @@ unit, then pages waiting for review, then nothing ("All caught up"). Its button 
 | Building the portal (`portal`), or nothing left | **Read the docs** |
 | Anything else | **See the plan** |
 
+When you open the window the Summary brings in the team's work by itself (never uploads) and shows the outcome in one
+line; if the team's changes clash with yours it changes nothing, names the files and offers **Open a terminal here**.
+Offline, it says you are working with the latest you brought in.
+
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.
@@ -367,14 +371,18 @@ a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the
 <!-- go:docs -->
 <!-- tour:docs -->
 
-**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have changes
-to bring in or never shared (and when you last did), and **Share now** (a checkpoint, then your work rebased on the team's
-and pushed). Its fold, **The team's repo**, holds the URL: paste it and **Save** (`camaron remote`). With a remote it
-also offers **Check** (asks the remote what is new) and **Share every time progress is saved**
-(`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched; something that looks
-like a secret is not published. A share or a check that fails says why — the server cannot be reached (connection, VPN
-or proxy), it wants a token or refuses yours, the repo is not there — with git's own line beneath; a token problem
-links to **Settings › Tokens** for that server.
+**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have
+changes to bring in or to upload, or never shared; a line — n to bring in · m to upload · last time … (the last upload
+or bring-in that left you in step), plus n unsaved when you have changed pages — and three actions, the useful one as
+the primary button: **Bring in changes** (`camaron pull`, the team's work rebased in), **Upload changes**
+(`camaron push`, a checkpoint, then yours pushed; it refuses when the team has new changes, so bring them in first) and
+**Sync with the team** (`camaron share`, bring in then upload). Its fold, **Team repo**, holds the URL: paste it and
+**Save** (`camaron remote`). With a remote it shows the same line and actions, **Check** (asks the remote what is new)
+and **Upload on save** (`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched;
+something that looks like a secret is not published. When the team's changes clash with yours, a rebase is left half
+way, or your unsaved changes had to go to git's stash, it says so and offers **Open a terminal here**. An action or a
+check that fails says why — the server cannot be reached (connection, VPN or proxy), it wants a token or refuses yours,
+the repo is not there — with git's own line beneath; a token problem links to **Settings › Tokens** for that server.
 
 ### Read
 
@@ -526,7 +534,7 @@ This machine and the kit on it (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Six ta
 
 Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost)
 
-The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a share Docs could not make), says sharing with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
+The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a step with the team that Docs could not take), says bringing in or uploading changes with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
 
 ### Skills
 
@@ -604,7 +612,7 @@ global install. It is the bench for changing the kit:
 | "I could not start the project's server" | The box shows the server's error; `camaron doctor` in that folder usually says what is missing |
 | A button you expected is not in the browser portal | On purpose: the browser portal runs nothing on your machine. Do it here |
 | You want Electron downloaded again | Delete `~/.camarones/desktop` and run `camaron app` |
-| "I can't reach <server>: check the connection, VPN or proxy" on **Share now** | The team's server is only on your company's network: connect the VPN (or set the proxy) and share again |
+| "I can't reach <server>: check the connection, VPN or proxy" on **Bring in changes**, **Upload changes** or **Sync with the team** | The team's server is only on your company's network: connect the VPN (or set the proxy) and try again |
 
 On Linux with restricted user namespaces (Ubuntu 24.04 and later) the kit starts the app with `--no-sandbox`; its
 windows only ever load your project's local server.

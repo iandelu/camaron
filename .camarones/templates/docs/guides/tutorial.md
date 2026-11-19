@@ -496,7 +496,7 @@ evidence, write, accept, reject; all take `--json`), `history [--months 12]`
 (hotspots, who to ask per repo, files that change together, read from git without AI into `docs/overview/history.md`),
 `catalog [--json|--check]` (every command with where it lives: portal, desktop app or CLI only, and its arguments),
 `projects [--json]` (the projects registered on this machine; `--inspect DIR` says what a folder is, `--adopt DIR [--name NAME]` turns it into a project and `--git-init DIR` puts its code under git: all three take `--json` and a refusal is `{"error": taken|home|no-git|git-init, "detail"}`), `join URL --no-open` / `new NAME --no-open` (print `{"path"}`; a refused access is `{"error": auth|denied|not-found|network|unknown, "host", "detail"}`, and a token for a private repo comes in `CAMARONES_JOIN_TOKEN`, never on the command line), `config [get|set KEY VALUE]` (lang, model, codex_model: the wizard's settings; sessions: `canvas` or `window`, where the desktop app opens a session), `trust --json` and `hooks --json` (what is pending
-approval, whether the method hooks are on), the portal's **Plan › Sync** (the same as `share`, with where you stand), `app` (the desktop app: the project's sections by task, the portal to read,
+approval, whether the method hooks are on), `pull` (bring in the team's work, no upload), `push` (upload yours; it refuses when the team has new changes), the portal's **Plan › Team sync** (the same three actions, with where you stand), `app` (the desktop app: the project's sections by task, the portal to read,
 where runs, wikis, scans and checks start; the browser portal only shows them).
 
 **Coding changes.** `camaron change start "<title>" --item WI-n [--repo R]… [--files repo:path,…] [--base REF]

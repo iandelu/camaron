@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, termOf, tokenNotice, tokenPrefill, viewOf } from './nav.js'
+import { catchUpOnOpen, firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, termOf, tokenNotice, tokenPrefill, viewOf } from './nav.js'
 
 test('a project has four places; this machine has its own, Kit dev only in a kit checkout', () => {
   expect(PROJECT).toEqual(['flow', 'board', 'quality', 'docs'])
@@ -94,4 +94,11 @@ test('the first run is pending only while the state says done: false', () => {
   expect(firstRunPending({ done: true })).toBe(false)
   expect(firstRunPending(null)).toBe(false)                    // no state (the read failed): no notice
   expect(firstRunPending({})).toBe(false)
+})
+
+test('the window catches up on open unless the first run is still ahead', () => {
+  expect(catchUpOnOpen({ mode: 'done', done: true }, '#/flow')).toBe(true)
+  expect(catchUpOnOpen(null, '#/flow')).toBe(true)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/flow')).toBe(false)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/start')).toBe(false)
 })
