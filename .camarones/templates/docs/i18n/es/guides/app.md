@@ -161,8 +161,9 @@ curso.
 
 **Una tarjeta por repo** va debajo, leída sin IA y sin red: el estado del repo, la puerta de calidad de SonarQube y la
 cobertura (o **Estimado** y la cobertura de un informe del repo, si no se leyó ningún servidor), las vulnerabilidades
-de librerías, el estado de su wiki y sus páginas desactualizadas. La tarjeta abre la página del repo. **Ver toda la
-Salud** va a Calidad.
+de librerías, el estado de su wiki y sus páginas desactualizadas (si no hay, las páginas por revisar). Un repo que no
+está clonado aquí lo dice en lugar de sus cifras de SonarQube y librerías. La tarjeta abre la página del repo. **Ver la
+salud completa** va a Calidad.
 
 ### La página de un repo
 
@@ -172,16 +173,18 @@ ventana real ya filtrada por el repo (`?repo=`):
 
 - **Cabecera**: el stack, leído de los ficheros del repo sin IA (lenguaje, framework, build, datos, contenedor, CI).
 - **SonarQube**: la cobertura, su tendencia en los últimos 8 chequeos de salud, la puerta de calidad, bugs,
-  vulnerabilidades del código y deuda; sin servidor leído, la estimación (ver [SonarQube](#sonarqube)). Abre Calidad ›
-  SonarQube.
+  vulnerabilidades del código y deuda; sin servidor leído, la estimación (ver [SonarQube](#sonarqube)); si la última
+  foto de salud no tiene cifras del repo, lo dice. Abre Calidad › SonarQube.
 - **Actividad**: commits por semana durante 12 semanas, las personas que han hecho commits y el último commit, desde git.
-- **Librerías**: vulnerabilidades por severidad y cuántas librerías tienen una versión más nueva. Abre Calidad › Librerías.
+- **Librerías**: vulnerabilidades por severidad (una sin gravedad cuenta como desconocida) y cuántas librerías tienen
+  una versión más nueva. Abre Calidad › Librerías.
 - **Documentación**: las páginas del repo al día, por comprobar y desactualizadas, y su wiki. Abre Docs › Wikis.
 - **Arquitectura**: un C4 pequeño (qué lo llama, a qué llama) y sus nodos del grafo del código; el C4 y el grafo se
   abren en el portal.
 - **Trabajo**: las tarjetas del repo por columna y los ADR que lo nombran. Abren el Tablero y Docs › Decisiones.
 
-El kit guarda el stack y la actividad en `.cache/repos/` y los refresca cuando cambia el HEAD del repo o la semana.
+El kit guarda el stack y la actividad en `.cache/repos/` y los refresca cuando cambia el HEAD del repo, su rama, la
+semana o su `stack` en `workspace.yaml`.
 
 ### Plan
 
@@ -333,8 +336,8 @@ Escribir historias con sus subtareas y oleadas se hace en las [Historias del por
 ## Calidad
 
 La salud del proyecto en un solo panel: esta máquina, la documentación y el código (`#/quality`, <kbd>g</kbd>
-<kbd>q</kbd>). Lee `camaron health`, que no usa IA. Bajo el título hay tres vistas: **Salud**, el panel, **Librerías**
-(`#/quality/libs`, más abajo) y **SonarQube** (`#/quality/sonar`, más abajo); la dirección antigua `#/libs` sigue abriendo Librerías.
+<kbd>q</kbd>). Lee `camaron health`, que no usa IA. Bajo el título hay tres vistas: **Salud**, el panel, **SonarQube**
+(`#/quality/sonar`, más abajo) y **Librerías** (`#/quality/libs`, más abajo); la dirección antigua `#/libs` sigue abriendo Librerías.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -362,9 +365,10 @@ Una fila por repo, con las cifras que leyó la última comprobación de salud (`
 
 <!-- go:quality/sonar -->
 
-Cada fila enseña su **origen** (SonarQube o Estimado), la puerta de calidad, la cobertura, los bugs, las
-vulnerabilidades del código, la deuda y **Abrir en SonarQube**. Filtra por repo y por origen; **Leer de nuevo** vuelve
-a leer la instantánea de salud. La cifra del servidor siempre gana a una estimación.
+Cada fila enseña su **fuente** (SonarQube o Estimado), la puerta de calidad, la cobertura (la de Sonar, si no la del
+informe del repo), los bugs, las vulnerabilidades del código, la deuda y **Abrir en SonarQube**. Filtra por repo y por
+fuente; **Volver a leer** vuelve a hacer la foto de salud (`camaron health --refresh`). La cifra del servidor siempre
+gana a una estimación. Si la foto no pudo leer los repos, la vista dice **Sin leer** con el motivo.
 
 Una fila **Estimado** abre un panel con lo que el kit sabe sin servidor (la cobertura del informe del repo, sus
 vulnerabilidades de librerías, sus páginas desactualizadas), lo que no puede saber y **Conectar SonarQube** (Ajustes ›
@@ -372,7 +376,7 @@ Tokens).
 
 ### Librerías
 
-Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la segunda vista de Calidad
+Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la tercera vista de Calidad
 (`#/quality/libs`). `?repo=<nombre>` la abre con la faceta de ese repo ya puesta.
 
 <!-- go:quality/libs -->

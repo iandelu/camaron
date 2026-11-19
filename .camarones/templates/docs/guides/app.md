@@ -157,8 +157,9 @@ plan (done of total), pages to review (linked to the portal's Review) and jobs r
 
 **One card per repo** sits under them, read without AI and without a network call: the repo's state, its SonarQube
 quality gate and coverage (or **Estimated** and the coverage from a report in the repo, when no server was read),
-library vulnerabilities, the state of its wiki and its out-of-date pages. A card opens the repo's page. **See all of
-Health** goes to Quality.
+library vulnerabilities, the state of its wiki and its out-of-date pages (with none, the pages to check). A repo not
+cloned here says so in place of its SonarQube and library figures. A card opens the repo's page. **See all of Health**
+goes to Quality.
 
 ### A repo's page
 
@@ -168,15 +169,18 @@ filtered to the repo (`?repo=`):
 
 - **Header**: the stack, read from the repo's files without AI (language, framework, build, data, container, CI).
 - **SonarQube**: coverage, its trend over the last 8 health builds, the quality gate, bugs, code vulnerabilities and
-  debt; with no server read, the estimate (see [SonarQube](#sonarqube)). Opens Quality › SonarQube.
+  debt; with no server read, the estimate (see [SonarQube](#sonarqube)); when the last health snapshot has no figures
+  for the repo, it says so. Opens Quality › SonarQube.
 - **Activity**: commits per week for 12 weeks, the people who committed and the last commit, from git.
-- **Libraries**: vulnerabilities by severity and how many libraries have a newer version. Opens Quality › Libraries.
+- **Libraries**: vulnerabilities by severity (one with no severity counts as unknown) and how many libraries have a
+  newer version. Opens Quality › Libraries.
 - **Documentation**: the repo's pages up to date, to check and out of date, and its wiki. Opens Docs › Wikis.
 - **Architecture**: a small C4 (what calls the repo, what it calls) and its code-graph nodes; the C4 and the graph open
   in the portal.
 - **Work**: the repo's cards by column and the ADRs that name it. Open the Board and Docs › Decisions.
 
-The kit keeps the stack and the activity in `.cache/repos/` and refreshes them when the repo's HEAD or the week changes.
+The kit keeps the stack and the activity in `.cache/repos/` and refreshes them when the repo's HEAD, its branch, the
+week or its `stack` in `workspace.yaml` changes.
 
 ### Plan
 
@@ -324,8 +328,8 @@ Writing stories with their subtasks and waves happens in the [portal's Stories](
 ## Quality
 
 The project's health in one board: this machine, the docs and the code (`#/quality`, <kbd>g</kbd> <kbd>q</kbd>). It
-reads `camaron health`, which needs no AI. Three views sit under the title: **Health**, the board, **Libraries**
-(`#/quality/libs`, below) and **SonarQube** (`#/quality/sonar`, below); the old `#/libs` address still opens Libraries.
+reads `camaron health`, which needs no AI. Three views sit under the title: **Health**, the board, **SonarQube**
+(`#/quality/sonar`, below) and **Libraries** (`#/quality/libs`, below); the old `#/libs` address still opens Libraries.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -353,16 +357,17 @@ One row per repo, from the figures the last health check read (`#/quality/sonar`
 
 <!-- go:quality/sonar -->
 
-Each row shows its **source** (SonarQube, or Estimated), the quality gate, coverage, bugs, code vulnerabilities, debt
-and **Open in SonarQube**. Filter by repo and by source; **Read again** reads the health snapshot again. The server's
-figure always wins over an estimate.
+Each row shows its **source** (SonarQube, or Estimated), the quality gate, coverage (Sonar's, else the repo's report),
+bugs, code vulnerabilities, debt and **Open in SonarQube**. Filter by repo and by source; **Read again** builds the health
+snapshot again (`camaron health --refresh`). The server's figure always wins over an estimate. When the snapshot could
+not read the repos at all, the view says **Unread** with the reason.
 
 An **Estimated** row opens a panel with what the kit knows without a server (the coverage from the repo's report, its
 library vulnerabilities, its out-of-date pages), what it cannot know, and **Connect SonarQube** (Settings › Tokens).
 
 ### Libraries
 
-Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's second view
+Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's third view
 (`#/quality/libs`). `?repo=<name>` opens it with that repo's facet already set.
 
 <!-- go:quality/libs -->
