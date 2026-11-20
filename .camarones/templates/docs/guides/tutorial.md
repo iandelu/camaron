@@ -453,6 +453,18 @@ token in `~/.camarones/mcp-token`, and requests from other origins are refused.
 scope for each repo folder, so a session opened in `<repo>/` searches and reads the docs too. It lives in your own
 Claude Code config (`~/.claude.json`), never in the repo; `doctor` says when a repo lacks it and `uninstall` removes it.
 
+**Guardrails.** `setup` (and `repair`) also installs, in every repo and in `cam-docs`, git hooks through the repo's own
+local config (`core.hooksPath` → `~/.camarones/githooks/`; nothing tracked is written): a commit message loses an AI
+co-author trailer or "Generated with Claude Code" line, a push that still has one is refused, staged secrets stop the
+commit (gitleaks) and pushing `cam-docs` runs `camaron check`. A repo that already has hooks (husky, pre-commit, Git
+LFS) keeps them: they run right after the kit's (`doctor` lists it when a tool such as husky points the repo elsewhere
+again, and `repair` chains it back). Claude Code's commit and PR attribution is turned off in each repo's local
+`.claude/settings.local.json` (git-ignored) and in the workspace folder's. `camaron guard status` shows it,
+`camaron guard uninstall` takes it away, `guard: {install: false}` in `workspace.yaml` leaves a project out. `camaron
+guard gate` checks a change against its base branch (AI trailer, secrets in the commits, `.env*`/key/`secrets/` paths,
+new high or critical vulnerabilities in the lockfiles it touches, Sonar's quality gate, and with `--latest` libraries it
+adds a major behind): exit 0 green, 1 red, 3 a check could not run, which is never green.
+
 **Method hooks (opt-in).** `camaron hooks on` adds five Claude Code hooks to `cam-docs/.claude/settings.json`, which
 the kit owns (`trust` does not ask about them): at session start the agent gets the plan state, the last handoff and
 pending reviews; with every prompt it gets the docs sections, C4 elements and code-graph nodes that match it, with no
@@ -495,7 +507,7 @@ next action apart.
 `doctor --local` (proposes a free local model for this computer, installs nothing), `doctor --context` (the tokens
 every agent session loads before reading a page, against `context.budget`), `autopilot`, `plugins [--json]`,
 `run`, `runs`, `kpis`, `eval`, `ab`, `pipeline show|validate`, `blocks [--force]`, `pages [--adopt] [--json]`, `diagrams [--json]`, `pr fresh <repo>`,
-`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes|enable|disable|add|remove` (the kit's skills, the team's copies of them, a switch per skill for the project or, with `--machine`, for you, and the optional packs; all take `--json`), `pr propose <url>`, `removed add`, `repair`, `export codetour <flow>`, `adr list|new|show|pack|candidates|write|accept|reject` (the decisions: frame, gather the
+`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes|enable|disable|add|remove` (the kit's skills, the team's copies of them, a switch per skill for the project or, with `--machine`, for you, and the optional packs; all take `--json`), `pr propose <url>`, `removed add`, `repair`, `guard install|status|gate|uninstall [--repo NAME] [--base REF] [--latest] [--json]` (the guardrails; exit 0 green, 1 red, 2 usage error, 3 a check could not run), `export codetour <flow>`, `adr list|new|show|pack|candidates|write|accept|reject` (the decisions: frame, gather the
 evidence, write, accept, reject; all take `--json`), `history [--months 12]`
 (hotspots, who to ask per repo, files that change together, read from git without AI into `docs/overview/history.md`),
 `catalog [--json|--check]` (every command with where it lives: portal, desktop app or CLI only, and its arguments),

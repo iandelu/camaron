@@ -82,6 +82,7 @@ moves the kit made) lives there too, so a change is seen on this machine only.
 | `~/.camarones/kit` (Windows: `%LOCALAPPDATA%\camarones-documenter\kit`) | The global install of the kit, shared by every project |
 | `~/.camarones/desktop` | The pinned Electron for `camaron app` |
 | `~/.camarones/bin`, `~/.camarones/osv-db` | Pinned binaries (gitleaks, OSV-Scanner) and OSV's offline database |
+| `~/.camarones/githooks/` | The git hooks the guardrails install (`camaron guard`): a dispatcher under every hook name, the kit's checks and how to run this kit. Each repo points at it with `core.hooksPath` in its own `.git/config` (`camaron.chain` remembers the hooks it had) — never a tracked file |
 | `~/.camarones/trust/` | What you approved of each team's agent config — never in a repo |
 | `~/.camarones/install/` | What the kit installed here (its skills, graphify's, OpenWiki's), so they need no approval, and when setup last ran here and with which kit |
 | `~/.camarones/mcp-token` | The token of `camaron mcp --http` |
