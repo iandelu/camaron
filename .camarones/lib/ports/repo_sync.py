@@ -3,6 +3,7 @@ clean ones (a forge token injected per call, never stored), find the repos alrea
 in one of them, failing loudly."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Protocol
 
@@ -14,4 +15,4 @@ class RepoSync(Protocol):
 
     def detect_repos(self, workspace: Path | None = ...) -> list[dict]: ...
 
-    def sync_repos(self, log: Log = ...) -> list[str]: ...
+    def sync_repos(self, log: Log = ..., skip: Iterable[str] = ...) -> list[str]: ...

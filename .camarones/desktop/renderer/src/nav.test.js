@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, termOf, tokenNotice, tokenPrefill, viewOf } from './nav.js'
+import { catchUpOnOpen, firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, repoHref, repoOf, repoPage, termOf, tokenNotice, tokenPrefill, viewOf, withRepo } from './nav.js'
 
 test('a project has four places; this machine has its own, Kit dev only in a kit checkout', () => {
   expect(PROJECT).toEqual(['flow', 'board', 'quality', 'docs'])
   expect(MACHINE).toEqual(['settings', 'guide', 'kitdev'])
   expect(sections({ kitdev: false }).machine).toEqual(['settings', 'guide'])
   expect(sections({ kitdev: true }).machine).toEqual(MACHINE)
-  expect(PLACES).toEqual(['flow', 'flow/plan', 'board', 'quality', 'quality/libs', 'docs', 'docs/wikis', 'docs/decisions',
+  expect(PLACES).toEqual(['flow', 'flow/plan', 'board', 'quality', 'quality/sonar', 'quality/libs', 'docs', 'docs/wikis', 'docs/decisions',
     'docs/interviews', 'settings', 'settings/tokens', 'settings/skills', 'settings/plugins', 'settings/trust', 'settings/kit', 'guide', 'kitdev'])
 })
 
@@ -94,4 +94,28 @@ test('the first run is pending only while the state says done: false', () => {
   expect(firstRunPending({ done: true })).toBe(false)
   expect(firstRunPending(null)).toBe(false)                    // no state (the read failed): no notice
   expect(firstRunPending({})).toBe(false)
+})
+
+test('the repo page is a view of Flow that is not a place; ?repo= names a repo', () => {
+  expect(viewOf('#/flow/repo/api', 'flow')).toBe('repo')
+  expect(placeOf('#/flow/repo/api', {})).toBe('flow/repo')
+  expect(PLACES).not.toContain('flow/repo')
+  expect(repoOf('#/board?repo=api')).toBe('api')
+  expect(repoOf('#/docs/decisions?repo=my.repo-2&x=1')).toBe('my.repo-2')
+  expect(repoOf('#/board?repo=%3Cscript%3E')).toBe('')
+  expect(repoOf('#/board')).toBe('')
+  expect(repoPage('#/flow/repo/api')).toBe('api')
+  expect(repoPage('#/flow/repo/my.repo')).toBe('my.repo')
+  expect(repoPage('#/flow/repo/..%2Fx')).toBeNull()
+  expect(repoPage('#/flow/repo/')).toBeNull()
+  expect(repoPage('#/flow')).toBeNull()
+  expect(repoHref('a b')).toBe('#/flow/repo/a%20b')
+  expect(withRepo('quality/sonar', 'api')).toBe('#/quality/sonar?repo=api')
+})
+
+test('the window catches up on open unless the first run is still ahead', () => {
+  expect(catchUpOnOpen({ mode: 'done', done: true }, '#/flow')).toBe(true)
+  expect(catchUpOnOpen(null, '#/flow')).toBe(true)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/flow')).toBe(false)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/start')).toBe(false)
 })

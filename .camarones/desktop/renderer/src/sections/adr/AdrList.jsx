@@ -1,7 +1,7 @@
 import { Button, EmptyState, fmtAgo, uiText } from '@camaron/ui'
 import { ADR_BASE, counts, filterRows, FILTERS } from '../../adr.js'
 import { lang, t } from '../../i18n.js'
-import { Page } from '../../parts.jsx'
+import { Page, RepoChip } from '../../parts.jsx'
 import { StatusChip, chipOf, kindWord } from './Read.jsx'
 
 // The list (spec §2.1): Candidatas · N and Nuevo ADR beside the title, the filters with their counts and a search,
@@ -65,7 +65,7 @@ function NoMatch({ q, filter, onFilter }) {
   )
 }
 
-export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candidates = null, now = Date.now() }) {
+export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candidates = null, repo = '', now = Date.now() }) {
   const all = rows || []
   const cands = Array.isArray(candidates) ? candidates : null
   const strip = cands?.length ? <Strip list={cands} /> : null
@@ -76,14 +76,16 @@ export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candi
       {strip}
     </Page>
   )
-  const n = counts(all)
-  const shown = filterRows(all, filter, q)
+  const mine = repo ? all.filter((r) => (r.repos || []).includes(repo)) : all
+  const n = counts(mine)
+  const shown = filterRows(mine, filter, q)
   const actions = (<>
     <Button href={`${ADR_BASE}/candidates`}>{cands ? t('adr.cand.button', { n: cands.length }) : t('adr.cand.title')}</Button>
     {create}
   </>)
   return (
     <Page title={t('adr.list')} actions={actions}>
+      {repo ? <RepoChip repo={repo} clear={ADR_BASE} /> : null}
       <div className="dk-adr-bar">
         <div className="dk-adr-filters" role="group" aria-label={t('adr.filters')}>
           {FILTERS.map((f) => (
@@ -100,7 +102,8 @@ export function AdrListView({ rows, filter = 'all', q = '', onFilter, onQ, candi
       </div>
       {shown.length ? (
         <ul className="dk-adr-list" aria-label={t('adr.list')}>{shown.map((r) => <Row key={r.id} r={r} now={now} />)}</ul>
-      ) : <NoMatch q={q} filter={filter} onFilter={onFilter} />}
+      ) : !mine.length ? <p className="muted" role="status">{t('adr.repoEmpty', { repo })}</p>
+        : <NoMatch q={q} filter={filter} onFilter={onFilter} />}
       {strip}
     </Page>
   )

@@ -35,7 +35,9 @@ the desktop app. The portal shows their result, not their buttons.
 
 **Header**: the project's name (back to Home), where you are (`Architecture › C4 model › index`), **Search** (<kbd>⌘</kbd>
 <kbd>K</kbd> / <kbd>Ctrl</kbd> <kbd>K</kbd>, or <kbd>/</kbd>), the trust counts (confirmed, drafts, needing
-re-confirmation, change requests not applied yet), the language and ◐ for light or dark.
+re-confirmation, change requests not applied yet; drafts and pages to re-confirm open **Review**), the language and ◐
+for light or dark. A page's trust looks the same in every view: Draft quiet with a dashed edge, Needs re-confirmation
+in amber, Confirmed in green.
 
 **Sidebar**: Home and seven zones — Docs, Board, Stories, Architecture, Plan, Quality and Review. The zone you are in
 opens its views; below the zones, the panel of what you are looking at (the page tree in Docs, the wikis, the code
@@ -85,8 +87,9 @@ and **Working notes** at the end, folded (discovery, interviews, questionnaires)
 - banners when it is an AI draft, needs re-confirmation, cites code that changed or is gone, or its translation is
   missing or out of date;
 - **On this page** (the outline), **Previous / Next**, and the **Sources** card: the files it cites, by repo, each with
-  its freshness. Hover one to see what changed it (commits, PR or MR, ticket keys). Click to open the lines in your
-  editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA, WebStorm, PyCharm) or, exported, in the repository.
+  its freshness (a translation with no sources of its own shows the page's). Hover one to see what changed it (commits,
+  PR or MR, ticket keys). Click to open the lines in your editor (VS Code, Cursor, Windsurf, VSCodium, IntelliJ IDEA,
+  WebStorm, PyCharm) or, exported, in the repository.
 
 What you can do on it, live:
 
@@ -185,10 +188,12 @@ was inferred from the code with its evidence, the options, "Other" and a comment
 form, so both mix, and whoever comes back sees their answers to change them. At the top: who answered, what nobody
 answered and where people disagree.
 
-**Sync** (`#/sync`, live): this `cam-docs` against the team's repo — your commits not shared, theirs not here, when
-this machine last shared, and files not saved yet. **Sync with the team** does what `camaron share` does (a
-checkpoint, the team's work in, yours out); **Check for news** asks the remote. A conflict is undone; a possible secret
-blocks the push. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
+**Team sync** (`#/sync`, live): this `cam-docs` against the team's repo — n to bring in, m to upload, when this machine last
+did, and files not saved yet. **Bring in changes** (`camaron pull`) rebases the team's work in; **Upload changes**
+(`camaron push`) checkpoints and pushes yours, and refuses when the team has new changes; **Sync with the team** does
+what `camaron share` does (bring in, then upload). The useful one is the primary button; **Check for news** asks the
+remote. A conflict is undone; a possible secret blocks the push; uploading or syncing while the project is bringing in
+the team's work, or over a rebase or merge left half way, touches nothing and says so. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
 repo not found) with git's line beneath; tokens are saved in the desktop app.
 
 <!-- portal:#/pipeline -->

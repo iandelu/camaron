@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
-import { Aviso, Brand, Breadcrumbs, Button, Card, Chip, EmptyState, Field, Keys, Skeleton, SkipLink, Thinking } from './index.js'
+import { Aviso, Brand, Breadcrumbs, Button, Card, Chip, EmptyState, Field, Keys, Skeleton, SkipLink, Thinking, TrustPill } from './index.js'
 
 const html = (node) => renderToStaticMarkup(node)
 
@@ -34,6 +34,13 @@ test('Button with href is a link', () => {
 test('Chip shows its state with its word, never colour alone', () => {
   expect(html(<Chip state="ok">Confirmada</Chip>)).toBe('<span class="cu-chip cu-chip--ok">Confirmada</span>')
   expect(() => html(<Chip state="warn" />)).toThrow(/word/)
+})
+
+test('TrustPill: one look per trust level, always with its word, a link when it leads somewhere', () => {
+  expect(html(<TrustPill trust="draft">Borrador</TrustPill>)).toBe('<span class="cu-trust cu-trust--draft">Borrador</span>')
+  expect(html(<TrustPill trust="needs-reconfirm" href="#/review">3 por reconfirmar</TrustPill>))
+    .toBe('<a class="cu-trust cu-trust--needs-reconfirm" href="#/review">3 por reconfirmar</a>')
+  expect(() => html(<TrustPill trust="confirmed" />)).toThrow(/word/)
 })
 
 test('Keys renders one kbd per key', () => {

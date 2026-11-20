@@ -28,6 +28,6 @@ def test_no_folded_command_is_named_like_a_view(kit):
     places, zones = _places(), _zones(kit)
     panelled = {n for names in places["panels"].values() for n in names}
     for place, place_zones in places["zones"].items():
-        views = [] if "/" in place else places["views"].get(place, [])
+        views = [] if "/" in place else places["views"].get(place, []) + places.get("pages", {}).get(place, [])
         clash = sorted(n for n, z in zones.items() if z in place_zones and n not in panelled and n in views)
         assert not clash, f"{place}: commands named like a view: {clash}"

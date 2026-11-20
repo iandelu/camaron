@@ -3,12 +3,15 @@ nobody found an answer to."""
 from __future__ import annotations
 
 import datetime as dt
+import os
 
 from lib import usage
 from lib.app.portal_views import reviewer
-from lib.core.paths import DOCS
+from lib.core.paths import DOCS, ROOT
+from lib.core.platform import IS_WIN
 from lib.interfaces.http.messages import Request, Response, json_response
-from lib.interfaces.http.router import route
+from lib.interfaces.http import jobs
+from lib.interfaces.http.router import Access, route
 from lib.app import services
 
 
@@ -50,15 +53,56 @@ def api_interview(who: str = "") -> dict:
             "status": questionnaire.status(), "user": reviewer(), "mine": mine}
 
 
+def sync_with_catch_up(req: Request, fetch: bool = False) -> dict:
+    sync = req.services.share.sync_status(fetch=fetch)
+    return {**sync, "catch_up": req.services.catchup.standing(sync)}
+
+
 @route("GET", "/api/sync")
 def get_sync(req: Request) -> Response:
-    return json_response(req.services.share.sync_status(fetch=req.query.get("fetch") == "1"))
+    return json_response(sync_with_catch_up(req, fetch=req.query.get("fetch") == "1"))
 
 
 @route("POST", "/api/sync/share")
 def post_share(req: Request) -> Response:
     # the team action: checkpoint, pull the team's work, push
     return json_response({"result": req.services.share.share(log=lambda _: None), "sync": req.services.share.sync_status()})
+
+
+def start_graph_job(catchup, result: dict) -> None:
+    repos = result["views"]["graphs"]
+    if repos:
+        jobs.start_job("graph", "Code graphs", lambda log: catchup.rebuild_graphs(repos, log))
+
+
+@route("POST", "/api/sync/pull")
+def post_pull(req: Request) -> Response:
+    result = req.services.catchup.run(log=lambda _: None)
+    start_graph_job(req.services.catchup, result)
+    return json_response({"result": result, "sync": sync_with_catch_up(req)})
+
+
+@route("POST", "/api/sync/push")
+def post_push(req: Request) -> Response:
+    return json_response({"result": req.services.share.push(log=lambda _: None), "sync": sync_with_catch_up(req)})
+
+
+@route("POST", "/api/app/catch-up", access=Access.APP)
+def post_catch_up(req: Request) -> Response:
+    catchup = req.services.catchup
+
+    def work(log) -> dict:
+        result = catchup.run(log)
+        start_graph_job(catchup, result)
+        return {"rc": 0, "result": result}
+
+    return json_response(jobs.start_job("catch-up", "Catch up with the team", work))
+
+
+@route("POST", "/api/app/terminal", access=Access.APP)
+def post_terminal(req: Request) -> Response:
+    shell = os.environ.get("COMSPEC") or "cmd.exe" if IS_WIN else os.environ.get("SHELL") or "/bin/sh"
+    return json_response({"opened": bool(req.services.launcher.open_new_terminal([shell], ROOT))})
 
 
 @route("GET", "/api/interview")

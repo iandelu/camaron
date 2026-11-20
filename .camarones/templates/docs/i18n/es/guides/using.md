@@ -58,10 +58,14 @@ carpeta abre los mismos pasos en el asistente; puedes cambiar de uno a otro a me
 
 ## Unirte a tu equipo
 
-Si tu equipo ya tiene un repo `cam-docs`: en la pantalla de inicio de la app, **Unirme a la documentación de mi equipo**
-y pega su URL (la del repo de la documentación, no la del código). Desde una terminal: `camaron join <url>`. El kit lo
-clona, o reutiliza la copia que ya tienes, y solo prepara tu máquina: el equipo ya eligió los repos, el stack, la
-arquitectura y el plan, y las sesiones siguen donde se quedaron.
+Si tu equipo ya tiene un repo `cam-docs`, las dos puertas de la pantalla de inicio de la app llegan a él: **Elegir
+carpeta** sobre tus repos pregunta si el equipo ya tiene su documentación en un repo `cam-docs` (responde **Sí** y pega su
+URL), y **Unirme a la documentación de mi equipo** pide la URL y después la carpeta donde están tus repos. Desde una
+terminal: `camaron join <url> [carpeta-de-tus-repos]`. El kit lo clona, o reutiliza la copia que ya tienes, y solo
+prepara tu máquina: el equipo ya eligió los repos, el stack, la arquitectura y el plan, unirte no cambia nada de eso, y
+las sesiones siguen donde se quedaron. Los repos se reconocen por su remoto, no por el nombre de la carpeta: un clon que
+tienes con otro nombre se enlaza con el nombre del equipo en vez de clonarse otra vez. Dejar fuera una herramienta al
+unirte solo afecta a tu máquina.
 
 Lo que llegó con el repo del equipo y ejecuta código o guía a los agentes (hooks, servidores MCP, ajustes, skills,
 plugins) espera a que lo apruebes en tu máquina: **Ajustes › Confianza**, o `camaron trust`.
@@ -78,7 +82,7 @@ plugins) espera a que lo apruebes en tu máquina: **Ajustes › Confianza**, o `
    copia de `cam-docs`, que se fusiona al terminar. El **Piloto automático** (`camaron autopilot`) va una a una, sin
    vigilancia.
 4. **Lee y revisa** lo que escribió: **Ver portal** y después Revisión.
-5. **Comparte**: **Docs › Compartir ahora** o `camaron share`.
+5. **Sube**: **Docs › Subir cambios** o `camaron push` (o **Sincronizar**, `camaron share`, para traer y subir).
 
 Cada unidad termina con un commit local en `cam-docs` y una nota de relevo, así que la siguiente sesión —tuya o de un
 compañero— sabe qué se comprobó, qué no y qué viene después.
@@ -103,16 +107,32 @@ Desde una terminal: `camaron confirm <página> --by <nombre>`, `camaron feedback
 
 <!-- portal:#/review -->
 
-## Compartir con el equipo
+## Trabajar con el equipo
 
-`cam-docs` es un repo git normal. Por defecto los checkpoints se quedan en local y publicar es un paso que das tú:
-**Docs › Compartir ahora**, **Plan › Sincronizar** en el portal, o `camaron share` (un checkpoint, el trabajo del
-equipo rebasado dentro y el tuyo subido). **Compartir cada vez que se guarda el progreso** (`camaron share --auto on`)
-lo hace tras cada checkpoint, solo en esta máquina. Un conflicto se deshace sin tocar nada; algo que parece un secreto
-nunca se sube.
+`cam-docs` es un repo git normal. Al abrir un proyecto —la ventana de la app de escritorio o el asistente de la
+terminal— se trae solo el trabajo del equipo y nunca se sube nada. Si los cambios del equipo chocan con los tuyos, no
+toca nada y dice qué ficheros; sin conexión, el proyecto se abre igual y avisa de que trabajas con lo último que
+trajiste. También busca los repos del equipo en esta máquina sin clonar: uno que falta aquí, o una carpeta con otra cosa
+en su lugar, lo dice el Resumen. Preparar la máquina y `camaron sync` nunca tocan un clon tuyo con cambios sin guardar
+o en otra rama que la del equipo. Tras traer, el explorador C4 se reconstruye solo si estaba desactualizado (un modelo con errores conserva el
+explorador que tenías), y los grafos de código de los repos
+cuyo HEAD se movió se reconstruyen en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
+desactualizados; los rehace `camaron pull`).
 
-¿Aún no hay repo del equipo? Pega su URL en **Docs › Repo del equipo** (`camaron remote <url>`); tu primer compartir
-lo publica.
+Los checkpoints se quedan en local y subir es un paso que das tú, con tres acciones en la franja del equipo de **Docs** (la app),
+**Plan › Sincronizar** (el portal) y **🤝 Equipo: traer, subir o sincronizar** (el asistente de la terminal):
+
+- **Traer cambios** (`camaron pull`): el trabajo del equipo rebasado dentro; lo tuyo no se sube.
+- **Subir cambios** (`camaron push`): un checkpoint y después lo tuyo subido. Se niega si el equipo tiene cambios
+  nuevos: tráelos primero, o sincroniza con el equipo.
+- **Sincronizar** (`camaron share`): traer y después subir.
+
+Una línea dice cuánto os separa (n por traer · m por subir · última vez …) y la acción útil es el botón principal.
+**Subir al guardar** (`camaron share --auto on`) sube tras cada checkpoint, solo en esta máquina. Un conflicto se
+deshace sin tocar nada; algo que parece un secreto nunca se sube.
+
+¿Aún no hay repo del equipo? Pega su URL en **Docs › Repo del equipo** (`camaron remote <url>`); tu primera subida lo
+publica.
 
 ## El tablero y las historias
 
@@ -136,7 +156,7 @@ Activar el tablero** (`camaron board init`).
 por área y una fila por repo (puerta de calidad de SonarQube, cobertura, vulnerabilidades, deuda). **Comprobar todo** la
 recalcula (`camaron health --refresh`). Una herramienta que falta tiene ahí su botón **Instalar**.
 
-**Librerías** (la segunda vista de Calidad, `#/quality/libs`) lista cada dependencia con la versión que usan los repos. **Buscar vulnerabilidades** las compara con la
+**Librerías** (la tercera vista de Calidad, `#/quality/libs`) lista cada dependencia con la versión que usan los repos. **Buscar vulnerabilidades** las compara con la
 base de datos sin conexión de OSV (`camaron inventory --cves`; nada sale de tu máquina). **Buscar versiones nuevas**
 pregunta a los registros públicos la última versión estable de cada una (`camaron inventory --latest`; salen de tu
 máquina los nombres de las librerías, nunca las vuestras). **Actualizar ▾** propone la última versión, o la que corrige

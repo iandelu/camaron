@@ -30,6 +30,7 @@ AREA: dict[tuple[str, str], str] = {
     ], "board"),
     **dict.fromkeys([
         ("POST", "/api/app/onboard/arch"), ("POST", "/api/app/onboard/done"), ("POST", "/api/app/onboard/repos"),
+        ("GET", "/api/app/onboard/repos-here"), ("POST", "/api/app/onboard/search"),
         ("POST", "/api/app/onboard/scan"), ("POST", "/api/app/onboard/setup"), ("GET", "/api/app/onboard/stack"),
         ("POST", "/api/app/onboard/stack"), ("GET", "/api/app/onboard/state"), ("POST", "/api/app/onboard/step"),
         ("GET", "/api/app/onboard/tools"),
@@ -60,6 +61,8 @@ AREA: dict[tuple[str, str], str] = {
     **dict.fromkeys([
         ("GET", "/api/interview"), ("POST", "/api/interview/answer"), ("GET", "/api/kpis"),
         ("POST", "/api/kpis/miss"), ("GET", "/api/misses"), ("GET", "/api/sync"), ("POST", "/api/sync/share"),
+        ("POST", "/api/sync/pull"), ("POST", "/api/sync/push"), ("POST", "/api/app/catch-up"),
+        ("POST", "/api/app/terminal"),
     ], "team"),
     **dict.fromkeys([
         ("POST", "/api/c4/confirm"), ("POST", "/api/c4/element"), ("POST", "/api/c4/relation"),
@@ -81,6 +84,8 @@ AREA: dict[tuple[str, str], str] = {
         ("GET", "/api/jobs/j1"),
     ], "jobs"),
 }
+
+AREA.update(dict.fromkeys([("GET", "/api/app/repo"), ("GET", "/api/app/repos")], "repos"))
 
 MOVED: set[str] = set(AREA.values())
 

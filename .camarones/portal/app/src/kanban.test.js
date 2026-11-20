@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { applyFilters, blockedText, parentOf, parseArg, parseNewArg, waveOf } from './kanban.js'
+import { blockedText, parentOf, parseArg, parseNewArg, waveOf } from './kanban.js'
 import { STRINGS } from './i18n.js'
 
 const link = (trust, fresh = null) => ({ link: 'X', trust, fresh, changed: false, missing: false })
@@ -12,25 +12,6 @@ const cards = [
   card('WI-1', 'Backlog', 1000, { type: 'epic' }),
   card('WI-5', 'In Progress', 1000, { epic: 'WI-1', links: [link('confirmed', 'stale')] }),
 ]
-
-test('filters: repo, epic, label and docs state, alone and together', () => {
-  const ids = (f) => applyFilters(cards, f).map((c) => c.id)
-  expect(ids({})).toEqual(['WI-3', 'WI-2', 'WI-4', 'WI-1', 'WI-5'])
-  expect(ids({ repo: 'api' })).toEqual(['WI-3', 'WI-4'])
-  expect(ids({ epic: 'WI-1' })).toEqual(['WI-3', 'WI-1', 'WI-5'])            // the epic itself and its stories
-  expect(ids({ label: 'pay' })).toEqual(['WI-3', 'WI-4'])
-  expect(ids({ docs: 'suspect' })).toEqual(['WI-3', 'WI-5'])                 // suspect or stale
-  expect(ids({ docs: 'unconfirmed' })).toEqual(['WI-2'])
-  expect(ids({ repo: 'api', label: 'pay', docs: 'suspect' })).toEqual(['WI-3'])
-  expect(ids({ repo: 'api', epic: 'WI-1', docs: 'unconfirmed' })).toEqual([])
-  expect(ids({ repo: '', epic: '', label: '', docs: '' })).toHaveLength(5)
-})
-
-test('a missing or unreadable link counts as unconfirmed (R15, as the CLI)', () => {
-  const missing = { link: 'FLOW-zzzz', trust: null, fresh: null, changed: false, missing: true }
-  const only = [card('WI-7', 'Ready', 0, { links: [missing] }), card('WI-8', 'Ready', 0, { links: [link('confirmed')] })]
-  expect(applyFilters(only, { docs: 'unconfirmed' }).map((c) => c.id)).toEqual(['WI-7'])
-})
 
 test('every Board string exists in es and en, the docs count too', () => {
   const kb = (l) => Object.keys(STRINGS[l]).filter((k) => /^kb/.test(k)).sort()
@@ -55,16 +36,6 @@ const family = [
   card('WI-20', 'In Progress', 1000, { type: 'task', parent: 'WI-19', wave: null }),
   card('WI-21', 'Backlog', 3000, { type: 'task', wave: 2 }),
 ]
-
-test('applyFilters: parent keeps the parent itself and its children, any case, with the other filters', () => {
-  const ids = (f) => applyFilters(family, f).map((c) => c.id)
-  expect(ids({ parent: 'WI-10' })).toEqual(['WI-10', 'WI-11', 'WI-12', 'WI-13'])
-  expect(ids({ parent: 'wi-10' })).toEqual(['WI-10', 'WI-11', 'WI-12', 'WI-13'])
-  expect(ids({ parent: 'WI-19' })).toEqual(['WI-20'])
-  expect(ids({ parent: 'WI-99' })).toEqual([])
-  expect(ids({ parent: '' })).toHaveLength(6)
-  expect(applyFilters(cards, { parent: 'WI-1' }).map((c) => c.id)).toEqual(['WI-1'])   // `epic` is not `parent`
-})
 
 test('waveOf: 1-based waves for Backlog and Ready cards, from the cards or from a waves list', () => {
   expect(waveOf(family)).toEqual({ 'WI-11': 1, 'WI-12': 2, 'WI-21': 3 })

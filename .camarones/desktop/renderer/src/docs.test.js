@@ -466,6 +466,32 @@ test('the team strip says where the team repo stands, one state at a time', () =
   expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
 })
 
+test('focusRepo puts the asked repo first and keeps the others; none or unknown leaves them all', async () => {
+  const { focusRepo } = await import('./docs.js')
+  const blocks = [{ repo: 'api' }, { repo: 'web' }]
+  expect(focusRepo(blocks, 'web')).toEqual({ first: { repo: 'web' }, rest: [{ repo: 'api' }] })
+  expect(focusRepo(blocks, 'zzz')).toEqual({ first: null, rest: blocks })
+  expect(focusRepo(blocks, '')).toEqual({ first: null, rest: blocks })
+})
+
+// GET sync's `changes` leaves out the files the kit rewrites on every read (docs/.status.json): they are never yours to
+// upload. An older server sends only `pending`.
+test('one change either way is said in the singular', () => {
+  expect(stripState({ remote: 'r', behind: 1, ahead: 0, pending: [] })).toEqual({ key: 'strip.behind.one', vars: { n: 1 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, changes: ['docs/a.md'] })).toEqual({ key: 'strip.ahead.one', vars: { n: 1 }, tone: 'warn' })
+  expect(t('strip.ahead.one', { n: 1 })).toBe('1 cambio por subir')
+})
+
+test('the team strip counts only real changes as yours to upload, never the files the kit rewrites', () => {
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: ['docs/.status.json'], changes: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] }))
+    .toEqual({ key: 'strip.ahead', vars: { n: 2 }, tone: 'warn' })
+  expect(t('strip.ahead', { n: 2 })).toBe('2 cambios por subir')
+  setLang('en')
+  expect(t('strip.ahead', { n: 2 })).toBe('2 changes to upload')
+  setLang('es')
+})
+
 // The health header lives on Read and the wiki cards on Wikis: the stale-wikis chip opens the Wikis tab with this address, and only
 // that tab's address asking for `show=stale` makes the tab look for its first stale card.
 test('the address that asks the Wikis tab for its first stale card', () => {

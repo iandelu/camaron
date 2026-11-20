@@ -78,6 +78,28 @@ def test_workspace_links_go_and_real_files_stay(un, before):
     assert kit.stopped == ["portal"]
 
 
+def test_the_links_to_clones_under_other_names_go_and_the_clones_stay(un, before, tmp_path):
+    from test_repos_here import team_repos
+    kit = un
+    team_repos(kit, tmp_path)
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    importlib.import_module("lib.app.repos_here").find(log=lambda _: None)
+    assert any(s.kind == "link" and "api-svc" in s.label for s in kit.uninstall.steps())
+    run(kit, backup=False)
+    assert sorted(p.name for p in kit.ws.iterdir()) == ["AGENTS.md", "api-svc", "web", "worker"]
+    assert git(kit.ws / "api-svc", "status", "--porcelain", "--ignored") == ""
+
+
+def test_sandbox_traces_report_a_link_left_in_the_workspace(un):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("sandbox", KIT_DIR.parent / "scripts" / "sandbox.py")
+    sandbox = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sandbox)
+    assert not any("api-link" in t for t in sandbox.traces(un.ws, home=un.home))
+    assert un.services.links.link(un.ws / "api-link", un.ws / "api")
+    assert any("api-link" in t for t in sandbox.traces(un.ws, home=un.home))
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="junctions are Windows only")
 def test_a_junction_root_link_goes_on_a_python_without_is_junction(un, before, without_is_junction):
     """Windows without symlink rights links folders as junctions (mklink /J); on Python 3.10 and 3.11 uninstall must

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-import hashlib
 import os
 import re
 from pathlib import Path, PurePosixPath
@@ -25,11 +24,11 @@ from .locks import FileLock, LockBusy
 from ..domain.c4 import anchors, evidence, verdict
 from ..domain.c4.evidence import relation_key  # noqa: F401  (callers name it freshness.relation_key)
 from ..domain.docs import cascade, frontmatter, logical_paths
+from ..domain.docs.fingerprints import digest as _hash, norm as _norm
 from ..app import services
 
 FILE = WORK / "fresh.json"
 LOCK = CTX.state_root / ".camarones" / ".cache" / "locks" / "fresh.lock"
-COMMENT = re.compile(r"^(//|#|/\*|\*|<!--|-->|--\s|;)")
 OUT_OF_DATE = cascade.OUT_OF_DATE
 META_BLOCK = re.compile(rf"\bmetadata\s*\{{(?:{c4edit.STR}|[^{{}}'\"])*\}}")
 FINGERPRINTED = ("lines", "symbol")             # the other anchors are checked for existence only (spec §5.3)
@@ -56,19 +55,6 @@ def _file(repo: str | None, path: str) -> Path:
     if repo in (None, "", "umbrella", ".", CAM_DIR):
         return ROOT / path
     return repo_dir(repo) / path
-
-
-def _norm(lines: list[str]) -> list[str]:
-    out = []
-    for line in lines:
-        s = re.sub(r"\s+", " ", line.strip())
-        if s and not COMMENT.match(s):
-            out.append(s)
-    return out
-
-
-def _hash(lines: list[str]) -> str:
-    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()[:16]
 
 
 def kind(ref: str) -> str:
@@ -518,6 +504,18 @@ def states() -> dict[str, dict]:
         if held := {s: c4["held"][s] for s in st["changed"] if s in c4["held"]}:
             st["c4"] = held
     return result
+
+
+def by_repo() -> dict[str, dict]:
+    """Each repo's pages by state: a page counts once under every repo its own (non-doc) sources cite. Unverified pages
+    are left out."""
+    pages, out = _pages(), {}
+    for logical, st in states().items():
+        if st["state"] == "unverified" or logical not in pages:
+            continue
+        for repo in {parse(s)[0] for s in _sources(pages[logical][0]) if kind(s) != "doc"} - {None, ""}:
+            out.setdefault(repo, {"fresh": 0, "suspect": 0, "stale": 0})[st["state"]] += 1
+    return out
 
 
 def _check_page_source(s: str, stamp: dict | None, decision: bool, c4: dict) -> str:

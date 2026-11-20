@@ -1898,6 +1898,19 @@
       ],
       "required": false,
       "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "set_aside",
+      "nargs": 0,
+      "options": [
+       "--set-aside"
+      ],
+      "required": false,
+      "type": null
      }
     ],
     "exclusive_groups": [],
@@ -2688,6 +2701,18 @@
       "type": null
      }
     ],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
+   "pull": {
+    "aliases": [],
+    "args": [],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
+   "push": {
+    "aliases": [],
+    "args": [],
     "exclusive_groups": [],
     "subparsers": null
    },

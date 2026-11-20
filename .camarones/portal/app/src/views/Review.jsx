@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
+import { Aviso, Button, Chip, EmptyState, Skeleton, TrustPill } from '@camaron/ui'
 import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { t as tr } from '../i18n.js'
 import { changedRepos, FILTERS, filterQueue, queueCounts } from './review.js'
 import { pageConflict } from './docpage.js'
 import { core } from '../core.js'
-
-const STATE = { draft: 'warn', 'needs-reconfirm': 'info', confirmed: 'ok' }
 
 // #/review: the pages that wait for a person, confirmed one by one or several at once, each with where it comes from.
 // Below, what else waits: review requests, change requests, code that moved, the checks.
@@ -101,7 +99,7 @@ export default function Review() {
                     aria-label={r.title} />}
                   <span className="rv-title"><a href={core.hrefFor(r.path)}>{r.title}</a>
                     <span className="muted small">{r.path}</span></span>
-                  <Chip state={STATE[r.trust]}>{t('trust.' + r.trust)}</Chip>
+                  <TrustPill trust={r.trust}>{t('trust.' + r.trust)}</TrustPill>
                 </li>
               ))}
             </ul>

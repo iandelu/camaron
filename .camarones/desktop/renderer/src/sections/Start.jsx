@@ -3,7 +3,7 @@ import { Aviso, Button, Card, Skeleton } from '@camaron/ui'
 import { portalUrl } from '../docs.js'
 import { useAgents, useJob } from '../hooks.js'
 import { STEP_KEYS, alreadyDone, canContinue, continueVariant, defaultPicks, errorLine, hostOf, manualHints, nextStep, prevStep,
-  progressOf, repoBody, repoFromUrl, repoRows, reposChanged, setupChoice, stepIndex, urlName } from '../onboarding.js'
+  progressOf, repoBody, repoFromUrl, repoRows, reposChanged, repoState, setupChoice, stepIndex, urlName } from '../onboarding.js'
 import { AgentPicker, Failed } from '../parts.jsx'
 import { Tokens } from './Machine.jsx'
 import { lang, t } from '../i18n.js'
@@ -68,6 +68,7 @@ export default function Start({ srv, jobs, app }) {
   if (!st) return <div className="dk-page ob"><Skeleton lines={5} /></div>
 
   const step = st.done ? 'intro' : st.steps[stepIndex(st)]
+  const join = st.mode === 'join'                       // the repos are the team's: shown, never saved from here
   const go = async (id, before) => {
     setMoving(true)
     setError('')
@@ -88,15 +89,15 @@ export default function Start({ srv, jobs, app }) {
   }
   // new picks make a finished setup stale: entering the step again installs them
   const pickTools = (p) => { setPicked(p); setSetup({ result: null, running: false }) }
-  const data = { repos: { kind: st.kind, rows }, tools: { rows: tools?.rows, picked },
+  const data = { repos: { kind: st.kind, rows, mode: st.mode }, tools: { rows: tools?.rows, picked },
     setup: { result: setup.result, requiredOk: tools?.required_ok }, arch: { saved: arch.saved } }[step]
   const check = canContinue(step, data)
   const waiting = moving || (step === 'tools' && !tools) || (step === 'setup' && (setup.running || !setup.result))
   const p = { srv, jobs, app }
 
   const panel = {
-    repos: <Repos rows={rows} setRows={setRows} />,
-    tools: <Tools tools={tools} picked={picked || []} setPicked={pickTools} error={toolsError} onRetry={loadTools} />,
+    repos: join ? <JoinRepos srv={srv} app={app} /> : <Repos rows={rows} setRows={setRows} />,
+    tools: <Tools tools={tools} picked={picked || []} setPicked={pickTools} error={toolsError} onRetry={loadTools} join={join} />,
     setup: <Setup {...p} tools={tools} picked={picked} repos={st.repos} state={setup} setState={setSetup} error={toolsError}
       reloadTools={loadTools} />,
     stack: <Stack {...p} scanned={scanned} setScanned={setScanned} />,
@@ -115,7 +116,7 @@ export default function Start({ srv, jobs, app }) {
           <div className="ob-next">
             {!check.ok && !waiting ? <span className="muted small" role="status">{t(check.reason)}</span> : null}
             <Button variant={continueVariant(step, data)} disabled={!check.ok || waiting}
-              onClick={() => go(next, step === 'repos' ? saveRepos : null)}>{t('obContinue')}</Button>
+              onClick={() => go(next, step === 'repos' && !join ? saveRepos : null)}>{t('obContinue')}</Button>
           </div>
         </div>
       )}
@@ -175,6 +176,45 @@ function Repos({ rows, setRows }) {
   )
 }
 
+// ---------- 1b. A join's repos: the team's list, read-only, with what this machine has of each (found by remote) ----------
+export function JoinRepos({ srv, app }) {
+  const [res, setRes] = useState(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const load = () => srv.get('app/onboard/repos-here').then(setRes, (e) => setError(say(e)))
+  useEffect(() => { load() }, [])
+  // a folder this machine names to search: remembered here only, never in the team's files
+  async function search() {
+    const [dir] = (await app.pickFiles?.('folder')) || []
+    if (!dir) return
+    setBusy(true)
+    setError('')
+    try { setRes(await srv.post('app/onboard/search', { folder: dir })) } catch (e) { setError(say(e)) } finally { setBusy(false) }
+  }
+  return (
+    <>
+      <h2>{t('obJoinReposTitle')}</h2>
+      <p className="dk-lede">{t('obJoinReposLead')}</p>
+      {!res ? (error ? null : <Skeleton lines={3} />) : (
+        <ul className="dk-units">
+          {res.rows.map((r) => {
+            const s = repoState(r)
+            return (
+              <li key={r.name} className="dk-unit">
+                <span className={'ob-glyph ' + (s.ok ? 'ob-ok' : 'ob-warn')} aria-hidden="true">{s.ok ? '✔' : '⚠'}</span>
+                <span className="dk-unit-main"><b>{r.name}</b>
+                  <code className="muted small dk-mono">{t(s.key, s.vars)}{r.url ? ` · ${r.url}` : ''}</code></span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <div className="row"><Button disabled={busy} onClick={search}>{t('obSearchFolder')}</Button></div>
+      {error ? <Aviso tone="error" title={error} /> : null}
+    </>
+  )
+}
+
 // ---------- 2. Tools: what this machine has; required ones ticked and locked ----------
 const KIND = { t_required: 'obKindRequired', t_optional: 'obKindOptional', t_kit: 'obKindKit' }
 
@@ -184,12 +224,13 @@ const ToolsFailed = ({ error, onRetry }) => (
     action={<Button size="sm" onClick={() => onRetry?.()}>{t('obRetry')}</Button>} />
 )
 
-export function Tools({ tools, picked, setPicked, error, onRetry }) {
+// `join`: the kit rows are the team's components; one left out is "not on this machine", and its row says what it costs.
+export function Tools({ tools, picked, setPicked, error, onRetry, join = false }) {
   const toggle = (id) => setPicked(picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id])
   return (
     <>
       <h2>{t('obToolsTitle')}</h2>
-      <p className="dk-lede">{t('obToolsLead')}</p>
+      <p className="dk-lede">{t(join ? 'obToolsLeadJoin' : 'obToolsLead')}</p>
       {error ? <ToolsFailed error={error} onRetry={onRetry} /> : null}          {/* with a list below, that one is stale */}
       {!tools ? (error ? null : <Skeleton lines={6} />) : (
         <ul className="dk-units">
@@ -200,7 +241,8 @@ export function Tools({ tools, picked, setPicked, error, onRetry }) {
                 <span className={'ob-glyph ' + (r.ok ? 'ob-ok' : 'ob-warn')} role="img" aria-label={t(r.ok ? 'obInstalled' : 'obMissing')}>{r.ok ? '✔' : '⚠'}</span>
                 <span className="dk-unit-main"><b>{r.id}</b>
                   <code className="muted small dk-mono">{t(KIND[r.kind])} · {r.label}{r.found ? ` · ${r.found}` : ''}</code>
-                  {r.note ? <span className="muted small">{r.note}</span> : null}</span>
+                  {r.note ? <span className="muted small">{r.note}</span> : null}
+                  {join && !r.sys && !r.ok && !picked.includes(r.id) ? <span className="muted small">{t('obCost.' + r.id)}</span> : null}</span>
                 {r.ok ? null : (
                   <label className="dk-check"><input type="checkbox" checked={locked || picked.includes(r.id)} disabled={locked}
                     aria-label={t('obInstallIt', { id: r.id })} onChange={() => toggle(r.id)} /></label>
@@ -408,14 +450,19 @@ function Arch({ srv, jobs, app, state, setState, onSkip }) {
 }
 
 // ---------- 6. Ready: the first run closes (firstrun.json done, a checkpoint commit); the window goes to the Summary ----------
-function Intro({ srv, app, closed: already }) {
+// The window skipped its catch-up on open while the first run was ahead, so closing it brings in the team's work now
+// (the C4 explorer included). A failed catch-up is the Summary's to say, never a failed close.
+export const closeFirstRun = (srv, jobs) => srv.post('app/onboard/done', {})
+  .then(() => srv.post('app/catch-up', {}).then(() => { jobs?.refresh() }, () => {}))
+
+function Intro({ srv, jobs, app, closed: already }) {
   const [error, setError] = useState('')
   const closed = useRef(already)                      // a first run finished earlier is not closed (and committed) again
   const close = () => {
     closed.current = true
     setError('')
     // refused with `done`: the CLI closed it meanwhile, which is what was asked
-    srv.post('app/onboard/done', {}).catch((e) => { if (alreadyDone(e)) return; closed.current = false; setError(say(e)) })
+    closeFirstRun(srv, jobs).catch((e) => { if (alreadyDone(e)) return; closed.current = false; setError(say(e)) })
   }
   useEffect(() => { if (!closed.current) close() }, [])
   return (

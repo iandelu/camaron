@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Aviso, Brand, Button, Card, Chip, Field, Skeleton } from '@camaron/ui'
 import { Failed } from './parts.jsx'
-import { adoptSay, BADGE, card, errorKey, JOIN0, joinOnce, names } from './hub.js'
+import { adoptSay, BADGE, canGo, card, errorKey, JOIN0, joinOnce, names } from './hub.js'
 import { t } from './i18n.js'
 
 // The start screen (the hub window, loaded from disk): what do you want to document. Pick a folder (the CLI says what
-// it is, the person confirms, it becomes a project), join the team's cam-docs, or open a recent project. Everything
-// goes through window.camaronHub (preload.cjs) to the main process, which runs the CLI and opens the project window.
+// it is, the person confirms, it becomes a project, or joins the team's docs into it), join the team's cam-docs, or
+// open a recent project. Everything goes through window.camaronHub (preload.cjs) to the main process, which runs the
+// CLI and opens the project window.
 
 // Text with `code` spans.
 const rich = (s) => s.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))
@@ -22,8 +23,13 @@ const UsersIcon = () => (
     <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
 )
 
-// One line per screen in the hub's own words; an error also shows the CLI's line, as it is.
-function Say({ say }) {
+// One line per screen in the hub's own words; an error also shows the CLI's line, as it is. A cam-docs made here and
+// never shared (C1) is a question instead: only its own button sets it aside.
+function Say({ say, js, busy, onSetAside }) {
+  if (js?.stray) return (
+    <Aviso tone="warn" title={t('hub.stray', { aside: js.aside })}
+      action={<Button variant="primary" disabled={busy} onClick={onSetAside}>{t('hub.strayGo')}</Button>} />
+  )
   if (!say) return null
   const text = t(say.key, say.vars)
   if (say.error) return <Aviso tone="error" title={text} detail={say.detail || undefined} />
@@ -40,6 +46,7 @@ export default function Hub({ hub }) {
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [js, setJs] = useState(JOIN0)                     // the join form's token state (hub.js joinStep)
+  const [team, setTeam] = useState('')                    // the found card's question: '' (not answered) | yes | no
 
   const load = () => hub.list().then((r) => (r?.error ? setListError(r.error) : setRows(r?.projects || [])),
     (e) => setListError(e.message))
@@ -62,6 +69,8 @@ export default function Hub({ hub }) {
     if (!r?.found) return setSay({ key: errorKey('folder'), detail: r?.detail, error: true })
     setFound({ dir, info: r.found })
     setName(r.found.name || '')
+    setTeam('')
+    setJs(JOIN0)
     setView('found')
     setSay(null)
   }
@@ -81,7 +90,8 @@ export default function Hub({ hub }) {
   const c = found ? card(found.info) : null
   const adopt = (e) => {
     e.preventDefault()
-    if (!c?.canContinue) return
+    if (!c || !canGo(c, team, url)) return
+    if (c.team && team === 'yes') return tryJoin({ ...js, dir: found.info.workspace })   // this same folder: no dialog
     const n = c.askName ? name.trim() || undefined : undefined       // a project keeps the name it has
     if (n?.startsWith('-')) return setSay({ key: 'hub.badName', error: true })
     work(async () => {
@@ -90,26 +100,29 @@ export default function Hub({ hub }) {
     })
   }
 
-  // Join: the URL, then the folder (the main process asks); a token only when the host asked for one.
-  const join = (e) => {
-    e.preventDefault()
+  // Join: the URL, then the folder (the main process asks, unless `state.dir` is the folder already picked); a token
+  // only when the host asked for one.
+  const tryJoin = (state) => {
     const u = url.trim()
     if (!u) return
     if (u.startsWith('-')) return setSay({ key: 'hub.badUrl', error: true })
-    const token = js.showToken ? js.token.trim() : undefined
+    const token = state.showToken ? state.token.trim() : undefined
     if (token === '') return
     work(async () => {
       setSay({ key: 'hub.joiningNow' })
-      const next = await joinOnce(hub, js, u, token)                   // never throws: a rejection clears the token too
+      const next = await joinOnce(hub, state, u, token)                // never throws: a rejection clears the token too
       setJs(next)
       setSay(next.say)
     })
   }
+  const join = (e) => { e.preventDefault(); tryJoin(js) }
+  const setAside = () => tryJoin({ ...js, setAside: true })           // C1: the stray answer's own button, and nothing else
   // another URL may be another host: the token (and folder) asked for the old one no longer apply
   const onUrl = (e) => {
     setUrl(e.target.value)
-    if (js.showToken) { setJs(JOIN0); setSay(null) }
+    if (js.showToken || js.stray) { setJs(JOIN0); setSay(null) }
   }
+  const answer = (v) => { setTeam(v); setJs(JOIN0); setSay(null) }
 
   const back = <button type="button" className="dk-back" disabled={busy} onClick={() => go('start')}>{t('hub.back')}</button>
   return (<>
@@ -159,23 +172,26 @@ export default function Hub({ hub }) {
               autoComplete="off" spellCheck={false} />
             <p className="muted small">{t('hub.tokenHelp')}</p>
           </div>)}
-          <Say say={say} />
+          <Say say={say} js={js} busy={busy} onSetAside={setAside} />
           <div className="row dk-end">
             <Button variant="ghost" disabled={busy} onClick={() => go('start')}>{t('cancel')}</Button>
-            <Button variant="primary" type="submit" disabled={busy}>{t(js.showToken ? 'hub.tokenGo' : 'hub.joinGo')}</Button>
+            {js.stray ? null : <Button variant="primary" type="submit" disabled={busy}>{t(js.showToken ? 'hub.tokenGo' : 'hub.joinGo')}</Button>}
           </div>
         </Card>
       </main>
     )}
     {view === 'found' && c && (
       <Found c={c} back={back} busy={busy} say={say} name={name} setName={setName} onPick={pick} onGitInit={gitInit}
-        onAdopt={adopt} />
+        onAdopt={adopt} team={team} setTeam={answer} url={url} onUrl={onUrl} js={js} setJs={setJs} onSetAside={setAside} />
     )}
   </>)
 }
 
-// What I found, one card per case (hub.js card), then the name and the way on: Continue, or only what the card allows.
-export function Found({ c, back, busy, say, name, setName, onPick, onGitInit, onAdopt }) {
+// What I found, one card per case (hub.js card), then the team question when the card asks it (C7: nothing picked,
+// Continue waits for an answer; Yes asks the team's URL and joins into this folder), the name and the way on.
+const noop = () => {}
+export function Found({ c, back, busy, say, name, setName, onPick, onGitInit, onAdopt, team = '', setTeam = noop, url = '',
+  onUrl = noop, js = JOIN0, setJs = noop, onSetAside = noop }) {
   return (
     <main className="dk-hub">
       {back}
@@ -193,13 +209,31 @@ export function Found({ c, back, busy, say, name, setName, onPick, onGitInit, on
         <p className="dk-dest"><span className="muted">cam-docs →</span> <code>{c.dest}</code></p>
       </Card>
       <form className="dk-hub-form" onSubmit={onAdopt}>
-        {c.canContinue && c.askName && <Field id="h-name" label={t('hub.name')} value={name}
+        {c.canContinue && c.team && (
+          <fieldset className="dk-team" disabled={busy}>
+            <legend>{t('hub.teamQ')}</legend>
+            <label className="dk-check"><input type="radio" name="h-team" value="yes" checked={team === 'yes'}
+              onChange={() => setTeam('yes')} /> {t('hub.teamYes')}</label>
+            {team === 'yes' && <Field id="h-team-url" className="cu-input dk-mono" label={t('hub.urlLabel')} value={url}
+              onChange={onUrl} required autoFocus autoComplete="off" spellCheck={false} placeholder="https://gitlab.com/shop/cam-docs.git" />}
+            {team === 'yes' && js.showToken && (<div className="dk-token">
+              <Field id="h-team-token" className="cu-input dk-mono" type="password" label={t('hub.tokenLabel', { host: js.host })}
+                value={js.token} onChange={(e) => setJs({ ...js, token: e.target.value })} required autoFocus
+                autoComplete="off" spellCheck={false} />
+              <p className="muted small">{t('hub.tokenHelp')}</p>
+            </div>)}
+            <label className="dk-check"><input type="radio" name="h-team" value="no" checked={team === 'no'}
+              onChange={() => setTeam('no')} /> {t('hub.teamNo')}</label>
+          </fieldset>
+        )}
+        {c.canContinue && c.askName && (!c.team || team === 'no') && <Field id="h-name" label={t('hub.name')} value={name}
           onChange={(e) => setName(e.target.value)} autoComplete="off" spellCheck={false} />}
-        <Say say={say} />
+        <Say say={say} js={js} busy={busy} onSetAside={onSetAside} />
         <div className="row dk-end">
           {/* with nothing else to do here, changing the folder is the one way on */}
           <Button variant={c.canContinue || c.action ? 'ghost' : 'primary'} disabled={busy} onClick={onPick}>{t('hub.change')}</Button>
-          {c.canContinue && <Button variant="primary" type="submit" disabled={busy} autoFocus>{t('hub.continue')}</Button>}
+          {c.canContinue && !js.stray && <Button variant="primary" type="submit" disabled={busy || !canGo(c, team, url)}
+            autoFocus={!c.team}>{t('hub.continue')}</Button>}
         </div>
       </form>
     </main>

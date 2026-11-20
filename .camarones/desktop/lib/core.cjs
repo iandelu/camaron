@@ -48,7 +48,8 @@ const inspectArgs = (dir) => ['projects', '--inspect', dir, '--json']
 const adoptArgs = (dir, name) => ['projects', '--adopt', dir, '--json',
   ...(typeof name === 'string' && name.trim() && !name.trim().startsWith('-') ? ['--name', name.trim()] : [])]
 const gitInitArgs = (dir) => ['projects', '--git-init', dir, '--json']
-const joinArgs = (url, dir) => ['join', url, dir, '--no-open']
+// --set-aside only on the person's click on the stray answer (C1): a strict true, never a truthy value.
+const joinArgs = (url, dir, setAside) => ['join', url, dir, '--no-open', ...(setAside === true ? ['--set-aside'] : [])]
 
 // A folder the page hands back: an absolute path (what the folder dialog gives), never an option or a relative one.
 const folderArg = (dir) => typeof dir === 'string' && dir.length > 0 && path.isAbsolute(dir)
@@ -61,12 +62,14 @@ function joinEnv(env, token) {
 }
 
 // `join --no-open` explains a refused access as one JSON line on stdout: {error, host, detail}; a cam-docs in that
-// folder that belongs to something else is {error: "taken", detail}.
-const JOIN_REASONS = ['auth', 'denied', 'not-found', 'network', 'unknown', 'taken']
+// folder that belongs to something else is {error: "taken", detail}; one made here and never shared is
+// {error: "stray", detail, aside} (the name it would be set aside as).
+const JOIN_REASONS = ['auth', 'denied', 'not-found', 'network', 'unknown', 'taken', 'stray']
 function joinFailure(out) {
   const r = lastJson(out)
   if (!r || typeof r.error !== 'string') return null
-  return { error: JOIN_REASONS.includes(r.error) ? r.error : 'unknown', host: String(r.host || ''), detail: String(r.detail || '') }
+  const error = JOIN_REASONS.includes(r.error) ? r.error : 'unknown'
+  return { error, host: String(r.host || ''), detail: String(r.detail || ''), ...(error === 'stray' ? { aside: String(r.aside || '') } : {}) }
 }
 
 // The CLI's own error: its last stderr line, without the ✖.

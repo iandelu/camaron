@@ -28,6 +28,24 @@ def test_no_wiki_units_without_the_openwiki_component(kit):
     assert unit(kit.plan.sync(), "repo-wiki:api")["notes"] == "OpenWiki not selected"
 
 
+@pytest.mark.parametrize("note", ["OpenWiki not selected", "No wiki for this repo (wizard → Wikis → choose repos)",
+                                  "dropped by hand"])
+def test_picking_openwiki_again_brings_back_its_units(kit, note):
+    """C3 (spec 2026-11-18 §6.5): a machine's choice that an older join shared is not repaired by itself; the team
+    picks the component again and every unit dropped for it comes back, whatever its note."""
+    plan, comps = kit.plan, kit.services.components
+    kit.services.workspace.set_wiki_repos(["api"])
+    comps.set_components(["likec4", "agents"])
+    data = plan.sync()
+    u = unit(data, "repo-wiki:api")
+    u["status"], u["notes"] = "dropped", note
+    plan.save(data)
+    comps.set_components(comps.ALL_COMPONENTS)
+    u = unit(plan.sync(), "repo-wiki:api")
+    assert u["status"] == "todo"
+    assert u["notes"] == ("" if note in (plan.NO_WIKI, plan.NO_OPENWIKI) else note)
+
+
 def test_sync_keeps_progress_and_drops_removed_repos(kit):
     plan, store = kit.plan, kit.services.workspace
     plan.sync()

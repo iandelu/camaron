@@ -29,7 +29,7 @@ Each project has its own window, served by that project's own local server (see
 |---|---|
 | Header | The brand (back to Flow), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
 | Rail | One button per project of this machine, with its initials. Another project opens **in this window**: the app starts that project's server, moves the window to it and stops the old one. Stopping it ends the sessions open on its canvas, so when one is live the app asks first: *{n} sessions are open in this project: switching project ends them.* — **Cancel** or **Switch anyway**. A project that is not on disk is greyed out. **+** opens the start screen |
-| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
+| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health, SonarQube and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
 | Main area | The section you are in |
 | Jobs panel and status bar | What runs now and the last jobs, with their output; the status bar shows the first running job and the kit's version |
 
@@ -90,17 +90,26 @@ and tells you what it found before it touches anything:
 | An empty folder | New project | Creates a project with no code yet: you document the design first |
 | Your home folder or a disk root | — | Refuses, and says why: `cam-docs` and the repo analysis would land there |
 
+For one repo or a folder of repos with no `cam-docs` yet, the card asks **Does your team already keep its
+documentation in a cam-docs repo?** with nothing picked, and **Continue** waits for an answer. **Yes, join it** asks the
+team's URL and joins it into this same folder, as the join below does. **No, start a new one** goes on as today. A
+project that was made here and never shared (no remote, no commits) asks it too.
+
 You can change the **Project name** (it starts as the folder's name) and press **Continue**, which runs
 `camaron projects --adopt` and opens the project's window.
 
 ### Join my team's documentation
 
-Paste the URL of the team's **cam-docs** repo — the documentation's, not the code's — and pick where to put it.
+Paste the URL of the team's **cam-docs** repo — the documentation's, not the code's — then pick the folder where your
+repos are (or will be): `cam-docs` goes inside it.
 The app runs `camaron join … --no-open` with your own git credentials first. If the host asks for credentials git
 does not have, an https URL gets a token field ("GitLab: read_repository + write_repository · GitHub: repo"); the
 token travels only in an environment variable, and is saved in the system keychain once git gets in with it. An SSH
 URL asks you to set up your SSH key instead. Other refusals are said in words: no access, not found, no network, or a
-folder that already has another `cam-docs`.
+folder that already has another `cam-docs`. A `cam-docs` the kit made there and never shared is a question instead:
+**Set it aside and join** renames it to `cam-docs.local-<date>` next to it (nothing is deleted) and brings in the team's;
+nothing happens without that click. When this machine already has the team's docs in another folder, the app says so
+and opens them, and looks for your repos in the folder you picked too.
 
 ### Recent
 
@@ -114,20 +123,20 @@ same step, in either of them. Until it is finished, the Summary offers **Continu
 
 | Step | What happens |
 |---|---|
-| Repos | The repos to document: the ones already in the project are ticked, the ones found in the folder are not. Add a code repo by URL (its name and branch fill in). At least one is needed, except in an empty folder |
-| Tools | What this machine has and lacks: required tools ticked and locked, the recommended ones picked when missing (one agent CLI is enough), plus the kit's pinned tools |
+| Repos | The repos to document: the ones already in the project are ticked, the ones found in the folder are not. Add a code repo by URL (its name and branch fill in). At least one is needed, except in an empty folder. On a join it is read-only: each team repo is *here*, *linked from* a clone you keep under another folder name, *missing* (Install clones it) or its folder is *taken* (left as it is); **Search another folder…** is remembered for this machine only |
+| Tools | What this machine has and lacks: required tools ticked and locked, the recommended ones picked when missing (one agent CLI is enough), plus the kit's pinned tools. On a join it lists the team's tools, and one left out is left out on this machine only: its row says what that costs, and the team's plan does not change |
 | Install | Starts by itself: installs what you picked, saves the components, writes the templates, sets the project up and syncs the plan, with a progress bar and the live log. **Cancel** stops between steps. Repos that could not be cloned show the Tokens card right there, with their host filled in |
 | Stack | Each repo's stack as read from its manifests; the pencil fixes a wrong one. Never blocks |
 | Architecture | A first C4 draft from static analysis, no AI: repos, databases and brokers, relations. **Save draft**, **View diagram ↗**, **Save and improve with AI** (opens your agent in a terminal on the C4 model) or **Skip** |
 | Ready | Closes the first run with a checkpoint commit. **Go to the next step** lands on the Summary |
 
 A new project in an **empty folder** goes Repos → Tools → Install → Ready (nothing to read yet). A project you
-**joined** goes Tools → Install → Ready, since the team already decided the rest — and skips the wizard entirely when
-this machine already has every repo and tool.
+**joined** goes Repos → Tools → Install → Ready, since the team already decided the rest; it never changes the team's
+repos, components or plan, and skips the wizard entirely when this machine already has every repo and tool.
 
 ## Flow
 
-Where the project stands and what to run next (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Two tabs sit under the title: **Summary** and **Plan** (`#/flow/plan`).
+Where the project stands and what to run next (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Two tabs sit under the title: **Summary** and **Plan** (`#/flow/plan`). A repo's own page (`#/flow/repo/<name>`) is a view, not a tab: it opens from a repo card.
 
 <!-- go:flow -->
 <!-- tour:flow -->
@@ -151,9 +160,47 @@ unit, then pages waiting for review, then nothing ("All caught up"). Its button 
 | Building the portal (`portal`), or nothing left | **Read the docs** |
 | Anything else | **See the plan** |
 
+When you open the window the Summary brings in the team's work by itself (never uploads) and shows the outcome in one
+line; if the team's changes clash with yours it changes nothing, names the files and offers **Open a terminal here**.
+Offline, it says you are working with the latest you brought in; any other failure says it could not bring in the
+team's changes, with what went wrong beneath. A clash leaves the line once you have the team's work (resolved in a
+terminal, or uploaded since), and an unreachable repo once an upload has reached it.
+
+The same look finds the team's repos on this machine (it never clones): a folder holding something else where a team repo
+goes warns and is left as it is, and a team repo that is not here yet says so, with **Prepare the machine**, which clones
+it. A repo linked to a clone kept under another name says nothing. Setup and **Clone or pull the repos** never move a
+clone of yours: one with unsaved changes, or on a branch other than the team's, is left as it is and the log says why.
+
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.
+
+**One card per repo** sits under them, read without AI and without a network call: the repo's state, its SonarQube
+quality gate and coverage (or **Estimated** and the coverage from a report in the repo, when no server was read),
+library vulnerabilities, the state of its wiki and its out-of-date pages (with none, the pages to check). A repo not
+cloned here says so in place of its SonarQube and library figures. A card opens the repo's page. **See all of Health**
+goes to Quality.
+
+### A repo's page
+
+One repo on one screen (`#/flow/repo/<name>`, from a repo card or from a repo link in Quality › Health). It is a
+bento of tiles; a repo that is not in the project answers "not found". Each tile opens its real window already
+filtered to the repo (`?repo=`):
+
+- **Header**: the stack, read from the repo's files without AI (language, framework, build, data, container, CI).
+- **SonarQube**: coverage, its trend over the last 8 health builds, the quality gate, bugs, code vulnerabilities and
+  debt; with no server read, the estimate (see [SonarQube](#sonarqube)); when the last health snapshot has no figures
+  for the repo, it says so. Opens Quality › SonarQube.
+- **Activity**: commits per week for 12 weeks, the people who committed and the last commit, from git.
+- **Libraries**: vulnerabilities by severity (one with no severity counts as unknown) and how many libraries have a
+  newer version. Opens Quality › Libraries.
+- **Documentation**: the repo's pages up to date, to check and out of date, and its wiki. Opens Docs › Wikis.
+- **Architecture**: a small C4 (what calls the repo, what it calls) and its code-graph nodes; the C4 and the graph open
+  in the portal.
+- **Work**: the repo's cards by column and the ADRs that name it. Open the Board and Docs › Decisions.
+
+The kit keeps the stack and the activity in `.cache/repos/` and refreshes them when the repo's HEAD, its branch, the
+week or its `stack` in `workspace.yaml` changes.
 
 ### Plan
 
@@ -292,7 +339,8 @@ A project without a board shows **Turn the board on** (`camaron board init`). Wi
 - **Open a card** to read its description, its acceptance criteria and its definition of done. A story lists its tasks
   and has **Add a task**. **Delete** takes the card off the board after asking: its file moves to
   `backlog/archive/tasks` (its tasks stay).
-- **Add ▾** (top) is a menu. **Story** opens the portal's Stories in your browser, where stories are written; **Task** and **Bug** open the form here: type, title, what it goes under (a task under an epic or a story; a story, bug or
+- **Filter by repo**: `?repo=<name>` (what a repo page's Work tile opens) shows a removable **Repo: <name>** chip and only that repo's cards.
+- **Add ▾** (top) is a menu, and the arrow keys move through its entries. **Story** opens the portal's Stories in your browser, where stories are written; **Task** and **Bug** open the form here: type, title, what it goes under (a task under an epic or a story; a story, bug or
   spike under an epic) and priority.
 
 Writing stories with their subtasks and waves happens in the [portal's Stories](portal.md#stories).
@@ -300,8 +348,8 @@ Writing stories with their subtasks and waves happens in the [portal's Stories](
 ## Quality
 
 The project's health in one board: this machine, the docs and the code (`#/quality`, <kbd>g</kbd> <kbd>q</kbd>). It
-reads `camaron health`, which needs no AI. Two views sit under the title: **Health**, the board, and **Libraries**
-(`#/quality/libs`, below); the old `#/libs` address still opens it.
+reads `camaron health`, which needs no AI. Three views sit under the title: **Health**, the board, **SonarQube**
+(`#/quality/sonar`, below) and **Libraries** (`#/quality/libs`, below); the old `#/libs` address still opens Libraries.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -313,7 +361,7 @@ and **Check everything** (`camaron health --refresh`). Then three areas, each wi
 |---|---|---|---|
 | Machine | Ready · Review · At risk | tools, missing | **Requirements and tools**: what is missing first, each with **Install** (`camaron doctor --install …`), **Install the pinned ones** (`camaron setup`), **Check again**, and kit files out of place with **Repair**. **Kit files**: each file or link that is off, with why; **Repair** puts back the kit's, checks again and says what it could not fix and why. A file of yours that the kit never replaces is listed as kept, not as something to fix |
 | Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them), **With and without cam-docs (AI)** (the same question asked twice), **Secret scan** (gitleaks over the docs and the wikis, `camaron check --secrets`: it runs when you open the row, lists each place it found — never the value — and says plainly when it could not run) and **Hooks for the agents** (the switch for the five Claude Code method hooks, `camaron hooks`, and what they saw: prompts that got docs, sessions that read the docs before their first code edit, edits stopped) |
-| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries view |
+| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the repo's page in the app). **Libraries** → the Libraries view |
 
 A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Settings › Tokens with the
 server filled in. A figure that could not be read shows "—", never 0. Below the board: **See the KPIs** (portal) and
@@ -323,10 +371,24 @@ server filled in. A figure that could not be read shows "—", never 0. Below th
 <!-- cmd:check -->
 <!-- cmd:hooks -->
 
+### SonarQube
+
+One row per repo, from the figures the last health check read (`#/quality/sonar`).
+
+<!-- go:quality/sonar -->
+
+Each row shows its **source** (SonarQube, or Estimated), the quality gate, coverage (Sonar's, else the repo's report),
+bugs, code vulnerabilities, debt and **Open in SonarQube**. Filter by repo and by source; **Read again** builds the health
+snapshot again (`camaron health --refresh`). The server's figure always wins over an estimate. When the snapshot could
+not read the repos at all, the view says **Unread** with the reason.
+
+An **Estimated** row opens a panel with what the kit knows without a server (the coverage from the repo's report, its
+library vulnerabilities, its out-of-date pages), what it cannot know, and **Connect SonarQube** (Settings › Tokens).
+
 ### Libraries
 
-Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's second view
-(`#/quality/libs`).
+Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's third view
+(`#/quality/libs`). `?repo=<name>` opens it with that repo's facet already set.
 
 <!-- go:quality/libs -->
 <!-- tour:libs -->
@@ -367,14 +429,22 @@ a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the
 <!-- go:docs -->
 <!-- tour:docs -->
 
-**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have changes
-to bring in or never shared (and when you last did), and **Share now** (a checkpoint, then your work rebased on the team's
-and pushed). Its fold, **The team's repo**, holds the URL: paste it and **Save** (`camaron remote`). With a remote it
-also offers **Check** (asks the remote what is new) and **Share every time progress is saved**
-(`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched; something that looks
-like a secret is not published. A share or a check that fails says why — the server cannot be reached (connection, VPN
-or proxy), it wants a token or refuses yours, the repo is not there — with git's own line beneath; a token problem
-links to **Settings › Tokens** for that server.
+**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have
+changes to bring in or to upload, or never shared; a line — n to bring in · m to upload · last time … (the last upload
+or bring-in that left you in step), plus n unsaved when you have changed pages (never the files the kit writes on its
+own: the doc status, `llms.txt`, the freshness fingerprints, the usage counters) — and three actions, the useful one as
+the primary button: **Bring in changes** (`camaron pull`, the team's work rebased in), **Upload changes**
+(`camaron push`, a checkpoint, then yours pushed; it refuses when the team has new changes, so bring them in first) and
+**Sync with the team** (`camaron share`, bring in then upload). Its fold, **Team repo**, holds the URL: paste it and
+**Save** (`camaron remote`). With a remote it shows the same line and actions, **Check** (asks the remote what is new)
+and **Upload on save** (`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched;
+something that looks like a secret is not published. When the team's changes clash with yours, a rebase is left half
+way, or your unsaved changes had to go to git's stash, it says so and offers **Open a terminal here**. Uploading or
+syncing while the window is still bringing in the team's work, or over a rebase or merge left half way, touches nothing
+and says so. Asking the team's server gives up after a minute, and ssh never stops to ask for a passphrase or a host key
+(unless you set ssh up for git yourself). An action or a
+check that fails says why — the server cannot be reached (connection, VPN or proxy), it wants a token or refuses yours,
+the repo is not there — with git's own line beneath; a token problem links to **Settings › Tokens** for that server.
 
 ### Read
 
@@ -439,6 +509,8 @@ The wiki of each repo (`#/docs/wikis`).
   primary action that follows the state: **Generate the wiki** with no pages yet, **Update** when the code has changed
   since the pages were written, **Expand** when the wiki was written under an earlier scope, **Try again** when the last
   run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
+- **Filtered by repo** (`?repo=<name>`, from a repo's page): that repo's card comes first and the others fold under
+  **The other wikis**.
 - **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
   has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
   the pages already there. While a wiki is being written its button reads **Generating…** with a running count of
@@ -460,6 +532,7 @@ The project's ADRs, made with the evidence in front of you and written down, wit
 `docs/.work/adr/<NNNN>.yaml`, which goes to git. The command guide has [every rule](tutorial.md#-decisions).
 
 
+- **Filtered by repo** (`?repo=<name>`): a removable chip and only the ADRs that name the repo.
 - **The list**: each ADR with its status (Running, In review, Proposed, Accepted, Superseded, Rejected…), filters and a
   search by title, number or repo. An ADR the kit did not write shows with its status and is not rewritten.
 - **New ADR**: a title, *new* or *retroactive*, and optionally the problem, drivers, constraints, candidate options and
@@ -528,7 +601,7 @@ This machine and the kit on it (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Six ta
 
 Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost)
 
-The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a share Docs could not make), says sharing with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
+The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a step with the team that Docs could not take), says bringing in or uploading changes with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
 
 ### Skills
 
@@ -545,7 +618,7 @@ says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one in
 <!-- go:settings/plugins -->
 
 The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
-whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
+whether it runs code or sends the docs out, and its state here. With none installed, the tab says so. **Enable**/**Disable** only affect this machine.
 
 ### Trust
 
@@ -606,7 +679,7 @@ global install. It is the bench for changing the kit:
 | "I could not start the project's server" | The box shows the server's error; `camaron doctor` in that folder usually says what is missing |
 | A button you expected is not in the browser portal | On purpose: the browser portal runs nothing on your machine. Do it here |
 | You want Electron downloaded again | Delete `~/.camarones/desktop` and run `camaron app` |
-| "I can't reach <server>: check the connection, VPN or proxy" on **Share now** | The team's server is only on your company's network: connect the VPN (or set the proxy) and share again |
+| "I can't reach <server>: check the connection, VPN or proxy" on **Bring in changes**, **Upload changes** or **Sync with the team** | The team's server is only on your company's network: connect the VPN (or set the proxy) and try again |
 
 On Linux with restricted user namespaces (Ubuntu 24.04 and later) the kit starts the app with `--no-sandbox`; its
 windows only ever load your project's local server.

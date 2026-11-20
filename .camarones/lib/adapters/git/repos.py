@@ -3,6 +3,7 @@ find the repos already sitting in a folder, and run git in one of them. Behind l
 from __future__ import annotations
 
 import os, re, subprocess
+from collections.abc import Iterable
 from pathlib import Path
 
 from lib.adapters.stores import workspace
@@ -43,14 +44,21 @@ def guess_kind(d: Path) -> str:
     return "service"
 
 
-def sync_repos(log: Log = print) -> list[str]:
-    """Clone missing repos, fast-forward clean ones. Tokens (🔑) are injected per call, never stored in the repos."""
+def sync_repos(log: Log = print, skip: Iterable[str] = ()) -> list[str]:
+    """Clone missing repos, fast-forward clean ones. Tokens (🔑) are injected per call, never stored in the repos.
+    `skip`: repos left alone (a folder holding something else, a clone found elsewhere that could not be linked); a
+    folder in the way is never cloned into. A clone with local changes, or on another branch than the team's, is a
+    person's work in progress: it is never checked out nor pulled."""
     from lib import creds
-    failed = []
+    failed, skip = [], set(skip)
     for r in workspace.workspace()["repos"]:
         path, branch, url = repo_dir(r["name"]), r.get("branch", "main"), r.get("url", "")
         env = creds.git_env(url)
-        if not (path / ".git").exists():
+        if r["name"] in skip:
+            log(f"skip   {r['name']}: not a clone of {url or 'the team’s repo'} here — left alone")
+        elif os.path.lexists(path) and not (path / ".git").exists():
+            log(f"⚠ {r['name']}: {path} exists and is not a git repo — not cloned")
+        elif not (path / ".git").exists():
             if not url:
                 log(f"⚠ {r['name']}: no url and not present — skipped")
                 continue
@@ -66,11 +74,12 @@ def sync_repos(log: Log = print) -> list[str]:
             log(f"local  {r['name']} (no remote)")
         elif git(path, "status", "--porcelain", "--untracked-files=no", check=False):
             log(f"skip   {r['name']}: local changes, not pulling")
+        elif (on := git(path, "symbolic-ref", "--short", "-q", "HEAD", check=False)) != branch:
+            log(f"skip   {r['name']}: on {on or 'a detached HEAD'}, not {branch} — left alone")
         else:
             log(f"pulling {r['name']} ({branch})…")
             try:
                 git(path, "fetch", "--quiet", "origin", branch, env=env)
-                git(path, "checkout", "--quiet", branch)
                 git(path, "merge", "--ff-only", "--quiet", f"origin/{branch}")
             except RuntimeError as e:
                 # The repo is already cloned locally — a remote that 404s or rejects auth (renamed,

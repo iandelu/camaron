@@ -4,6 +4,7 @@ import { shape } from '@camaron/ui/result.js'
 import { chip, state } from './jobs.js'
 import { useCmd } from './hooks.js'
 import { openSession, sessionNote, unitAction, waitsFor } from './plan.js'
+import { repoHref } from './nav.js'
 import { lang, t } from './i18n.js'
 
 // The pieces the sections share: the page, the agent picker, a fold, a job's outcome and a plan unit's row.
@@ -52,6 +53,17 @@ export function Fold({ label, children, open = false }) {
       <summary>{label}</summary>
       <div className="dk-fold-body">{children}</div>
     </details>
+  )
+}
+
+// "Repo: api" removable: the name links to the repo's page, the × to `clear`, the same view without the filter.
+export function RepoChip({ repo, clear }) {
+  const [before, after] = t('bd.repo', { repo: '\n' }).split('\n')
+  return (
+    <p className="row dk-bd-repo">
+      <Chip><span>{before}<a href={repoHref(repo)}>{repo}</a>{after}</span>
+        <a className="dk-bd-repo-x" href={clear} aria-label={t('bd.repoClear', { repo })}>{'\u00d7'}</a></Chip>
+    </p>
   )
 }
 

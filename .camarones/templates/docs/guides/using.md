@@ -57,10 +57,14 @@ the wizard; you can switch between them halfway.
 
 ## Joining your team
 
-When your team already has a `cam-docs` repo: in the app's start screen, **Join my team's documentation** and paste
-its URL (the docs repo, not the code's). From a terminal: `camaron join <url>`. The kit clones it, or reuses the copy you
-already have, and only prepares your machine — the team already chose the repos, the stack, the architecture and the
-plan, and the sessions go on where they were.
+When your team already has a `cam-docs` repo, either door of the app's start screen gets you there: **Pick a folder**
+on your repos asks whether the team already keeps its docs in a `cam-docs` repo (answer **Yes** and paste its URL), or
+**Join my team's documentation** asks the URL, then the folder where your repos are. From a terminal:
+`camaron join <url> [folder-with-your-repos]`. The kit clones it, or reuses the copy you already have, and only prepares
+your machine — the team already chose the repos, the stack, the architecture and the plan, a join changes none of it, and
+the sessions go on where they were. Repos are found by their remote, not their folder name: a clone you keep under
+another name is linked under the team's name instead of cloned again. Leaving a tool out at the join only affects your
+machine.
 
 What came with the team's repo and runs code or steers agents (hooks, MCP servers, settings, skills, plugins) waits
 until you approve it on your machine: **Settings › Trust**, or `camaron trust`.
@@ -76,7 +80,7 @@ until you approve it on your machine: **Settings › Trust**, or `camaron trust`
 3. **Or do several at once** — **Plan › Run the ready ones** (`camaron run --parallel 2`): each unit in its own copy of
    `cam-docs`, merged when it ends. **Autopilot** (`camaron autopilot`) goes one by one, unattended.
 4. **Read and review** what it wrote — **View portal**, then Review.
-5. **Share** — **Docs › Share now** or `camaron share`.
+5. **Upload** — **Docs › Upload changes** or `camaron push` (or **Sync with the team**, `camaron share`, to bring in and upload).
 
 Each unit ends with a local commit in `cam-docs` and a handoff note, so the next session — yours or a colleague's —
 knows what was checked, what was not and what comes next.
@@ -99,14 +103,29 @@ From a terminal: `camaron confirm <page> --by <name>`, `camaron feedback <page> 
 
 <!-- portal:#/review -->
 
-## Sharing with the team
+## Working with the team
 
-`cam-docs` is a normal git repo. By default checkpoints stay local and publishing is a step you take: **Docs › Share
-now**, **Plan › Sync** in the portal, or `camaron share` — a checkpoint, the team's work rebased in, yours pushed. **Share
-every time progress is saved** (`camaron share --auto on`) does it after every checkpoint, on this machine only. A
-conflict is undone and nothing is touched; something that looks like a secret is never pushed.
+`cam-docs` is a normal git repo. Opening a project — the desktop app's window or the terminal wizard — brings in the
+team's work by itself and never uploads. If the team's changes clash with yours it changes nothing and names the files;
+offline, the project still opens and says you are working with the latest you brought in. It also looks for the team's repos
+on this machine without cloning: a repo missing here, or a folder holding something else in its place, is said in the
+Summary. Setup and `camaron sync` never touch a clone of yours with unsaved changes or on another branch than the team's. After a bring-in the C4
+explorer rebuilds itself if it is stale (a model with errors keeps the explorer you had), and the code graphs of repos whose HEAD moved rebuild in the background in the
+app (the terminal wizard only says how many are out of date; `camaron pull` rebuilds them).
 
-No team repo yet? Paste its URL in **Docs › The team's repo** (`camaron remote <url>`); your first share publishes it.
+Checkpoints stay local and uploading is a step you take, with three actions in the team strip of **Docs** (the app), **Plan › Team sync**
+(the portal) and **🤝 Team: bring in, upload or sync with the team** (the terminal wizard):
+
+- **Bring in changes** (`camaron pull`) — the team's work rebased in; yours is not uploaded.
+- **Upload changes** (`camaron push`) — a checkpoint, then yours pushed. It refuses when the team has new changes: bring
+  them in first, or sync with the team.
+- **Sync with the team** (`camaron share`) — bring in, then upload.
+
+A line says how far apart you are (n to bring in · m to upload · last time …) and the useful action is the primary
+button. **Upload on save** (`camaron share --auto on`) uploads after every checkpoint, on this machine only. A conflict is
+undone and nothing is touched; something that looks like a secret is never pushed.
+
+No team repo yet? Paste its URL in **Docs › The team's repo** (`camaron remote <url>`); your first upload publishes it.
 
 ## The board and stories
 
@@ -128,7 +147,7 @@ the board on** (`camaron board init`).
 and a row per repo (SonarQube gate, coverage, vulnerabilities, debt). **Check everything** refreshes it
 (`camaron health --refresh`). A missing tool has its **Install** button there.
 
-**Libraries** (the second view of Quality, `#/quality/libs`) lists every dependency with the version the repos use. **Scan for vulnerabilities** checks them against
+**Libraries** (the third view of Quality, `#/quality/libs`) lists every dependency with the version the repos use. **Scan for vulnerabilities** checks them against
 OSV's offline database (`camaron inventory --cves`; nothing leaves your machine). **Look for newer versions** asks the
 public registries for each one's latest stable version (`camaron inventory --latest`; library names leave your
 machine, your own never). **Update ▾** proposes the latest version, or the one that fixes its advisories, and makes a

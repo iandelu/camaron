@@ -69,7 +69,7 @@ configuración de agentes en `trust`, lo quitan. Un fichero tuyo en medio que no
 `AGENTS.md`, por ejemplo) se queda como está: `doctor` y `repair` lo listan como tuyo, no como algo por arreglar.
 
 `.camarones/.cache/` guarda lo que se puede reconstruir: los registros de las ejecuciones (`runs/<run>/events.jsonl`),
-la web exportada (`site/`), el índice del tablero (`board.db`), la foto de la salud y copias de los ficheros del kit
+la web exportada (`site/`), el índice del tablero (`board.db`), la foto de la salud y la cobertura de sus últimos 26 chequeos (`health/history.jsonl`), el stack y la actividad de cada repo (`repos/<nombre>.json`, por HEAD y semana ISO) y copias de los ficheros del kit
 sustituidos; y lo que dejan en esta máquina las sesiones de la app: el prompt de cada una (`prompts/`), el registro de
 la sesión de cada unidad (`sessions/`) y las terminales del lienzo (`terminals/`). También el registro de cada cambio de
 código (`changes/<id>.json`: sus ramas, el worktree de la documentación, la fase, las PR y los movimientos de tarjeta que
@@ -139,10 +139,10 @@ La API sirve al portal y a la app; no es una interfaz pública estable (esa es l
 | Documentación | `GET tree`, `doc?path&lang`, `search?q`, `ask?q`, `status`, `reviews`, `viewers`, `wikis`, `codemap?repo`; `POST doc`, `commit`, `new`, `confirm`, `feedback`, `review/decide` |
 | Arquitectura | `GET c4/view?id`; `POST c4/element`, `c4/confirm`, `c4/relation`, `c4/remove` |
 | Tablero e historias | `GET kanban`, `kanban/item?id`, `kanban/waves`, `stories`, `stories/item`, `stories/files`; `POST stories/analyze`; con un token: `POST kanban/init`, `add`, `move`, `assign`, `link`, `archive`, `stories/save`, `stories/suggest` |
-| Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (eventos enviados por el servidor), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/share` |
+| Plan | `GET pipeline?lang`, `runs/<id>`, `runs/<id>/events` (eventos enviados por el servidor), `plan/cost`, `interview`, `sync`; `POST units/approve`, `units/retry`, `interview/answer`, `sync/pull`, `sync/push`, `sync/share` (las tres con el mismo acceso; `GET sync` devuelve además `catch_up`, lo que trajo abrir el proyecto) |
 | Calidad | `GET health`, `kpis`, `misses`, `inventory`, `schemas`, `ci`; `POST kpis/miss` |
 | Trabajo en la máquina (token de la app) | `POST runs`, `runs/<id>/cancel`, `wiki`, `build`, `inventory`, `schemas`, `ci`, `ask/answer`, `plan/cost` |
-| La app (token de la app) | `GET app/info`, `catalog`, `summary`, `machine`, `guide`, `creds`, `agents`, `chat/models`, `terminals`, `terminals/stream` (eventos enviados por el servidor), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `chat` (un turno del chat de Docs, un trabajo silencioso que la app sigue), `terminals` (una sesión, en el lienzo o en una ventana; su nombre antiguo, `agent`, sigue valiendo), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
+| La app (token de la app) | `GET app/info`, `catalog`, `summary`, `repos` (la tarjeta de cada repo), `repo?name=` (el panel de un repo; 404 si no está en el proyecto), `machine`, `guide`, `creds`, `agents`, `chat/models`, `terminals`, `terminals/stream` (eventos enviados por el servidor), `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/events`; `POST app/cmd`, `chat` (un turno del chat de Docs, un trabajo silencioso que la app sigue), `terminals` (una sesión, en el lienzo o en una ventana; su nombre antiguo, `agent`, sigue valiendo), `terminals/<id>/input`, `terminals/<id>/resize`, `terminals/<id>/close`, `units/<id>/takeover`, `units/<id>/handback`, `units/<id>/stop`, `app/catch-up` (trae el trabajo del equipo al abrir la ventana; nunca sube), `app/terminal` (una terminal en la carpeta del proyecto), `creds`, `doctor`, `kitdev`, `onboard/*`, `jobs/<id>/cancel` |
 
 El trabajo largo es un **trabajo**: `GET jobs` los lista y `GET jobs/<id>?since=n` lee sus líneas desde la `n`.
 

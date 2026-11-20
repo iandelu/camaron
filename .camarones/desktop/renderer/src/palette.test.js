@@ -65,7 +65,7 @@ test('the sections with their shortcut, the other projects that exist, the actio
 
 test('the sections group lists each section, then its other views', () => {
   const ids = (sections) => entries({ sections, t }).find((x) => x.id === 'sections').items.map((i) => i.id)
-  expect(ids(['flow', 'quality', 'docs'])).toEqual(['go:flow', 'go:flow/plan', 'go:quality', 'go:quality/libs', 'go:docs',
+  expect(ids(['flow', 'quality', 'docs'])).toEqual(['go:flow', 'go:flow/plan', 'go:quality', 'go:quality/sonar', 'go:quality/libs', 'go:docs',
     'go:docs/wikis', 'go:docs/decisions', 'go:docs/interviews'])
   const items = entries({ sections: ['flow'], t }).find((x) => x.id === 'sections').items
   expect(items[0]).toEqual({ id: 'go:flow', label: '<nav.flow>', keys: ['g', 'f'], href: '#/flow' })

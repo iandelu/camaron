@@ -29,9 +29,11 @@ function lang() {
 
 const L = {
   es: { projects: 'Proyectos…', browser: 'Abrir en el navegador', startFailed: 'No he podido arrancar el servidor del proyecto',
-        pickFolder: 'La carpeta de tu código, o una vacía', pickJoin: 'Carpeta donde traer el cam-docs del equipo' },
+        pickFolder: 'La carpeta de tu código, o una vacía', pickJoin: 'La carpeta donde están tus repos (o estarán)',
+        elsewhere: 'Ya tienes la documentación de este equipo en {path}. La abro, y busco tus repos también en la carpeta que elegiste.' },
   en: { projects: 'Projects…', browser: 'Open in the browser', startFailed: 'I could not start the project\'s server',
-        pickFolder: 'Your code\'s folder, or an empty one', pickJoin: 'Folder to bring the team\'s cam-docs into' },
+        pickFolder: 'Your code\'s folder, or an empty one', pickJoin: 'The folder where your repos are (or will be)',
+        elsewhere: 'You already have this team\'s docs in {path}. Opening them, and looking for your repos in the folder you picked too.' },
 }
 const s = (k) => L[lang()][k]
 
@@ -192,16 +194,20 @@ function handlers() {
     const why = core.lastJson(r.out) || {}
     return { error: 'git-init', detail: String(why.detail || '') || core.errLine(r.err) || `exit ${r.code}` }
   })
-  // Join: the URL, then where it goes (asked once: a retry with a token passes the same `dir` back). A refused access
-  // returns the CLI's reason ({error: auth|denied|not-found|network|unknown|taken, host, detail, dir}); anything else
-  // is "failed". The token goes only in the child's environment.
-  onHub('hub:join', async ({ url, token, dir } = {}) => {
+  // Join: the URL, then where it goes, the folder where the repos are (asked once: a retry with a token, or the stray
+  // answer's "set it aside", passes the same `dir` back; the found card passes its own folder). A refused access returns
+  // the CLI's reason ({error: auth|denied|not-found|network|unknown|taken|stray, host, detail, dir}); anything else is
+  // "failed". The token goes only in the child's environment. The team's docs found elsewhere (C2) are said, then opened.
+  onHub('hub:join', async ({ url, token, dir, setAside } = {}) => {
     if (typeof url !== 'string' || !url.trim() || url.trim().startsWith('-')) return { error: 'url' }
     if (dir != null && !core.folderArg(dir)) return { error: 'folder' }
     const into = dir || await pickFolder(s('pickJoin'))
     if (!into) return { cancelled: true }
-    const r = await cli(core.joinArgs(url.trim(), into), { env: core.joinEnv(process.env, token) })
+    const r = await cli(core.joinArgs(url.trim(), into, setAside === true), { env: core.joinEnv(process.env, token) })
     const made = r.code === 0 && core.lastJson(r.out)
+    if (made && made.path && made.elsewhere) {
+      await dialog.showMessageBox(hub, { type: 'info', message: s('elsewhere').replace('{path}', made.elsewhere) })
+    }
     if (made && made.path) return openProject(made.path)
     const why = core.joinFailure(r.out) || { error: 'failed', host: '', detail: core.errLine(r.err) || `exit ${r.code}` }
     return { ...why, dir: into }
@@ -257,12 +263,14 @@ function handlers() {
     shell.showItemInFolder(path.resolve(file))
     return true
   })
-  // Files the person picks to hand to a CLI command (answers to import): only their paths go back to the page.
+  // Files (answers to import) or a folder the person picks to hand to the project: only their paths go back to the page.
   ipcMain.handle('app:pick', async (e, kind) => {
     const p = projectOf(e)
     if (!p) return []
     const filters = kind === 'answers' ? [{ name: 'Answers', extensions: ['json', 'yaml', 'yml', 'md'] }] : []
-    const r = await dialog.showOpenDialog(p[1].win, { properties: ['openFile', 'multiSelections'], filters })
+    // a folder to search for the team's repos (the join's repos step): one folder, never a file
+    const properties = kind === 'folder' ? ['openDirectory'] : ['openFile', 'multiSelections']
+    const r = await dialog.showOpenDialog(p[1].win, { properties, filters })
     return r.canceled ? [] : r.filePaths
   })
 }

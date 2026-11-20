@@ -181,6 +181,41 @@ def test_a_build_without_config_names_the_real_folder(kit):
     assert not ok and REF in msg
 
 
+def fake_likec4(kit, monkeypatch, ok):
+    """likec4 build as a stand-in: on success it writes the explorer where `-o` says; a broken model writes nothing."""
+    import subprocess
+    from lib.app import viewers
+    kit.services.diagrams.arch_dir().mkdir(parents=True, exist_ok=True)
+    (kit.services.diagrams.arch_dir() / "likec4.config.json").write_text("{}\n", encoding="utf-8")
+
+    def run(cmd, **kw):
+        out = viewers.Path(cmd[cmd.index("-o") + 1])
+        if ok:
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "index.html").write_text("new", encoding="utf-8")
+        return subprocess.CompletedProcess(cmd, 0 if ok else 1, "", "")
+    monkeypatch.setattr(viewers, "run", run)
+    dest = viewers.VIEWERS / "architecture"
+    dest.mkdir(parents=True, exist_ok=True)
+    (dest / "index.html").write_text("old", encoding="utf-8")
+    (dest / "gone.js").write_text("old", encoding="utf-8")
+    return dest
+
+
+def test_a_broken_model_leaves_the_working_explorer_alone(kit, monkeypatch):
+    dest = fake_likec4(kit, monkeypatch, ok=False)
+    assert kit.services.viewers.build_c4(log=lambda _: None) is False
+    assert (dest / "index.html").read_text(encoding="utf-8") == "old"
+    assert sorted(p.name for p in dest.parent.iterdir()) == ["architecture"]       # no build folder left behind
+
+
+def test_a_good_build_replaces_the_explorer_whole(kit, monkeypatch):
+    dest = fake_likec4(kit, monkeypatch, ok=True)
+    assert kit.services.viewers.build_c4(log=lambda _: None) is True
+    assert (dest / "index.html").read_text(encoding="utf-8") == "new" and not (dest / "gone.js").exists()
+    assert sorted(p.name for p in dest.parent.iterdir()) == ["architecture"]
+
+
 @needs("likec4")
 def test_likec4_validates_and_builds_the_repo_model(kit):
     external_model(kit)

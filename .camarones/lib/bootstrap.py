@@ -45,6 +45,11 @@ def _arch_scan() -> object:
     return quickarch
 
 
+def _repo_facts() -> object:
+    from lib.adapters import repo_facts
+    return repo_facts
+
+
 def _wiki_engine() -> object:
     from lib.adapters import openwiki
     return openwiki
@@ -83,6 +88,11 @@ def _setup() -> object:
 def _share() -> object:
     from lib.app import share
     return share
+
+
+def _catchup() -> object:
+    from lib.app import catchup
+    return catchup
 
 
 def _wiki() -> object:
@@ -176,11 +186,13 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "viewers": _viewers,
     "setup": _setup,
     "share": _share,
+    "catchup": _catchup,
     "wiki": _wiki,
     "portal": _portal,
     "export_site": _export_site,
     "workspace": _workspace,
     "repos": _repos,
+    "repo_facts": _repo_facts,
     "doc_state": _doc_state,
     "docs": _docs,
     "vendor": _vendor,

@@ -132,7 +132,7 @@ test('on Read the only primary action is Leer, not the chat\'s entry', () => {
   expect(out.match(/<button[^>]*cu-btn--primary[^>]*>.*?<\/button>/g)).toEqual([expect.stringMatching(/Leer la documentación<\/button>$/)])
 })
 
-// The wiki blocks sit in their own grid, not in the .dk-stack of Machine's stack input (a 14rem column), on the wide page.
+// The wiki blocks sit in their own grid, not in a .dk-stack column (Machine's stack input is .dk-stack-in), on the wide page.
 test('the wiki blocks are laid out by the wikis grid, not by .dk-stack', () => {
   HASH = '#/docs/wikis'; globalThis.location = { origin: 'http://127.0.0.1:5000', hash: HASH }
   const out = render()
@@ -564,6 +564,17 @@ test('at #/docs/interviews the Entrevistas tab is current and the Read buttons a
   const out = render()
   expect(out).toMatch(/aria-current="page"[^>]*>Entrevistas</)
   expect(out).not.toContain('Leer la documentación')
+})
+
+test('?repo= on Wikis: that repo first, the others folded; an unknown repo folds nothing', () => {
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis?repo=web' }
+  const out = render()
+  expect(out).toContain('Las otras wikis (2)')
+  expect(out.indexOf('Wiki · web')).toBeGreaterThan(-1)
+  expect(out.indexOf('Wiki · web')).toBeLessThan(out.indexOf('Las otras wikis'))
+  expect(out.indexOf('Wiki · api')).toBeGreaterThan(out.indexOf('Las otras wikis'))
+  globalThis.location = { origin: 'http://127.0.0.1:5000', hash: '#/docs/wikis?repo=zzz' }
+  expect(render()).not.toContain('Las otras wikis')
 })
 
 // The chat belongs to the place, not to a tab: every tab is inside the one grid that keeps the panel's column, so an open panel

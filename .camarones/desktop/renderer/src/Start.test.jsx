@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
-import Start, { Setup, Steps, Tools } from './sections/Start.jsx'
+import Start, { JoinRepos, Setup, Steps, Tools, closeFirstRun } from './sections/Start.jsx'
 
 const srv = { get: () => new Promise(() => {}), post: () => new Promise(() => {}) }
 
@@ -61,4 +61,41 @@ test('a failed tools reload with a stale list still says so and offers Retry', (
   }
   // no error: the list alone
   expect(renderToStaticMarkup(<Tools tools={tools} picked={[]} setPicked={() => {}} />)).not.toContain('role="alert"')
+})
+
+// The window skipped its catch-up while the first run was ahead: closing the first run brings in the team's work then.
+test('closing the first run catches up with the team', async () => {
+  const posts = []
+  let refreshed = 0
+  const srv = { post: (path) => { posts.push(path); return Promise.resolve({}) } }
+  await closeFirstRun(srv, { refresh: () => { refreshed += 1 } })
+  expect(posts).toEqual(['app/onboard/done', 'app/catch-up'])
+  expect(refreshed).toBe(1)
+})
+
+test('a refused close does not catch up, and a failed catch-up does not fail the close', async () => {
+  const posts = []
+  const refused = { post: (path) => { posts.push(path); return Promise.reject(new Error('step')) } }
+  await expect(closeFirstRun(refused, { refresh: () => {} })).rejects.toThrow('step')
+  expect(posts).toEqual(['app/onboard/done'])
+  const flaky = { post: (path) => (path === 'app/catch-up' ? Promise.reject(new Error('busy')) : Promise.resolve({})) }
+  await expect(closeFirstRun(flaky, { refresh: () => {} })).resolves.toBeUndefined()
+})
+
+
+test('a join: the repos step is read-only and Continue never posts the team\'s list', () => {
+  const src = readFileSync(new URL('./sections/Start.jsx', import.meta.url), 'utf-8')
+  expect(src).toContain("step === 'repos' && !join ? saveRepos : null")
+  const out = renderToStaticMarkup(<JoinRepos srv={srv} app={{}} />)
+  expect(out).toContain('Repos del equipo en esta máquina')
+  expect(out).toContain('Buscar en otra carpeta…')
+})
+
+test('a join\'s tools step says what leaving a tool out costs, only on this machine', () => {
+  const rows = [{ id: 'openwiki', kind: 't_kit', label: 'OpenWiki', ok: false, sys: false, rec: true, found: '', note: '' }]
+  const out = renderToStaticMarkup(<Tools tools={{ rows }} picked={[]} setPicked={() => {}} join />)
+  expect(out).toContain('Sin OpenWiki esta máquina no puede generar wikis')
+  expect(renderToStaticMarkup(<Tools tools={{ rows }} picked={['openwiki']} setPicked={() => {}} join />))
+    .not.toContain('Sin OpenWiki')
+  expect(renderToStaticMarkup(<Tools tools={{ rows }} picked={[]} setPicked={() => {}} />)).not.toContain('Sin OpenWiki')
 })

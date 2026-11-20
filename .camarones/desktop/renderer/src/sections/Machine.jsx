@@ -151,7 +151,7 @@ export function Repos({ srv, jobs, m, reload }) {
             <div className="dk-unit-main"><b>{r.name}</b></div>
             <div className="row dk-unit-acts">
               <Chip state={r.cloned ? 'ok' : 'warn'}>{r.cloned ? t('mc.cloned') : t('mc.notCloned')}</Chip>
-              <input className="cu-input dk-stack" value={stacks[r.name] || ''} placeholder={t('mc.detected')} aria-label={t('mc.stack', { repo: r.name })}
+              <input className="cu-input dk-stack-in" value={stacks[r.name] || ''} placeholder={t('mc.detected')} aria-label={t('mc.stack', { repo: r.name })}
                      onChange={(e) => setStacks((s) => ({ ...s, [r.name]: e.target.value }))} />
               {(stacks[r.name] || '') !== (r.stack || '') ? (
                 <Button size="sm" disabled={c.running} onClick={() => run('stack', stacks[r.name].trim() ? { repo: r.name, text: stacks[r.name].trim() } : { repo: r.name, reset: true })}>{t('tm.save')}</Button>

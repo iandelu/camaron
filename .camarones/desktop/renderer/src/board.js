@@ -83,6 +83,16 @@ export function shouldFocus(kb, active, el) {
   return !!(kb?.grabbed || !active || active.tagName === 'BODY' || active === el || active.closest?.('.dk-bd'))
 }
 
+// The menu item the focus moves to for a key: arrows wrap, Home and End jump; any other key leaves it.
+export function menuStep(index, key, count) {
+  if (!count) return 0
+  if (key === 'ArrowDown') return (index + 1) % count
+  if (key === 'ArrowUp') return (index - 1 + count) % count
+  if (key === 'Home') return 0
+  if (key === 'End') return count - 1
+  return index
+}
+
 // The keyboard state that points at a card, where `cols` (columns()) draw it; null when it is not there. A click or a drag
 // start resets the keyboard to its card, so the next arrow starts from there and not from an older pick.
 export function cardAt(cols, id) {

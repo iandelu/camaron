@@ -16,7 +16,7 @@ from ..core.fsutil import load_json, save_json
 from ..core.locks import FileLock
 from ..core.process import out, run
 from ..domain import change as rules
-from ..domain.docs import frontmatter, trust_levels
+from ..domain.docs import derived, frontmatter, trust_levels
 from . import services
 
 WORKTREES = ".cw"           # the workspace folder that holds cam-docs worktrees (as lib/harness/worktrees.py)
@@ -305,11 +305,6 @@ def status(id_: str | None = None) -> list[dict]:
 
 
 # ---------- link, close ----------
-# what `check` and the usage counters rewrite in a worktree: regenerated, never someone's work
-DERIVED = ("docs/.status.json", "docs/.work/fresh.json", "docs/llms.txt", "docs/llms-full.txt")
-DERIVED_DIRS = ("docs/.work/usage/",)
-
-
 def link(id_: str | None, url: str, *, repo: str | None = None, cwd: Path | None = None,
          by: str | None = None) -> dict:
     """Record the change's PR for `repo` (the only repo when it has one; `docs` for the docs PR): the change is in
@@ -353,7 +348,7 @@ def _work_in(wt: Path) -> list[str]:
         return []
     st = run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=wt, check=False, capture=True).stdout or ""
     found = [ln[3:].strip('"') for ln in st.splitlines() if ln.strip()]
-    return [p for p in found if p not in DERIVED and not p.startswith(DERIVED_DIRS)]
+    return [p for p in found if not derived.kit_written(p)]
 
 
 def close(id_: str | None, *, abandon: bool = False, cwd: Path | None = None, by: str | None = None) -> dict:

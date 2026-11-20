@@ -450,3 +450,10 @@ test('the section lives under docs, the legacy address still routes', async () =
   expect(route('#/docs/decisions/0012')).toEqual({ view: 'adr', id: '0012' })
   expect(route('#/docs/decisions')).toEqual({ view: 'list' })
 })
+
+test('filterRows keeps the rows that name the repo', async () => {
+  const { filterRows } = await import('./adr.js')
+  const rows = [{ id: '1', title: 'a', chip: 'accepted', repos: ['api'] }, { id: '2', title: 'b', chip: 'accepted', repos: ['web'] }]
+  expect(filterRows(rows, 'all', '', 'api').map((r) => r.id)).toEqual(['1'])
+  expect(filterRows(rows, 'all', '')).toHaveLength(2)
+})

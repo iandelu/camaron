@@ -58,7 +58,7 @@ def prerequisites() -> dict[str, dict]:
 
 
 def install_tools(log: Log = print, comps: list[str] | None = None) -> None:
-    comps = components.components() if comps is None else comps
+    comps = components.here() if comps is None else comps
     if "graphify" in comps:
         if not services.current().toolchain.tool_ok("graphify"):
             log(f"installing graphify {VERSIONS['graphify']} (uv)…")
@@ -210,7 +210,7 @@ def refresh_agent_config() -> None:
 def wire_repo(name: str, log: Log = print, comps: list[str] | None = None) -> None:
     """Nothing is written into the repo's tracked files: the code graph goes to cam-docs/graph/<repo>, and the
     OpenWiki folder is an untracked symlink into cam-docs/wikis/<repo>."""
-    comps = components.components() if comps is None else comps
+    comps = components.here() if comps is None else comps
     if "openwiki" in comps and CAM_LAYOUT:
         services.current().links.link_repo_wiki(name, log)
     if "agents" in comps and CAM_LAYOUT:
@@ -240,7 +240,7 @@ def wire_one(name: str, log: Log = print, comps: list[str] | None = None) -> Non
 
 
 def wire_umbrella(log: Log = print, comps: list[str] | None = None) -> None:
-    comps = components.components() if comps is None else comps
+    comps = components.here() if comps is None else comps
     if "agents" in comps:
         q = dict(cwd=ROOT, check=False, quiet=True)
         if "openwiki" in comps:
@@ -251,7 +251,7 @@ def wire_umbrella(log: Log = print, comps: list[str] | None = None) -> None:
         if "graphify" in comps:
             install_graphify_skill()
         templates.init_templates(log=lambda _: None)          # kit skills + AGENTS.md/CLAUDE.md
-        write_agent_config(comps)
+        write_agent_config(components.components())           # shared files: the team's choice, not this machine's
         linked = link_workspace(log)
         if linked:
             log(f"✔ {WORKSPACE.name}/ → {CAM_DIR}/: {', '.join(linked)}")
@@ -260,7 +260,7 @@ def wire_umbrella(log: Log = print, comps: list[str] | None = None) -> None:
 
 def setup_steps(comps: list[str] | None = None) -> int:
     """How many ✔ lines setup() will print — drives the progress bar."""
-    comps = components.components() if comps is None else comps
+    comps = components.here() if comps is None else comps
     n = sum(1 for t in components.KIT_TOOLS if t in comps) + 1          # tools + repos synced
     n += len(services.current().workspace.repo_names())      # repos wired
     n += 1                                                   # umbrella
@@ -271,13 +271,16 @@ def setup_steps(comps: list[str] | None = None) -> int:
 
 
 def setup(ci: bool = False, log: Log = print, comps: list[str] | None = None) -> bool:
-    comps = components.components() if comps is None else comps
+    comps = components.here() if comps is None else comps
     missing = [k for k, v in prerequisites().items() if v["need"] and not v["ok"]]
     if missing:
         raise RuntimeError("missing prerequisites: " + ", ".join(missing))
     install_tools(log, comps)
     log("syncing repositories…")
-    failed = services.current().repos.sync_repos(lambda m: log(m.strip()))
+    from lib.app import repos_here
+    here = repos_here.find(lambda m: log(m.strip()))     # a clone under another name is linked, never cloned again
+    left = [r["name"] for r in here["rows"] if r["state"] == "taken" or (r["state"] == "missing" and r["path"])]
+    failed = services.current().repos.sync_repos(lambda m: log(m.strip()), skip=left)
     if failed:
         raise RuntimeError('Repository sync failed: ' + ', '.join(failed))
     log(f"✔ {len(services.current().workspace.repo_names())} repo(s) in sync")
