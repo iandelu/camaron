@@ -316,10 +316,14 @@ def _back_to_head(path: str, code: str) -> None:
         (ROOT / path).unlink(missing_ok=True)
 
 
-def _regenerate() -> None:
+def _regenerate(log: Log) -> None:
+    """Rebuild the derived files; a failure is a warning, so what the pull did (and where local work went) is still said."""
     current = services.current()
-    current.doc_status.collect()
-    current.llms.llms()
+    try:
+        current.doc_status.collect()
+        current.llms.llms()
+    except Exception as e:                                   # noqa: BLE001 — the next read rebuilds them
+        log(f"⚠ could not rebuild the derived files: {e}")
 
 
 def _rebase_onto(theirs: str, ident: list[str]):
@@ -421,13 +425,13 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
     regenerated = sorted(set(regenerated) | set(resolved))
     if human or failure is not None:
         if regenerated:
-            _regenerate()
+            _regenerate(log)
         return result("conflict", theirs, files=human) if human else {**result("error"), **_failed(failure, url)}
     if _autostashes() > stashes:                                     # the local changes did not re-apply: keep them safe
         unmerged = sorted(_nul_lines("diff", "--name-only", "-z", "--diff-filter=U"))
         for path in unmerged:                        # the stash holds them; markers left here a checkpoint would commit
             _back_to_head(path, "UU")
-        _regenerate()
+        _regenerate(log)
         stuck = unmerged or sorted(_nul_lines("stash", "show", "--name-only", "-z", "stash@{0}"))
         return result("stashed", "your uncommitted changes are kept in git's stash (git stash list)", files=stuck,
                       commits=behind, regenerated=regenerated)
@@ -446,7 +450,7 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
             checkpoint_commit("board repaired after sync", warn=warn)
         finally:
             _sharing = False
-    _regenerate()
+    _regenerate(log)
     return result("pulled", branch, commits=behind, regenerated=regenerated)
 
 

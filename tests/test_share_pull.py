@@ -270,6 +270,24 @@ def test_changes_kept_in_the_stash_leave_no_markers_for_a_checkpoint_to_commit(k
     assert "<<<<<<<" not in git(kit.root, "show", "HEAD:docs/shared.md")
 
 
+
+def test_a_failed_rebuild_of_the_derived_files_never_hides_what_the_pull_did(kit, tmp_path, monkeypatch):
+    remote = bare(tmp_path); publish(kit, remote)
+    _tracked(kit, "docs/shared.md", "# Base\n")
+    mate_commits(kit, remote, tmp_path, "docs/shared.md", "# Team\n")
+    (kit.root / "docs" / "shared.md").write_text("# Mine\n", encoding="utf-8")
+    monkeypatch.setattr(kit.services.share, "_dirty", lambda: {})
+
+    def broken(*_a, **_kw):
+        raise RuntimeError("status broke")
+    monkeypatch.setattr(kit.services.doc_status, "collect", broken)
+    said = []
+    r = kit.services.share.pull(log=said.append)
+    assert r["status"] == "stashed" and r["files"] == ["docs/shared.md"]
+    assert any("status broke" in line for line in said)
+    mate_commits(kit, remote, tmp_path / "again", "docs/other.md", "# Other\n")
+    assert kit.services.share.pull(log=lambda _: None)["status"] == "pulled"
+
 def _spy_fetch(kit, monkeypatch, instead=None):
     """Every `git fetch` pull runs, with its keyword arguments; `instead` runs in its place."""
     share = kit.services.share
