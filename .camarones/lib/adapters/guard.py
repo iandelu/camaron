@@ -94,8 +94,11 @@ def has_config(repo: Path) -> bool:
 def uninstall_repo(repo: Path) -> bool:
     """Give the repo back its own hooks folder; True when anything of the kit's was in its config."""
     changed = has_config(repo)
+    chain = _cfg(repo, "camaron.chain", local=True)
+    if chain == out(["git", "config", "--global", "--type=path", "--get", "core.hooksPath"], cwd=repo):
+        chain = ""                                                    # the global folder shows through again: no local copy
     if _ours(_cfg(repo, "core.hooksPath")):
-        _set(repo, "core.hooksPath", _cfg(repo, "camaron.chain", local=True) or None)
+        _set(repo, "core.hooksPath", chain or None)
     for key in ("camaron.chain", "camaron.check"):
         if _cfg(repo, key, local=True):
             _set(repo, key, None)

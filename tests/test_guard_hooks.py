@@ -227,3 +227,15 @@ def test_the_kits_own_push_says_so_and_skips_the_docs_check(guard, repo, tmp_pat
     assert git(repo, "push", "-q", "origin", "main", check=False).returncode == 0
     commit(repo, f"docs: sneaky\n\n{TRAILER}", "--no-verify")
     assert git(repo, "push", "-q", "origin", "main", check=False).returncode != 0         # the AI credit is refused all the same
+
+
+def test_a_global_hooks_folder_is_chained_and_shows_through_again_on_uninstall(guard, repo, tmp_path):
+    shared = tmp_path / "shared-hooks"
+    hook(shared / "pre-commit", 'echo global > "$(git rev-parse --show-toplevel)/global-ran"')
+    git(repo, "config", "--global", "core.hooksPath", shared.as_posix())
+    installed(guard, repo)
+    assert config(repo, "camaron.chain") == shared.as_posix()
+    assert commit(repo, f"feat: x\n\n{TRAILER}").returncode == 0 and (repo / "global-ran").is_file() and message(repo) == "feat: x"
+    assert guard.uninstall_repo(repo)
+    assert config(repo, "core.hooksPath") == ""                                              # not left as a local copy of it
+    assert git(repo, "config", "--get", "core.hooksPath").stdout.strip() == shared.as_posix()
