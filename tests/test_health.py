@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import stat
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -483,7 +484,7 @@ def test_an_inventory_of_the_wrong_shape_does_not_stop_the_build(probed, saved):
 def test_a_repo_that_fails_to_build_is_unread_not_a_crash(probed, monkeypatch):
     from lib import health, inventory
     probed.common.save_json(inventory.DATA, {"libraries": [{"repo": "api", "name": "a", "ecosystem": "m", "version": "1"}],
-                                             "vulns": {"at": "2026-10-20T00:00:00Z"}})
+                                             "vulns": {"at": f"{date.today().isoformat()}T00:00:00Z"}})   # a fresh scan: this test is about the failing repo
     real = health._vulns_of
     monkeypatch.setattr(health, "_vulns_of", lambda libs: (_ for _ in ()).throw(RuntimeError("bad rows")) if libs else real(libs))
     snap = health.build(log=quiet)
