@@ -220,7 +220,9 @@ vez; una carpeta con ese nombre que es otra cosa se deja como está. El primer p
 máquina. En **Herramientas**, dejar una fuera solo afecta a tu máquina (se guarda en la caché, nunca en `workspace.yaml`):
 el plan del equipo sigue igual. Si en esa carpeta hay un `cam-docs` que hizo el kit y nunca se compartió (sin remoto ni
 commits), pregunta antes de tocar nada y solo con tu sí lo aparta como `cam-docs.local-<fecha>` (`camaron join …
---set-aside`); nunca borra nada. `uninstall` quita los enlaces a tus clones y deja los clones. Si el repo del equipo está
+--set-aside`); nunca borra nada. `uninstall` quita los enlaces a tus clones y deja los clones. El Resumen, al abrir la ventana, avisa de una carpeta con
+otra cosa donde va un repo del equipo y de los repos del equipo que aún no están en tu máquina (**Preparar la máquina**
+los clona); un clon enlazado no dice nada. Si el repo del equipo está
 vacío, tu primera subida lo publica. Sin URL, el repo es local y el remoto se añade después con
 `camaron remote <url>`. Si git no tiene acceso, la app pide un token y lo guarda en el llavero del sistema, nunca en el
 proyecto.

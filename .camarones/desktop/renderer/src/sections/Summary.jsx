@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Card, Skeleton, catchUpSay } from '@camaron/ui'
+import { Aviso, Button, Card, Skeleton, catchUpSay, reposSay } from '@camaron/ui'
 import { action, doctorNote } from '../summary.js'
 import { openSession, sessionNote } from '../plan.js'
 import { useAgents, useStore } from '../hooks.js'
@@ -103,10 +103,25 @@ export default function Summary({ srv, jobs }) {
 }
 
 // What the window's catch-up with the team left: a clash or no route to the repo warns (the files, a terminal to
-// resolve it, the team strip in Docs), a pull that brought changes is a quiet line, up to date says nothing.
+// resolve it, the team strip in Docs), a pull that brought changes is a quiet line, up to date says nothing. Then the
+// team's repos: a folder in the way warns, a repo not on this machine yet points at preparing it.
 export function CatchUpNote({ srv, catchUp, remote = '' }) {
   const said = catchUpSay(catchUp, remote)
-  if (!said) return null
+  const repos = reposSay(catchUp)
+  if (!said && !repos.length) return null
+  return (
+    <>
+      {said ? pullNote(srv, said) : null}
+      {repos.map((r) => (
+        <Aviso key={r.key} tone={r.tone} title={t(r.key, r.vars)}
+          detail={r.setup ? t('cu.repoMissingHow') : undefined}
+          action={r.setup ? <Button size="sm" href="#/settings">{t('next.machine')}</Button> : undefined} />
+      ))}
+    </>
+  )
+}
+
+function pullNote(srv, said) {
   const title = t(said.key, said.vars)
   if (said.tone !== 'warn') return <p className="muted small" role="status">{title}</p>
   return (

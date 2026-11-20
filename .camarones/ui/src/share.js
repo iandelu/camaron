@@ -91,3 +91,17 @@ export function catchUpSay(c, remote = '') {
   if (key === 'error') return REASONS.includes(p.reason) ? { ...reasonSay(p, remote), tone: 'warn' } : { key: 'cu.unknown', vars: {}, tone: 'warn', detail: p.detail || '' }
   return null
 }
+
+// The Summary's lines for the team's repos in the last catch-up: a folder in the way warns, a repo not here yet points
+// at preparing the machine. Linked clones are the steady state after a join and say nothing. A result from before the
+// catch-up looked for repos has none.
+const LISTED = 5
+const listed = (names) => (names.length > LISTED ? [...names.slice(0, LISTED), `+${names.length - LISTED}`] : names).join(', ')
+
+export function reposSay(c) {
+  const { taken = [], missing = [] } = c?.repos || {}
+  return [
+    taken.length ? { key: one('cu.repoTaken', taken.length), vars: { names: listed(taken) }, tone: 'warn' } : null,
+    missing.length ? { key: one('cu.repoMissing', missing.length), vars: { names: listed(missing) }, tone: 'info', setup: true } : null,
+  ].filter(Boolean)
+}

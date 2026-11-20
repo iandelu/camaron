@@ -166,6 +166,10 @@ Offline, it says you are working with the latest you brought in; any other failu
 team's changes, with what went wrong beneath. A clash leaves the line once you have the team's work (resolved in a
 terminal, or uploaded since), and an unreachable repo once an upload has reached it.
 
+The same look finds the team's repos on this machine (it never clones): a folder holding something else where a team repo
+goes warns and is left as it is, and a team repo that is not here yet says so, with **Prepare the machine**, which clones
+it. A repo linked to a clone kept under another name says nothing.
+
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.

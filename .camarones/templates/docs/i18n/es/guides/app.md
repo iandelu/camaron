@@ -170,6 +170,10 @@ conexión, dice que trabajas con lo último que trajiste; cualquier otro fallo d
 equipo, con lo que falló debajo. Un choque deja la línea en cuanto tienes el trabajo del equipo (resuelto en una
 terminal, o subido después), y un repo inalcanzable en cuanto una subida lo alcanza.
 
+La misma mirada busca los repos del equipo en esta máquina (nunca clona): una carpeta con otra cosa donde va un repo del
+equipo avisa y se queda como está, y un repo del equipo que aún no está aquí lo dice, con **Preparar la máquina**, que lo
+clona. Un repo enlazado a un clon con otro nombre no dice nada.
+
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en

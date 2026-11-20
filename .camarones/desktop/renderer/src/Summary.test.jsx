@@ -88,3 +88,26 @@ test('on open, a known reason reads as a share does, with the token to save; a r
   expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={{ status: 'done', pull: { status: 'busy', detail: 'git' } }} />))
     .toContain('A rebase or merge is unfinished in cam-docs: finish or abort it in a terminal.')
 })
+
+const repos = (r) => ({ status: 'done', pull: { status: 'up-to-date' }, repos: { here: [], linked: [], missing: [], taken: [], ...r } })
+
+test('a repo of the team that is not on this machine is said with the way to prepare it; linked clones say nothing', () => {
+  const out = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={repos({ missing: ['wallet-adapter', 'web'] })} />)
+  expect(out).toContain('Estos repos del equipo no están en esta máquina: wallet-adapter, web.')
+  expect(out).toMatch(/<a [^>]*href="#\/settings"[^>]*>Preparar la máquina<\/a>/)
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={repos({ here: ['web'], linked: ['api'] })} />)).toBe('')
+  setLang('en')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={repos({ missing: ['api'] })} />))
+    .toContain('This team repo is not on this machine: api.')
+})
+
+test('a folder that holds something else where a team repo goes warns and was left alone; it comes after the pull', () => {
+  const c = { ...repos({ taken: ['worker'] }), pull: { status: 'pulled', commits: 2 } }
+  const out = renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={c} />)
+  expect(out.indexOf('He traído 2 cambios del equipo.')).toBeGreaterThanOrEqual(0)
+  expect(out.indexOf('La carpeta worker no es el repo del equipo y no la he tocado')).toBeGreaterThan(out.indexOf('He traído 2'))
+  expect(out).not.toContain('Preparar la máquina')
+  setLang('en')
+  expect(renderToStaticMarkup(<CatchUpNote srv={{}} catchUp={repos({ taken: ['worker', 'web'] })} />))
+    .toContain('The folders worker, web are not the team&#x27;s repos and I left them as they are')
+})

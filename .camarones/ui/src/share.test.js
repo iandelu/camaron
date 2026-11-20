@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { catchUpSay, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, shareOk, shareSay, syncPrimary } from './share.js'
+import { catchUpSay, fetchSay, lastSync, pullOk, pullSay, pushOk, pushSay, reposSay, shareOk, shareSay, syncPrimary } from './share.js'
 
 const REMOTE = 'https://gitlab-central.example.space/team/docs.git'
 const fatal = "fatal: unable to access 'https://gitlab-central.example.space/team/docs.git/': Could not resolve host: gitlab-central.example.space"
@@ -137,4 +137,18 @@ test('one change brought in is said in the singular, on Traer and on open', () =
   expect(pullSay({ status: 'pulled', commits: 2 }).key).toBe('sy.pull.pulled')
   expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 1 } }).key).toBe('cu.pulled.one')
   expect(catchUpSay({ status: 'done', pull: { status: 'pulled', commits: 4 } }).key).toBe('cu.pulled')
+})
+
+test('the catch-up names the repos not here and the folders in the way; linked clones are the steady state and stay quiet', () => {
+  const repos = (r) => reposSay({ status: 'done', pull: { status: 'up-to-date' }, repos: { here: [], linked: [], missing: [], taken: [], ...r } })
+  expect(reposSay(null)).toEqual([])
+  expect(reposSay({ status: 'busy', pull: null })).toEqual([])
+  expect(reposSay({ status: 'done', pull: { status: 'up-to-date' } })).toEqual([])
+  expect(repos({ here: ['web'], linked: ['api'] })).toEqual([])
+  expect(repos({ taken: ['worker'] })).toEqual([{ key: 'cu.repoTaken.one', vars: { names: 'worker' }, tone: 'warn' }])
+  expect(repos({ taken: ['a', 'b'], missing: ['api'] })).toEqual([
+    { key: 'cu.repoTaken', vars: { names: 'a, b' }, tone: 'warn' },
+    { key: 'cu.repoMissing.one', vars: { names: 'api' }, tone: 'info', setup: true },
+  ])
+  expect(repos({ missing: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] })[0].vars.names).toBe('a, b, c, d, e, +2')
 })
