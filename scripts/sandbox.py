@@ -108,6 +108,9 @@ def traces(folder: Path, home: Path | None = None) -> list[str]:
         exclude = d / ".git" / "info" / "exclude"
         if exclude.is_file() and "/openwiki" in exclude.read_text(encoding="utf-8").splitlines():
             found.append(f"{name}: /openwiki in .git/info/exclude")
+        if ("githooks" in git("config", "--local", "--get", "core.hooksPath", cwd=d, check=False)
+                or git("config", "--local", "--get-regexp", "^camaron\\.", cwd=d, check=False)):
+            found.append(f"{name}: the kit's git hooks in .git/config (core.hooksPath, camaron.*)")   # lib/adapters/guard.py
     registry = (home or Path.home()) / ".camarones" / "projects.json"
     if registry.is_file():
         rows = json.loads(registry.read_text(encoding="utf-8") or "[]")

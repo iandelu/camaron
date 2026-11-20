@@ -15,6 +15,9 @@ from lib.domain.docs import derived
 from lib.ports import Log
 from lib.projects import git_failure
 
+# The kit's own uploads say so: cam-docs' pre-push hook (lib/githooks/kit/pre-push) runs `camaron check` for a person's
+# `git push`, not for the push of a share that already ran its own gates, which a false ERROR would stop for good.
+PUSH_FROM_KIT = {"CAMARONES_SHARE": "1"}
 
 # ---------- progress safety: local checkpoint commits in the umbrella repo ----------
 def _stderr(line: str) -> None:
@@ -256,7 +259,7 @@ def _share(log: Log) -> dict:
             _shared()
             return {"status": "up-to-date", "detail": branch}
     log(f"pushing {branch}…")
-    r = git("push", "--quiet", "-u", "origin", branch, env=auth)
+    r = git("push", "--quiet", "-u", "origin", branch, env={**auth, **PUSH_FROM_KIT})
     if r.returncode:
         return _failed(r, url)
     _shared()
@@ -491,7 +494,7 @@ def _push(log: Log) -> dict:
         if out(["git", "rev-list", "--count", f"{theirs}..HEAD"], cwd=ROOT) == "0":
             return {"status": "nothing", "detail": branch}
     log(f"pushing {branch}…")
-    r = run(["git", "push", "--quiet", "-u", "origin", branch], cwd=ROOT, check=False, quiet=True, env=auth)
+    r = run(["git", "push", "--quiet", "-u", "origin", branch], cwd=ROOT, check=False, quiet=True, env={**auth, **PUSH_FROM_KIT})
     if r.returncode:
         return _failed(r, url)
     _shared()

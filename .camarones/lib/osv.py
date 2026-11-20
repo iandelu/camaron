@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json, os, subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 from .common import HOME, PREFS, load_json, repo_dir
 from . import binaries
@@ -104,11 +105,12 @@ def parse(data: dict) -> dict[tuple[str, str], list[dict]]:
     return out
 
 
-def scan_repo(exe: str, name: str) -> dict | None:
+def scan_repo(exe: str, name: str, path: Path | None = None) -> dict | None:
+    """OSV-Scanner's JSON for a repo of the workspace, or for any folder `path` (the gate scans a tree it extracted)."""
     argv = [str(exe), "scan", "source", "--format", "json", "--recursive"]
     if not online():                                     # --no-resolve: fetching a parent pom from Maven Central
         argv += ["--offline-vulnerabilities", "--download-offline-databases", "--no-resolve"]   # would send its coordinates
-    argv.append(str(repo_dir(name)))
+    argv.append(str(path or repo_dir(name)))
     DB_DIR.mkdir(parents=True, exist_ok=True)
     rc, stdout = _run(argv, {**os.environ, "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY": str(DB_DIR)})
     if rc not in (0, 1, 128):                            # 1: vulnerabilities found, 128: no packages to scan

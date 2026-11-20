@@ -160,6 +160,16 @@ def _translations() -> object:
     return translations
 
 
+def _guard() -> object:
+    from lib.adapters import guard
+    return guard
+
+
+def _guard_gate() -> object:
+    from lib.adapters import guard_gate
+    return guard_gate
+
+
 def _worktrees() -> object:
     from lib.harness import worktrees
     return worktrees
@@ -203,6 +213,8 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "translations": _translations,
     "search": _search,
     "worktrees": _worktrees,
+    "guard": _guard,
+    "guard_gate": _guard_gate,
 }
 
 

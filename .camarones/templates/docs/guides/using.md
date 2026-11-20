@@ -196,8 +196,8 @@ change goes on its own branch, `cam/<id>-<slug>`, in each service repo, and the 
 - **Difficulty.** Low (0–2), medium (3–5) or high (6+). A low change gets a short plan, a medium one a plan you approve,
   a high one a spec, a plan and a proposed split into draft board items.
 - **Test first, then verification.** The agent runs the repo's own build, tests and linters plus `camaron check`.
-- **Guardrails and impact.** Forbidden paths, gitleaks, pages the change leaves stale (`camaron pr fresh`) and the
-  trust rules, then the impact on the docs, the contracts and the board.
+- **Guardrails and impact.** The gate (`camaron guard gate`: forbidden paths, gitleaks, dependencies, Sonar), pages the
+  change leaves stale (`camaron pr fresh`) and the trust rules, then the impact on the docs, the contracts and the board.
 - **One question.** "Open the PRs?" If you say yes it opens a draft code PR per repo and a draft docs PR that link each
   other, and records them in the change (`camaron change link`). The kit never merges. The agent moves its own
   card by running the change commands: In Progress at `camaron change start`, In Review at the first
@@ -241,8 +241,30 @@ To adapt the workflow to your team:
 - `camaron change close ID` checks with git that every branch is merged into its base: the card goes **Done**.
   `--abandon` puts it back in **Ready**. Both remove the docs worktree; the branches stay.
 
-ID can be left out inside a change's branch, or when only one change is open. The guardrails and opening the PRs
-themselves come in later versions.
+ID can be left out inside a change's branch, or when only one change is open. Opening the PRs themselves comes in a
+later version.
+
+## Guardrails
+
+`camaron setup` (and `repair`) puts guardrails in every repo of the project and in `cam-docs`, so nothing depends on
+the AI remembering a rule. They live in each repo's own git config and in Claude Code's local settings: no tracked file
+is written into a service repo.
+
+- **Git hooks.** A commit message loses an AI co-author trailer or a "Generated with Claude Code" line, a push that
+  still carries one is refused, and staged secrets stop the commit (gitleaks). Pushing `cam-docs` runs `camaron check`
+  and stops on an error. A repo that already has hooks (husky, pre-commit, Git LFS) keeps them: they run right after the
+  kit's. A false positive: `git commit --no-verify`.
+- **Claude Code attribution** is off in each repo's `.claude/settings.local.json` (kept out of git) and in the workspace
+  folder's.
+- `camaron guard status` says what is on; `camaron doctor` lists what is off and `camaron repair` puts it back;
+  `camaron guard uninstall` gives the repos their own hooks back. `guard: {install: false}` in `workspace.yaml` leaves
+  the project out of setup and repair.
+- `camaron guard gate [--repo NAME] [--base REF] [--latest]` is the gate a change must pass, read from its commits
+  against the base branch: no AI trailer, no secret in the commits, no `.env*`, key or `secrets/` path, no **new** high
+  or critical vulnerability in the lockfiles it touches, a green Sonar quality gate (when the repo has a Sonar project),
+  and, with `--latest` or `guard: {outdated: true}`, no library it adds or bumps a major version behind (that one sends
+  library names to the public registries). A check that could not run (no gitleaks, no Sonar token, no OSV-Scanner) is
+  **not run**, never green. Exit 0 green, 1 red, 3 nothing failed but a check did not run.
 
 ## Costs and KPIs
 
