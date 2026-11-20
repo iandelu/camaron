@@ -20,7 +20,7 @@ from .app import services
 
 STEPS = ("name", "repos", "tools", "setup", "stack", "arch", "intro")   # first-run steps, saved by id
 LEGACY_STEPS = ("name", "repos", "tools", "setup", "arch", "intro")     # firstrun.json before 3.3 kept only the index
-JOIN_STEPS = ("tools", "setup", "intro")   # joining a team's cam-docs: the rest is shared and already decided
+JOIN_STEPS = ("repos", "tools", "setup", "intro")   # a join: repos is read-only, the rest is the team's already
 GREENFIELD_STEPS = ("name", "repos", "tools", "setup", "intro")   # nothing to read yet: no stack scan, no C4 draft
 
 # a file that says "there is code here"; *.csproj is matched by suffix (its name is the project's)
@@ -123,7 +123,8 @@ def _has_repos(f: Path) -> bool:
 def inspect(folder: Path) -> dict:
     """What `folder` is, first match wins: project · repo · umbrella · code · empty. Returns `case`, `kind`,
     `workspace` (the folder that holds the repos), `docs_root`, `name` (the workspace folder's), `repos` (detect_repos
-    rows), `siblings` (repo case: the other repos next to it) and `warning`: `home` when the workspace is the user's home or a
+    rows), `siblings` (repo case: the other repos next to it), `stray` (a project made here and never shared:
+    no remote, no commit) and `warning`: `home` when the workspace is the user's home or a
     filesystem root and no project is there yet (wins over the rest), else `no-git` for code without a repository. A picked `cam-docs` folder
     is read as the workspace it belongs to, and a folder inside a git repository as that repository. Code with a manifest
     at its top reports the workspace it will have once `git_init` makes it a repo: its parent."""
@@ -158,7 +159,8 @@ def inspect(folder: Path) -> dict:
         siblings = [r for r in repos if r["name"] != f.name]
         repos = [r for r in repos if r["name"] == f.name]
     return {"case": case, "kind": kind, "workspace": str(workspace), "docs_root": str(root or workspace / CAM_DIR),
-            "name": workspace.name, "repos": repos, "siblings": siblings, "warning": warning}
+            "name": workspace.name, "repos": repos, "siblings": siblings, "warning": warning,
+            "stray": bool(root and root.name == CAM_DIR and projects.stray(root))}
 
 
 # ---------- first-run state: one implementation for the CLI wizard and the app ----------
@@ -208,7 +210,7 @@ def local_ready() -> bool:
     """This machine already has what setup gives: every repo with a URL cloned and the chosen kit tools."""
     if missing_repos():
         return False
-    return all(services.current().toolchain.tool_ok(k) for k in services.current().components.KIT_TOOLS if k in services.current().components.components())
+    return all(services.current().toolchain.tool_ok(k) for k in services.current().components.KIT_TOOLS if k in services.current().components.here())
 
 
 def mode(saved: dict) -> str:
@@ -216,6 +218,12 @@ def mode(saved: dict) -> str:
     from .common import WS_FILE
     shared = plan.PLAN.exists() and WS_FILE.exists()          # team work that came with the repo (or pre-2.4)
     return first_run_mode(saved, shared, local_ready=bool(shared and not saved) and local_ready())
+
+
+def joining() -> bool:
+    """This project's first run is a join: its tools step chooses for this machine only, and its setup writes no plan."""
+    from .common import ROOT
+    return mode(load_json(firstrun_file(ROOT), {})) == "join"
 
 
 def state() -> dict:
@@ -317,8 +325,10 @@ def tool_rows() -> list[dict]:
         rec = v["need"] or k in ("docker", "java") or (k == "claude" and not have_agent)
         rows.append({"id": k, "label": v["hint"], "ok": v["ok"], "kind": kind, "rec": rec, "sys": True,
                      "found": v.get("found", ""), "note": v.get("note", "")})
-    chosen = services.current().components.components()
+    chosen, join = services.current().components.components(), joining()
     for k, label in {**services.current().components.KIT_TOOLS, **services.current().components.EXTRAS}.items():
+        if join and k not in chosen:                       # a join picks among the team's components only
+            continue
         installed = services.current().toolchain.tool_ok(k) if k in services.current().components.KIT_TOOLS else (k in chosen)
         rows.append({"id": k, "label": label, "ok": installed, "kind": "t_kit", "rec": True, "sys": False,
                      "found": VERSIONS.get(k, "") if installed and k in services.current().components.KIT_TOOLS else "", "note": ""})
@@ -339,9 +349,11 @@ def install_choice(rows: list[dict], choice: str, picked: list[str] | None = Non
 
 
 def install_tools(system: list[str], components: list[str], log, cancelled: Callable[[], bool] | None = None) -> list[str]:
-    """Save the chosen components, install the system tools in order and refresh PATH; returns the ones that failed.
-    `cancelled` is asked before each install: once it says yes, the rest are left alone."""
-    services.current().components.set_components(components)
+    """Save the chosen components (on a join: this machine's choice, never the team's), install the system tools in
+    order and refresh PATH; returns the ones that failed. `cancelled` is asked before each install: once it says yes,
+    the rest are left alone."""
+    c = services.current().components
+    (c.set_machine if joining() else c.set_components)(components)
     failed = []
     for k in system:
         if cancelled and cancelled():
@@ -358,16 +370,20 @@ def install_tools(system: list[str], components: list[str], log, cancelled: Call
 def run_setup(log, cancelled: Callable[[], bool] | None = None) -> bool:
     """The setup step's work: templates, `app.setup.setup`, the plan for this workspace (also when setup failed, so the
     portal has one) and the `setup` unit marked done when it worked. True when setup succeeded. `cancelled` (the app's
-    cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done."""
+    cancel button) is asked between steps: before setup starts and once it ends; a cancelled setup is not marked done.
+    A join leaves the team's plan as it is: the setup that ran is this machine's (install_state)."""
     if cancelled and cancelled():
         return False
+    join = joining()
     services.current().templates.init_templates(services.current().workspace.workspace()["project"]["name"], log=lambda _: None)  # `log` counts setup's own steps
     try:
         ok = services.current().setup.setup(log=log)
     finally:
-        plan.sync()                        # a setup that raised still leaves the plan in place
+        if not join:
+            plan.sync()                    # a setup that raised still leaves the plan in place
     if ok and not (cancelled and cancelled()):
-        plan.set_status("setup", "done", "first run")
+        if not join:
+            plan.set_status("setup", "done", "first run")
         from . import install_state
         install_state.mark_setup()
         return True
@@ -438,7 +454,10 @@ def go_to(step: str) -> dict:
 def set_repos(rows: list) -> dict:
     """The repos step: validate the rows (`name` required and unique, `url` optional, `branch` defaults to main, `kind`
     to service), keep the extra keys an existing repo already has (stack, wiki…) and save. A legacy project needs at
-    least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate`."""
+    least one. Raises ValueError with a code: `repos` · `name` · `url` · `duplicate` · `join` (a join never changes the
+    team's list)."""
+    if joining():
+        raise ValueError("join")
     if not isinstance(rows, list):
         raise ValueError("repos")
     ws = services.current().workspace.workspace()
@@ -463,6 +482,33 @@ def set_repos(rows: list) -> dict:
     ws["repos"] = out
     services.current().workspace.save_workspace(ws)
     return state()
+
+
+def join_repos() -> dict:
+    """The join's repos step: what this machine has of each team repo, found by its remote. Read-only for the team's
+    list; a clone kept under another folder name is linked (repos_here). Each row's `where` is its clone as the person
+    reads it: `./<folder>` beside the workspace, else the full path."""
+    from .app import repos_here
+    from .common import ROOT
+    saved = load_json(firstrun_file(ROOT), {})
+    if not saved and mode(saved) == "join":     # linking may make this machine ready: the first run stays a join
+        save_position(ROOT, "repos", "join")
+    res, ws = repos_here.find(log=lambda _: None), WORKSPACE.resolve()
+    for r in res["rows"]:
+        p = Path(r["path"]) if r["path"] else None
+        r["where"] = "" if p is None else f"./{p.name}" if p.parent == ws else str(p)
+    return res
+
+
+def search(folder: str) -> dict:
+    """*Search another folder*: remembered for this machine only, then the rows again. ValueError `folder` for anything
+    but an existing absolute folder (the app's dialog gives one)."""
+    from .app import repos_here
+    f = Path(str(folder or "").strip())
+    if not str(folder or "").strip() or not f.is_absolute():
+        raise ValueError("folder")
+    repos_here.add_search(f)
+    return join_repos()
 
 
 def setup_job(system: list[str], components: list[str], log, cancelled: Callable[[], bool] | None = None) -> dict:

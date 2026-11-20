@@ -165,6 +165,13 @@ T = {
         "cu_unknown": "✖ No he podido traer los cambios del equipo: {detail}",
         "cu_graphs_stale": "{n} grafo(s) de código desactualizado(s): los rehace la app o «{cli} pull».",
         "sh_git_said": "  git: {detail}",
+        "jr_title": "Repos del equipo en esta máquina",
+        "jr_lead": "La lista es del equipo: aquí solo ves qué tienes de cada uno. Los busco por su remoto, no por el nombre de la carpeta.",
+        "jr_here": "aquí", "jr_linked": "enlazado desde {path}", "jr_missing": "falta: se clonará",
+        "jr_unlinked": "está en {path}, pero no he podido enlazarlo: en Windows activa el modo desarrollador",
+        "jr_taken": "carpeta ocupada: la dejo como está y no la clono",
+        "jr_search": "🔎 Buscar en otra carpeta…", "jr_search_q": "Carpeta donde buscar los repos (ruta completa):",
+        "jr_bad_folder": "Esa carpeta no existe: escribe la ruta completa.",
         "join_welcome": "Te unes a «{name}»: el equipo ya eligió repos, stack y arquitectura, y el plan sigue donde lo dejaron. "
                         "Yo solo preparo esta máquina: herramientas y repos. Nada de pelar dos veces la misma gamba.",
         "m_model": "🧠 Modelo de IA",
@@ -542,6 +549,13 @@ T = {
         "cu_unknown": "✖ Couldn't bring in the team's changes: {detail}",
         "cu_graphs_stale": "{n} code graph(s) out of date: the app or “{cli} pull” rebuilds them.",
         "sh_git_said": "  git: {detail}",
+        "jr_title": "The team's repos on this machine",
+        "jr_lead": "The list is the team's: here you only see what you have of each. I find them by their remote, not by the folder's name.",
+        "jr_here": "here", "jr_linked": "linked from {path}", "jr_missing": "missing: setup clones it",
+        "jr_unlinked": "it is in {path}, but I could not link it: on Windows, turn on Developer Mode",
+        "jr_taken": "folder taken: left as it is and not cloned",
+        "jr_search": "🔎 Search another folder…", "jr_search_q": "Folder to search for the repos (full path):",
+        "jr_bad_folder": "That folder does not exist: type the full path.",
         "join_welcome": "You're joining “{name}”: the team already picked the repos, stack and architecture, and the plan carries "
                         "on where they left it. I'll just set up this machine: tools and repos. No peeling the same shrimp twice.",
         "m_model": "🧠 AI model",
@@ -1121,6 +1135,8 @@ class W:
         ws = services.current().workspace.workspace()
         every = dict(zip(STEPS, [("Workspace", self.fr_name), ("Repos", self.fr_repos), (self.t("t_title"), self.fr_tools),
                                  ("Setup", self.fr_setup), ("Stack", self.fr_stack), ("C4", self.fr_arch), ("🦐", self.fr_intro)]))
+        if mode == "join":                                       # the team's list, read-only: what this machine has
+            every["repos"] = ("Repos", self.fr_join_repos)
         ids = onboard.steps(mode, onboard.kind_of(ws))
         first = STEPS[min(max(start, 0), len(STEPS) - 1)]
         i = ids.index(first) if first in ids else 0
@@ -1210,6 +1226,30 @@ class W:
                 if gone:
                     ws["repos"] = [r for r in ws["repos"] if r["name"] not in gone]
             services.current().workspace.save_workspace(ws)
+            self.banner()
+
+    def fr_join_repos(self, ws: dict):
+        """A join's repos step: each team repo with what this machine has of it. The list stays the team's."""
+        while True:
+            res = onboard.join_repos()
+            tbl = Table(title=self.t("jr_title"), title_justify="left", border_style="grey42", show_header=False)
+            for r in res["rows"]:
+                state = "jr_unlinked" if r["state"] == "missing" and r["path"] else f"jr_{r['state']}"
+                tbl.add_row(f"[{ORANGE}]{r['name']}[/]", self.t(state, path=r["where"]), r["url"] or "(local)")
+            self.say(f"[grey62]{self.t('jr_lead')}[/]")
+            console.print(tbl if res["rows"] else f"  {self.t('repos_none')}")
+            c = self.sel(self.t("menu"), [Choice(self.t("r_continue"), "go"), Choice(self.t("jr_search"), "search")],
+                         default="go")
+            if c is None:
+                return BACK
+            if c == "go":
+                return None
+            folder = self.txt(self.t("jr_search_q"))
+            if folder:
+                try:
+                    onboard.search(str(Path(folder).expanduser()))
+                except ValueError:
+                    self.say(self.t("jr_bad_folder"), "yellow")
             self.banner()
 
     def add_url(self, ws: dict) -> bool:

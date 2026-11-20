@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { S } from './i18n.js'
 import { STEP_KEYS, alreadyDone, canContinue, continueVariant, defaultPicks, errorKey, errorLine, errorText, hostOf, manualHints, nextStep,
-  prevStep, progressOf, repoBody, repoFromUrl, repoRows, reposChanged, setupChoice, stepIndex, urlName } from './onboarding.js'
+  prevStep, progressOf, repoBody, repoFromUrl, repoRows, reposChanged, repoState, setupChoice, stepIndex, urlName } from './onboarding.js'
 
 const LEGACY = ['repos', 'tools', 'setup', 'stack', 'arch', 'intro']
 const at = (step, steps = LEGACY) => ({ mode: 'new', kind: 'legacy', steps, step, done: false })
@@ -178,4 +178,17 @@ test('errorLine says a rejection in the person\'s language', () => {
   expect(errorLine({ message: 'Failed to fetch' }, es)).toBe(S.es.obErrNetwork)
   expect(errorLine(new Error('busy'), es)).toBe(S.es.obErrBusy)
   expect(errorLine(new Error('app/onboard/step: 500'), es)).toBe(`${S.es.obErrServer} app/onboard/step: 500`)
+})
+
+
+// The join's repos step (spec 2026-11-18 §6.2): read-only, so Continue never waits on it.
+test('a join\'s repos step never blocks and each row says what this machine has', () => {
+  expect(canContinue('repos', { kind: 'legacy', rows: [], mode: 'join' }).ok).toBe(true)
+  const rows = [{ state: 'here' }, { state: 'linked', where: './operator-adapter' }, { state: 'missing', where: '' },
+    { state: 'missing', where: '/Users/me/IdeaProjects/api' }, { state: 'taken' }]
+  const says = rows.map(repoState)
+  expect(says.map((x) => x.key)).toEqual(['obRepoHere', 'obRepoLinked', 'obRepoMissing', 'obRepoUnlinked', 'obRepoTaken'])
+  expect(says[1].vars).toEqual({ path: './operator-adapter' })
+  expect(says.map((x) => x.ok)).toEqual([true, true, false, false, false])
+  for (const x of says) expect(x.key in S.es && x.key in S.en, x.key).toBe(true)
 })

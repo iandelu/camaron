@@ -6,6 +6,7 @@ import json, os, subprocess, sys
 from pathlib import Path
 
 from lib import projects                            # no dependency on ROOT/common state
+from lib.core.ctx import CAM_DIR
 from lib.interfaces.cli import registry
 
 def _relaunch(root: Path, argv: list[str], entry: str) -> None:
@@ -19,7 +20,11 @@ def _relaunch(root: Path, argv: list[str], entry: str) -> None:
     os.execv(sys.executable, args)
 
 
-def _team(fn, *args, no_open: bool):
+ELSEWHERE = {"es": "Ya tienes la documentación de este equipo en {path}: abro esa y busco los repos también en {folder}.",
+             "en": "You already have this team's docs in {path}: opening it, and looking for the repos in {folder} too."}
+
+
+def _team(fn, *args, no_open: bool, **kw):
     """new --from / join: a clone that fails (no access, wrong URL, folder taken) is a short error, not a traceback.
     Access is checked first with plain git; a token is asked only when that fails and there is a terminal to ask in.
     The desktop app has none: it passes the token in CAMARONES_JOIN_TOKEN (never on the command line) and, with
@@ -40,10 +45,24 @@ def _team(fn, *args, no_open: bool):
                               "detail": detail.replace(token, "***") if token else detail}, ensure_ascii=False))
         sys.exit(1)
     try:
-        return fn(*args)
-    except (ValueError, RuntimeError) as e:
+        try:
+            return fn(*args, **kw)
+        except projects.Stray as e:                                 # C1: only the person's yes sets it aside
+            if no_open or not sys.stdin.isatty():
+                raise
+            import questionary
+            print(f"✖ {e}", file=sys.stderr)
+            if not questionary.confirm(projects._tr(projects.STRAY)["q"].format(aside=e.aside), default=False).ask():
+                sys.exit(1)
+            return fn(*args, **{**kw, "set_aside": True})
+    except (ValueError, RuntimeError, OSError) as e:
         print(f"✖ {e}", file=sys.stderr)
-        if no_open and isinstance(e, projects.Taken):               # the app words it: a stable code, not this line
+        if isinstance(e, projects.Stray):
+            if no_open:
+                print(json.dumps({"error": "stray", "detail": str(e), "aside": e.aside}, ensure_ascii=False))
+            else:
+                print(projects._tr(projects.STRAY)["hint"].format(aside=e.aside), file=sys.stderr)
+        elif no_open and isinstance(e, projects.Taken):             # the app words it: a stable code, not this line
             print(json.dumps({"error": "taken", "detail": str(e)}, ensure_ascii=False))
         sys.exit(1)
 
@@ -63,6 +82,9 @@ def prelaunch(argv: list[str], entry: str) -> None:
     no_open = cmd0 in ("new", "join") and "--no-open" in argv
     if no_open:
         argv.remove("--no-open")
+    set_aside = cmd0 == "join" and "--set-aside" in argv           # C1: the person said to set a stray cam-docs aside
+    if set_aside:
+        argv.remove("--set-aside")
     if cmd0 == "new" and len(argv) > 2 and not argv[2].startswith("-"):
         from_url = argv[argv.index("--from") + 1] if "--from" in argv[3:-1] else ""
         dest = _team(projects.create, argv[2], None, from_url, no_open=no_open)
@@ -74,10 +96,14 @@ def prelaunch(argv: list[str], entry: str) -> None:
     elif cmd0 == "join" and len(argv) > 2 and not argv[2].startswith("-"):
         # The team's cam-docs repo: cloned into <folder or cwd>/cam-docs, or reused if this machine already has it.
         # The wizard then only prepares this machine (tools, repos) — the rest is the team's, already done.
-        dest, joined = _team(projects.join, argv[2], Path(argv[3]).resolve() if len(argv) > 3 else Path.cwd(),
-                             no_open=no_open)
+        folder = Path(argv[3]).resolve() if len(argv) > 3 else Path.cwd()
+        dest, joined = _team(projects.join, argv[2], folder, no_open=no_open, **({"set_aside": True} if set_aside else {}))
+        ws = dest.parent if dest.name == CAM_DIR else dest
+        elsewhere = {"elsewhere": str(dest)} if ws.resolve() != folder.resolve() else {}
+        if elsewhere and not no_open:                               # C2: say it, then open that one
+            print(f"🦐 {projects._tr(ELSEWHERE).format(path=dest, folder=folder)}", file=sys.stderr)
         if no_open:
-            print(json.dumps({"path": str(dest), "joined": joined}))
+            print(json.dumps({"path": str(dest), "joined": joined, **elsewhere}))
             sys.exit(0)
         print(f"🦐 {'joined' if joined else 'new project, remote set'} → {dest}")
         _relaunch(dest, [], entry)

@@ -92,6 +92,9 @@ def traces(folder: Path, home: Path | None = None) -> list[str]:
         p = folder / n
         if p.exists() or p.is_symlink():
             found.append(f"{n} in the sandbox root")
+    for p in sorted(folder.iterdir()) if folder.is_dir() else ():     # a repo linked under its team name (repos_here)
+        if p.name not in LINKS and (p.is_symlink() or getattr(p, "is_junction", lambda: False)()):
+            found.append(f"{p.name}: a link in the sandbox root")
     for name, (_url, _branch, sha) in REPOS.items():
         d = folder / name
         if not d.is_dir():

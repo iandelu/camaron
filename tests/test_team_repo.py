@@ -195,10 +195,10 @@ def test_first_run_mode(kit, state, shared, local, mode):
 
 def test_join_first_run_skips_the_team_steps(kit, fake_wizard, monkeypatch):
     ran = []
-    for step in ("fr_name", "fr_repos", "fr_tools", "fr_setup", "fr_stack", "fr_arch", "fr_intro"):
+    for step in ("fr_name", "fr_repos", "fr_join_repos", "fr_tools", "fr_setup", "fr_stack", "fr_arch", "fr_intro"):
         monkeypatch.setattr(kit.wizard.W, step, lambda self, ws, s=step: ran.append(s))
     assert fake_wizard([]).first_run(mode="join")
-    assert ran == ["fr_tools", "fr_setup", "fr_intro"]
+    assert ran == ["fr_join_repos", "fr_tools", "fr_setup", "fr_intro"]
     assert kit.common.load_json(kit.wizard.FIRSTRUN, {})["done"]
 
 

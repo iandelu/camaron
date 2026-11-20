@@ -19,7 +19,8 @@ const CASES = {
 
 // What the picked folder is, as a card: badge, title, sentence, where cam-docs goes, and whether Continue is offered.
 // An unknown case reads as an empty folder. Home (or a drive root) as the workspace wins over everything: only
-// "Change folder" is left. A warning's card also shows `<warningKey>Title` as its heading.
+// "Change folder" is left. A warning's card also shows `<warningKey>Title` as its heading. `team`: the card asks whether
+// the team already has its docs (repos with no cam-docs yet, or a project made here and never shared).
 export function card(found) {
   const f = { repos: [], siblings: [], ...found }
   const c = { canContinue: true, askName: true, ...(CASES[f.case] || CASES.empty)(f), dest: f.docs_root }
@@ -27,8 +28,11 @@ export function card(found) {
     delete c.action
     return { ...c, canContinue: false, warningKey: 'hub.home' }
   }
-  return c
+  return ['repo', 'umbrella'].includes(f.case) || (f.case === 'project' && f.stray) ? { ...c, team: true } : c
 }
+
+// Continue on the found card: what the card allows and, when it asks the team question, an answer (Yes with a URL).
+export const canGo = (c, team, url) => !!c.canContinue && (!c.team || team === 'no' || (team === 'yes' && !!url.trim()))
 
 // "api, web and infra", "a, b, c, d and 2 more": repo rows or names, in the app's language.
 export function names(rows, t = text, max = 4) {
@@ -64,6 +68,10 @@ export function adoptSay(found, r) {
 export const JOIN0 = { showToken: false, token: '', host: '', dir: null, say: null }
 
 export function joinStep(state, r, t = text) {
+  if (r?.error === 'stray') {                                       // C1: asked, never done without the person's click
+    const aside = r.aside || 'cam-docs.local'
+    return { ...JOIN0, stray: true, aside, dir: r.dir || state.dir, say: { key: 'hub.stray', vars: { aside }, detail: '', error: false } }
+  }
   if (r?.error === 'auth' && r.host) {
     const again = !!(state.showToken && state.token)               // the first ask is a request, not a failure
     return { showToken: true, token: '', host: r.host, dir: r.dir || state.dir,
@@ -72,10 +80,12 @@ export function joinStep(state, r, t = text) {
   return { ...JOIN0, say: joinSay(r, t) }
 }
 
-// One try: hub.join (preload: url, token, dir) and the next state, whatever happens, a rejection included.
+// One try: hub.join (preload: url, token, dir, setAside) and the next state, whatever happens, a rejection included.
+// `state.setAside`: the person said to set a stray cam-docs aside (the stray answer's own button).
 export async function joinOnce(hub, state, url, token, t = text) {
   let r
-  try { r = await hub.join(url, token, state.dir || undefined) } catch (e) { r = e instanceof Error ? e : new Error(String(e)) }
+  try { r = await hub.join(url, token, state.dir || undefined, ...(state.setAside ? [true] : [])) }
+  catch (e) { r = e instanceof Error ? e : new Error(String(e)) }
   return joinStep(state, r, t)
 }
 

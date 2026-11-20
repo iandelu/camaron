@@ -180,8 +180,18 @@
     "access": "app"
   },
   {
+    "method": "GET",
+    "path": "/api/app/onboard/repos-here",
+    "access": "app"
+  },
+  {
     "method": "POST",
     "path": "/api/app/onboard/scan",
+    "access": "app"
+  },
+  {
+    "method": "POST",
+    "path": "/api/app/onboard/search",
     "access": "app"
   },
   {

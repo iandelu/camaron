@@ -170,6 +170,8 @@ test('a join token reaches the CLI only in its environment, never inherited', ()
   const dir = path.join(KIT, '..', 'shop')
   assert.deepEqual(core.joinArgs('https://gitlab.com/shop/cam-docs.git', dir),
     ['join', 'https://gitlab.com/shop/cam-docs.git', dir, '--no-open'])
+  assert.deepEqual(core.joinArgs('u', dir, true), ['join', 'u', dir, '--no-open', '--set-aside'])   // only on the person's click
+  assert.deepEqual(core.joinArgs('u', dir, 'yes'), ['join', 'u', dir, '--no-open'])
   const base = { PATH: 'p', CAMARONES_JOIN_TOKEN: 'from-the-shell', CAMARONES_APP_TOKEN: 'x' }
   assert.equal(core.cliEnv(base).CAMARONES_JOIN_TOKEN, undefined)            // only the join that was given one
   assert.equal(core.joinEnv(base, '').CAMARONES_JOIN_TOKEN, undefined)
@@ -189,6 +191,9 @@ test('why a join failed: the CLI\'s JSON line, or nothing', () => {
   // the folder's cam-docs belongs to something else: a stable code, not the CLI's Spanish line
   assert.deepEqual(core.joinFailure('{"error": "taken", "detail": "/x/cam-docs ya existe y no está vacía"}'),
     { error: 'taken', host: '', detail: '/x/cam-docs ya existe y no está vacía' })
+  // C1: a cam-docs made here and never shared; the name it would get goes back to the page
+  assert.deepEqual(core.joinFailure('{"error": "stray", "detail": "d", "aside": "cam-docs.local-20261119"}'),
+    { error: 'stray', host: '', detail: 'd', aside: 'cam-docs.local-20261119' })
 })
 
 test('the CLI\'s error line', () => {

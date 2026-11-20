@@ -15,7 +15,7 @@ if (process.argv.includes('--camaron-hub')) {
     pick: () => ipcRenderer.invoke('hub:pick'),
     inspect: (dir) => ipcRenderer.invoke('hub:inspect', dir),
     adopt: (dir, name) => ipcRenderer.invoke('hub:adopt', { dir, name }),
-    join: (url, token, dir) => ipcRenderer.invoke('hub:join', { url, token, dir }),
+    join: (url, token, dir, setAside) => ipcRenderer.invoke('hub:join', { url, token, dir, setAside }),
     gitInit: (dir) => ipcRenderer.invoke('hub:gitInit', dir),
     lang: () => ipcRenderer.invoke('hub:lang'),
   })

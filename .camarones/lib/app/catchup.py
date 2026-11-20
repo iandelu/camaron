@@ -1,4 +1,5 @@
-"""Catch-up: bring this machine's cam-docs in step with the team's (pull) and rebuild the local views that went stale.
+"""Catch-up: bring this machine's cam-docs in step with the team's (pull), find the team's repos on this machine (a clone
+under another folder name is linked, nothing is cloned) and rebuild the local views that went stale.
 It never pushes and never writes team decisions (workspace.yaml, plan.yaml, the .c4 model). The explorer is rebuilt
 here; the code graphs are slow, so `views["graphs"]` lists the stale repos still to rebuild and the caller runs
 `rebuild_graphs` on them (a background job, or inline in the CLI). Nothing here raises past `run`."""
@@ -41,7 +42,7 @@ def standing(sync: dict) -> dict | None:
 
 def rebuild_c4(log: Log = print) -> str:
     c4 = services.current().viewers.viewers()["c4"]
-    if not c4["model"] or "likec4" not in services.current().components.components() or not which("likec4"):
+    if not c4["model"] or "likec4" not in services.current().components.here() or not which("likec4"):
         return "skipped"
     if c4["exists"] and not c4["stale"]:
         return "fresh"
@@ -75,8 +76,19 @@ def _pull(log: Log) -> dict:
                 "host": ""}
 
 
+def _repos(log: Log) -> dict:
+    from lib.app import repos_here
+    try:
+        found = repos_here.find(log)
+    except Exception as e:                                   # noqa: BLE001 — opening must go on
+        log(f"⚠ could not look for the repos: {e}")
+        return {s: [] for s in repos_here.STATES}
+    return {s: found[s] for s in repos_here.STATES}
+
+
 def _run(log: Log) -> dict:
     pull = _pull(log)
+    repos = _repos(log)
     try:
         c4 = rebuild_c4(log)
     except Exception as e:                                   # noqa: BLE001 — opening must go on
@@ -87,7 +99,7 @@ def _run(log: Log) -> dict:
     except Exception as e:                                   # noqa: BLE001
         log(f"⚠ could not check the code graphs: {e}")
         stale = []
-    result = {"status": "done", "pull": pull, "views": {"c4": c4, "graphs": stale},
+    result = {"status": "done", "pull": pull, "repos": repos, "views": {"c4": c4, "graphs": stale},
               "at": dt.datetime.now().astimezone().isoformat(timespec="seconds")}
     save_json(LAST, result)
     return result

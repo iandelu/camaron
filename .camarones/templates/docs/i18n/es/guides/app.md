@@ -91,17 +91,26 @@ te cuenta qué ha encontrado antes de tocar nada:
 | Una carpeta vacía | Proyecto nuevo | Crea un proyecto aún sin código: documentas el diseño primero |
 | Tu carpeta personal o la raíz de un disco | — | La rechaza y explica por qué: `cam-docs` y el análisis de repos acabarían ahí |
 
+Con un repo o una carpeta de repos sin `cam-docs` todavía, la tarjeta pregunta **¿Tu equipo ya tiene su documentación
+en un repo cam-docs?** sin nada marcado, y **Continuar** espera la respuesta. **Sí, unirme a ella** pide la URL del equipo
+y la trae a esta misma carpeta, como hace la unión de abajo. **No, empezar una nueva** sigue como hasta ahora. Un
+proyecto hecho aquí y nunca compartido (sin remoto ni commits) también lo pregunta.
+
 Puedes cambiar el **Nombre del proyecto** (empieza con el de la carpeta) y pulsar **Continuar →**, que ejecuta
 `camaron projects --adopt` y abre la ventana del proyecto.
 
 ### Unirme a la documentación de mi equipo
 
-Pega la URL del repo **cam-docs** del equipo —el de la documentación, no el del código— y elige dónde dejarlo. La app
+Pega la URL del repo **cam-docs** del equipo —el de la documentación, no el del código— y después elige la carpeta
+donde están (o estarán) tus repos: `cam-docs` va dentro. La app
 ejecuta `camaron join … --no-open` primero con tus propias credenciales de git. Si el servidor pide credenciales que
 git no tiene, una URL https saca un campo para el token («GitLab: read_repository + write_repository · GitHub: repo»);
 el token viaja solo en una variable de entorno y se guarda en el llavero del sistema cuando git consigue entrar con él.
 Una URL SSH te pide que configures tu clave SSH. Los demás rechazos se dicen con palabras: sin acceso, no existe, sin
-red, o una carpeta que ya tiene otro `cam-docs`.
+red, o una carpeta que ya tiene otro `cam-docs`. Un `cam-docs` que hizo el kit ahí y nunca se compartió es una pregunta:
+**Apartarlo y unirme** lo renombra a `cam-docs.local-<fecha>` a su lado (no se borra nada) y trae el del equipo; sin ese
+clic no pasa nada. Si esta máquina ya tiene la documentación del equipo en otra carpeta, la app lo dice, la abre y busca
+tus repos también en la carpeta que elegiste.
 
 ### Recientes
 
@@ -116,16 +125,17 @@ preparación**.
 
 | Paso | Qué pasa |
 |---|---|
-| Repos | Los repos que vas a documentar: marcados los que ya están en el proyecto, sin marcar los que encontró en la carpeta. Añade un repo de código por su URL (el nombre y la rama se rellenan). Hace falta al menos uno, salvo en una carpeta vacía |
-| Herramientas | Lo que tiene y lo que le falta a esta máquina: las obligatorias marcadas y fijas, las recomendadas elegidas si faltan (basta un CLI de agente), más las herramientas fijadas del kit |
+| Repos | Los repos que vas a documentar: marcados los que ya están en el proyecto, sin marcar los que encontró en la carpeta. Añade un repo de código por su URL (el nombre y la rama se rellenan). Hace falta al menos uno, salvo en una carpeta vacía. Al unirte es de solo lectura: cada repo del equipo está *aquí*, *enlazado desde* un clon que tienes con otro nombre, *falta* (Instalar lo clona) o su carpeta está *ocupada* (se deja como está); **Buscar en otra carpeta…** solo lo recuerda esta máquina |
+| Herramientas | Lo que tiene y lo que le falta a esta máquina: las obligatorias marcadas y fijas, las recomendadas elegidas si faltan (basta un CLI de agente), más las herramientas fijadas del kit. Al unirte lista las del equipo, y dejar una fuera solo afecta a esta máquina: su fila dice lo que cuesta, y el plan del equipo no cambia |
 | Instalar | Empieza solo: instala lo elegido, guarda los componentes, escribe las plantillas, prepara el proyecto y sincroniza el plan, con barra de progreso y la salida en vivo. **Cancelar** para entre pasos. Si un repo no se pudo clonar, sale ahí mismo la tarjeta de Tokens con su servidor escrito |
 | Stack | El stack de cada repo leído de sus manifiestos; el lápiz corrige uno mal detectado. Nunca bloquea |
 | Arquitectura | Un primer borrador C4 hecho con análisis estático, sin IA: repos, bases de datos y brokers, relaciones. **Guardar borrador**, **Ver diagrama ↗**, **Guardar y mejorar con IA** (abre tu agente en una terminal sobre el modelo C4) o **Saltar** |
 | Listo | Cierra el primer arranque con un commit de checkpoint. **Ir al siguiente paso** te deja en el Resumen |
 
 Un proyecto nuevo en una **carpeta vacía** va Repos → Herramientas → Instalar → Listo (aún no hay nada que leer). Un
-proyecto al que te **uniste** va Herramientas → Instalar → Listo, porque el resto ya lo decidió el equipo, y se salta
-el asistente entero si esta máquina ya tiene todos los repos y herramientas.
+proyecto al que te **uniste** va Repos → Herramientas → Instalar → Listo, porque el resto ya lo decidió el equipo; nunca
+cambia los repos, los componentes ni el plan del equipo, y se salta el asistente entero si esta máquina ya tiene todos
+los repos y herramientas.
 
 ## Flujo
 

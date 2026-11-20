@@ -58,10 +58,14 @@ carpeta abre los mismos pasos en el asistente; puedes cambiar de uno a otro a me
 
 ## Unirte a tu equipo
 
-Si tu equipo ya tiene un repo `cam-docs`: en la pantalla de inicio de la app, **Unirme a la documentación de mi equipo**
-y pega su URL (la del repo de la documentación, no la del código). Desde una terminal: `camaron join <url>`. El kit lo
-clona, o reutiliza la copia que ya tienes, y solo prepara tu máquina: el equipo ya eligió los repos, el stack, la
-arquitectura y el plan, y las sesiones siguen donde se quedaron.
+Si tu equipo ya tiene un repo `cam-docs`, las dos puertas de la pantalla de inicio de la app llegan a él: **Elegir
+carpeta** sobre tus repos pregunta si el equipo ya tiene su documentación en un repo `cam-docs` (responde **Sí** y pega su
+URL), y **Unirme a la documentación de mi equipo** pide la URL y después la carpeta donde están tus repos. Desde una
+terminal: `camaron join <url> [carpeta-de-tus-repos]`. El kit lo clona, o reutiliza la copia que ya tienes, y solo
+prepara tu máquina: el equipo ya eligió los repos, el stack, la arquitectura y el plan, unirte no cambia nada de eso, y
+las sesiones siguen donde se quedaron. Los repos se reconocen por su remoto, no por el nombre de la carpeta: un clon que
+tienes con otro nombre se enlaza con el nombre del equipo en vez de clonarse otra vez. Dejar fuera una herramienta al
+unirte solo afecta a tu máquina.
 
 Lo que llegó con el repo del equipo y ejecuta código o guía a los agentes (hooks, servidores MCP, ajustes, skills,
 plugins) espera a que lo apruebes en tu máquina: **Ajustes › Confianza**, o `camaron trust`.

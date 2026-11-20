@@ -97,6 +97,21 @@ def test_uninstall_removes_it(kit, claude):
     assert not any("camarones MCP" in s.label for s in uninstall.steps(backup=False))
 
 
+def test_a_stale_entry_of_a_linked_repo_does_not_hide_its_clones_entry(kit, claude):
+    """Found on the sandbox: a repo once registered under the team's name is now a clone kept under another name,
+    linked as <workspace>/<name> (repos_here). Claude Code still has an empty entry for the old path, which resolves to
+    the clone too; the entry that holds the server is the one uninstall must find and remove."""
+    cfg, _ = claude
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    data = {"projects": {str(kit.ws / "api"): {"mcpServers": {}}}}            # left by an older registration
+    cfg.write_text(json.dumps(data), encoding="utf-8")
+    assert kit.services.links.link(kit.ws / "api", kit.ws / "api-svc")
+    assert kit.services.agent_config.wire_repo_mcp("api", log=lambda _: None) is True
+    assert kit.services.agent_config.repo_mcp_registered("api")
+    assert kit.services.agent_config.unwire_repo_mcp("api") is True
+    assert "camarones" not in json.loads(cfg.read_text(encoding="utf-8"))["projects"][str((kit.ws / "api-svc").resolve())]["mcpServers"]
+
+
 @pytest.mark.parametrize("cli, portable", [("camaron", True), ("camarones", True), ("./camaron.command", False)])
 def test_the_shared_mcp_entry_names_the_cli_not_a_path_on_this_machine(kit, monkeypatch, cli, portable):
     """.mcp.json is committed to the team's cam-docs: with a global install it must say `camaron mcp`, not a path.

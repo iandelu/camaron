@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.94.0-ff875f?style=flat-square" alt="Versión 4.94.0">
+  <img src="https://img.shields.io/badge/version-4.95.0-ff875f?style=flat-square" alt="Versión 4.95.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -205,10 +205,23 @@ lo que había).
 
 ### 4. En equipo: un solo `cam-docs` para todos
 
-Al crear un proyecto puedes darle la URL del repo `cam-docs` del equipo (en la app, **Unirme a la documentación de mi
-equipo**; en la terminal, `camaron join <url>` o `camaron new <nombre> --from <url>`). Si el repo ya tiene un proyecto,
-lo clona (o reutiliza el que ya tienes) y solo prepara tu máquina: repos, stack, arquitectura y plan ya los decidió el
-equipo. Si está vacío, tu primera subida lo publica. Sin URL, el repo es local y el remoto se añade después con
+Al crear un proyecto puedes darle la URL del repo `cam-docs` del equipo. En la app, las dos puertas llegan al mismo
+sitio: **Elegir carpeta** sobre un repo o una carpeta de repos sin `cam-docs` pregunta «¿Tu equipo ya tiene su
+documentación en un repo cam-docs?» (nada marcado; **Continuar** espera la respuesta): **Sí** pide la URL y la trae a esa
+misma carpeta, **No** empieza un proyecto nuevo. **Unirme a la documentación de mi equipo** pide la URL y después la
+carpeta donde están (o estarán) tus repos. En la terminal, `camaron join <url> [carpeta-de-tus-repos]` o
+`camaron new <nombre> --from <url>`. Si el repo ya tiene un proyecto, lo clona (o reutiliza el que ya tienes; si está en
+otra carpeta, abre ese y busca tus repos también en la que elegiste) y solo prepara tu máquina: repos, stack,
+arquitectura y plan ya los decidió el equipo, y unirte no cambia nada de eso (`git status` en `cam-docs` queda limpio).
+Los repos se reconocen por su remoto, no por el nombre de la carpeta: si tienes `operator-adapter.git` clonado como
+`operator-adapter` y el equipo lo llama `wallet-adapter`, se enlaza `wallet-adapter` a tu clon en vez de clonarlo otra
+vez; una carpeta con ese nombre que es otra cosa se deja como está. El primer paso de la unión lo enseña repo a repo
+(*aquí*, *enlazado desde…*, *falta: se clonará*, *carpeta ocupada*) con **Buscar en otra carpeta…**, que solo recuerda tu
+máquina. En **Herramientas**, dejar una fuera solo afecta a tu máquina (se guarda en la caché, nunca en `workspace.yaml`):
+el plan del equipo sigue igual. Si en esa carpeta hay un `cam-docs` que hizo el kit y nunca se compartió (sin remoto ni
+commits), pregunta antes de tocar nada y solo con tu sí lo aparta como `cam-docs.local-<fecha>` (`camaron join …
+--set-aside`); nunca borra nada. `uninstall` quita los enlaces a tus clones y deja los clones. Si el repo del equipo está
+vacío, tu primera subida lo publica. Sin URL, el repo es local y el remoto se añade después con
 `camaron remote <url>`. Si git no tiene acceso, la app pide un token y lo guarda en el llavero del sistema, nunca en el
 proyecto.
 
@@ -743,13 +756,16 @@ cualquier cambio vuelve a preguntar. `camaron plugins disable gemini` lo apaga e
 <summary><strong>Para scripts: proyectos y unirse sin preguntas</strong></summary>
 
 - `camaron projects --inspect <carpeta> --json` solo lee e imprime `case` (`project`, `repo`, `umbrella`, `code` o
-  `empty`), `kind`, `workspace`, `docs_root`, `name`, `repos`, `siblings` y `warning` (`home`, `no-git` o vacío).
+  `empty`), `kind`, `workspace`, `docs_root`, `name`, `repos`, `siblings`, `warning` (`home`, `no-git` o vacío) y `stray`
+  (un proyecto hecho aquí y nunca compartido).
 - `--adopt <carpeta> [--name X]` crea y registra el `cam-docs/`; `--git-init <carpeta>` hace `git init` en el código
   (sin commits ni push).
 - Un rechazo sale con 1 y `{"error": código, "detail": …}`: `taken`, `home`, `no-git` o `git-init`.
-- `camaron join URL --no-open` (y `new NOMBRE --no-open`) imprime `{"path": …}`; sin acceso,
-  `{"error", "host", "detail"}` con `auth`, `denied`, `not-found`, `network` o `unknown`. El token de un repo privado va
-  en `CAMARONES_JOIN_TOKEN`, nunca en la línea de comandos.
+- `camaron join URL [CARPETA] --no-open` (y `new NOMBRE --no-open`) imprime `{"path": …}`, con `"elsewhere"` cuando
+  abre la documentación del equipo que ya tenías en otra carpeta; sin acceso, `{"error", "host", "detail"}` con `auth`,
+  `denied`, `not-found`, `network` o `unknown`; un `cam-docs` hecho aquí y nunca compartido, `{"error": "stray",
+  "aside"}` (repítelo con `--set-aside` para apartarlo). El token de un repo privado va en `CAMARONES_JOIN_TOKEN`, nunca
+  en la línea de comandos.
 
 </details>
 

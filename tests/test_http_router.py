@@ -30,6 +30,7 @@ AREA: dict[tuple[str, str], str] = {
     ], "board"),
     **dict.fromkeys([
         ("POST", "/api/app/onboard/arch"), ("POST", "/api/app/onboard/done"), ("POST", "/api/app/onboard/repos"),
+        ("GET", "/api/app/onboard/repos-here"), ("POST", "/api/app/onboard/search"),
         ("POST", "/api/app/onboard/scan"), ("POST", "/api/app/onboard/setup"), ("GET", "/api/app/onboard/stack"),
         ("POST", "/api/app/onboard/stack"), ("GET", "/api/app/onboard/state"), ("POST", "/api/app/onboard/step"),
         ("GET", "/api/app/onboard/tools"),

@@ -19,6 +19,8 @@ def app_onboard(name: str, b: dict) -> tuple[dict, int]:
         return onboard.go_to(str(b.get("id", ""))), 200
     if name == "repos":
         return onboard.set_repos(b.get("repos")), 200
+    if name == "search":
+        return onboard.search(inputs.text(b, "folder") or ""), 200
     if name == "setup":
         system = inputs.text_list(b, "system")
         comps = [c for c in inputs.text_list(b, "components") if c in services.current().components.ALL_COMPONENTS] if "components" in b else services.current().components.components()
@@ -64,12 +66,18 @@ def get_tools(req: Request) -> Response:
     return json_response({"rows": rows, "required_ok": all(r["ok"] for r in rows if r["kind"] == "t_required")})
 
 
+@route("GET", "/api/app/onboard/repos-here", access=Access.APP)
+def get_repos_here(req: Request) -> Response:
+    from lib import onboard
+    return json_response(onboard.join_repos())
+
+
 @route("GET", "/api/app/onboard/stack", access=Access.APP)
 def get_stack(req: Request) -> Response:
     from lib import onboard
     return json_response(onboard.stack_rows())
 
 
-@route("POST", "/api/app/onboard/{name:step|repos|setup|scan|stack|arch|done}", access=Access.APP)
+@route("POST", "/api/app/onboard/{name:step|repos|search|setup|scan|stack|arch|done}", access=Access.APP)
 def post_onboard(req: Request) -> Response:
     return json_response(*app_onboard(req.params["name"], req.body))
