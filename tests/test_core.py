@@ -4,6 +4,11 @@ from __future__ import annotations
 import importlib
 import os
 import re
+import subprocess
+import sys
+import time
+
+import pytest
 
 from conftest import KIT_DIR, purge_kit_modules
 
@@ -71,3 +76,86 @@ def test_now_is_utc_to_the_second():
     """now() moved from docs.py to core/clock.py (F5a): an ISO time in UTC without microseconds, as .state.json keeps it."""
     now = importlib.import_module("lib.core.clock").now()
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", now)
+
+
+SLEEPS = [sys.executable, "-c", "import time; time.sleep(30)"]
+
+
+def test_a_command_past_its_timeout_is_killed_and_raises(kit):
+    from lib.core import process
+    calls = (lambda: process.out(SLEEPS, timeout=1),
+             lambda: process.run(SLEEPS, timeout=1, check=False, capture=True))
+    for call in calls:
+        started = time.monotonic()
+        with pytest.raises(subprocess.TimeoutExpired):
+            call()
+        assert time.monotonic() - started < 15                    # back long before the child would have ended
+
+
+def test_a_command_inside_its_timeout_answers_as_before(kit):
+    from lib.core import process
+    assert process.out([sys.executable, "-c", "print('hi')"], timeout=30) == "hi"
+    assert process.run([sys.executable, "-c", "pass"], timeout=30, check=False).returncode == 0
+
+
+def test_no_timeout_leaves_subprocess_run_as_it_was(kit, monkeypatch):
+    from lib.core import process
+    monkeypatch.setattr(process, "IS_WIN", False)
+    seen = []
+
+    def fake(cmd, **kw):
+        seen.append(kw)
+        return subprocess.CompletedProcess(cmd, 0, "x\n", "")
+    monkeypatch.setattr(process.subprocess, "run", fake)
+    assert process.out(["tool"]) == "x"
+    assert "timeout" not in seen[0]
+
+
+def traps_term(marker, then="sys.exit(143)"):
+    return [sys.executable, "-c", "import pathlib, signal, sys, time; signal.signal(signal.SIGTERM, lambda *a: "
+            f"(pathlib.Path(sys.argv[1]).write_text('x'), {then})); time.sleep(30)", str(marker)]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGTERM to send a console program: its tree is killed")
+def test_a_timed_out_command_is_asked_to_stop_before_it_is_killed(kit, tmp_path):
+    from lib.core import process
+    marker = tmp_path / "cleaned"                  # git drops its refs/*.lock on SIGTERM; SIGKILL leaves them behind
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(traps_term(marker), timeout=2, check=False, capture=True)
+    assert marker.exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no SIGTERM to send a console program: its tree is killed")
+def test_a_command_that_will_not_stop_is_killed_after_the_grace(kit, tmp_path, monkeypatch):
+    from lib.core import process
+    monkeypatch.setattr(process, "TERM_GRACE", 0.5)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(traps_term(tmp_path / "m", then="None"), timeout=2, check=False, capture=True)
+    assert time.monotonic() - started < 15
+
+
+# Git for Windows' git.exe is a launcher that starts the real git, which holds the pipes: killing the launcher alone
+# leaves subprocess waiting on them for as long as the real git runs. A timeout must not wait on such a child.
+GRANDCHILD = [sys.executable, "-c", "import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', "
+              "'import time; time.sleep(30)'], stdout=sys.stdout, stderr=sys.stderr); time.sleep(30)"]
+
+
+def test_a_timeout_does_not_wait_on_a_child_the_command_started(kit):
+    from lib.core import process
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(GRANDCHILD, timeout=1, check=False, capture=True)
+    assert time.monotonic() - started < 15
+
+
+def test_on_windows_a_timeout_kills_the_command_and_what_it_started(kit, monkeypatch):
+    from lib.core import process
+    killed = []
+    monkeypatch.setattr(process, "IS_WIN", True)
+    monkeypatch.setattr(process, "kill_tree", lambda pid, sig=None: killed.append(pid) or True)
+    with pytest.raises(subprocess.TimeoutExpired):
+        process.run(SLEEPS, timeout=1, check=False, capture=True)
+    assert len(killed) == 1
+    assert process.out([sys.executable, "-c", "print('hi')"], timeout=30) == "hi"
+    assert process.run([sys.executable, "-c", "import sys; sys.exit(3)"], timeout=30, check=False).returncode == 3

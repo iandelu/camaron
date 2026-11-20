@@ -14,10 +14,10 @@ test('a translation that is missing or older than the English page says so', () 
 })
 
 test('trust and freshness banners, the cited files of a stale page included', () => {
-  expect(pageBanners(d({ trust: 'needs-reconfirm' }), {}, '')).toEqual([{ tone: 'info', key: 'banner.needs-reconfirm' }])
+  expect(pageBanners(d({ trust: 'needs-reconfirm' }), {}, '')).toEqual([{ tone: 'warn', key: 'banner.needs-reconfirm' }])
   expect(pageBanners(d({ fresh: 'stale', freshness: { missing: ['a.java'], changed: ['b.java'] } }), {}, ''))
     .toEqual([{ tone: 'warn', key: 'banner.stale', code: 'a.java, b.java' }])
-  expect(pageBanners(d({ trust: 'draft' }), {}, '')).toEqual([{ tone: 'warn', key: 'banner.draft', draft: true }])
+  expect(pageBanners(d({ trust: 'draft' }), {}, '')).toEqual([{ tone: 'note', key: 'banner.draft', draft: true }])
   expect(pageBanners(d({ trust: 'draft' }), { space: 'notes' }, '')).toEqual([])     // working notes are drafts by nature
 })
 

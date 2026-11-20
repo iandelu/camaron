@@ -43,6 +43,8 @@ def arch_validate() -> tuple[bool, str]:
     r = run(["likec4", "validate", "."], cwd=arch_dir(), check=False, capture=True)
     text = re.sub(r"\x1b\[[0-9;]*m", "", (r.stdout or "") + (r.stderr or ""))
     keep = [l for l in text.splitlines() if re.search(r"ERROR|Line \d+|Invalid|Valid|WARN .*layout", l)]
+    if r.returncode and not keep:  # LikeC4 failed in a way the filter does not know (node crashed): show its own words
+        keep = [l for l in text.splitlines() if l.strip()][-10:]
     return r.returncode == 0, "\n".join(keep[-40:])
 
 

@@ -151,6 +151,12 @@ unit, then pages waiting for review, then nothing ("All caught up"). Its button 
 | Building the portal (`portal`), or nothing left | **Read the docs** |
 | Anything else | **See the plan** |
 
+When you open the window the Summary brings in the team's work by itself (never uploads) and shows the outcome in one
+line; if the team's changes clash with yours it changes nothing, names the files and offers **Open a terminal here**.
+Offline, it says you are working with the latest you brought in; any other failure says it could not bring in the
+team's changes, with what went wrong beneath. A clash leaves the line once you have the team's work (resolved in a
+terminal, or uploaded since), and an unreachable repo once an upload has reached it.
+
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.
@@ -401,27 +407,79 @@ Every repo's dependencies, read from its manifests and lockfiles without AI: Qua
 
 ## Docs
 
-Reading is the portal's; this place opens it and does the work it cannot (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). Four tabs sit under the title: **Read**, **Wikis**, **Decisions** and **Interviews**.
+Reading is the portal's; this place opens it, shows the state of the docs and does the work the portal cannot (`#/docs`,
+<kbd>g</kbd> <kbd>d</kbd>). Four tabs sit under the title: **Read**, **Wikis**, **Decisions** and **Interviews**. The
+status, the counters and the unanswered questions are read from what the project already knows, with no model; writing
+a wiki uses the OpenWiki provider or this machine's agent, and the chat uses the agent and model you pick.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
-**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have changes
-to bring in or never shared (and when you last did), and **Share now** (a checkpoint, then your work rebased on the team's
-and pushed). Its fold, **The team's repo**, holds the URL: paste it and **Save** (`camaron remote`). With a remote it
-also offers **Check** (asks the remote what is new) and **Share every time progress is saved**
-(`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched; something that looks
-like a secret is not published. A share or a check that fails says why — the server cannot be reached (connection, VPN
-or proxy), it wants a token or refuses yours, the repo is not there — with git's own line beneath; a token problem
-links to **Settings › Tokens** for that server.
+**The team strip.** Above the tabs, on every Docs tab, the team's `cam-docs` repo: whether you are up to date, have
+changes to bring in or to upload, or never shared; a line — n to bring in · m to upload · last time … (the last upload
+or bring-in that left you in step), plus n unsaved when you have changed pages (never the files the kit writes on its
+own: the doc status, `llms.txt`, the freshness fingerprints, the usage counters) — and three actions, the useful one as
+the primary button: **Bring in changes** (`camaron pull`, the team's work rebased in), **Upload changes**
+(`camaron push`, a checkpoint, then yours pushed; it refuses when the team has new changes, so bring them in first) and
+**Sync with the team** (`camaron share`, bring in then upload). Its fold, **Team repo**, holds the URL: paste it and
+**Save** (`camaron remote`). With a remote it shows the same line and actions, **Check** (asks the remote what is new)
+and **Upload on save** (`camaron share --auto on|off`, this machine only). A conflict is undone and nothing is touched;
+something that looks like a secret is not published. When the team's changes clash with yours, a rebase is left half
+way, or your unsaved changes had to go to git's stash, it says so and offers **Open a terminal here**. Uploading or
+syncing while the window is still bringing in the team's work, or over a rebase or merge left half way, touches nothing
+and says so. Asking the team's server gives up after a minute, and ssh never stops to ask for a passphrase or a host key
+(unless you set ssh up for git yourself). An action or a
+check that fails says why — the server cannot be reached (connection, VPN or proxy), it wants a token or refuses yours,
+the repo is not there — with git's own line beneath; a token problem links to **Settings › Tokens** for that server.
 
 ### Read
 
-- **Read the docs**, **Review drafts**, **Search or ask** and **See CI** open the portal in your browser.
+- The row of chips under the tabs (a screen reader announces it as "Documentation status") counts what the project
+  already knows: drafts, pages to reconfirm, pages that cite deleted code, translations pending and feedback pending;
+  how many wikis are up to date, out of date, written under an earlier scope or missing; and the C4 (up to date, out of
+  date, not built yet, or no model to build yet). A count at zero is left out, and a line says so when no chip applies.
+  While the wikis are being read it shows a placeholder. **Wikis out of date** is a button: it opens the **Wikis** tab
+  at the first such card. The C4 chip is read again when a C4 build ends successfully; a failed one leaves it as it was.
+- **Read the docs**, **Review drafts**, **Search or ask** and **See CI** open the portal in your browser. **Review
+  drafts** shows how many drafts there are (`Review drafts · 4`) and no number when there are none.
 - **Build the C4 explorer** builds the interactive LikeC4 map the portal shows under Architecture; **View** opens it.
-- **Ask with AI** answers a question only from the docs, through this machine's agent, and lists its sources as
-  buttons to the portal. It waits up to 90 seconds; `ask.ai: false` in `workspace.yaml` turns it off and `ask.model`
-  picks the model.
+- **Ask with AI** is a field and an **Ask** button under the C4 card, and the chat they open: a panel on the right of
+  the Docs place (a drawer over the page in a narrow window) that stays open while you move between the Docs tabs.
+  **Ask** sends the question in the field and opens the panel on it; with the field empty it only opens the panel, and a
+  question that cannot go yet stays in the field. Opening puts the focus in the panel's field; <kbd>Esc</kbd> in the
+  panel, or **Close**, closes it and gives the focus back to what opened it. <kbd>Enter</kbd> sends and
+  <kbd>Shift</kbd> <kbd>Enter</kbd> starts a new line.
+- The chat answers **only from the docs**: one headless call with no tools, in an empty folder, so it does not read the
+  code. Each answer says who wrote it and lists its sources as buttons that open the page in the portal. The last few
+  turns go along as context, so a follow-up can be short. When no page answers, it says so and the question joins
+  **Unanswered questions**. If the agent gives nothing (it is not signed in, or does not have that model), the turn
+  fails and says why. An answer waits up to 90 seconds; past that the turn fails and suggests a faster model from the
+  picker.
+- The picker at the top of the panel lists, for each agent installed on this machine, the models it can be asked for,
+  each option naming the agent and the model (`Claude Code · haiku`): Claude's haiku, sonnet and opus; Codex's single
+  default entry, which names the model set for Codex in **Settings** (`Codex · default (gpt-5.6-terra)`); the models
+  Ollama has, for OpenCode (only when both are installed, otherwise OpenCode's default); or the single default of a
+  command agent. The kit installs no model: an agent that is not on this machine is not listed. The first chat opens on
+  the agent and model Ask's AI answer uses (the one routed for small jobs; `ask.model` in `workspace.yaml` sets the
+  model), so it costs the same when Ask's model is one the picker offers; otherwise it opens on that agent's cheapest
+  entry, or on the first agent's when Ask's agent is not installed. After a turn that worked, the pick is kept on this
+  machine (`chat` in `~/.camarones.json`) and the next chat opens on it. The pick cannot be changed while an answer is
+  being written, nor while `ask.ai` is off.
+- A small shrimp under the conversation shows where the turn is: it thinks while the answer is awaited (the label reads
+  "Peeling your docs…") and talks while the text is revealed in steps ("Answering…"); a click on the text shows it all.
+  When your system asks for reduced motion the shrimp stays still and the answer simply appears. Sending a question
+  scrolls the conversation down to it; a new answer is shown from its start, and the list does not move while it is
+  revealed.
+- The conversation lives in the window's memory, nothing is saved: it survives going to another place and coming back
+  (open the panel again), one question runs at a time, and **Clear** empties it at once and throws away an answer still
+  being written: the next question can go once that dropped answer has ended (the shrimp keeps thinking until then). If
+  the project's server is still answering an earlier question this window lost track of (the connection dropped while
+  it answered, or the window was reloaded), a new one is refused until that answer ends, and the panel says so. It is
+  gone when the window is closed or reloaded, or the project is switched. With no agent installed on this machine, or
+  with `ask.ai: false` in `workspace.yaml`, the panel says so and, for the first, links to **Settings**.
+- **Unanswered questions** appears under the chat's field only when there are some: the questions asked on this machine
+  (in the portal's search or Ask, in this chat, or by an agent) that no page answered, each with how many times it was
+  asked (`×3`). **Add to open questions** sends it to the open questions of the next interview; **Dismiss** forgets it.
 - **All commands**, folded, has board, checkpoint, ci, export, portal, removed and translated.
 
 <!-- portal:#/docs -->
@@ -432,11 +490,24 @@ The wiki of each repo (`#/docs/wikis`).
 
 <!-- go:docs/wikis -->
 
-- **Filtered by repo** (`?repo=<name>`): that repo's block comes first and the others fold.
-- **One block per repo**: **Generate the wiki** writes that repo's OpenWiki. When the repo was not chosen for a wiki,
-  it chooses it; when it has no brief yet, it writes a starter brief without AI first. It is off, with the reason,
-  when the repo is not cloned, no wiki engine is installed, or another repo's wiki is being generated (one at a time).
-  Once the wiki has pages: **View** and **Wiki graph · {repo}** (build its graph).
+- **One card per repo**, in a grid that fills the window. Each card shows its state with an icon and a word, the figures
+  the repo has (its pages, when the wiki was written, and whether its brief is the AI's or the starter one) and **one**
+  primary action that follows the state: **Generate the wiki** with no pages yet, **Update** when the code has changed
+  since the pages were written, **Expand** when the wiki was written under an earlier scope, **Try again** when the last
+  run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
+- **Filtered by repo** (`?repo=<name>`, from a repo's page): that repo's card comes first and the others fold under
+  **The other wikis**.
+- **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
+  has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
+  the pages already there. While a wiki is being written its button reads **Generating…** with a running count of
+  seconds, and the card pulses (not when your system asks for reduced motion). It does so too when you come back to
+  Docs during a run started earlier, and the cards and Read's chips catch up when the run ends. One wiki runs at a time.
+- The action that writes pages is off, with the reason, when the repo is not cloned, no wiki engine is installed, or
+  another repo's wiki is being generated; **View** never is. The **Wiki graph · {repo}** row (**Build the graph** or
+  **Rebuild the graph**) appears once the wiki has pages, when the graph is missing or older than them, and stays to
+  show that build; after a failed graph build its button reads **Try again**. If the wikis cannot be read, one notice
+  with **Try again** says so and the actions stay off; if only a second read fails, the cards keep what was read and the
+  notice says it may be out of date.
 
 ### Decisions
 
@@ -514,7 +585,7 @@ This machine and the kit on it (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Six ta
 
 Saved hosts with **Test** and **Delete**; a form (host, kind, token) whose **Check and save** checks the token against the server first (**Save it anyway** if you insist). Tokens live in the system keychain, never in the project and never on a command line. SonarQube only over https (http only on localhost)
 
-The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a share Docs could not make), says sharing with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
+The address `#/settings/tokens?host=<host>&kind=sonarqube` (or `gitlab`, `github`) opens the form filled in, with a notice saying why: a SonarQube host comes from Quality; a forge host, or one with no kind (a step with the team that Docs could not take), says bringing in or uploading changes with the team needs its token. The old `#/machine?host=…&kind=…` still lands on it.
 
 ### Skills
 
@@ -592,7 +663,7 @@ global install. It is the bench for changing the kit:
 | "I could not start the project's server" | The box shows the server's error; `camaron doctor` in that folder usually says what is missing |
 | A button you expected is not in the browser portal | On purpose: the browser portal runs nothing on your machine. Do it here |
 | You want Electron downloaded again | Delete `~/.camarones/desktop` and run `camaron app` |
-| "I can't reach <server>: check the connection, VPN or proxy" on **Share now** | The team's server is only on your company's network: connect the VPN (or set the proxy) and share again |
+| "I can't reach <server>: check the connection, VPN or proxy" on **Bring in changes**, **Upload changes** or **Sync with the team** | The team's server is only on your company's network: connect the VPN (or set the proxy) and try again |
 
 On Linux with restricted user namespaces (Ubuntu 24.04 and later) the kit starts the app with `--no-sandbox`; its
 windows only ever load your project's local server.

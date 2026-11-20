@@ -23,6 +23,13 @@ test('the Settings tour visits every tab', () => {
   for (const v of VIEWS.settings.slice(1)) expect(places.has(`settings/${v}`), v).toBe(true)
 })
 
+// Each step opens the tab its target is on: the health, the portal buttons, the C4 and the chat's entry on Read, the cards on Wikis.
+test('the Docs tour: the team and the tabs, then health, portal, C4, the wikis on their tab and the chat', () => {
+  const read = (...targets) => targets.map((target) => ({ section: 'docs', target }))
+  expect(TOURS.docs).toEqual([...read('docs-team', 'tabs-docs', 'docs-health', 'docs-portal', 'docs-c4'),
+    { section: 'docs/wikis', target: 'docs-wikis' }, ...read('docs-chat')])
+})
+
 test('old tour ids still resolve', () => {
   expect(tourAlias('team')).toBe('docs')
   expect(tourAlias('summary')).toBe('flow')

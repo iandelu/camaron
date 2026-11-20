@@ -401,12 +401,12 @@ reescribe están en `CONVENTIONS.md` sección 6.
   `review-fixes` que la IA aplica en la siguiente sesión.
 - Con el idioma en español, **Editar** edita la traducción (`docs/i18n/es/…`).
 - Editar una página ✅ la pasa a **⚠️ pendiente de reconfirmar** hasta que alguien la vuelva a mirar.
-- No edites a mano lo generado (`llms.txt`, `llms-full.txt`, `docs/.status.json`, los visores). Las wikis mejor regenerarlas con
-  **Generar la wiki** (app, **Docs**): una actualización de OpenWiki puede reescribir lo que cambies.
+- No edites a mano lo generado (`llms.txt`, `llms-full.txt`, `docs/.status.json`, los visores). Las wikis mejor regenerarlas desde la
+  app (**Docs**) que editarlas: una actualización de OpenWiki puede reescribir lo que cambies.
 
 ## 7. OpenWiki: una wiki por repo
 
-App → **Docs** → **Generar la wiki** (log en directo), asistente → **📚 Wikis**, o `camaron wiki <repo>` en una terminal. La
+App → **Docs** → **Wikis** → la tarjeta del repo (**Generar la wiki**, o **Actualizar** cuando el código ha cambiado; log en directo), asistente → **📚 Wikis**, o `camaron wiki <repo>` en una terminal. La
 wiki se guarda en `cam-docs/wikis/<repo>/` (el repo ve un enlace `openwiki/` sin versionar); la lees en el portal del
 navegador (**Docs** → **Wikis**), donde sus páginas aparecen como `wikis/<repo>/…`. Usa el proveedor de OpenWiki si hay uno configurado (`openwiki auth configure <proveedor>`);
 si no, Claude Code o Codex. Los archivos que OpenWiki añade al propio repo (`AGENTS.md`, `CLAUDE.md`, `.github/`) se quitan
@@ -416,10 +416,13 @@ Cada wiki es una sesión de agente completa, así que solo la llevan los repos q
 **Elegir qué repos tienen wiki** (se guarda como `wiki: true` en `.camarones/workspace.yaml`). Elige los servicios con
 lógica, no librerías ni repos de CI. La primera wiki de un repo espera a su brief (`wikis/<repo>/INSTRUCTIONS.md`, que
 escribe la unidad repo-brief) para usar tu glosario; `camaron wiki <repo> --force` se salta esa comprobación, y el comando ni elige el repo ni escribe un brief: pide el repo
-clonado y un motor. En **Docs** de la app, todos los repos tienen **Generar la wiki**: si el repo aún no está elegido, lo
-elige, y si no tiene brief, antes escribe uno inicial con el análisis estático (sin IA), que la unidad repo-brief
-sustituye después. El botón queda cerrado, con el motivo, si el repo no está clonado (clónalo desde **Ajustes**) o no
-hay ningún motor de wiki instalado. Se lanzan de una en una (mientras se genera la de un repo, el botón de los demás espera), y un lote se para en cuanto el motor se queda sin cuota o sin sesión, en vez de fallar todos los repos
+clonado y un motor. En **Docs › Wikis** de la app, la tarjeta de cada repo muestra el estado de su wiki con una sola
+acción; si aún no tiene páginas, es **Generar la wiki**: si el repo aún no está elegido, lo elige, y si no tiene brief,
+antes escribe uno inicial con el análisis estático (sin IA), que la unidad repo-brief sustituye después. **Actualizar** y
+**Ampliar** lanzan el mismo OpenWiki sobre una wiki que ya tiene páginas. **Reintentar** aparece tras una ejecución
+fallida: tras una primera ejecución fallida (aún sin páginas) repite la generación inicial. La acción queda cerrada, con
+el motivo, si el repo no está clonado (clónalo desde **Ajustes**) o no hay ningún motor de wiki instalado. Se lanzan de
+una en una (mientras se genera la de un repo, las de los demás esperan), y un lote se para en cuanto el motor se queda sin cuota o sin sesión, en vez de fallar todos los repos
 que quedan.
 
 ## 8. CI
@@ -511,7 +514,7 @@ que carga cada sesión de un agente antes de leer una página, frente a `context
 evidencia, escribir, aceptar, rechazar; todos aceptan `--json`), `history [--months 12]` (puntos calientes, a quién preguntar en cada repo, ficheros que cambian juntos, leídos de git sin
 IA en `docs/overview/history.md`), `catalog [--json|--check]` (cada comando con dónde vive: portal, app de escritorio o
 solo CLI, y sus argumentos) y `projects [--json]` (los proyectos registrados en esta máquina; `--inspect DIR` dice qué es una carpeta, `--adopt DIR [--name NOMBRE]` la convierte en proyecto y `--git-init DIR` pone en git su código: los tres aceptan `--json` y un rechazo es `{"error": taken|home|no-git|git-init, "detail"}`), `join URL --no-open` / `new NOMBRE --no-open` (imprimen `{"path"}`; un acceso rechazado es `{"error": auth|denied|not-found|network|unknown, "host", "detail"}`, y el token de un repo privado llega en `CAMARONES_JOIN_TOKEN`, nunca en la línea de comandos), `config [get|set CLAVE VALOR]` (lang, model, codex_model: los ajustes del asistente; sessions: `canvas` o `window`, dónde abre una sesión la app de escritorio), `trust --json` y `hooks --json` (lo pendiente de
-aprobar, si los hooks del método están activos), **Plan › Sincronizar** en el portal (lo mismo que `share`, con dónde estás) y `app` (la app de escritorio: las secciones del proyecto por tareas, el portal para leer,
+aprobar, si los hooks del método están activos), `pull` (trae el trabajo del equipo, sin subir), `push` (sube lo tuyo; se niega si el equipo tiene cambios nuevos), **Plan › Sincronizar** en el portal (las mismas tres acciones, con dónde estás) y `app` (la app de escritorio: las secciones del proyecto por tareas, el portal para leer,
 donde se lanzan ejecuciones, wikis, análisis y comprobaciones; el portal del navegador solo las enseña).
 
 **Cambios de código.** `camaron change start "<título>" --item WI-n [--repo R]… [--files repo:ruta,…] [--base REF]

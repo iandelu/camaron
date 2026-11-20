@@ -16,7 +16,7 @@ export const TOURS = {
   board: at('board', 'board-columns', 'board-add', 'board-help'),
   quality: at('quality', 'q-verdict', 'q-areas', 'q-repos'),
   libs: at(LIBS, 'libs-actions', 'libs-filters', 'libs-table'),
-  docs: at('docs', 'docs-team', 'tabs-docs', 'docs-portal', 'docs-c4', 'docs-ask'),
+  docs: [...at('docs', 'docs-team', 'tabs-docs', 'docs-health', 'docs-portal', 'docs-c4'), ...at('docs/wikis', 'docs-wikis'), ...at('docs', 'docs-chat')],
   interviews: at('docs/interviews', 'iv-mode', 'iv-questionnaire', 'iv-agents'),
   settings: [...at('settings', 'tabs-settings', 'mc-guide', 'mc-setup', 'mc-settings', 'mc-repos'), ...at('settings/tokens', 'mc-tokens'),
     ...at('settings/skills', 'team-skills'), ...at('settings/plugins', 'team-plugins'), ...at('settings/trust', 'team-trust'),

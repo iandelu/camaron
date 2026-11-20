@@ -41,6 +41,22 @@ def test_a_mixed_folder_keeps_everything_but_the_hidden_tools(tmp_path):
     assert Path(shutil.which("tidy", path=path)).resolve() == tidy.resolve()
 
 
+def test_a_kept_tool_still_finds_the_folder_it_looks_up_beside_itself(tmp_path):
+    """npm's global bin holds `likec4.cmd` next to `node_modules/`, which the shim reads from its own folder."""
+    try:
+        (tmp_path / "probe").symlink_to(tmp_path, target_is_directory=True)
+    except OSError:
+        pytest.skip("this machine cannot make links (see the next test)")
+    mixed = tmp_path / "mixed"
+    tool(mixed, "gitleaks")
+    tool(mixed, "likec4")
+    (mixed / "node_modules" / "likec4").mkdir(parents=True)
+    (mixed / "node_modules" / "likec4" / "likec4.mjs").write_text("", encoding="utf-8")
+    shadow = Path(masked_path(str(mixed), HIDDEN - {"likec4"}))
+    assert shadow != mixed and shutil.which("gitleaks", path=str(shadow)) is None
+    assert (shadow / "node_modules" / "likec4" / "likec4.mjs").is_file()
+
+
 def test_where_links_cannot_be_made_a_mixed_folder_stays_as_it_is(tmp_path, monkeypatch):
     def refuse(*_a, **_kw):
         raise OSError("no symlink rights")

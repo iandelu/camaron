@@ -154,6 +154,12 @@ pelar». Su botón depende de qué paso sea:
 | Construir el portal (`portal`), o no queda nada | **Leer la documentación** |
 | Cualquier otra cosa | **Ver el plan** |
 
+Al abrir la ventana, el Resumen trae solo el trabajo del equipo (nunca sube) y muestra el resultado en una línea; si los
+cambios del equipo chocan con los tuyos, no toca nada, nombra los ficheros y ofrece **Abrir una terminal aquí**. Sin
+conexión, dice que trabajas con lo último que trajiste; cualquier otro fallo dice que no pudo traer los cambios del
+equipo, con lo que falló debajo. Un choque deja la línea en cuanto tienes el trabajo del equipo (resuelto en una
+terminal, o subido después), y un repo inalcanzable en cuanto una subida lo alcanza.
+
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en
@@ -411,28 +417,88 @@ Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la
 
 ## Docs
 
-Leer es cosa del portal; este lugar lo abre y hace el trabajo que él no puede (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). Bajo el título hay cuatro pestañas: **Leer**, **Wikis**, **Decisiones** y **Entrevistas**.
+Leer es cosa del portal; este lugar lo abre, enseña el estado de la documentación y hace el trabajo que el portal no
+puede (`#/docs`, <kbd>g</kbd> <kbd>d</kbd>). Bajo el título hay cuatro pestañas: **Leer**, **Wikis**, **Decisiones** y
+**Entrevistas**. El estado, los contadores y las preguntas sin respuesta se leen de lo que el proyecto ya sabe, sin
+modelo; escribir una wiki usa el proveedor de OpenWiki o el agente de esta máquina, y el chat usa el agente y el modelo
+que elijas.
 
 <!-- go:docs -->
 <!-- tour:docs -->
 
 **La franja del equipo.** Encima de las pestañas, en todas las de Docs, el repo `cam-docs` del equipo: si estás al día,
-tienes cambios por traer o nunca compartiste (y cuándo lo hiciste por última vez), y **Compartir ahora** (un checkpoint,
-después tu trabajo rebasado sobre el del equipo y subido). Su pliegue, **Repo del equipo**, guarda la URL: pégala y
-**Guardar** (`camaron remote`). Con remoto ofrece además **Comprobar** (pregunta al remoto qué hay de nuevo) y
-**Compartir cada vez que se guarda el progreso** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se
-deshace sin tocar nada; algo que parece un secreto no se publica. Un compartir o una comprobación que falla dice por qué
-—no llega al servidor (conexión, VPN o proxy), pide un token o rechaza el tuyo, el repo no está— con la línea de git
-debajo; un problema de token enlaza a **Ajustes › Tokens** para ese servidor.
+tienes cambios por traer o por subir, o nunca compartiste; una línea —n por traer · m por subir · última vez … (la última
+subida o traída que te dejó al día), más n sin guardar cuando has cambiado páginas (nunca los ficheros que el kit escribe
+por su cuenta: el estado de los docs, `llms.txt`, las huellas de frescura, los contadores de uso)— y tres acciones, la
+útil como botón
+principal: **Traer cambios** (`camaron pull`, el trabajo del equipo rebasado dentro), **Subir cambios**
+(`camaron push`, un checkpoint y después lo tuyo subido; se niega si el equipo tiene cambios nuevos, así que tráelos
+primero) y **Sincronizar** (`camaron share`, traer y después subir). Su pliegue, **Repo del equipo**, guarda la URL:
+pégala y **Guardar** (`camaron remote`). Con remoto muestra la misma línea y acciones, **Comprobar** (pregunta al remoto
+qué hay de nuevo) y **Subir al guardar** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se deshace
+sin tocar nada; algo que parece un secreto no se publica. Cuando los cambios del equipo chocan con los tuyos, hay un
+rebase a medias o tus cambios sin guardar tuvieron que ir al stash de git, lo dice y ofrece **Abrir una terminal aquí**.
+Subir o sincronizar mientras la ventana aún trae el trabajo del equipo, o sobre un rebase o un merge a medias, no toca
+nada y lo dice. Preguntar al servidor del equipo se rinde al minuto, y ssh nunca se para a pedir una frase de paso ni una
+clave de host (salvo que hayas configurado ssh para git tú mismo).
+Una acción o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o proxy), pide un token o
+rechaza el tuyo, el repo no está— con la línea de git debajo; un problema de token enlaza a **Ajustes › Tokens** para
+ese servidor.
 
 ### Leer
 
-- **Leer la documentación**, **Revisar borradores**, **Buscar o preguntar** y **Ver la CI** abren el portal en tu navegador.
+- La fila de chips bajo las pestañas (un lector de pantalla la anuncia como «Estado de la documentación») cuenta lo que
+  el proyecto ya sabe: borradores, páginas por reconfirmar, páginas que citan código borrado, traducciones pendientes y
+  comentarios pendientes; cuántas wikis están al día, desfasadas, escritas con un alcance anterior o sin hacer; y el C4
+  (al día, desfasado, aún sin construir o aún sin modelo que construir). Una cuenta a cero no se muestra, y una línea lo
+  dice cuando no hay ningún chip. Mientras se leen las wikis, enseña un marcador. **Wikis desfasadas** es un botón: abre
+  la pestaña **Wikis** en la primera tarjeta en ese estado. El chip del C4 se vuelve a leer cuando una construcción del
+  C4 termina bien; si falla, se queda como estaba.
+- **Leer la documentación**, **Revisar borradores**, **Buscar o preguntar** y **Ver la CI** abren el portal en tu
+  navegador. **Revisar borradores** muestra cuántos borradores hay (`Revisar borradores · 4`) y ningún número cuando no
+  hay.
 - **Construir el explorador C4** construye el mapa interactivo de LikeC4 que el portal enseña en Arquitectura; **Ver**
   lo abre.
-- **Preguntar con IA** responde una pregunta solo con la documentación, a través del agente de esta máquina, y enlaza
-  sus fuentes en el portal. Espera hasta 90 segundos; `ask.ai: false` en `workspace.yaml` lo apaga y `ask.model` elige
-  el modelo.
+- **Preguntar con IA** es un campo y un botón **Preguntar** bajo la tarjeta del C4, y el chat que abren: un panel a la
+  derecha del lugar Docs (un cajón sobre la página en una ventana estrecha) que sigue abierto mientras pasas de una
+  pestaña de Docs a otra. **Preguntar** envía la pregunta del campo y abre el panel con ella; con el campo vacío solo
+  abre el panel, y una pregunta que aún no puede salir se queda en el campo. Al abrirse, el foco va al campo del panel;
+  <kbd>Esc</kbd> en el panel, o **Cerrar**, lo cierra y devuelve el foco a lo que lo abrió. <kbd>Intro</kbd> envía y
+  <kbd>Shift</kbd> <kbd>Intro</kbd> empieza una línea nueva.
+- El chat responde **solo con la documentación**: una llamada sin interfaz y sin herramientas, en una carpeta vacía, así
+  que no lee el código. Cada respuesta dice quién la escribió y enlaza sus fuentes con botones que abren la página en el
+  portal. Los últimos turnos van como contexto, así que una pregunta de seguimiento puede ser corta. Cuando ninguna
+  página responde, lo dice y la pregunta pasa a **Preguntas sin respuesta**. Si el agente no da nada (no ha iniciado
+  sesión, o no tiene ese modelo), el turno falla y dice por qué. Una respuesta espera hasta 90 segundos; pasado ese
+  tiempo el turno falla y sugiere elegir un modelo más rápido en el selector.
+- El selector de arriba del panel lista, de cada agente instalado en esta máquina, los modelos a los que se puede
+  preguntar, y cada opción nombra el agente y el modelo (`Claude Code · haiku`): haiku, sonnet y opus de Claude; la
+  única entrada por defecto de Codex, que nombra el modelo fijado para Codex en **Ajustes** (`Codex · por defecto
+  (gpt-5.6-terra)`); los modelos que tiene Ollama, para OpenCode (solo si están instalados los dos; si no, el modelo por
+  defecto de OpenCode); o el único modelo por defecto de un agente de comando. El kit no instala ningún modelo: un agente
+  que no está en esta máquina no aparece. El primer chat se abre con el agente y el modelo que usa la respuesta con IA de
+  Preguntar (el enrutado para trabajos pequeños; `ask.model` en `workspace.yaml` fija el modelo), así que cuesta lo mismo
+  cuando el modelo de Preguntar es uno de los que ofrece el selector; si no, se abre con la entrada más barata de ese
+  agente, o con la del primer agente cuando el agente de Preguntar no está instalado. Tras un turno que funcionó, la
+  elección se guarda en esta máquina (`chat` en `~/.camarones.json`) y el siguiente chat se abre con ella. La elección
+  no se puede cambiar mientras se escribe una respuesta, ni mientras `ask.ai` está desactivado.
+- Un camarón pequeño bajo la conversación enseña en qué punto está el turno: piensa mientras se espera la respuesta (la
+  etiqueta dice «Pelando tus docs…») y habla mientras el texto se va mostrando por pasos («Contestando…»); un clic en
+  el texto lo muestra entero. Si tu sistema pide menos movimiento, el camarón se queda quieto y la respuesta aparece sin
+  más. Al enviar una pregunta la conversación baja hasta ella; una respuesta nueva se enseña desde su principio, y la
+  lista no se mueve mientras se va mostrando.
+- La conversación vive en la memoria de la ventana y no se guarda nada: sobrevive a ir a otro lugar y volver (abre el
+  panel otra vez), se responde una pregunta a la vez, y **Vaciar** la vacía al momento y descarta una respuesta que aún
+  se esté escribiendo: la siguiente pregunta puede salir cuando esa respuesta descartada haya terminado (hasta entonces
+  el camarón sigue pensando). Si el servidor del proyecto aún está respondiendo a una pregunta anterior de la que esta
+  ventana perdió el rastro (se cortó la conexión mientras respondía, o se recargó la ventana), la nueva se rechaza hasta
+  que esa respuesta termine, y el panel lo dice. Desaparece al cerrar o recargar la ventana, o al cambiar de proyecto.
+  Sin ningún agente instalado en esta máquina, o con `ask.ai: false` en `workspace.yaml`, el panel lo dice y, en el
+  primer caso, enlaza a **Ajustes**.
+- **Preguntas sin respuesta** aparece bajo el campo del chat solo cuando hay alguna: las preguntas hechas en esta
+  máquina (en la búsqueda o en Preguntar del portal, en este chat, o por un agente) que ninguna página respondió, cada
+  una con las veces que se hizo (`×3`). **Añadir a preguntas abiertas** la manda a las preguntas abiertas de la próxima
+  entrevista; **Descartar** la olvida.
 - **Todos los comandos**, plegado, tiene board, checkpoint, ci, export, portal, removed y translated.
 
 <!-- portal:#/docs -->
@@ -443,11 +509,27 @@ La wiki de cada repo (`#/docs/wikis`).
 
 <!-- go:docs/wikis -->
 
-- **Filtrada por repo** (`?repo=<nombre>`): el bloque de ese repo va primero y los demás se pliegan.
-- **Un bloque por repo**: **Generar la wiki** escribe la wiki OpenWiki de ese repo. Si el repo no estaba elegido para
-  tener wiki, lo elige; si aún no tiene brief, antes escribe uno inicial sin IA. Está desactivado, con el motivo, si el
-  repo no está clonado, no hay ningún motor de wiki instalado o se está generando la wiki de otro repo (una a la vez).
-  Cuando la wiki tiene páginas: **Ver** y **Grafo del wiki · {repo}** (construir su grafo).
+- **Una tarjeta por repo**, en una cuadrícula que llena la ventana. Cada tarjeta muestra su estado con un icono y una
+  palabra, las cifras que tiene el repo (sus páginas, cuándo se escribió la wiki y si su brief es el de la IA o el
+  inicial) y **una** acción principal que sigue al estado: **Generar la wiki** si aún no tiene páginas, **Actualizar**
+  si el código ha cambiado desde que se escribieron las páginas, **Ampliar** si la wiki se escribió con un alcance
+  anterior, **Reintentar** si la última generación falló y **Ver** cuando está al día. Cuando una wiki tiene páginas,
+  **Ver** la abre en el portal junto a la acción.
+- **Filtrada por repo** (`?repo=<nombre>`, desde la página de un repo): la tarjeta de ese repo va primero y las demás
+  se pliegan en **Las otras wikis**.
+- **Generar la wiki** escribe la wiki OpenWiki de ese repo; si el repo no estaba elegido para tener wiki, lo elige, y si
+  aún no tiene brief, antes escribe uno inicial sin IA. **Actualizar** y **Ampliar** lanzan OpenWiki en modo
+  actualización sobre las páginas que ya existen. Mientras se escribe una wiki, su botón dice **Generando…** con una
+  cuenta de segundos, y la tarjeta late (no si tu sistema pide menos movimiento). También lo hace al volver a Docs
+  durante una ejecución empezada antes, y las tarjetas y los chips de Leer se ponen al día cuando termina. Se escribe
+  una wiki a la vez.
+- La acción que escribe páginas está desactivada, con el motivo, si el repo no está clonado, no hay ningún motor de
+  wiki instalado o se está generando la wiki de otro repo; **Ver** nunca lo está. La fila **Grafo del wiki · {repo}**
+  (**Construir el grafo** o **Reconstruir el grafo**) aparece cuando la wiki ya tiene páginas y falta el grafo o es
+  anterior a ellas, y se queda para enseñar esa construcción; tras una construcción fallida su botón dice
+  **Reintentar**. Si no se pueden leer las wikis, un único aviso con **Reintentar** lo dice y las acciones siguen
+  desactivadas; si falla solo una segunda lectura, las tarjetas conservan lo leído y el aviso dice que puede estar
+  desactualizado.
 
 ### Decisiones
 
@@ -528,7 +610,7 @@ Esta máquina y el kit que lleva (`#/settings`, <kbd>g</kbd> <kbd>m</kbd>). Bajo
 
 Los servidores guardados con **Probar** y **Borrar**; un formulario (servidor, tipo, token) cuyo **Comprobar y guardar** prueba antes el token contra el servidor (**Guardarlo igualmente** si insistes). Los tokens viven en el llavero del sistema, nunca en el proyecto ni en una línea de comandos. SonarQube solo por https (http solo en localhost)
 
-La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice por qué: un servidor de SonarQube viene de Calidad; uno de la forja, o sin tipo (un compartir que Docs no pudo hacer), dice que para compartir con el equipo falta su token. La antigua `#/machine?host=…&kind=…` sigue llegando a él.
+La dirección `#/settings/tokens?host=<servidor>&kind=sonarqube` (o `gitlab`, `github`) abre el formulario relleno, con un aviso que dice por qué: un servidor de SonarQube viene de Calidad; uno de la forja, o sin tipo (un paso con el equipo que Docs no pudo dar), dice que para traer o subir cambios con el equipo falta su token. La antigua `#/machine?host=…&kind=…` sigue llegando a él.
 
 ### Skills
 
@@ -609,7 +691,7 @@ instalación global. Es el banco para cambiar el kit:
 | «No he podido arrancar el servidor del proyecto» | El cuadro trae el error del servidor; `camaron doctor` en esa carpeta suele decir qué falta |
 | En el portal del navegador no está el botón que esperabas | Es a propósito: el portal del navegador no ejecuta nada en tu máquina. Hazlo aquí |
 | Quieres que vuelva a descargar Electron | Borra `~/.camarones/desktop` y lanza `camaron app` |
-| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Compartir ahora** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a compartir |
+| «No llego a <servidor>: revisa la conexión, la VPN o el proxy» al **Traer cambios**, **Subir cambios** o **Sincronizar** | El servidor del equipo solo está en la red de tu empresa: conecta la VPN (o configura el proxy) y vuelve a intentarlo |
 
 En Linux con los *user namespaces* restringidos (Ubuntu 24.04 y posteriores) el kit abre la app con `--no-sandbox`;
 sus ventanas solo cargan el servidor local de tu proyecto.

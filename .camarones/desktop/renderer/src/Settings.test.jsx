@@ -47,12 +47,12 @@ test('Tokens is prefilled from the address and says where the user came from', (
 test('a forge host, or one with no kind, is a share that needs a token, not Quality', () => {
   for (const kind of ['', 'gitlab', 'github']) {
     const out = render('#/settings/tokens?host=git.acme', { fill: { host: 'git.acme', kind } })
-    expect(out, kind).toContain('Para compartir con el equipo falta el token de git.acme.')
+    expect(out, kind).toContain('Para traer o subir cambios con el equipo falta el token de git.acme.')
     expect(out, kind).not.toContain('Calidad')
   }
   setLang('en')
   const en = render('#/settings/tokens?host=git.acme', { fill: { host: 'git.acme', kind: '' } })
-  expect(en).toContain('Sharing with the team needs the token for git.acme.')
+  expect(en).toContain('Bringing in or uploading changes with the team needs the token for git.acme.')
   expect(en).not.toContain('Quality')
 })
 

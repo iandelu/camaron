@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import json, os, subprocess, sys, threading, urllib.error, urllib.request
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
 import pytest
 
+from test_app_api import TOKEN, app_server, call as app_call   # noqa: F401 — app_server is a fixture
 from test_team_repo import bare, git, publish
 
 
@@ -53,6 +55,54 @@ def test_a_check_for_news_names_the_teams_host(kit, monkeypatch):
                         if cmd[:2] == ["git", "fetch"] else real(cmd, **kw))
     f = kit.services.share.sync_status(fetch=True)["fetched"]
     assert f == {"ok": False, "reason": "network", "host": "gitlab-central.example.space", "detail": said}
+
+
+def test_changes_leave_out_the_files_the_kit_rewrites(kit, tmp_path):
+    publish(kit, bare(tmp_path))
+    (kit.root / "docs" / ".status.json").write_text('{"rewritten": 1}\n', encoding="utf-8")   # every GET tree does this
+    s = kit.services.share.sync_status()
+    assert "docs/.status.json" in s["pending"] and s["changes"] == []
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    s = kit.services.share.sync_status()
+    assert s["changes"] == ["docs/mine.md"] and "docs/.status.json" in s["pending"]
+
+
+def test_one_page_edit_is_one_change_beside_the_state_the_kit_keeps(kit, tmp_path):
+    publish(kit, bare(tmp_path))
+    work = kit.root / "docs" / ".work"
+    (work / "usage").mkdir(parents=True, exist_ok=True)
+    (work / "fresh.json").write_text('{"pages": {}}\n', encoding="utf-8")                # freshness fingerprints
+    (work / "usage" / "ana-laptop.json").write_text('{"reads": 1}\n', encoding="utf-8")  # the person's counters
+    (kit.root / "docs" / "mine.md").write_text("# Mine\n", encoding="utf-8")
+    assert kit.services.share.sync_status()["changes"] == ["docs/mine.md"]
+
+
+def test_the_kit_keeps_one_list_of_the_files_it_writes(kit):
+    from lib.app import change, share
+    from lib.domain.docs import derived
+    from lib.harness import integrate
+    assert share.DERIVED == integrate.DERIVED == derived.REBUILT
+    assert all(derived.kit_written(p) for p in (*derived.REBUILT, "docs/.work/fresh.json", "docs/.work/usage/a.json"))
+    assert not derived.kit_written("docs/mine.md") and not hasattr(change, "DERIVED_DIRS")
+
+
+def test_the_last_time_in_step_is_the_newer_of_an_upload_and_a_good_bring_in(kit):
+    kit.services.templates.init_templates("demo", log=lambda _: None)
+    share, save = kit.services.share, kit.common.save_json
+    last = lambda: share.sync_status()["last_sync"]                     # noqa: E731
+    assert last() is None
+    def caught_up(status, at):
+        save(kit.services.catchup.LAST, {"status": "done", "pull": {"status": status}, "views": {}, "at": at})
+    caught_up("up-to-date", "2026-11-18T10:00:00+01:00")
+    assert last() == "2026-11-18T10:00:00+01:00"                         # never shared: the bring-in alone
+    save(share.SHARED, {"last": "2026-11-18T09:30:00+00:00"})              # 10:30 in +01:00: newer
+    assert last() == "2026-11-18T09:30:00+00:00"
+    caught_up("pulled", "2026-11-18T12:00:00+01:00")
+    assert last() == "2026-11-18T12:00:00+01:00"
+    for status in ("conflict", "stashed", "error", "busy"):              # a bring-in that did not leave it level
+        caught_up(status, "2026-11-18T13:00:00+01:00")
+        assert last() == "2026-11-18T09:30:00+00:00"
+    assert share.sync_status()["last_share"] == "2026-11-18T09:30:00+00:00"
 
 
 def test_auto_share_survives_the_last_share(kit, tmp_path):
@@ -114,3 +164,76 @@ def test_trust_and_hooks_as_json(kit):
     assert r.returncode == 0 and json.loads(r.stdout) == {"enabled": False}
     cli(kit, "hooks", "on")
     assert json.loads(cli(kit, "hooks", "--json").stdout) == {"enabled": True}
+
+
+def test_the_portal_brings_in_and_uploads(kit, tmp_path, portal):
+    remote = bare(tmp_path); publish(kit, remote)
+    assert call(portal + "/api/sync/pull", {}, header=False)[0] == 403
+    code, r = call(portal + "/api/sync/pull", {})
+    assert code == 200 and r["result"]["pull"]["status"] == "up-to-date" and "catch_up" in r["sync"]
+    (kit.root / "docs" / "edit.md").write_text("# Edit\n", encoding="utf-8")
+    code, r = call(portal + "/api/sync/push", {})
+    assert code == 200 and r["result"]["status"] == "pushed" and r["sync"]["pending"] == []
+
+
+def test_the_app_opens_a_terminal_in_cam_docs(kit, app_server, monkeypatch):
+    opened = []
+    import lib.adapters.system.os_open as os_open
+    monkeypatch.setattr(os_open, "open_new_terminal", lambda cmd, cwd: opened.append((cmd, cwd)) or True)
+    code, r = app_call(app_server + "/api/app/terminal", {}, token=TOKEN)
+    assert code == 200 and r == {"opened": True} and Path(opened[0][1]).resolve() == kit.root.resolve()
+
+
+@pytest.mark.parametrize("win, env, shell", [
+    (True, {"COMSPEC": r"C:\Windows\system32\cmd.exe"}, r"C:\Windows\system32\cmd.exe"),
+    (True, {}, "cmd.exe"),
+    (False, {"SHELL": "/bin/zsh"}, "/bin/zsh"),
+    (False, {}, "/bin/sh"),
+])
+def test_the_terminal_opens_the_shell_of_this_os(kit, app_server, monkeypatch, win, env, shell):
+    import lib.adapters.system.os_open as os_open
+    from lib.interfaces.http.routes import team
+    opened = []
+    monkeypatch.setattr(os_open, "open_new_terminal", lambda cmd, cwd: opened.append(cmd) or True)
+    monkeypatch.setattr(team, "IS_WIN", win)
+    for name in ("COMSPEC", "SHELL"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    app_call(app_server + "/api/app/terminal", {}, token=TOKEN)
+    assert opened == [[shell]]
+
+
+def test_the_app_starts_a_catch_up_job(kit, tmp_path, app_server):
+    publish(kit, bare(tmp_path))
+    code, job = app_call(app_server + "/api/app/catch-up", {}, token=TOKEN)
+    assert code == 200 and job["kind"] == "catch-up"
+
+
+def test_pull_and_push_from_the_cli(kit, tmp_path):
+    remote = bare(tmp_path); publish(kit, remote)
+    r = cli(kit, "pull"); assert r.returncode == 0 and r.stdout.startswith("up-to-date")
+    (kit.root / "docs" / "cli.md").write_text("# CLI\n", encoding="utf-8")
+    r = cli(kit, "push"); assert r.returncode == 0 and r.stdout.startswith("pushed")
+
+
+def test_pull_from_the_cli_offline_exits_1(kit, tmp_path):
+    kit.services.templates.init_templates("demo", log=lambda _: None)
+    kit.services.share.set_remote(str(tmp_path / "gone.git")); kit.services.share.checkpoint_commit("first")
+    r = cli(kit, "pull"); assert r.returncode == 1 and r.stdout.startswith("error (not-found)")
+
+
+@pytest.mark.parametrize("fail", ["run", "rebuild"])
+def test_pull_turns_an_exception_into_one_error_line(kit, capsys, fail):
+    from types import SimpleNamespace
+    from lib.interfaces.cli.commands import team
+
+    def boom(*a, **kw):
+        raise RuntimeError("boom")
+    run = {"status": "done", "views": {"graphs": ["web"]},
+           "pull": {"status": "up-to-date", "detail": "main", "commits": 0, "files": []}}
+    catchup = SimpleNamespace(run=boom if fail == "run" else (lambda log=print: run), rebuild_graphs=boom)
+    code = team.Pull().run(SimpleNamespace(), SimpleNamespace(services=SimpleNamespace(catchup=catchup)))
+    out = capsys.readouterr()
+    assert code == 1 and "Traceback" not in out.out + out.err
+    assert [l for l in out.out.splitlines() if l.startswith("error:")] == ["error: boom"]

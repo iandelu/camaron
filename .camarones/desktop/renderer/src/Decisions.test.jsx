@@ -352,11 +352,17 @@ test("inside Docs the list's actions sit beside a heading that does not repeat t
   expect(heading(inDocs(<AdrListView rows={[row()]} filter="all" q="" onFilter={noop} onQ={noop} />, 'en'))[1]).toBe('Project decisions')
 })
 
-// The review's two columns need the wide page: Docs widens while one ADR is open, and keeps its width for the list.
+// The review's two columns need the wide page: Docs widens while one ADR is open, and keeps its width for the list. The page
+// sits in the place's chat grid (`dk-docs`), which keeps the chat panel's column.
 test('Docs widens for an open ADR, not for the list', () => {
   const waiting = () => new Promise(() => {})
   const srv = { get: waiting, post: waiting }
-  const docs = (hash) => { globalThis.location = { origin: 'http://127.0.0.1:5000', hash }; return html(<Docs srv={srv} jobs={null} app={{}} index={null} />) }
+  const docs = (hash) => {
+    globalThis.location = { origin: 'http://127.0.0.1:5000', hash }
+    const out = html(<Docs srv={srv} jobs={null} app={{}} index={null} />)
+    expect(out).toMatch(/^<div class="dk-docs">/)
+    return out.replace(/^<div class="dk-docs">/, '')
+  }
   try {
     const one = docs('#/docs/decisions/0012')
     expect(one).toMatch(/^<div class="dk-page wide">/)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Brand, Breadcrumbs, Button, EmptyState, Keys, Skeleton, SkipLink } from '@camaron/ui'
-import { START, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
+import { START, catchUpOnOpen, firstRunRoute, initials, movedRoute, sectionOf, sections } from './nav.js'
+import { chatStore } from './chat.js'
 import { jobsStore } from './jobs.js'
 import { chord, entries, keyFor, typing } from './palette.js'
 import { crumbs } from './crumbs.js'
@@ -57,7 +58,9 @@ function Project({ app }) {
   const tour = useTour()
   const srv = useMemo(() => server(app.token), [])
   const jobs = useMemo(() => jobsStore(srv.get), [])           // one for the window: it outlasts the sections
+  const chat = useMemo(() => chatStore(srv), [])                // the Docs chat: also the window's, so a change of section keeps it
   const { running } = useStore(jobs)
+  const caughtUp = useRef(false)
   const projects = useProjects(app, srv, index?.project, setStatus)
   // The index and where the first run stands, read side by side; the section mounts only after both, so a first run
   // left unfinished opens straight on the wizard (#/start) and Flow never fires its reads first. Without the
@@ -72,6 +75,10 @@ function Project({ app }) {
       }
       setIndex(idx.x)
       setError('')
+      if (!caughtUp.current && catchUpOnOpen(s, location.hash)) {
+        caughtUp.current = true
+        srv.post('app/catch-up', {}).then(() => jobs.refresh(), () => {})
+      }
     })
   useEffect(() => {
     open()
@@ -140,7 +147,7 @@ function Project({ app }) {
       </>}
       <main className="dk-main" id="main" tabIndex={-1}>
         {error && <Failed title={t('project.failed')} detail={error} onRetry={() => { setError(''); open() }} />}
-        {!index && !error ? <Skeleton lines={4} /> : <Section here={here} srv={srv} jobs={jobs} app={app} index={index} sections={all} />}
+        {!index && !error ? <Skeleton lines={4} /> : <Section here={here} srv={srv} jobs={jobs} chat={chat} app={app} index={index} sections={all} />}
       </main>
       <JobsPanel srv={srv} jobs={jobs} />
       <SwitchAsk projects={projects} />

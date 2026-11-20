@@ -43,22 +43,23 @@ def masked_path(path: str, hidden: frozenset[str]) -> str:
 
 
 def _without(folder: Path, shadow: Path, hidden: frozenset[str]) -> str | None:
-    """`folder` when none of `hidden` is in it, None when nothing else is, else a folder of links to the rest; `folder`
-    as it is where this machine cannot make links (Windows without the right to)."""
+    """`folder` when none of `hidden` is in it, None when no other tool is, else a folder of links to the rest, folders
+    included (a shim such as npm's `likec4.cmd` reads its `node_modules/` from beside itself); `folder` as it is where
+    this machine cannot make links (Windows without the right to)."""
     try:
         with os.scandir(folder) as entries:
-            names = [e.name for e in entries if not e.is_dir()]
+            found = [(e.name, e.is_dir()) for e in entries]
     except OSError:
         return str(folder)
-    rest = [n for n in names if n.split(".")[0].lower() not in hidden]
-    if len(rest) == len(names):
+    rest = [(n, d) for n, d in found if d or n.split(".")[0].lower() not in hidden]
+    if len(rest) == len(found):
         return str(folder)
-    if not rest:
+    if all(d for _, d in rest):
         return None
     shadow.mkdir()
     try:
-        for n in rest:
-            (shadow / n).symlink_to(folder / n)
+        for n, d in rest:
+            (shadow / n).symlink_to(folder / n, target_is_directory=d)
     except OSError:
         return str(folder)
     return str(shadow)

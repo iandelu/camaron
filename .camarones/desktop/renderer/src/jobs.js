@@ -12,6 +12,13 @@ export function arrange(list) {
 
 // A job a person stopped ends failed on the server (rc ≠ 0) with stopped: true; here it is stopped, not failed.
 export const state = (job) => (job.status === 'failed' && job.stopped ? 'stopped' : job.status)
+// A job's name in the app's language when the app knows its kind (`job.kind.<kind>`), else the server's label.
+export function jobLabel(job, t) {
+  const key = `job.kind.${job.kind}`
+  const said = t(key)
+  return said === key ? job.label || job.kind : said
+}
+
 export const chip = (job) => ({ running: 'info', done: 'ok', failed: 'bad' })[state(job)] || 'warn'
 
 // started and now in seconds (the server's time.time()); t is the app's strings.

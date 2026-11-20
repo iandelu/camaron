@@ -69,16 +69,45 @@ def which(name: str) -> str | None:
     return None
 
 
+TERM_GRACE = 3.0                      # seconds a timed-out command has to clean up before it is killed
+
+
+def _bounded(full: list[str], kw: dict, timeout: float) -> subprocess.CompletedProcess:
+    """subprocess.run's timeout, but POSIX asks first (SIGTERM: git drops its refs/*.lock, which SIGKILL leaves behind)
+    and kills after TERM_GRACE, never waiting on the pipes a child of the command may hold. Windows kills the whole
+    tree: a child it started (a .cmd shim's program, the real git behind Git for Windows' launcher) holds the pipes."""
+    if kw.pop("capture_output", False):
+        kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    with subprocess.Popen(full, **kw) as p:
+        try:
+            said, err = p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if IS_WIN:
+                kill_tree(p.pid)
+                p.kill()
+                p.communicate()
+                raise
+            p.terminate()
+            try:
+                p.wait(TERM_GRACE)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait()
+            raise
+        return subprocess.CompletedProcess(p.args, p.returncode, said, err)
+
+
 def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool = False,
-        capture: bool = False, env: dict | None = None) -> subprocess.CompletedProcess:
-    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows)."""
+        capture: bool = False, env: dict | None = None, timeout: float | None = None) -> subprocess.CompletedProcess:
+    """Run a command resolving Windows .cmd shims (npm, npx, likec4, openwiki are .cmd on Windows). With a `timeout`
+    (seconds) a command that runs longer is stopped (`_bounded`) and `subprocess.TimeoutExpired` is raised."""
     exe = which(cmd[0]) or cmd[0]
     full = [exe, *cmd[1:]]
     kw: dict = {"cwd": str(cwd) if cwd else None, "env": {**os.environ, **(env or {})}}
     if capture or quiet:
         kw.update(capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
-        r = subprocess.run(full, **kw)
+        r = _bounded(full, kw, timeout) if timeout is not None else subprocess.run(full, **kw)
     except OSError as e:
         # a tool that is missing, unreadable, or blocked (e.g. Windows Smart App Control /
         # WinError 4551) must not crash the wizard — treat it like "not available" instead
@@ -91,8 +120,8 @@ def run(cmd: list[str], cwd: Path | None = None, check: bool = True, quiet: bool
     return r
 
 
-def out(cmd: list[str], cwd: Path | None = None) -> str:
-    r = run(cmd, cwd=cwd, check=False, capture=True)
+def out(cmd: list[str], cwd: Path | None = None, timeout: float | None = None) -> str:
+    r = run(cmd, cwd=cwd, check=False, capture=True, timeout=timeout)
     return (r.stdout or "").strip() if r.returncode == 0 else ""
 
 

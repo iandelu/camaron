@@ -39,8 +39,8 @@ PAGES = {
                  "La IA guarda checkpoints mientras trabaja: si cierras la terminal o el portátil, la próxima vez aparece "
                  "«▶ Continuar» y retoma desde el último checkpoint; «💬 Reabrir la conversación de esta unidad» vuelve a esa misma "
                  "conversación, o te avisa si no puede. Al terminar cada unidad se hace un commit local en "
-                 "cam-docs para que nada se pierda; «🤝 Compartir con el equipo» (o `camaron share`) trae el trabajo del "
-                 "equipo y publica el tuyo cuando tú decides. ¿Queréis otro plan? En `.camarones/pipeline.yaml` podéis "
+                 "cam-docs para que nada se pierda; «🤝 Equipo: traer, subir o sincronizar» (`camaron pull`, `camaron push`, `camaron share`) trae el trabajo del "
+                 "equipo o sube el tuyo cuando tú decides; al abrir el proyecto se trae solo, sin subir nada. ¿Queréis otro plan? En `.camarones/pipeline.yaml` podéis "
                  "quitar, añadir o reordenar unidades sin tocar el kit (la guía de comandos trae ejemplos). Las entrevistas "
                  "no te frenan: lo que depende de ellas se escribe antes como borrador y se afina cuando las haces. ¿Con prisa? "
                  "`camaron run` hace varias unidades a la vez, cada una en su propia copia de cam-docs, y `camaron kpis` "
@@ -52,7 +52,7 @@ PAGES = {
    Que hacemos?
    > Siguiente paso (sesion con IA)   <- el cursor ya esta en lo recomendado
      Revisar y verificar paginas (3)
-     Portal  /  Wikis  /  Actualizar  /  Compartir
+     Portal  /  Wikis  /  Actualizar  /  Equipo
 
      Plan y documentacion  >   plan, estado, rehacer, diagrama, stack
      Equipo                >   cuestionario, estadisticas, CI
@@ -95,12 +95,12 @@ PAGES = {
 
    repo-a/openwiki  -->  enlace a cam-docs/wikis/repo-a (sin versionar en el repo)
 
-   generar o actualizar:  app > Docs > Generar la wiki  |  asistente > Wikis  |  camaron wiki repo-a
+   generar o actualizar:  app > Docs > Wikis > tarjeta del repo  |  asistente > Wikis  |  camaron wiki repo-a
    leerla:  portal (navegador) > Docs > Wikis""",
          "text": "OpenWiki escribe una wiki estándar de cada repo donde cada afirmación está anclada a un fichero y línea "
                  "del código: la IA no se inventa cosas y cualquiera puede comprobarlas. La wiki se guarda en "
                  "cam-docs/wikis/<repo>, así que el repo de servicio queda limpio. La generas o actualizas desde la "
-                 "app (Docs › «Generar la wiki», con el log en directo), desde el asistente (📚 Wikis) o con "
+                 "app (Docs › Wikis, en la tarjeta del repo: «Generar la wiki», o «Actualizar» cuando el código ha cambiado, con el log en directo), desde el asistente (📚 Wikis) o con "
                  "«camaron wiki <repo>» en una terminal; la lees en el portal del navegador (Docs › Wikis), donde sus páginas "
                  "aparecen en wikis/<repo>/. Cada wiki es una sesión de agente completa, así que solo la llevan los repos "
                  "que elijas (asistente > Wikis > elegir), y la primera espera al repo-brief, que le da el rol y el glosario "
@@ -236,7 +236,7 @@ PAGES = {
                  "debajo, lo que lleva costado el plan); Tablero (su menú Añadir: Historia abre las Historias del portal en el navegador); Calidad (la salud del proyecto: máquina, documentación y código, repo a repo; el escaneo de "
                  "secretos y los hooks del método; y su vista Librerías: buscar vulnerabilidades repo a repo, con su "
                  "barra, Parar y un tick al acabar; en qué repos está cada una, primero donde tiene avisos; y "
-                 "Actualizar en una rama nueva, también un módulo Maven cuya versión fija el pom padre) y Docs (una franja del equipo para compartir encima de sus pestañas: Leer abre el portal en tu navegador, construye "
+                 "Actualizar en una rama nueva, también un módulo Maven cuya versión fija el pom padre) y Docs (encima de sus pestañas, la franja del equipo: traer, subir o sincronizar; Leer abre el portal en tu navegador, construye "
                  "el explorador C4 y responde con IA; Wikis genera las wikis; Decisiones, los ADR: plantear una decisión, reunir su evidencia sin IA, revisarla por partes y aceptarla, ver «Decisiones: los ADR»; y Entrevistas); debajo, Ajustes (General: setup, que dice «Lista» cuando "
                  "ya corrió en esta máquina, idioma y modelos, "
                  "dónde se abren las sesiones y repos; Tokens; Skills; Plugins; Confianza, para aprobar lo que llegó con el repo del equipo; y Kit, con el kit y desinstalar) y Guía: todo esto explicado a fondo, con botones que te llevan "
@@ -319,8 +319,8 @@ PAGES = {
                  "español editas la traducción. El portal desplegado no edita: es una foto de la última exportación; su "
                  "botón «Editar» te lleva al fichero en GitLab/GitHub (si cam-docs tiene remote) y el cambio entra por "
                  "merge request, y el CI vuelve a publicar. Editar una página ✅ la pasa a ⚠️ hasta que alguien la mire. "
-                 "No edites a mano lo generado (llms.txt, llms-full.txt, .status.json, visores): las wikis mejor regenerarlas con «Generar la "
-                 "wiki» (Docs, en la app), porque una actualización puede reescribir lo que cambies."},
+                 "No edites a mano lo generado (llms.txt, llms-full.txt, .status.json, visores): las wikis mejor regenerarlas desde la "
+                 "app (Docs) que editarlas, porque una actualización puede reescribir lo que cambies."},
         {"icon": "🔑", "title": "Tokens de GitLab / GitHub",
          "art": r"""
    llavero del sistema  --->  Camarones  --->  git clone / pull   (OK)
@@ -522,7 +522,7 @@ PAGES = {
    3. Portal (camaron up)    -> leer, editar, confirmar o pedir cambios
    4. Wikis                  -> crear o refrescar la wiki de un repo
    5. Actualizar             -> cuando cambie el codigo
-   6. Compartir              -> traer lo del equipo y publicar lo tuyo""",
+   6. Equipo                 -> traer lo del equipo, subir lo tuyo o sincronizar""",
          "text": "Con esto basta, y todo está en la parte de arriba del menú. Puedes parar cuando quieras: el progreso "
                  "se guarda solo. Esc siempre vuelve atrás.\n\n"
                  "¿Hay un Camarón nuevo? «Ajustes › ⬆️ Actualizar Camarón» (o `camaron self-update`) mira el kit "
@@ -572,8 +572,8 @@ PAGES = {
                  "Every “🦐 Next step” opens a session that does ONE unit. The AI saves checkpoints while it works: if you "
                  "close the terminal or the laptop, next time you get “▶ Continue” and it resumes from the last checkpoint; "
                  "“💬 Reopen this unit's conversation” goes back to that same conversation, or tells you when it can't. "
-                 "Each finished unit is committed locally in cam-docs so nothing is lost; “🤝 Share with the team” (or "
-                 "`camaron share`) pulls the team's work and publishes yours when you decide. Want a different plan? "
+                 "Each finished unit is committed locally in cam-docs so nothing is lost; “🤝 Team: bring in, upload or sync with the team” (`camaron pull`, "
+                 "`camaron push`, `camaron share`) brings in the team's work or uploads yours when you decide; opening the project brings it in by itself, never uploading. Want a different plan? "
                  "`.camarones/pipeline.yaml` lets you drop, add or rewire units without touching the kit (the command "
                  "guide has examples). The interviews don't hold you up: what depends on them is drafted first and "
                  "refined once you have them. In a hurry? `camaron run` does several units at once, each in its own copy of "
@@ -586,7 +586,7 @@ PAGES = {
    What shall we do?
    > Next step (AI session)           <- the cursor is already on the recommended one
      Review & verify pages (3)
-     Portal  /  Wikis  /  Update  /  Share
+     Portal  /  Wikis  /  Update  /  Team
 
      Plan & docs           >   plan, status, redo, diagram, stack
      Team                  >   questionnaire, stats, CI
@@ -628,11 +628,11 @@ PAGES = {
 
    repo-a/openwiki  -->  link to cam-docs/wikis/repo-a (not versioned in the repo)
 
-   generate or update:  app > Docs > Generate the wiki  |  wizard > Wikis  |  camaron wiki repo-a
+   generate or update:  app > Docs > Wikis > the repo's card  |  wizard > Wikis  |  camaron wiki repo-a
    read it:  portal (browser) > Docs > Wikis""",
          "text": "OpenWiki writes a standard wiki for each repo where every claim is anchored to a file and line of code, "
                  "so the AI can't make things up and anyone can check. The wiki is stored in cam-docs/wikis/<repo>, so "
-                 "the service repo stays clean. Generate or update it from the app (Docs › “Generate the wiki”, with a live log), from "
+                 "the service repo stays clean. Generate or update it from the app (Docs › Wikis, on the repo's card: “Generate the wiki”, or “Update” once the code has changed, with a live log), from "
                  "the wizard (📚 Wikis) or with “camaron wiki <repo>” in a terminal; you read it in the browser portal "
                  "(Docs › Wikis), where its pages show up as wikis/<repo>/. "
                  "Each wiki is a full agent run, so only the repos you choose get one (wizard > Wikis > choose), and the "
@@ -739,7 +739,7 @@ PAGES = {
                  "Docker or on any static host (`camaron up --static` shows it as is). Home asks first and shows the "
                  "project's state; the sidebar has seven zones: Docs (pages and wikis), Board, Stories, Architecture "
                  "(the C4 model with its elements to fix and confirm, the code graph and Data), Plan (the "
-                 "live Pipeline, the Interview and Sync), Quality (Health, Libraries, KPIs and CI) and Review. Ctrl K jumps to "
+                 "live Pipeline, the Interview and Team sync), Quality (Health, Libraries, KPIs and CI) and Review. Ctrl K jumps to "
                  "any page or view, or takes the question to Ask, which gives the sections that answer with their "
                  "citation, no AI. The portal never runs anything on your machine: running the plan, generating wikis, "
                  "building the C4 explorer or answering with AI happen in the desktop app. Every view in depth: in the "
@@ -768,7 +768,7 @@ PAGES = {
                  "machine, docs and code, repo by repo; the secret scan and the method hooks; and its Libraries view: scan for vulnerabilities repo by repo, with its bar, Stop and a tick when it ends; which repos "
                  "each one is in, the flagged ones first; and Update on a new branch, a Maven module whose parent pom "
                  "sets the version included) and "
-                 "Docs (a team strip for sharing above its tabs: Read opens the portal in your browser, builds the C4 explorer and answers with "
+                 "Docs (above its tabs, the team strip: bring in, upload or sync with the team; Read opens the portal in your browser, builds the C4 explorer and answers with "
                  "AI; Wikis generates the wikis; Decisions, the ADRs: frame a decision, gather its evidence without AI, review it part by part and accept it, see “Decisions: the ADRs”; and Interviews); below, Settings (General: setup, which says \"Ready\" once it has run on this machine, language and models, "
                  "where sessions open and repos; Tokens; Skills; Plugins; Trust, to approve what came with the team's repo; and Kit, with the kit and uninstall) and Guide: "
                  "all of this explained in depth, with buttons that take you to each place and a tour that points at "
@@ -852,7 +852,7 @@ PAGES = {
                  "export; its “Edit” button takes you to the file in GitLab/GitHub (when cam-docs has a remote), the "
                  "change goes in as a merge request and CI publishes it again. Editing a ✅ page turns it ⚠️ until "
                  "someone checks it. Don't hand-edit generated files (llms.txt, llms-full.txt, .status.json, viewers); wikis are "
-                 "better regenerated with “Generate the wiki” (Docs, in the app), since an update can rewrite what you change."},
+                 "better regenerated from the app (Docs) than edited, since an update can rewrite what you change."},
         {"icon": "🔑", "title": "GitLab / GitHub tokens",
          "art": r"""
    OS keychain          --->  Camarones  --->  git clone / pull   (OK)
@@ -1051,7 +1051,7 @@ PAGES = {
    3. Portal (camaron up)    -> read, edit, confirm or request changes
    4. Wikis                  -> create or refresh a repo's wiki
    5. Update                 -> when the code changes
-   6. Share                  -> pull the team's work and publish yours""",
+   6. Team                   -> bring in the team's work, upload yours, or both""",
          "text": "That's all, and it is all on the top part of the menu. Stop whenever you like: progress saves itself. "
                  "Esc always goes back.\n\n"
                  "Is there a new Camarón? “Settings › ⬆️ Update Camarón” (or `camaron self-update`) checks the official "

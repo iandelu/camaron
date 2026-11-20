@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
+import { Aviso, Button, Chip, EmptyState, Skeleton, TrustPill } from '@camaron/ui'
 import { postJSON } from '../api.js'
 import { docsGet } from '../docsApi.js'
 import { c4Box, drawC4, flowViewId, loadViewers } from '../content/doc.js'
@@ -141,8 +141,8 @@ function Element({ e, v, edit, t, change }) {
   return (
     <article className={'c4el' + (e.draft ? ' draft' : '')}>
       <div className="c4el-h"><b>{e.title}</b><Chip>{e.kind}</Chip><code className="small muted">{e.fqn}</code>
-        {e.confirmed ? <Chip state="ok">{t('c4ConfirmedBy', { by: e.confirmedBy || '?', at: e.confirmedAt || '' })}</Chip>
-          : e.draft ? <Chip state="warn">{t('c4Draft')}</Chip> : null}
+        {e.confirmed ? <TrustPill trust="confirmed">{t('c4ConfirmedBy', { by: e.confirmedBy || '?', at: e.confirmedAt || '' })}</TrustPill>
+          : e.draft ? <TrustPill trust="draft">{t('c4Draft')}</TrustPill> : null}
         {edit && <span className="c4el-act">
           <Button size="sm" variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{t('edit')}</Button>
           {!(e.confirmed && !e.draft) && <Button size="sm" onClick={() => change('confirm', { fqns: [e.fqn] })}>{t('c4Confirm')}</Button>}

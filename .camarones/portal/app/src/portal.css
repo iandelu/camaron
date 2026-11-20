@@ -144,9 +144,6 @@ body.bare #tree, body.bare #side-head { display: none; }
         padding-bottom: 1.1rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
 .meta code.file { font: .76rem var(--mono); color: var(--muted); max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: .4rem; }
-.pill.trust.confirmed { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
-.pill.trust.draft { color: var(--muted); border-style: dashed; }
-.pill.trust.needs-reconfirm { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
 .doc .gen-block { margin: 1rem 0; }
 .doc .gen-badge { display: inline-flex; margin: 0 0 .4rem; padding: .05rem .55rem; font-size: .78rem; color: var(--muted);
                   border: 1px solid var(--line); border-radius: 99px; background: var(--panel); }

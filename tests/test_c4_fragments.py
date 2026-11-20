@@ -43,6 +43,14 @@ def test_two_fragments_declaring_the_same_element_fail(kit):
     assert not ok and "Duplicate" in msg
 
 
+def test_a_likec4_crash_the_filter_does_not_know_still_says_what_it_printed(kit, monkeypatch):
+    arch(kit, {"model.c4": MODEL})
+    crash = subprocess.CompletedProcess([], 1, stdout="", stderr="\nError: Cannot find module 'likec4.mjs'\n    at x\n")
+    monkeypatch.setattr(kit.services.diagrams, "run", lambda *a, **kw: crash)
+    ok, msg = kit.services.diagrams.arch_validate()
+    assert not ok and "Cannot find module" in msg
+
+
 def test_the_c4_viewer_goes_stale_when_a_fragment_changes(kit):
     d = arch(kit, {"model.c4": MODEL})
     built = kit.services.viewers.VIEWERS / "architecture" / "index.html"

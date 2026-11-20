@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import tempfile
 from pathlib import Path
 
 from lib.app import components, services
@@ -47,12 +48,34 @@ def build_c4(dest: Path | None = None, log: Log = print) -> bool:
             + ("add its LikeC4 config there" if services.current().diagrams.arch_source() else "unit arch-system writes it"))
         return False
     log("building the interactive C4 explorer (LikeC4)…")
-    shutil.rmtree(dest, ignore_errors=True)
-    r = run(["likec4", "build", ".", "-o", str(dest), "--base", "/architecture/", "--title", services.current().workspace.workspace()["project"]["name"]],
-            cwd=services.current().diagrams.arch_dir(), check=False, quiet=True)
-    ok = r.returncode == 0 and (dest / "index.html").exists()
-    log("✔ C4 explorer" if ok else "⚠ C4 explorer skipped: the model has errors (run arch-validate)")
-    return ok
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    built = Path(tempfile.mkdtemp(prefix=f".{dest.name}-", dir=dest.parent))    # a broken model keeps the explorer there
+    try:
+        r = run(["likec4", "build", ".", "-o", str(built), "--base", "/architecture/", "--title", services.current().workspace.workspace()["project"]["name"]],
+                cwd=services.current().diagrams.arch_dir(), check=False, quiet=True)
+        ok = r.returncode == 0 and (built / "index.html").exists()
+        if not ok:
+            log("⚠ C4 explorer skipped: the model has errors (run arch-validate)")
+            return False
+        return _swap(built, dest, log)
+    finally:
+        shutil.rmtree(built, ignore_errors=True)
+
+
+def _swap(built: Path, dest: Path, log: Log) -> bool:
+    old = built.with_name(built.name + "-old")
+    try:
+        if dest.exists():
+            dest.rename(old)
+        built.rename(dest)
+    except OSError as e:                                     # a file of it held open (Windows): keep the one there
+        if old.exists() and not dest.exists():
+            old.rename(dest)
+        log(f"⚠ C4 explorer not replaced: {e}")
+        return False
+    shutil.rmtree(old, ignore_errors=True)
+    log("✔ C4 explorer")
+    return True
 
 
 def code_graphs() -> dict[str, Path]:

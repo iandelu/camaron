@@ -386,12 +386,12 @@ rewritten by an agent are in `CONVENTIONS.md` section 6.
   unit that the AI applies in the next session.
 - With Spanish selected, **Edit** edits the translation (`docs/i18n/es/…`).
 - Editing a ✅ page turns it **⚠️ needs re-confirmation** until someone checks it again.
-- Don't hand-edit generated files (`llms.txt`, `llms-full.txt`, `docs/.status.json`, the viewers). Wikis are better regenerated with
-  **Generate the wiki** (app, **Docs**): an OpenWiki update can rewrite what you change.
+- Don't hand-edit generated files (`llms.txt`, `llms-full.txt`, `docs/.status.json`, the viewers). Wikis are better regenerated from the
+  app (**Docs**) than edited: an OpenWiki update can rewrite what you change.
 
 ## 7. OpenWiki: one wiki per repo
 
-App → **Docs** → **Generate the wiki** (live log), wizard → **📚 Wikis**, or `camaron wiki <repo>` in a terminal. The wiki
+App → **Docs** → **Wikis** → the repo's card (**Generate the wiki**, or **Update** once the code has changed; live log), wizard → **📚 Wikis**, or `camaron wiki <repo>` in a terminal. The wiki
 is stored in `cam-docs/wikis/<repo>/` (the repo sees an unversioned `openwiki/` link); you read it in the browser portal
 (**Docs** → **Wikis**), where its pages show as `wikis/<repo>/…`. It uses the OpenWiki provider if one is configured (`openwiki auth configure <provider>`), otherwise
 Claude Code or Codex. The files OpenWiki adds to the repo itself (`AGENTS.md`, `CLAUDE.md`, `.github/`) are removed when
@@ -401,10 +401,13 @@ Each wiki is a full agent run, so only the repos you choose get one: wizard → 
 wiki** (stored as `wiki: true` in `.camarones/workspace.yaml`). Pick the services with logic, not libraries or CI repos.
 A first wiki waits for the repo's brief (`wikis/<repo>/INSTRUCTIONS.md`, written by the repo-brief unit) so it uses your
 glossary; `camaron wiki <repo> --force` skips that check, and the command neither chooses the repo nor writes a brief:
-it needs the repo cloned and an engine. In the app's **Docs**, every repo has **Generate the wiki**: for a repo not
-chosen yet it chooses it, and without a brief it first writes a starter one from the static scan (no AI), which the
-repo-brief unit replaces later. The button stays closed, with the reason, when the repo is not cloned (clone it from
-**Settings**) or no wiki engine is installed. Runs go one at a time (while one repo's runs, Generate waits on the others), and a batch stops as soon as the
+it needs the repo cloned and an engine. In the app's **Docs › Wikis**, each repo's card shows its wiki's state with one
+action; with no pages yet it is **Generate the wiki**: for a repo not chosen yet it chooses it, and without a brief it
+first writes a starter one from the static scan (no AI), which the repo-brief unit replaces later. **Update** and
+**Expand** run the same OpenWiki on a wiki that already has pages. **Try again** appears after a failed run: after a
+failed first run (no pages yet) it repeats the initial generation. The action stays closed, with the reason, when the
+repo is not cloned (clone it from **Settings**) or no wiki engine is installed. Runs go one at a time (while one repo's
+runs, the others wait), and a batch stops as soon as the
 engine is out of quota or logged out instead of failing every remaining repo.
 
 ## 8. CI
@@ -493,7 +496,7 @@ evidence, write, accept, reject; all take `--json`), `history [--months 12]`
 (hotspots, who to ask per repo, files that change together, read from git without AI into `docs/overview/history.md`),
 `catalog [--json|--check]` (every command with where it lives: portal, desktop app or CLI only, and its arguments),
 `projects [--json]` (the projects registered on this machine; `--inspect DIR` says what a folder is, `--adopt DIR [--name NAME]` turns it into a project and `--git-init DIR` puts its code under git: all three take `--json` and a refusal is `{"error": taken|home|no-git|git-init, "detail"}`), `join URL --no-open` / `new NAME --no-open` (print `{"path"}`; a refused access is `{"error": auth|denied|not-found|network|unknown, "host", "detail"}`, and a token for a private repo comes in `CAMARONES_JOIN_TOKEN`, never on the command line), `config [get|set KEY VALUE]` (lang, model, codex_model: the wizard's settings; sessions: `canvas` or `window`, where the desktop app opens a session), `trust --json` and `hooks --json` (what is pending
-approval, whether the method hooks are on), the portal's **Plan › Sync** (the same as `share`, with where you stand), `app` (the desktop app: the project's sections by task, the portal to read,
+approval, whether the method hooks are on), `pull` (bring in the team's work, no upload), `push` (upload yours; it refuses when the team has new changes), the portal's **Plan › Team sync** (the same three actions, with where you stand), `app` (the desktop app: the project's sections by task, the portal to read,
 where runs, wikis, scans and checks start; the browser portal only shows them).
 
 **Coding changes.** `camaron change start "<title>" --item WI-n [--repo R]… [--files repo:path,…] [--base REF]

@@ -45,6 +45,16 @@ main[tabindex="-1"]:focus { outline: none; }
 .cu-chip--info { color: var(--color-acento-texto); }
 .cu-chip--bad { color: var(--color-estado-mal); }
 
+/* TrustPill (components.jsx): a page's trust, the same in every view. Draft is quiet (it is where every fresh project
+   starts), needs-reconfirm is the one that asks for a look, confirmed is green; the word is always there. */
+.cu-trust { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 .5rem; border: 1px solid var(--color-rule);
+            border-radius: var(--consola-radio-control); background: var(--color-canvas-elevated); font-size: var(--text-meta);
+            line-height: 1.2; color: var(--color-ink-soft); white-space: nowrap; text-decoration: none; }
+.cu-trust--confirmed { color: var(--color-estado-bien); border-color: color-mix(in srgb, var(--color-estado-bien) 35%, var(--color-rule)); }
+.cu-trust--draft { color: var(--color-ink-dim); border-style: dashed; border-color: color-mix(in srgb, var(--color-ink-dim) 45%, transparent); }
+.cu-trust--needs-reconfirm { color: var(--color-estado-aviso); border-color: color-mix(in srgb, var(--color-estado-aviso) 40%, var(--color-rule)); }
+a.cu-trust:hover { border-color: currentColor; text-decoration: none; }
+
 .cu-keys { display: inline-flex; gap: .25rem; }
 .cu-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem;
           border: 1px solid var(--color-rule); border-radius: var(--consola-radio-chico); background: var(--color-canvas);

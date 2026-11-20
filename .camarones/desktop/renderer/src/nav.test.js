@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, repoHref, repoOf, repoPage, termOf, tokenNotice, tokenPrefill, viewOf, withRepo } from './nav.js'
+import { catchUpOnOpen, firstRunPending, firstRunRoute, initials, LIBS, MACHINE, movedRoute, placeOf, PLACES, PROJECT, sectionOf, sections, repoHref, repoOf, repoPage, termOf, tokenNotice, tokenPrefill, viewOf, withRepo } from './nav.js'
 
 test('a project has four places; this machine has its own, Kit dev only in a kit checkout', () => {
   expect(PROJECT).toEqual(['flow', 'board', 'quality', 'docs'])
@@ -111,4 +111,11 @@ test('the repo page is a view of Flow that is not a place; ?repo= names a repo',
   expect(repoPage('#/flow')).toBeNull()
   expect(repoHref('a b')).toBe('#/flow/repo/a%20b')
   expect(withRepo('quality/sonar', 'api')).toBe('#/quality/sonar?repo=api')
+})
+
+test('the window catches up on open unless the first run is still ahead', () => {
+  expect(catchUpOnOpen({ mode: 'done', done: true }, '#/flow')).toBe(true)
+  expect(catchUpOnOpen(null, '#/flow')).toBe(true)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/flow')).toBe(false)
+  expect(catchUpOnOpen({ mode: 'new', done: false, step: 'repos' }, '#/start')).toBe(false)
 })

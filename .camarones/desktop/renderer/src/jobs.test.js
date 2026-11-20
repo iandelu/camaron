@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
-import { ago, arrange, chip, jobsStore, RECENT, state } from './jobs.js'
+import { ago, arrange, chip, jobLabel, jobsStore, RECENT, state } from './jobs.js'
+import { setLang, t } from './i18n.js'
 
 const job = (id, status, started) => ({ id, status, started, label: `job ${id}` })
 
@@ -77,4 +78,14 @@ test('stopped, it looks no more', async () => {
   store.stop()
   await timers.next()
   expect(timers.queue).toHaveLength(0)
+})
+
+test('a job the app knows is named in the app\'s language; any other keeps the server\'s label', () => {
+  setLang('es')
+  expect(jobLabel({ kind: 'catch-up', label: 'Catch up with the team' }, t)).toBe('Ponerse al día con el equipo')
+  expect(jobLabel({ kind: 'graph', label: 'Code graphs' }, t)).toBe('Grafos de código')
+  expect(jobLabel({ kind: 'wiki', label: 'OpenWiki api' }, t)).toBe('OpenWiki api')
+  setLang('en')
+  expect(jobLabel({ kind: 'catch-up', label: 'x' }, t)).toBe('Catch up with the team')
+  setLang('es')
 })

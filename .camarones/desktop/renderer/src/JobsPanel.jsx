@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@camaron/ui'
-import { ago } from './jobs.js'
+import { ago, jobLabel } from './jobs.js'
 import { JobChip } from './parts.jsx'
 import { useStore } from './hooks.js'
 import { t } from './i18n.js'
@@ -52,7 +52,7 @@ function JobLine({ job }) {
   return (
     <>
       <JobChip job={job} />
-      <span className="dk-job-label">{job.label || job.kind}</span>
+      <span className="dk-job-label">{jobLabel(job, t)}</span>
       <span className="muted small">{ago(job.started, now(), t)}</span>
     </>
   )
@@ -79,7 +79,7 @@ function JobLog({ srv, job }) {
   }, [job.id, job.status])
   useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight }, [lines])
   return (
-    <pre className="dk-log" ref={box} tabIndex={0} aria-label={job.label || job.kind}>
+    <pre className="dk-log" ref={box} tabIndex={0} aria-label={jobLabel(job, t)}>
       {lines.length ? lines.join('\n') : t('job.empty')}
     </pre>
   )

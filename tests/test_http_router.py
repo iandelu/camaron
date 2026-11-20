@@ -59,7 +59,9 @@ AREA: dict[tuple[str, str], str] = {
     ], "runs"),
     **dict.fromkeys([
         ("GET", "/api/interview"), ("POST", "/api/interview/answer"), ("GET", "/api/kpis"),
-        ("POST", "/api/kpis/miss"), ("GET", "/api/sync"), ("POST", "/api/sync/share"),
+        ("POST", "/api/kpis/miss"), ("GET", "/api/misses"), ("GET", "/api/sync"), ("POST", "/api/sync/share"),
+        ("POST", "/api/sync/pull"), ("POST", "/api/sync/push"), ("POST", "/api/app/catch-up"),
+        ("POST", "/api/app/terminal"),
     ], "team"),
     **dict.fromkeys([
         ("POST", "/api/c4/confirm"), ("POST", "/api/c4/element"), ("POST", "/api/c4/relation"),
@@ -75,6 +77,7 @@ AREA: dict[tuple[str, str], str] = {
     **dict.fromkeys([
         ("GET", "/api/app/catalog"), ("POST", "/api/app/cmd"), ("GET", "/api/app/info"),
     ], "app_cmd"),
+    **dict.fromkeys([("POST", "/api/app/chat"), ("GET", "/api/app/chat/models")], "chat"),
     **dict.fromkeys([
         ("POST", "/api/app/jobs/j1/cancel"), ("GET", "/api/app/jobs/j1/events"), ("GET", "/api/jobs"),
         ("GET", "/api/jobs/j1"),

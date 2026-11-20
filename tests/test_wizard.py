@@ -360,3 +360,146 @@ def test_tool_rows_shape(kit, monkeypatch):
     assert kit.wizard.W().tool_rows() == want
     if hasattr(kit.onboard, "tool_rows"):
         assert kit.onboard.tool_rows() == want
+
+
+# ---------- catching up on open ----------
+def pulled(status, **kw):
+    pull = {"status": status, "commits": 0, "files": [], "regenerated": [], "detail": "", **kw}
+    return {"status": "done", "pull": pull, "views": {"c4": "fresh", "graphs": []}, "at": ""}
+
+
+@pytest.mark.parametrize("result,key,vars", [
+    (pulled("pulled", commits=3), "cu_pulled", {"n": 3}),
+    (pulled("up-to-date"), "cu_up_to_date", {}),
+    (pulled("conflict", files=["a.md", "b.md"]), "cu_conflict", {"files": "a.md, b.md"}),
+    (pulled("stashed", files=["a.md"]), "cu_stashed", {}),
+    (pulled("busy", detail="git"), "cu_busy_git", {}),
+    (pulled("busy", detail="run"), "cu_busy_run", {}),
+    (pulled("error", reason="network", host="h"), "cu_offline", {}),
+    (pulled("error", reason="unknown", detail="KeyError: x"), "cu_unknown", {"detail": "KeyError: x"}),
+    (pulled("error", detail="detached HEAD: check out a branch first"), "cu_unknown",
+     {"detail": "detached HEAD: check out a branch first"}),
+    ({"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""}, "cu_busy", {}),
+])
+def test_catch_up_says_what_happened(kit, fake_wizard, monkeypatch, said, result, key, vars):
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: result)
+    w = fake_wizard([])
+    w.catch_up()
+    assert w.t(key, **vars) in said
+
+
+def test_catch_up_on_open_says_which_graphs_are_stale_and_does_not_rebuild_them(kit, fake_wizard, monkeypatch, said):
+    r = pulled("up-to-date"); r["views"]["graphs"] = ["web", "api"]
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: r)
+    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda *a, **kw: pytest.fail("opening never waits on graphs"))
+    w = fake_wizard([])
+    w.catch_up()
+    assert w.t("cu_graphs_stale", n=2, cli=kit.wizard.cli_cmd()) in said
+
+
+def test_catch_up_survives_an_exception(kit, fake_wizard, monkeypatch):
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: 1 / 0)
+    fake_wizard([]).catch_up()
+
+
+def test_the_menu_opens_after_a_failed_catch_up(kit, fake_wizard, monkeypatch):
+    kit.common.save_json(kit.wizard.FIRSTRUN, {"step": 6, "done": True})
+    kit.plan.sync()
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: 1 / 0)
+    fake_wizard(["exit"])._run()
+
+
+def test_share_asks_which_of_the_three(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "push", lambda log=print: {"status": "behind", "detail": ""})
+    w = fake_wizard(["push"])
+    w.do_share()
+    assert w.t("sh_behind") in said
+
+
+def test_a_sync_conflict_says_the_sh_line_and_does_not_raise(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "share",
+                        lambda log=print: {"status": "conflict", "detail": "origin/main"})
+    w = fake_wizard(["share", True])
+    w.do_share()
+    assert w.t("sh_conflict", detail="origin/main") in said
+
+
+@pytest.mark.parametrize("action", ["push", "share"])
+@pytest.mark.parametrize("detail, key", [("catch-up", "sh_busy"), ("git", "cu_busy_git")])
+def test_a_busy_upload_says_what_holds_the_docs(kit, fake_wizard, monkeypatch, said, action, detail, key):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, action, lambda log=print: {"status": "busy", "detail": detail})
+    w = fake_wizard([action, True, False])
+    w.do_share()
+    assert w.t(key) in said and w.t("sh_err_unknown") not in said
+
+
+def test_a_pull_from_a_repo_not_found_says_so_not_offline(kit, fake_wizard):
+    w = fake_wizard([])
+    line = w._pull_line({"status": "error", "reason": "not-found", "host": "h"}, "https://h/team.git")
+    assert line == (w.t("sh_err_not_found", url="https://h/team.git", host="h"), "red")
+
+
+def test_the_busy_run_line_promises_no_automatic_catch_up(kit):
+    T = kit.wizard.T
+    assert T["es"]["cu_busy_run"] == "Hay una ejecución del autopiloto usando los docs: trae los cambios del equipo cuando termine."
+    assert T["en"]["cu_busy_run"] == "An autopilot run is using the docs: bring in the team's changes once it ends."
+
+
+def test_a_finished_first_run_catches_up_before_the_menu(kit, fake_wizard, monkeypatch):
+    order = []
+    monkeypatch.setattr(kit.wizard.onboard, "mode", lambda saved: "join")
+    monkeypatch.setattr(kit.wizard.W, "first_run", lambda self, start=0, mode="new": order.append("first_run") or True)
+    monkeypatch.setattr(kit.wizard.W, "catch_up", lambda self: order.append("catch_up"))
+    monkeypatch.setattr(kit.wizard.W, "dashboard", lambda self: order.append("menu"))
+    kit.plan.sync()
+    fake_wizard(["exit"])._run()
+    assert order[:3] == ["first_run", "catch_up", "menu"]
+
+
+def test_an_unfinished_first_run_does_not_catch_up(kit, fake_wizard, monkeypatch):
+    order = []
+    monkeypatch.setattr(kit.wizard.onboard, "mode", lambda saved: "join")
+    monkeypatch.setattr(kit.wizard.W, "first_run", lambda self, start=0, mode="new": order.append("first_run") and False)
+    monkeypatch.setattr(kit.wizard.W, "catch_up", lambda self: order.append("catch_up"))
+    fake_wizard([])._run()
+    assert order == ["first_run"]
+
+
+def test_the_pull_choice_runs_the_catch_up_not_a_bare_pull(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "pull", lambda *a, **kw: pytest.fail("the catch-up does the pull"))
+    calls = []
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: calls.append(1) or pulled("pulled", commits=2))
+    w = fake_wizard(["pull"])
+    w.do_share()
+    assert calls == [1] and w.t("cu_pulled", n=2) in said
+
+
+def test_the_pull_choice_rebuilds_the_stale_graphs_it_was_asked_for(kit, fake_wizard, monkeypatch):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    r = pulled("up-to-date"); r["views"]["graphs"] = ["web"]
+    monkeypatch.setattr(kit.services.catchup, "run", lambda log=print: r)
+    seen = []
+    monkeypatch.setattr(kit.services.catchup, "rebuild_graphs", lambda repos, log=print: seen.append(repos))
+    fake_wizard(["pull"]).do_share()
+    assert seen == [["web"]]
+
+
+def test_a_busy_catch_up_on_the_pull_choice_says_so_and_does_not_raise(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.catchup, "run",
+                        lambda log=print: {"status": "busy", "pull": None, "views": {"c4": "skipped", "graphs": []}, "at": ""})
+    w = fake_wizard(["pull"])
+    w.do_share()
+    assert w.t("cu_busy") in said
+
+
+def test_an_unexpected_status_says_it_could_not_and_shows_the_detail(kit, fake_wizard, monkeypatch, said):
+    monkeypatch.setattr(kit.services.share, "docs_remote", lambda: "u")
+    monkeypatch.setattr(kit.services.share, "push", lambda log=print: {"status": "odd", "detail": "what git said"})
+    w = fake_wizard(["push"])
+    w.do_share()
+    assert w.t("sh_err_unknown") in said and w.t("sh_git_said", detail="what git said") in said

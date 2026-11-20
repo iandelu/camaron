@@ -85,6 +85,11 @@ def _share() -> object:
     return share
 
 
+def _catchup() -> object:
+    from lib.app import catchup
+    return catchup
+
+
 def _wiki() -> object:
     from lib.app import wiki
     return wiki
@@ -175,6 +180,7 @@ PROVIDERS: dict[str, Callable[[], object]] = {
     "viewers": _viewers,
     "setup": _setup,
     "share": _share,
+    "catchup": _catchup,
     "wiki": _wiki,
     "portal": _portal,
     "export_site": _export_site,
