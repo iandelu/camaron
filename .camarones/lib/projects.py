@@ -38,7 +38,13 @@ def register(path: Path, name: str | None = None) -> None:
 
 
 def touch(path: Path) -> None:
-    register(path)
+    """Bump a project that is already registered to the top (last used). Never adds one: every `camaron` run touches
+    the project it stands in (hooks, agents in a unit's `.cw/<n>` worktree, a test's export), and none of those is a
+    project the person created, joined or adopted — those go through `register`."""
+    path = path.resolve()
+    row = next((r for r in load() if Path(r["path"]).resolve() == path), None)
+    if row:
+        register(path, row["name"])
 
 
 def unregister(*paths: Path) -> int:

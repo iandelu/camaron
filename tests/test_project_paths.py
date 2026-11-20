@@ -55,6 +55,19 @@ def test_register_moves_to_top_without_duplicates(kit, tmp_path):
     assert [r["name"] for r in p.load()] == ["a", "b"]
 
 
+def test_touch_bumps_a_registered_project_but_never_adds_one(kit, tmp_path):
+    """Any `camaron` run (a hook, an agent in a unit worktree, a test's export) touches the project it stands in:
+    that must not put throwaway folders in the person's project list."""
+    p = kit.projects
+    for n in ("a", "b"):
+        p.register(marker(tmp_path / n))
+    p.touch(tmp_path / "b")
+    assert [r["name"] for r in p.load()] == ["b", "a"]            # last used goes first
+    before = p.load()
+    p.touch(marker(tmp_path / ".cw" / "wi-1"))                    # a unit's worktree: a project nobody created here
+    assert p.load() == before
+
+
 def test_adopt_refuses_a_non_empty_non_git_cam_docs(kit, tmp_path):
     w = tmp_path / "other"
     (w / "cam-docs").mkdir(parents=True)

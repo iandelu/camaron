@@ -59,8 +59,9 @@ function samePath(a, b, platform = process.platform) {
   return norm(a) === norm(b)
 }
 
-// The rail: the projects the CLI listed, the one this window shows marked as current.
-const rail = (listed, current, platform) => (listed || []).map((p) => ({ ...p, current: samePath(p.path, current, platform) }))
+// The rail: the projects the CLI listed that are still on disk, the one this window shows marked as current.
+const rail = (listed, current, platform) =>
+  (listed || []).filter((p) => p.exists !== false).map((p) => ({ ...p, current: samePath(p.path, current, platform) }))
 
 // One start per project at a time: a project's server takes seconds to come up, and until then a second click (the
 // rail, the hub) would start a second server. inFlight: key → the start's promise, dropped when it settles.

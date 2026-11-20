@@ -54,6 +54,11 @@ test('the open project is found in the list whatever the spelling of its path', 
   assert.deepEqual(r.rail(listed, '/w/b/cam-docs/', 'linux').map((p) => p.current), [false, true])
 })
 
+test('the rail leaves out a project whose folder is gone', () => {
+  const listed = [{ path: '/w/a/cam-docs', exists: true }, { path: '/w/.cw/wi-1', exists: false }]
+  assert.deepEqual(r.rail(listed, '/w/a/cam-docs', 'linux').map((p) => p.path), ['/w/a/cam-docs'])
+})
+
 test('a second click while a project starts waits for that start instead of starting another server', async () => {
   const inFlight = new Map()
   let starts = 0, done
