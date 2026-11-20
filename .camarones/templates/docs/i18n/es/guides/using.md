@@ -113,7 +113,8 @@ Desde una terminal: `camaron confirm <página> --by <nombre>`, `camaron feedback
 terminal— se trae solo el trabajo del equipo y nunca se sube nada. Si los cambios del equipo chocan con los tuyos, no
 toca nada y dice qué ficheros; sin conexión, el proyecto se abre igual y avisa de que trabajas con lo último que
 trajiste. También busca los repos del equipo en esta máquina sin clonar: uno que falta aquí, o una carpeta con otra cosa
-en su lugar, lo dice el Resumen. Tras traer, el explorador C4 se reconstruye solo si estaba desactualizado (un modelo con errores conserva el
+en su lugar, lo dice el Resumen. Preparar la máquina y `camaron sync` nunca tocan un clon tuyo con cambios sin guardar
+o en otra rama que la del equipo. Tras traer, el explorador C4 se reconstruye solo si estaba desactualizado (un modelo con errores conserva el
 explorador que tenías), y los grafos de código de los repos
 cuyo HEAD se movió se reconstruyen en segundo plano en la app (el asistente de la terminal solo dice cuántos hay
 desactualizados; los rehace `camaron pull`).

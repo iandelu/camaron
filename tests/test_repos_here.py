@@ -206,3 +206,79 @@ def test_the_catch_up_finds_the_repos(kit, tmp_path):
     r = kit.services.catchup.run(log=lambda _: None)
     assert r["repos"] == {"here": ["web", "worker"], "linked": ["api"], "missing": [], "taken": []}
     assert same(kit.ws / "api", kit.ws / "api-svc")
+
+
+# ---------- setup leaves a person's own checkout alone ----------
+def advance(tmp_path: Path, url: str, name: str) -> str:
+    """A teammate pushes a commit to the team's main; returns that commit."""
+    work = tmp_path / "pushes" / name
+    git(tmp_path, "clone", "-q", url, str(work))
+    (work / "teammate.txt").write_text("their work\n", encoding="utf-8")
+    git(work, "add", "teammate.txt")
+    git(work, "commit", "-q", "-m", "teammate")
+    git(work, "push", "-q", "origin", "main")
+    return git(work, "rev-parse", "HEAD")
+
+
+def head(repo: Path) -> str:
+    return git(repo, "rev-parse", "HEAD")
+
+
+def test_setup_fast_forwards_a_clean_clone_on_the_team_branch(kit, tmp_path, monkeypatch):
+    urls = team_repos(kit, tmp_path)
+    new = advance(tmp_path, urls["api"], "api")
+    assert offline_setup(kit, monkeypatch)()
+    assert head(kit.ws / "api") == new
+
+
+def test_setup_leaves_a_clone_on_another_branch_alone(kit, tmp_path, monkeypatch):
+    urls = team_repos(kit, tmp_path)
+    git(kit.ws / "api", "checkout", "-q", "-b", "my-feature")
+    mine = head(kit.ws / "api")
+    advance(tmp_path, urls["api"], "api")
+    assert offline_setup(kit, monkeypatch)()
+    assert git(kit.ws / "api", "branch", "--show-current") == "my-feature"
+    assert head(kit.ws / "api") == mine
+    assert not (kit.ws / "api" / "teammate.txt").exists()
+
+
+def test_setup_leaves_a_linked_clone_on_another_branch_alone(kit, tmp_path, monkeypatch):
+    urls = team_repos(kit, tmp_path)
+    (kit.ws / "api").rename(kit.ws / "api-svc")
+    git(kit.ws / "api-svc", "checkout", "-q", "-b", "my-feature")
+    mine = head(kit.ws / "api-svc")
+    advance(tmp_path, urls["api"], "api")
+    assert offline_setup(kit, monkeypatch)()
+    assert same(kit.ws / "api", kit.ws / "api-svc")
+    assert git(kit.ws / "api-svc", "branch", "--show-current") == "my-feature"
+    assert head(kit.ws / "api-svc") == mine
+
+
+def test_setup_leaves_a_clone_on_a_detached_head_alone(kit, tmp_path, monkeypatch):
+    urls = team_repos(kit, tmp_path)
+    git(kit.ws / "api", "checkout", "-q", "--detach")
+    mine = head(kit.ws / "api")
+    advance(tmp_path, urls["api"], "api")
+    assert offline_setup(kit, monkeypatch)()
+    assert git(kit.ws / "api", "branch", "--show-current") == ""
+    assert head(kit.ws / "api") == mine
+
+
+def test_setup_leaves_a_dirty_clone_alone(kit, tmp_path, monkeypatch):
+    urls = team_repos(kit, tmp_path)
+    (kit.ws / "api" / "pom.xml").write_text("<edited/>\n", encoding="utf-8")
+    mine = head(kit.ws / "api")
+    advance(tmp_path, urls["api"], "api")
+    assert offline_setup(kit, monkeypatch)()
+    assert head(kit.ws / "api") == mine
+    assert (kit.ws / "api" / "pom.xml").read_text(encoding="utf-8") == "<edited/>\n"
+
+
+def test_a_clone_left_alone_says_why(kit, tmp_path, monkeypatch):
+    team_repos(kit, tmp_path)
+    git(kit.ws / "api", "checkout", "-q", "-b", "my-feature")
+    monkeypatch.setattr(kit.services.setup, "prerequisites", lambda: {})
+    lines: list[str] = []
+    kit.services.setup.setup(log=lines.append, comps=[])
+    said = next(m for m in lines if "api" in m and "my-feature" in m)
+    assert "main" in said and "left alone" in said

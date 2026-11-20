@@ -109,7 +109,7 @@ From a terminal: `camaron confirm <page> --by <name>`, `camaron feedback <page> 
 team's work by itself and never uploads. If the team's changes clash with yours it changes nothing and names the files;
 offline, the project still opens and says you are working with the latest you brought in. It also looks for the team's repos
 on this machine without cloning: a repo missing here, or a folder holding something else in its place, is said in the
-Summary. After a bring-in the C4
+Summary. Setup and `camaron sync` never touch a clone of yours with unsaved changes or on another branch than the team's. After a bring-in the C4
 explorer rebuilds itself if it is stale (a model with errors keeps the explorer you had), and the code graphs of repos whose HEAD moved rebuild in the background in the
 app (the terminal wizard only says how many are out of date; `camaron pull` rebuilds them).
 

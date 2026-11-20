@@ -172,7 +172,9 @@ terminal, o subido después), y un repo inalcanzable en cuanto una subida lo alc
 
 La misma mirada busca los repos del equipo en esta máquina (nunca clona): una carpeta con otra cosa donde va un repo del
 equipo avisa y se queda como está, y un repo del equipo que aún no está aquí lo dice, con **Preparar la máquina**, que lo
-clona. Un repo enlazado a un clon con otro nombre no dice nada.
+clona. Un repo enlazado a un clon con otro nombre no dice nada. Preparar la máquina y **Clonar o actualizar los repos**
+nunca mueven un clon tuyo: uno con cambios sin guardar, o en otra rama que la del equipo, se queda como está y el registro
+dice por qué.
 
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
