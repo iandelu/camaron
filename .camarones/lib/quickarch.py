@@ -5,7 +5,7 @@ renders LikeC4 files + a terminal tree, and lets the user accept it as the AI-dr
 """
 from __future__ import annotations
 
-import json, re, shutil
+import json, os, re, shutil
 from pathlib import Path
 
 from .common import DOCS, CACHE, run, which, repo_dir
@@ -57,18 +57,19 @@ def q(text: str) -> str:
 
 def files(repo: Path):
     n = 0
-    for p in repo.rglob("*"):
-        if n >= MAX_FILES:
-            return
-        if any(part in SKIP_DIRS for part in p.relative_to(repo).parts):
-            continue
-        if p.is_file() and (p.suffix in EXTS or p.name.startswith(".env") or p.name in ("Dockerfile", "pubspec.yaml")):
-            try:
-                if p.stat().st_size <= MAX_BYTES:
-                    n += 1
-                    yield p
-            except OSError:
-                continue
+    for root, dirs, names in os.walk(repo):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)    # prune before descending: node_modules alone is 100k+ entries
+        for name in sorted(names):                                 # sorted: the first match is the evidence a C4 element cites
+            if n >= MAX_FILES:
+                return
+            p = Path(root, name)
+            if p.is_file() and (p.suffix in EXTS or name.startswith(".env") or name in ("Dockerfile", "pubspec.yaml")):
+                try:
+                    if p.stat().st_size <= MAX_BYTES:
+                        n += 1
+                        yield p
+                except OSError:
+                    continue
 
 
 def stack(repo: Path, blob: str) -> str:
