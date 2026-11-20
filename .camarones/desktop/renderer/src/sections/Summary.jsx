@@ -114,7 +114,6 @@ export function CatchUpNote({ srv, catchUp, remote = '' }) {
       {said ? pullNote(srv, said) : null}
       {repos.map((r) => (
         <Aviso key={r.key} tone={r.tone} title={t(r.key, r.vars)}
-          detail={r.setup ? t('cu.repoMissingHow') : undefined}
           action={r.setup ? <Button size="sm" href="#/settings">{t('next.machine')}</Button> : undefined} />
       ))}
     </>
