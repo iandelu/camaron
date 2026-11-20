@@ -60,7 +60,13 @@ class RepoCleaner(migrate.Cleaner):
         ow = self.repo / "openwiki"
         if services.current().links._is_link(ow):
             self.act("unlink openwiki", lambda: remove_link(ow))
-        self.lines(".git/info/exclude", ["/openwiki"])
+        g = services.current().guard                       # P3: the git hooks in .git/config, the attribution setting
+        if g.has_config(self.repo):
+            self.act("unset .git/config (git hooks: core.hooksPath back to the repo's own)", lambda: g.uninstall_repo(self.repo))
+        settings = self.repo / ".claude" / "settings.local.json"
+        if g.wrote_attribution(settings):
+            self.act("clean .claude/settings.local.json (Claude Code attribution)", lambda: g.uninstall_attribution([settings]))
+        self.lines(".git/info/exclude", ["/openwiki", "/.claude/settings.local.json"])
         cm = self.repo / "CLAUDE.md"
         if cm.is_file() and services.current().setup.POINTER_START in (text := cm.read_text(encoding="utf-8")) \
                 and services.current().setup.POINTER_START not in (migrate.head_text(self.repo, "CLAUDE.md") or ""):
@@ -104,6 +110,13 @@ def root_links() -> list[str]:
             if target == ROOT.resolve() / n or ROOT.resolve() in target.parents:
                 out.append(n)
     return out
+
+
+def guard_files() -> list[Path]:
+    """The workspace folder's local Claude Code settings the kit may have written the attribution setting into (cam-docs' own go
+    with cam-docs)."""
+    from lib import skills_packs
+    return [f for f in skills_packs._settings_files() if ROOT.resolve() not in f.resolve().parents]
 
 
 def open_wiki_runs() -> list[str]:
@@ -200,6 +213,8 @@ def steps(include_global: bool = False, backup: bool = True, keep_board: bool | 
         out += [Step("repo", a) for a in RepoCleaner(name, dry=True).run()]
         if services.current().agent_config.repo_mcp_entry(name):
             out.append(Step("registry", f"Claude Code's local config for {name}: the camarones MCP server"))
+    out += [Step("edit", f"{f}: Claude Code attribution (the kit's setting; the rest of the file stays)") for f in guard_files()
+            if services.current().guard.wrote_attribution(f)]
     out += [Step("link", f"{WORKSPACE.name}/{n} → {CAM_DIR}/{n} (link)") for n in root_links()]
     out += [Step("link", f"{WORKSPACE.name}/{p.parent.name}/{p.name} → {CAM_DIR}/{p.parent.name}/{p.name} (link in your own "
                          f"folder)") for p in services.current().links.merged_links()]
@@ -284,6 +299,7 @@ def run(include_global: bool = False, backup: bool = True, backup_dir: Path | No
         if forget_repo_mcp(name):
             acts.append("camarones MCP")
         log(f"✔ {name}: " + (f"{len(acts)} trace(s) removed" if acts else "clean"))
+    services.current().guard.uninstall_attribution(guard_files())
     repos_here.unlink_all(log)                 # after the cleaners: they reached the clones through these links
     for p in services.current().links.merged_links():  # the kit's links inside a folder of the person's own
         remove_link(p)

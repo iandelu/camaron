@@ -63,6 +63,8 @@ class Services:
     doc_edit: ModuleType
     translations: ModuleType
     search: ModuleType
+    guard: ModuleType
+    guard_gate: ModuleType
 
     def __init__(self, providers: Mapping[str, Callable[[], object]]) -> None:
         object.__setattr__(self, "_providers", dict(providers))
