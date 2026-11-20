@@ -14,11 +14,12 @@ from pathlib import Path
 from typing import Callable
 
 from ..common import KIT, out, run
+from ..domain.docs import derived
 from .ctx import Ctx
 from .locks import FileLock
 from .worktrees import Worktrees
 
-DERIVED = ("docs/llms.txt", "docs/llms-full.txt", "docs/.status.json")         # regenerated from the pages; never merged by hand
+DERIVED = derived.REBUILT                                                    # regenerated from the pages; never merged by hand
 SHARED_C4 = tuple(f"docs/architecture/{n}" for n in ("model.c4", "spec.c4", "views.c4", "deployment.c4"))
 EXCLUDED = (*DERIVED, "docs/.work", "backlog", ".gitattributes")   # plan state and the board live in the main cam-docs only
 UNION = ("docs/interview/open-questions.md",)               # append-only lists: keep every unit's additions

@@ -1,4 +1,5 @@
 import json, threading
+from types import SimpleNamespace
 from test_team_repo import bare, git, publish
 from test_share_pull import mate_commits
 
@@ -117,3 +118,57 @@ def test_a_pull_that_raises_is_an_error_and_the_run_goes_on(kit, monkeypatch):
     assert r["status"] == "done" and r["views"]["c4"] == "built"
     assert (r["pull"]["status"], r["pull"]["reason"], r["pull"]["detail"]) == ("error", "unknown", "index broke")
     assert kit.services.catchup.last() == r
+
+def test_a_clash_resolved_in_a_terminal_is_no_longer_reported(kit, tmp_path, monkeypatch):
+    remote = bare(tmp_path)
+    page = kit.root / "docs" / "page.md"
+    page.parent.mkdir(parents=True, exist_ok=True); page.write_text("base\n", encoding="utf-8")
+    publish(kit, remote)
+    mate_commits(kit, remote, tmp_path, "docs/page.md", "theirs\n")
+    page.write_text("mine\n", encoding="utf-8")
+    fake_c4(kit, monkeypatch, {"exists": False, "stale": False, "model": False})
+    cu = kit.services.catchup
+    r = cu.run(log=lambda _: None)
+    assert r["pull"]["status"] == "conflict" and cu.standing(kit.services.share.sync_status()) == r
+    git(kit.root, "checkout", "--", "docs/page.md"); git(kit.root, "merge", "-q", "--ff-only", "origin/main")
+    assert cu.standing(kit.services.share.sync_status()) is None
+
+
+def test_an_unreachable_team_is_no_longer_reported_once_an_upload_reached_it(kit):
+    cu, share = kit.services.catchup, kit.services.share
+    failed = {"status": "done", "pull": {"status": "error", "reason": "network", "host": "h", "detail": "x"},
+              "views": {"c4": "fresh", "graphs": []}, "at": "2026-11-18T09:00:00+00:00"}
+    kit.common.save_json(cu.LAST, failed)
+    kit.common.save_json(share.SHARED, {"last": "2026-11-18T08:00:00+00:00"})
+    assert cu.standing(share.sync_status()) == failed
+    kit.common.save_json(share.SHARED, {"last": "2026-11-18T10:00:00+00:00"})
+    assert cu.standing(share.sync_status()) is None
+
+def test_a_units_worktree_skips_the_catch_up_and_touches_nothing(kit, monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    cu = kit.services.catchup
+    monkeypatch.setattr(cu, "CTX", SimpleNamespace(root=tmp_path / "unit", state_root=kit.root))
+    monkeypatch.setattr(kit.services.share, "pull", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("no pull")))
+    r = cu.run(log=lambda _: None)
+    assert (r["status"], r["pull"], r["views"]) == ("skipped", None, {"c4": "skipped", "graphs": []})
+    assert cu.last() is None
+
+def test_rebuild_graphs_graphs_each_repo_then_merges_them(kit, monkeypatch):
+    cu, seen = kit.services.catchup, []
+    monkeypatch.setattr(kit.services.code, "graph_repo", lambda name: seen.append(name) or True)
+    monkeypatch.setattr(kit.services.viewers, "graph", lambda rebuild=True, log=print: seen.append(("merge", rebuild)) or "g.html")
+    assert cu.rebuild_graphs(["web", "api"], log=lambda _: None) is True
+    assert seen == ["web", "api", ("merge", False)]
+    monkeypatch.setattr(kit.services.viewers, "graph", lambda rebuild=True, log=print: None)
+    assert cu.rebuild_graphs([], log=lambda _: None) is False
+
+def test_the_graph_job_starts_only_for_stale_repos(kit, monkeypatch):
+    from lib.interfaces.http import jobs
+    from lib.interfaces.http.routes import team
+    started, rebuilt = [], []
+    monkeypatch.setattr(jobs, "start_job", lambda kind, label, fn: started.append(kind) or fn(lambda _: None))
+    catchup = SimpleNamespace(rebuild_graphs=lambda repos, log: rebuilt.append(repos))
+    team.start_graph_job(catchup, {"views": {"graphs": []}})
+    assert started == [] and rebuilt == []
+    team.start_graph_job(catchup, {"views": {"graphs": ["web"]}})
+    assert started == ["graph"] and rebuilt == [["web"]]

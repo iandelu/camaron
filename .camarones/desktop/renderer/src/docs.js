@@ -203,8 +203,8 @@ export function stripState(sync) {
   if (!sync) return { key: 'strip.reading', tone: 'none' }
   if (sync.error) return { key: 'strip.failed', tone: 'warn' }
   if (!sync.remote) return { key: 'strip.never', tone: 'none' }
-  if (sync.behind > 0) return { key: 'strip.behind', vars: { n: sync.behind }, tone: 'warn' }
+  if (sync.behind > 0) return { key: sync.behind === 1 ? 'strip.behind.one' : 'strip.behind', vars: { n: sync.behind }, tone: 'warn' }
   const n = (sync.ahead || 0) + ((sync.changes ?? sync.pending)?.length || 0)      // changes: never the files the kit rewrites
-  if (n > 0) return { key: 'strip.ahead', vars: { n }, tone: 'warn' }
+  if (n > 0) return { key: n === 1 ? 'strip.ahead.one' : 'strip.ahead', vars: { n }, tone: 'warn' }
   return { key: 'strip.upToDate', tone: 'ok' }
 }

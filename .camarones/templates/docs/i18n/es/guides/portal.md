@@ -204,7 +204,8 @@ hizo esta máquina por última vez y los ficheros aún sin guardar—. **Traer c
 trabajo del equipo; **Subir cambios** (`camaron push`) hace un checkpoint y sube lo tuyo, y se niega si el equipo tiene
 cambios nuevos; **Sincronizar con el equipo** hace lo mismo que `camaron share` (traer y después subir). La acción útil
 es el botón principal; **Comprobar si hay novedades** pregunta al remoto. Un conflicto se deshace; un posible secreto
-bloquea el push. Un fallo dice por qué (no
+bloquea el push; subir o sincronizar mientras el proyecto trae el trabajo del equipo, o sobre un rebase o un merge a
+medias, no toca nada y lo dice. Un fallo dice por qué (no
 llega al servidor: conexión, VPN o proxy; falta un token o lo rechaza; el repo no está) con la línea de git debajo; los
 tokens se guardan en la app de escritorio.
 

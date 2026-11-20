@@ -468,6 +468,12 @@ test('the team strip says where the team repo stands, one state at a time', () =
 
 // GET sync's `changes` leaves out the files the kit rewrites on every read (docs/.status.json): they are never yours to
 // upload. An older server sends only `pending`.
+test('one change either way is said in the singular', () => {
+  expect(stripState({ remote: 'r', behind: 1, ahead: 0, pending: [] })).toEqual({ key: 'strip.behind.one', vars: { n: 1 }, tone: 'warn' })
+  expect(stripState({ remote: 'r', behind: 0, ahead: 0, changes: ['docs/a.md'] })).toEqual({ key: 'strip.ahead.one', vars: { n: 1 }, tone: 'warn' })
+  expect(t('strip.ahead.one', { n: 1 })).toBe('1 cambio por subir')
+})
+
 test('the team strip counts only real changes as yours to upload, never the files the kit rewrites', () => {
   expect(stripState({ remote: 'r', behind: 0, ahead: 0, pending: ['docs/.status.json'], changes: [] })).toEqual({ key: 'strip.upToDate', tone: 'ok' })
   expect(stripState({ remote: 'r', behind: 0, ahead: 1, pending: ['docs/.status.json', 'docs/a.md'], changes: ['docs/a.md'] }))

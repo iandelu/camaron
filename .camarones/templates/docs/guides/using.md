@@ -104,7 +104,7 @@ From a terminal: `camaron confirm <page> --by <name>`, `camaron feedback <page> 
 `cam-docs` is a normal git repo. Opening a project — the desktop app's window or the terminal wizard — brings in the
 team's work by itself and never uploads. If the team's changes clash with yours it changes nothing and names the files;
 offline, the project still opens and says you are working with the latest you brought in. After a bring-in the C4
-explorer rebuilds itself if it is stale, and the code graphs of repos whose HEAD moved rebuild in the background in the
+explorer rebuilds itself if it is stale (a model with errors keeps the explorer you had), and the code graphs of repos whose HEAD moved rebuild in the background in the
 app (the terminal wizard only says how many are out of date; `camaron pull` rebuilds them).
 
 Checkpoints stay local and uploading is a step you take, with three actions in the team strip of **Docs** (the app), **Plan › Team sync**

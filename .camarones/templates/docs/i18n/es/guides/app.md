@@ -156,7 +156,9 @@ pelar». Su botón depende de qué paso sea:
 
 Al abrir la ventana, el Resumen trae solo el trabajo del equipo (nunca sube) y muestra el resultado en una línea; si los
 cambios del equipo chocan con los tuyos, no toca nada, nombra los ficheros y ofrece **Abrir una terminal aquí**. Sin
-conexión, dice que trabajas con lo último que trajiste.
+conexión, dice que trabajas con lo último que trajiste; cualquier otro fallo dice que no pudo traer los cambios del
+equipo, con lo que falló debajo. Un choque deja la línea en cuanto tienes el trabajo del equipo (resuelto en una
+terminal, o subido después), y un repo inalcanzable en cuanto una subida lo alcanza.
 
 Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina**. Debajo, un aviso si la última
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
@@ -383,7 +385,9 @@ que elijas.
 
 **La franja del equipo.** Encima de las pestañas, en todas las de Docs, el repo `cam-docs` del equipo: si estás al día,
 tienes cambios por traer o por subir, o nunca compartiste; una línea —n por traer · m por subir · última vez … (la última
-subida o traída que te dejó al día), más n sin guardar cuando has cambiado páginas— y tres acciones, la útil como botón
+subida o traída que te dejó al día), más n sin guardar cuando has cambiado páginas (nunca los ficheros que el kit escribe
+por su cuenta: el estado de los docs, `llms.txt`, las huellas de frescura, los contadores de uso)— y tres acciones, la
+útil como botón
 principal: **Traer cambios** (`camaron pull`, el trabajo del equipo rebasado dentro), **Subir cambios**
 (`camaron push`, un checkpoint y después lo tuyo subido; se niega si el equipo tiene cambios nuevos, así que tráelos
 primero) y **Sincronizar** (`camaron share`, traer y después subir). Su pliegue, **Repo del equipo**, guarda la URL:
@@ -391,6 +395,9 @@ pégala y **Guardar** (`camaron remote`). Con remoto muestra la misma línea y a
 qué hay de nuevo) y **Subir al guardar** (`camaron share --auto on|off`, solo en esta máquina). Un conflicto se deshace
 sin tocar nada; algo que parece un secreto no se publica. Cuando los cambios del equipo chocan con los tuyos, hay un
 rebase a medias o tus cambios sin guardar tuvieron que ir al stash de git, lo dice y ofrece **Abrir una terminal aquí**.
+Subir o sincronizar mientras la ventana aún trae el trabajo del equipo, o sobre un rebase o un merge a medias, no toca
+nada y lo dice. Preguntar al servidor del equipo se rinde al minuto, y ssh nunca se para a pedir una frase de paso ni una
+clave de host (salvo que hayas configurado ssh para git tú mismo).
 Una acción o una comprobación que falla dice por qué —no llega al servidor (conexión, VPN o proxy), pide un token o
 rechaza el tuyo, el repo no está— con la línea de git debajo; un problema de token enlaza a **Ajustes › Tokens** para
 ese servidor.

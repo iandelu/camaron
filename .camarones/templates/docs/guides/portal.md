@@ -192,7 +192,8 @@ answered and where people disagree.
 did, and files not saved yet. **Bring in changes** (`camaron pull`) rebases the team's work in; **Upload changes**
 (`camaron push`) checkpoints and pushes yours, and refuses when the team has new changes; **Sync with the team** does
 what `camaron share` does (bring in, then upload). The useful one is the primary button; **Check for news** asks the
-remote. A conflict is undone; a possible secret blocks the push. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
+remote. A conflict is undone; a possible secret blocks the push; uploading or syncing while the project is bringing in
+the team's work, or over a rebase or merge left half way, touches nothing and says so. A failure says why (the server unreachable: connection, VPN or proxy; a token missing or refused; the
 repo not found) with git's line beneath; tokens are saved in the desktop app.
 
 <!-- portal:#/pipeline -->

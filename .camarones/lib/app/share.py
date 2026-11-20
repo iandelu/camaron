@@ -10,6 +10,8 @@ import sys
 
 from lib.app import services
 from lib.common import CACHE, CTX, ROOT, load_json, out, run, save_json
+from lib.core.locks import FileLock, LockBusy
+from lib.domain.docs import derived
 from lib.ports import Log
 from lib.projects import git_failure
 
@@ -88,15 +90,14 @@ def set_auto_share(on: bool) -> None:
 def sync_status(fetch: bool = False) -> dict:
     """Where cam-docs stands against the team's repo, without the network unless `fetch`: the remote and branch, the
     commits ahead / behind the last fetched origin, the files not checkpointed yet (`pending`; `changes` leaves out the
-    derived files the kit rewrites on its own), the last commit, the last share and `last_sync`: the newer of the last
+    files the kit writes on its own), the last commit, the last share and `last_sync`: the newer of the last
     share and the last catch-up that left this machine level with the team."""
     git = lambda *a: out(["git", *a], cwd=ROOT)                       # noqa: E731
     url = docs_remote()
     branch = git("symbolic-ref", "--short", "HEAD") if (ROOT / ".git").exists() else ""
     fetched = None
     if url and fetch:
-        from lib import creds
-        r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=creds.git_env(url))
+        r = _fetch(url, FETCH_TIMEOUT)
         fetched = {"ok": True, "reason": ""} if r.returncode == 0 else \
             {"ok": False, "reason": git_failure(r.stderr or r.stdout or ""), "host": _remote_host(url), "detail": _git_said(r)}
     ahead = behind = None
@@ -112,7 +113,7 @@ def sync_status(fetch: bool = False) -> dict:
     head = git("log", "-1", "--format=%h%x00%s%x00%cI").split("\x00") if branch else []
     last_share = load_json(SHARED, {}).get("last")
     return {"remote": url, "branch": branch, "ahead": ahead, "behind": behind, "pending": pending,
-            "changes": [p for p in pending if p not in DERIVED],
+            "changes": [p for p in pending if not derived.kit_written(p)],
             "head": dict(zip(("hash", "subject", "date"), head)) if len(head) == 3 else None,
             "auto": auto_share(), "last_share": last_share, "last_sync": _last_sync(last_share), "fetched": fetched}
 
@@ -181,9 +182,29 @@ def _failed(r: subprocess.CompletedProcess, url: str) -> dict:
     return {"status": "error", "reason": reason, "host": host, "detail": _git_said(r)}
 
 
+def _uploading(work, log: Log) -> dict:
+    """push and share wait for nothing: beside a catch-up (its pull may be rebasing) or over a rebase or merge left half
+    way (the person's to finish, and a checkpoint would commit into it) they are busy and touch nothing."""
+    from lib.app.catchup import LOCK
+    lock = FileLock(LOCK, wait=0)
+    try:
+        lock.acquire()
+    except LockBusy:
+        return {"status": "busy", "detail": "catch-up"}
+    try:
+        return {"status": "busy", "detail": "git"} if _in_progress() else work(log)
+    finally:
+        lock.release()
+
+
 def share(log: Log = print) -> dict:
     """Checkpoint, bring in the team's work (rebase onto origin) and push. Returns {"status", "detail"}:
-    pushed · up-to-date · no-remote · nothing · blocked (secrets staged) · conflict (rebase undone) · error."""
+    pushed · up-to-date · no-remote · nothing · blocked (secrets staged) · conflict (rebase undone) · busy (catch-up, or
+    git: a rebase or merge left half way) · error."""
+    return _uploading(_share, log)
+
+
+def _share(log: Log) -> dict:
     url = _clean_origin()
     if not url:
         return {"status": "no-remote", "detail": ""}
@@ -214,7 +235,7 @@ def share(log: Log = print) -> dict:
     if not branch:
         return {"status": "error", "detail": "detached HEAD: check out a branch first"}
     log(f"fetching {url}…")
-    r = git("fetch", "--quiet", "origin", env=auth)
+    r = _fetch(url, FETCH_TIMEOUT)
     if r.returncode:
         return _failed(r, url)
     theirs = f"origin/{branch}"
@@ -243,7 +264,7 @@ def share(log: Log = print) -> dict:
 
 
 # Rebuilt from the pages, so a clash in them is never worth a person's time: the team's copy is taken and rewritten.
-DERIVED: tuple[str, ...] = ("docs/.status.json", "docs/llms.txt", "docs/llms-full.txt")
+DERIVED = derived.REBUILT
 
 
 def _nul_lines(*args: str) -> list[str]:
@@ -341,6 +362,20 @@ def _no_ssh_prompt() -> dict:
     return {"GIT_SSH_COMMAND": "ssh -o BatchMode=yes -o ConnectTimeout=10"}
 
 
+FETCH_TIMEOUT = 60                                  # seconds: a share, an upload or a check for news never hangs
+
+
+def _fetch(url: str, timeout: float | None) -> subprocess.CompletedProcess:
+    """git fetch origin. With `timeout` it gives up after that many seconds (read as git's own network failure) and ssh
+    never prompts."""
+    from lib import creds
+    env = {**creds.git_env(url), **(_no_ssh_prompt() if timeout else {})}
+    try:
+        return run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=env, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(["git", "fetch"], 124, "", f"fatal: timed out after {timeout:g} s")
+
+
 def pull(log: Log = print, timeout: float | None = None) -> dict:
     """Bring in the team's work (fetch + rebase onto origin); never pushes and never commits, except the board's own
     repair. Local work stays put: a clash leaves HEAD and every file as they were. With `timeout`, the fetch gives up
@@ -360,13 +395,8 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
     branch = out(["git", "symbolic-ref", "--short", "HEAD"], cwd=ROOT)
     if not branch:
         return result("error", "detached HEAD: check out a branch first")
-    from lib import creds
     log(f"fetching {url}…")
-    env = {**creds.git_env(url), **(_no_ssh_prompt() if timeout else {})}
-    try:
-        r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=env, timeout=timeout)
-    except subprocess.TimeoutExpired:                                # read as git's own network failure
-        r = subprocess.CompletedProcess(["git", "fetch"], 124, "", f"fatal: timed out after {timeout:g} s")
+    r = _fetch(url, timeout)
     if r.returncode:
         return {**result("error"), **_failed(r, url)}
     theirs = f"origin/{branch}"
@@ -422,7 +452,12 @@ def pull(log: Log = print, timeout: float | None = None) -> dict:
 
 def push(log: Log = print) -> dict:
     """Upload local cam-docs work; never rebases and never pulls. Returns {"status", "detail"}: pushed · nothing ·
-    behind (the team moved: pull first, nothing changed) · blocked (secrets staged) · no-remote · error."""
+    behind (the team moved: pull first, nothing changed) · blocked (secrets staged) · no-remote · busy (as share's) ·
+    error."""
+    return _uploading(_push, log)
+
+
+def _push(log: Log) -> dict:
     url = _clean_origin()
     if not url:
         return {"status": "no-remote", "detail": ""}
@@ -442,7 +477,7 @@ def push(log: Log = print) -> dict:
     from lib import creds
     auth = creds.git_env(url)
     log(f"fetching {url}…")
-    r = run(["git", "fetch", "--quiet", "origin"], cwd=ROOT, check=False, quiet=True, env=auth)
+    r = _fetch(url, FETCH_TIMEOUT)
     if r.returncode:
         return _failed(r, url)
     theirs = f"origin/{branch}"
