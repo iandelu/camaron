@@ -1,24 +1,9 @@
 // Pure helpers of the Board view (Kanban.jsx) over GET /api/kanban: the filters, the waves, a story's subtasks and the
 // start gate's refusal. Columns, drop anchor and keyboard move live in the kit's shared kanban.js, the desktop app's
 // Board uses them too.
-export { STATUS_LABELS, columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
+export { STATUS_LABELS, applyFilters, columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
 
-const SUSPECT = new Set(['suspect', 'stale'])
-const DOCS = {
-  suspect: (c) => (c.links || []).some((l) => SUSPECT.has(l.fresh)),
-  unconfirmed: (c) => (c.links || []).some((l) => l.trust !== 'confirmed'),
-}
 const up = (s) => String(s || '').trim().toUpperCase()
-
-// An empty filter lets everything through; `epic` keeps the epic itself and its stories, `parent` (#/kanban?parent=)
-// the parent itself and its children (a story and its subtasks).
-export function applyFilters(cards, { repo, epic, label, docs, parent } = {}) {
-  return cards.filter((c) => (!repo || (c.repos || []).includes(repo))
-    && (!epic || up(c.epic) === up(epic) || up(c.id) === up(epic))
-    && (!parent || up(c.parent) === up(parent) || up(c.id) === up(parent))
-    && (!label || (c.labels || []).includes(label))
-    && (!docs || !DOCS[docs] || DOCS[docs](c)))
-}
 
 // Each Backlog/Ready card's wave, 1-based as people count: from `waves` (GET /api/kanban/waves: lists of rows or ids)
 // when given, else from the card's own `wave` (0-based; null or -1 when it has none). → {id: n}

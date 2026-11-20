@@ -43,6 +43,12 @@ export const wikiBlocks = (tree, wikis) => {
   return (tree?.repos || []).map((repo) => block(repo, withWiki.includes(repo), 'unread'))
 }
 
+// The asked repo's block first, the rest apart; a repo with no block asks for nothing.
+export const focusRepo = (blocks, repo) => {
+  const first = repo ? blocks.find((b) => b.repo === repo) || null : null
+  return { first, rest: first ? blocks.filter((b) => b !== first) : blocks }
+}
+
 // A wiki card's state, one at a time: a run in progress, a run that failed, no pages yet, written under an older scope
 // (`old`), the code moved since (`stale`), or fresh. `hasWiki` (not info.pages) decides "no pages": the tree fallback has no row.
 export const wikiState = (block, { running = false, failed = false } = {}) => {

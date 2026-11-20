@@ -12,4 +12,5 @@ test('breadcrumbs follow the place, its view and the ADR', () => {
   expect(crumbs({ hash: '#/flow', project: 'p', t })).toEqual([{ label: 'p', href: '#/flow' }, { label: 'Flujo' }])
   expect(crumbs({ hash: '#/flow/plan', project: 'p', t })).toEqual([{ label: 'p', href: '#/flow' }, { label: 'Flujo', href: '#/flow' }, { label: 'Plan' }])
   expect(crumbs({ hash: '#/board', project: '', t })).toEqual([{ label: '…', href: '#/flow' }, { label: 'Tablero' }])
+  expect(crumbs({ hash: '#/flow/repo/api', project: 'p', t })).toEqual([{ label: 'p', href: '#/flow' }, { label: 'Flujo', href: '#/flow' }, { label: 'api' }])
 })

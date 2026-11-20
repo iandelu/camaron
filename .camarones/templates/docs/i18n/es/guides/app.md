@@ -29,7 +29,7 @@ Cada proyecto tiene su ventana, servida por el servidor local de ese proyecto (v
 |---|---|
 | Cabecera | La marca (vuelve a Flujo), dónde estás (`proyecto › sección`), **Ver portal**, **Buscar o ir a…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) y **⋯**. La cabecera es la barra de la ventana: arrástrala para moverla |
 | Raíl | Un botón por cada proyecto de esta máquina, con sus iniciales. Otro proyecto se abre **en esta ventana**: la app arranca el servidor de ese proyecto, lleva la ventana a él y para el anterior. Pararlo cierra las sesiones abiertas en su lienzo, así que si alguna sigue viva la app pregunta antes: *Hay {n} sesiones abiertas en este proyecto: al cambiar de proyecto se cierran.* — **Cancelar** o **Cambiar igualmente**. Un proyecto que no está en el disco sale apagado. **+** abre la pantalla de inicio |
-| Barra lateral | Cuatro lugares: Flujo (Resumen y Plan), Tablero, Calidad (Salud y Librerías) y Docs (Leer, Wikis, Decisiones y Entrevistas); después, bajo **Esta app**, Ajustes (General, Tokens, Skills, Plugins, Confianza y Kit), Guía y (solo en un checkout del kit) Kit dev. Un lugar con vistas las enseña como pestañas bajo su título. Al pasar por uno ves su atajo |
+| Barra lateral | Cuatro lugares: Flujo (Resumen y Plan), Tablero, Calidad (Salud, SonarQube y Librerías) y Docs (Leer, Wikis, Decisiones y Entrevistas); después, bajo **Esta app**, Ajustes (General, Tokens, Skills, Plugins, Confianza y Kit), Guía y (solo en un checkout del kit) Kit dev. Un lugar con vistas las enseña como pestañas bajo su título. Al pasar por uno ves su atajo |
 | Zona central | La sección en la que estás |
 | Panel de trabajos y barra de estado | Lo que corre ahora y los últimos trabajos, con su salida; la barra de estado enseña el primer trabajo en curso y la versión del kit |
 
@@ -129,7 +129,7 @@ el asistente entero si esta máquina ya tiene todos los repos y herramientas.
 
 ## Flujo
 
-Dónde está el proyecto y qué toca ejecutar después (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Bajo el título hay dos pestañas: **Resumen** y **Plan** (`#/flow/plan`).
+Dónde está el proyecto y qué toca ejecutar después (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Bajo el título hay dos pestañas: **Resumen** y **Plan** (`#/flow/plan`). La página de un repo (`#/flow/repo/<nombre>`) es una vista, no una pestaña: se abre desde la tarjeta del repo.
 
 <!-- go:flow -->
 <!-- tour:flow -->
@@ -164,6 +164,33 @@ Sin ningún agente instalado, la tarjeta lo dice y ofrece **Preparar la máquina
 comprobación encontró algo que le falta a esta máquina o un fichero del kit fuera de su sitio (**Verlo en Calidad**), y
 tres cifras: el plan (hechas de total), las páginas por revisar (enlazan a la Revisión del portal) y los trabajos en
 curso.
+
+**Una tarjeta por repo** va debajo, leída sin IA y sin red: el estado del repo, la puerta de calidad de SonarQube y la
+cobertura (o **Estimado** y la cobertura de un informe del repo, si no se leyó ningún servidor), las vulnerabilidades
+de librerías, el estado de su wiki y sus páginas desactualizadas (si no hay, las páginas por revisar). Un repo que no
+está clonado aquí lo dice en lugar de sus cifras de SonarQube y librerías. La tarjeta abre la página del repo. **Ver la
+salud completa** va a Calidad.
+
+### La página de un repo
+
+Un repo en una pantalla (`#/flow/repo/<nombre>`, desde una tarjeta de repo o desde un enlace de repo en Calidad ›
+Salud). Es un bento de teselas; un repo que no está en el proyecto responde «no encontrado». Cada tesela abre su
+ventana real ya filtrada por el repo (`?repo=`):
+
+- **Cabecera**: el stack, leído de los ficheros del repo sin IA (lenguaje, framework, build, datos, contenedor, CI).
+- **SonarQube**: la cobertura, su tendencia en los últimos 8 chequeos de salud, la puerta de calidad, bugs,
+  vulnerabilidades del código y deuda; sin servidor leído, la estimación (ver [SonarQube](#sonarqube)); si la última
+  foto de salud no tiene cifras del repo, lo dice. Abre Calidad › SonarQube.
+- **Actividad**: commits por semana durante 12 semanas, las personas que han hecho commits y el último commit, desde git.
+- **Librerías**: vulnerabilidades por severidad (una sin gravedad cuenta como desconocida) y cuántas librerías tienen
+  una versión más nueva. Abre Calidad › Librerías.
+- **Documentación**: las páginas del repo al día, por comprobar y desactualizadas, y su wiki. Abre Docs › Wikis.
+- **Arquitectura**: un C4 pequeño (qué lo llama, a qué llama) y sus nodos del grafo del código; el C4 y el grafo se
+  abren en el portal.
+- **Trabajo**: las tarjetas del repo por columna y los ADR que lo nombran. Abren el Tablero y Docs › Decisiones.
+
+El kit guarda el stack y la actividad en `.cache/repos/` y los refresca cuando cambia el HEAD del repo, su rama, la
+semana o su `stack` en `workspace.yaml`.
 
 ### Plan
 
@@ -306,7 +333,8 @@ Un proyecto sin tablero enseña **Activar el tablero** (`camaron board init`). C
 - **Abre una tarjeta** para leer su descripción, sus criterios de aceptación y su definición de hecho. Una historia
   lista sus tareas y tiene **Añadir tarea**. **Eliminar** la quita del tablero tras preguntar: su fichero pasa a
   `backlog/archive/tasks` (sus tareas se quedan).
-- **Añadir ▾** (arriba) es un menú. **Historia** abre las Historias del portal en tu navegador, donde se escriben las historias; **Tarea** y **Bug** abren aquí el formulario: tipo, título, dentro de qué va (una tarea bajo una épica o una historia; una
+- **Filtrar por repo**: `?repo=<nombre>` (lo que abre la tesela Trabajo de la página de un repo) enseña un chip **Repo: <nombre>** que se puede quitar y solo las tarjetas de ese repo.
+- **Añadir ▾** (arriba) es un menú, y las flechas recorren sus entradas. **Historia** abre las Historias del portal en tu navegador, donde se escriben las historias; **Tarea** y **Bug** abren aquí el formulario: tipo, título, dentro de qué va (una tarea bajo una épica o una historia; una
   historia, un bug o un spike bajo una épica) y prioridad.
 
 Escribir historias con sus subtareas y oleadas se hace en las [Historias del portal](portal.md#historias).
@@ -314,8 +342,8 @@ Escribir historias con sus subtareas y oleadas se hace en las [Historias del por
 ## Calidad
 
 La salud del proyecto en un solo panel: esta máquina, la documentación y el código (`#/quality`, <kbd>g</kbd>
-<kbd>q</kbd>). Lee `camaron health`, que no usa IA. Bajo el título hay dos vistas: **Salud**, el panel, y **Librerías**
-(`#/quality/libs`, más abajo); la dirección antigua `#/libs` sigue abriéndola.
+<kbd>q</kbd>). Lee `camaron health`, que no usa IA. Bajo el título hay tres vistas: **Salud**, el panel, **SonarQube**
+(`#/quality/sonar`, más abajo) y **Librerías** (`#/quality/libs`, más abajo); la dirección antigua `#/libs` sigue abriendo Librerías.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -327,7 +355,7 @@ Arriba, un veredicto («Páginas desactualizadas: 3 · Críticas o altas: 2», o
 |---|---|---|---|
 | Máquina | Lista · Revisar · Riesgo | herramientas, faltan | **Requisitos y herramientas**: primero lo que falta, cada cosa con **Instalar** (`camaron doctor --install …`), **Instalar las fijadas** (`camaron setup`), **Volver a comprobar**, y ficheros del kit fuera de su sitio con **Reparar**. **Ficheros del kit**: cada fichero o enlace fuera de su sitio, con su motivo; **Reparar** repone lo del kit, vuelve a comprobar y dice qué no ha podido y por qué. Un fichero tuyo que el kit nunca reemplaza sale como «se queda como está», no como algo por arreglar |
 | Documentación | Al día · Revisar · Riesgo | páginas desactualizadas, por revisar | **Páginas desactualizadas** (cada una con **Sigue valiendo**, o **Añadir una unidad que las actualice**), **Preguntas de control (IA)** (confirmar preguntas de oro, hacerlas, o **Proponer preguntas con {agente}**), **Contexto de cada sesión** (los tokens que carga cada sesión de agente frente al presupuesto), **Páginas por revisar** (portal), **Bloques generados** (actualizarlos), **Con y sin cam-docs (IA)** (la misma pregunta dos veces), **Escaneo de secretos** (gitleaks sobre la documentación y las wikis, `camaron check --secrets`: se ejecuta al abrir la fila, lista cada sitio donde encontró algo —nunca el valor— y dice claro cuando no pudo ejecutarse) y **Hooks para los agentes** (el interruptor de los cinco hooks del método de Claude Code, `camaron hooks`, y lo que han visto: prompts con documentación, sesiones que leyeron la documentación antes de su primera edición de código, ediciones frenadas) |
-| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en el portal). **Librerías** → la vista Librerías |
+| Código | Sano · Revisar · Riesgo | librerías, críticas o altas | **Repos**: por repo su puerta de calidad de SonarQube (Aprobado, Aviso, Suspendido) o si usa Sonar, la cobertura (la de Sonar, si no la de sus informes locales) con su fecha, las vulnerabilidades por gravedad y la deuda técnica, y **Ver completo →** (la página del repo en la app). **Librerías** → la vista Librerías |
 
 Un repo que usa SonarQube sin token guardado enseña **Conectar SonarQube**, que abre Ajustes › Tokens con el servidor
 escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo del panel: **Ver los KPIs** (portal) y
@@ -337,10 +365,25 @@ escrito. Una cifra que no se pudo leer sale como «—», nunca como 0. Debajo d
 <!-- cmd:check -->
 <!-- cmd:hooks -->
 
+### SonarQube
+
+Una fila por repo, con las cifras que leyó la última comprobación de salud (`#/quality/sonar`).
+
+<!-- go:quality/sonar -->
+
+Cada fila enseña su **fuente** (SonarQube o Estimado), la puerta de calidad, la cobertura (la de Sonar, si no la del
+informe del repo), los bugs, las vulnerabilidades del código, la deuda y **Abrir en SonarQube**. Filtra por repo y por
+fuente; **Volver a leer** vuelve a hacer la foto de salud (`camaron health --refresh`). La cifra del servidor siempre
+gana a una estimación. Si la foto no pudo leer los repos, la vista dice **Sin leer** con el motivo.
+
+Una fila **Estimado** abre un panel con lo que el kit sabe sin servidor (la cobertura del informe del repo, sus
+vulnerabilidades de librerías, sus páginas desactualizadas), lo que no puede saber y **Conectar SonarQube** (Ajustes ›
+Tokens).
+
 ### Librerías
 
-Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la segunda vista de Calidad
-(`#/quality/libs`).
+Las dependencias de cada repo, leídas de sus manifiestos y lockfiles sin IA: la tercera vista de Calidad
+(`#/quality/libs`). `?repo=<nombre>` la abre con la faceta de ese repo ya puesta.
 
 <!-- go:quality/libs -->
 <!-- tour:libs -->
@@ -472,6 +515,8 @@ La wiki de cada repo (`#/docs/wikis`).
   si el código ha cambiado desde que se escribieron las páginas, **Ampliar** si la wiki se escribió con un alcance
   anterior, **Reintentar** si la última generación falló y **Ver** cuando está al día. Cuando una wiki tiene páginas,
   **Ver** la abre en el portal junto a la acción.
+- **Filtrada por repo** (`?repo=<nombre>`, desde la página de un repo): la tarjeta de ese repo va primero y las demás
+  se pliegan en **Las otras wikis**.
 - **Generar la wiki** escribe la wiki OpenWiki de ese repo; si el repo no estaba elegido para tener wiki, lo elige, y si
   aún no tiene brief, antes escribe uno inicial sin IA. **Actualizar** y **Ampliar** lanzan OpenWiki en modo
   actualización sobre las páginas que ya existen. Mientras se escribe una wiki, su botón dice **Generando…** con una
@@ -495,6 +540,7 @@ Los ADR del proyecto, decididos con la evidencia delante y escritos, sin IA (`#/
 `docs/.work/adr/<NNNN>.yaml`, que va a git. La guía de comandos tiene [todas las reglas](tutorial.md#-decisiones).
 
 
+- **Filtrada por repo** (`?repo=<nombre>`): un chip que se puede quitar y solo los ADR que nombran el repo.
 - **La lista**: cada ADR con su estado (En curso, En revisión, Propuesta, Aceptada, Sustituida, Rechazada…), filtros y
   búsqueda por título, número o repo. Un ADR que el kit no escribió aparece con su estado y no se reescribe.
 - **Nuevo ADR**: un título, *nuevo* o *retroactivo* y, si quieres, el problema, los drivers, las restricciones, las
@@ -581,7 +627,7 @@ dice. Debajo, **Packs opcionales** (ponytail, impeccable): **Añadir** copia uno
 <!-- go:settings/plugins -->
 
 Los del kit (Gemini, Confluence, Notion) y los del equipo (`.camarones/plugins/`), con lo que aporta cada
-uno, si ejecuta código o envía la documentación fuera, y su estado aquí. **Activar**/**Desactivar** solo afectan a esta
+uno, si ejecuta código o envía la documentación fuera, y su estado aquí. Sin ninguno instalado, la pestaña lo dice. **Activar**/**Desactivar** solo afectan a esta
 máquina.
 
 ### Confianza

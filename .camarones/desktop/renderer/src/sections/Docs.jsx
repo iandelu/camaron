@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Aviso, Button, Card, Thinking } from '@camaron/ui'
 import { route as adrRoute } from '../adr.js'
-import { buildFailed, c4Card, docsHealth, lastMiss, openPortal, readViewers, seeksStale, startBuild, startWiki, viewersRead, wikiAction,
-  wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
+import { buildFailed, c4Card, docsHealth, focusRepo, lastMiss, openPortal, readViewers, seeksStale, startBuild, startWiki, viewersRead,
+  wikiAction, wikiBlocks, wikiBusyWith, wikiError, wikiRunning, wikiRuns, wikiRunsEnded, wikiState, wikisRead } from '../docs.js'
 import { useHash, useJob, useStore } from '../hooks.js'
 import { ago } from '../jobs.js'
 import { errorLine } from '../onboarding.js'
-import { JobOutput } from '../parts.jsx'
-import { viewOf } from '../nav.js'
+import { Fold, JobOutput } from '../parts.jsx'
+import { repoOf, viewOf } from '../nav.js'
 import { Place } from '../Place.jsx'
 import { t } from '../i18n.js'
 import Commands from './Commands.jsx'
@@ -52,7 +52,7 @@ export default function Docs({ srv, jobs, chat, app, index }) {
   return (
     <div className={chatting ? 'dk-docs with-chat' : 'dk-docs'}>
       <Place section="docs" view={view} wide={wide} head={<TeamStrip srv={srv} jobs={jobs} />}>
-        {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} index={index} open={open} seek={seeksStale(hash)} />
+        {view === 'wikis' ? <WikisView srv={srv} jobs={jobs} index={index} open={open} seek={seeksStale(hash)} repo={repoOf(hash)} />
           : view === 'decisions' ? <Decisions srv={srv} />
           : view === 'interviews' ? <Interviews srv={srv} jobs={jobs} app={app} />
           : <ReadView srv={srv} jobs={jobs} chat={talk} index={index} open={open} onAsk={ask} />}
@@ -88,7 +88,8 @@ function ReadView({ srv, jobs, chat, index, open, onAsk }) {
 }
 
 // The wiki cards. `seek`: the address asks for the first stale card (the health header's chip), looked for once the cards are read.
-function WikisView({ srv, jobs, index, open, seek }) {
+// `repo` (?repo=, from a repo's page): that repo's card first, the others folded below.
+function WikisView({ srv, jobs, index, open, seek, repo = '' }) {
   const wikis = useWikis(srv, jobs)
   const sought = useRef(!seek)
   useEffect(() => {
@@ -96,19 +97,24 @@ function WikisView({ srv, jobs, index, open, seek }) {
     sought.current = true
     scrollToStale()
   }, [wikis.rows])
-  return <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={wikis.running} open={open} />
+  return <WikiGrid srv={srv} jobs={jobs} index={index} wikis={wikis} running={wikis.running} open={open} repo={repo} />
 }
 
 // The wiki cards and, once a read failed, the one notice above them (the cards do not repeat it). `wikis` is useWikis' state.
-export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, reload }, running, open }) {
+// With a `repo` that has a card, the grid holds only it and the others wait in a fold, in a grid of their own.
+export function WikiGrid({ srv, jobs, index, wikis: { rows, loading, failed, reload }, running, open, repo = '' }) {
+  const { first, rest } = focusRepo(wikiBlocks(index, rows), repo)
+  const block = (b, i) => (
+    <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading} failed={failed} busyWith={wikiBusyWith(running, b.repo)}
+      runningHere={wikiRunning(running, b.repo)} onView={() => open(b.hash)} onDone={reload} />)
   return (
     <>
       {failed ? <WikisUnread kept={!!rows} onRetry={reload} /> : null}
       <div className="dk-wikis" data-tour="docs-wikis">
-        {wikiBlocks(index, rows).map((b, i) => (
-          <WikiBlock key={b.repo} srv={srv} jobs={jobs} block={b} index={i} loading={loading} failed={failed} busyWith={wikiBusyWith(running, b.repo)}
-            runningHere={wikiRunning(running, b.repo)} onView={() => open(b.hash)} onDone={reload} />))}
+        {(first ? [first] : rest).map(block)}
       </div>
+      {first && rest.length
+        ? <Fold label={t('docs.otherWikis', { n: rest.length })}><div className="dk-wikis">{rest.map(block)}</div></Fold> : null}
     </>
   )
 }

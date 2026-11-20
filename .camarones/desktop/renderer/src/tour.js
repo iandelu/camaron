@@ -11,7 +11,7 @@ export const TOURS = {
   app: [{ section: null, target: 'rail' }, ...['flow', 'board', 'quality', 'docs', 'settings'].map(nav),
     { section: null, target: 'find' }, { section: null, target: 'portal' }, { section: null, target: 'menu' },
     { section: null, target: 'jobs' }, nav('guide')],
-  flow: at('flow', 'tabs-flow', 'summary-next', 'summary-doctor', 'summary-stats'),
+  flow: at('flow', 'tabs-flow', 'summary-next', 'summary-doctor', 'summary-stats', 'summary-repos'),
   plan: at('flow/plan', 'plan-run', 'plan-keep', 'plan-units', 'plan-cost', 'plan-reset'),
   board: at('board', 'board-columns', 'board-add', 'board-help'),
   quality: at('quality', 'q-verdict', 'q-areas', 'q-repos'),

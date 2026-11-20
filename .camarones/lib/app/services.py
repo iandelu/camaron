@@ -18,6 +18,7 @@ from lib.ports.toolchain import Toolchain
 from lib.ports.vcs import Vcs
 from lib.ports.wiki_engine import WikiEngine
 from lib.ports.workspace_store import WorkspaceStore
+from lib.ports.repo_facts import RepoFacts
 from lib.ports.repo_sync import RepoSync
 from lib.ports.doc_state import DocState
 from lib.ports.doc_store import DocStore
@@ -40,6 +41,7 @@ class Services:
     vcs: Vcs
     workspace: WorkspaceStore
     repos: RepoSync
+    repo_facts: RepoFacts
     doc_state: DocState
     docs: DocStore
     vendor: Vendor

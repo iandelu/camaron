@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
-import { SkillsList } from './sections/SettingsTeam.jsx'
-import { setLang } from './i18n.js'
+import { PluginsList, SkillsList } from './sections/SettingsTeam.jsx'
+import { setLang, t } from './i18n.js'
 
 afterEach(() => setLang('es'))
 
@@ -31,4 +31,10 @@ test('the skills card shows each skill with its icon, both switches and the pack
   const en = renderToStaticMarkup(<SkillsList data={SKILLS} />)
   expect(en).toContain('Frontend design')
   expect(en).toContain('awaits approval')
+})
+
+test('the plugins tab says so when there are none', () => {
+  const out = renderToStaticMarkup(<PluginsList rows={[]} />)
+  expect(out).toContain(t('pl.empty'))
+  expect(out).toContain('Aún no hay plugins')
 })

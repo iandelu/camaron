@@ -20,8 +20,8 @@
       "_rolldown-runtime-WkwZ5CU-.js"
     ]
   },
-  "_kanban-B_jOjNId.js": {
-    "file": "assets/kanban-B_jOjNId.js",
+  "_kanban-B5HtlrfS.js": {
+    "file": "assets/kanban-B5HtlrfS.js",
     "name": "kanban"
   },
   "_rolldown-runtime-WkwZ5CU-.js": {
@@ -29,7 +29,7 @@
     "name": "rolldown-runtime"
   },
   "index.html": {
-    "file": "assets/index-F2b5IO78.js",
+    "file": "assets/index-CKWKB6e8.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -51,7 +51,7 @@
       "src/Stories.jsx"
     ],
     "css": [
-      "assets/index-DpSkXwqA.css"
+      "assets/index-BEqNEJH_.css"
     ]
   },
   "src/Ci.jsx": {
@@ -67,7 +67,7 @@
     ]
   },
   "src/Data.jsx": {
-    "file": "assets/Data-BaNjmcKI.js",
+    "file": "assets/Data-C6t46utP.js",
     "name": "Data",
     "src": "src/Data.jsx",
     "isDynamicEntry": true,
@@ -102,7 +102,7 @@
     ]
   },
   "src/Kanban.jsx": {
-    "file": "assets/Kanban-DK4bIq07.js",
+    "file": "assets/Kanban-C2Z0IRtO.js",
     "name": "Kanban",
     "src": "src/Kanban.jsx",
     "isDynamicEntry": true,
@@ -110,7 +110,7 @@
       "_rolldown-runtime-WkwZ5CU-.js",
       "_i18n-CuWvslLp.js",
       "_Failed-CHA16Tgt.js",
-      "_kanban-B_jOjNId.js"
+      "_kanban-B5HtlrfS.js"
     ]
   },
   "src/Kpis.jsx": {
@@ -137,7 +137,7 @@
     ]
   },
   "src/Pipeline.jsx": {
-    "file": "assets/Pipeline-Y8cG7HVE.js",
+    "file": "assets/Pipeline-b7FbnGyU.js",
     "name": "Pipeline",
     "src": "src/Pipeline.jsx",
     "isDynamicEntry": true,
@@ -151,7 +151,7 @@
     ]
   },
   "src/Stories.jsx": {
-    "file": "assets/Stories-CuL5ml_h.js",
+    "file": "assets/Stories-CmA_zkIu.js",
     "name": "Stories",
     "src": "src/Stories.jsx",
     "isDynamicEntry": true,
@@ -160,7 +160,7 @@
       "_i18n-CuWvslLp.js",
       "_core-C_L3pvZC.js",
       "_Failed-CHA16Tgt.js",
-      "_kanban-B_jOjNId.js"
+      "_kanban-B5HtlrfS.js"
     ]
   },
   "src/Sync.jsx": {

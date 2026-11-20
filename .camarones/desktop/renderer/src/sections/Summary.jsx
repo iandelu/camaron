@@ -7,6 +7,7 @@ import { firstRunPending } from '../nav.js'
 import { AgentPicker, Failed, Page } from '../parts.jsx'
 import { TerminalButton } from './TeamStrip.jsx'
 import { useTour } from '../Tour.jsx'
+import RepoCards from './RepoCards.jsx'
 import { lang, t } from '../i18n.js'
 
 // The project's Summary: one next step (lib/plan.next_step, the wizard's own rule) with the one button that takes
@@ -96,6 +97,7 @@ export default function Summary({ srv, jobs }) {
           <b className="t-impact dk-stat-n">{running.length}</b>
         </Card>
       </div>
+      <div data-tour="summary-repos"><RepoCards srv={srv} jobs={jobs} /></div>
     </Page>
   )
 }

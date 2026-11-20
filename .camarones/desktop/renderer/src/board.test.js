@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'vitest'
-import { addChoices, allowedParents, cardAt, childrenOf, fit, gateKey, gateMessage, moveOutcome, parentLabel, parentOf, placed, sendMove, shouldFocus } from './board.js'
+import { addChoices, allowedParents, cardAt, childrenOf, fit, gateKey, gateMessage, menuStep, moveOutcome, parentLabel, parentOf, placed, sendMove, shouldFocus } from './board.js'
 import { setLang, t } from './i18n.js'
 
 const rows = [
@@ -173,4 +173,14 @@ test('addChoices: the story goes to the portal, every other type to the form, in
     { type: 'story', where: 'portal' }, { type: 'task', where: 'form' }, { type: 'bug', where: 'form' }])
   expect(addChoices(['bug', 'story'])).toEqual([{ type: 'bug', where: 'form' }, { type: 'story', where: 'portal' }])
   expect(addChoices([])).toEqual([])
+})
+
+test('menuStep moves among the menu items, wrapping, with Home and End', () => {
+  expect(menuStep(0, 'ArrowDown', 3)).toBe(1)
+  expect(menuStep(2, 'ArrowDown', 3)).toBe(0)
+  expect(menuStep(0, 'ArrowUp', 3)).toBe(2)
+  expect(menuStep(1, 'Home', 3)).toBe(0)
+  expect(menuStep(0, 'End', 3)).toBe(2)
+  expect(menuStep(1, 'x', 3)).toBe(1)
+  expect(menuStep(0, 'ArrowDown', 0)).toBe(0)
 })

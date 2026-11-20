@@ -15,9 +15,9 @@ const slug = (name) => name.split(':').pop().split('/').pop().replace(/[^\w.-]+/
 const libCount = (rows) => new Set(rows.map((r) => r.ecosystem + r.name)).size
 const modeOf = (args) => (args.cves ? 'cves' : args.latest ? 'latest' : 'read')
 
-export default function Libs({ srv, jobs }) {
+export default function Libs({ srv, jobs, repo = '', initial = null }) {
   const c = useCmd(srv, jobs)
-  const [inv, setInv] = useState(null)
+  const [inv, setInv] = useState(initial)
   const [error, setError] = useState('')
   const [mode, setMode] = useState('cves')
   const [closed, setClosed] = useState(false)
@@ -32,7 +32,7 @@ export default function Libs({ srv, jobs }) {
     <>
       {error ? <Failed title={t('q.cvFailed')} detail={error} onRetry={load} /> : null}
       {inv ? (
-        <LibrariesBoard inv={inv} actions={<Actions c={c} run={run} />}
+        <LibrariesBoard inv={inv} repo={repo} actions={<Actions c={c} run={run} />}
           status={closed ? null : <ScanStatus c={c} mode={mode} onClose={() => setClosed(true)} />}
           renderUpdate={(row, p) => <Update row={row} proposal={p} srv={srv} jobs={jobs} onChanged={load} />} />
       ) : !error ? <Skeleton lines={3} /> : null}

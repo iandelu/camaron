@@ -84,6 +84,8 @@ AREA: dict[tuple[str, str], str] = {
     ], "jobs"),
 }
 
+AREA.update(dict.fromkeys([("GET", "/api/app/repo"), ("GET", "/api/app/repos")], "repos"))
+
 MOVED: set[str] = set(AREA.values())
 
 

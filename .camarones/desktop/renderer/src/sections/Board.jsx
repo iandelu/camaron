@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Aviso, Button, Chip, EmptyState, Skeleton } from '@camaron/ui'
-import { columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
-import { addChoices, cardAt, childrenOf, fit, gateMessage, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
-import { Failed, Page } from '../parts.jsx'
+import { applyFilters, columns, dropAnchor, keyMove } from '@camaron/ui/kanban.js'
+import { addChoices, cardAt, childrenOf, fit, gateMessage, menuStep, moved, parentLabel, placed, sendMove, shouldFocus } from '../board.js'
+import { Failed, Page, RepoChip } from '../parts.jsx'
 import { AddForm, StoryPanel, known, label } from './BoardPanels.jsx'
 import { openPortal } from '../docs.js'
+import { useHash } from '../hooks.js'
+import { repoOf } from '../nav.js'
 import { lang, t } from '../i18n.js'
 
 export { AddForm, StoryPanel }
@@ -50,7 +52,9 @@ export default function Board({ srv, app }) {
     const el = land && document.getElementById(`bd-${land}`)
     if (el) { el.focus(); setLand(null) }
   }, [land, board])
-  const cols = useMemo(() => (board ? columns(fit(board.cards, board.statuses), board.statuses) : []), [board])
+  const repo = repoOf(useHash())
+  const shown = useMemo(() => (board && repo ? { ...board, cards: applyFilters(board.cards, { repo }) } : board), [board, repo])
+  const cols = useMemo(() => (shown ? columns(fit(shown.cards, shown.statuses), shown.statuses) : []), [shown])
 
   async function move(id, status, anchor) {
     const card = cols.flatMap((c) => c.cards).find((c) => c.id === id)
@@ -120,18 +124,18 @@ export default function Board({ srv, app }) {
   if (error) return <Page title={t('nav.board')}><Failed title={t('bd.failed')} detail={error} onRetry={() => { setError(''); load() }} /></Page>
   if (!board) return <Page title={t('nav.board')}><Skeleton lines={6} /></Page>
   const picked = open && board.cards.find((c) => c.id === open)
-  const shown = item && item.id?.toUpperCase() === open ? { ...item, status: picked?.status ?? item.status } : null
+  const itemShown = item && item.id?.toUpperCase() === open ? { ...item, status: picked?.status ?? item.status } : null
   const side = adding ? (
     <AddForm cards={board.cards} types={board.types} priorities={board.priorities} prefill={adding} busy={busy} error={formError}
       onSubmit={create} onClose={closePanel} />
   ) : open ? (
-    <StoryPanel id={open} item={shown} error={itemError} tasks={childrenOf(board.cards, open)} lang={lang()} writable={!!board.writable}
+    <StoryPanel id={open} item={itemShown} error={itemError} tasks={childrenOf(board.cards, open)} lang={lang()} writable={!!board.writable}
       busy={busy} deleteError={delError} onAddTask={(story) => openForm({ type: 'task', parent: story })} onOpen={openCard}
       onDelete={remove} onClose={closePanel} />
   ) : null
   return (
     <Page title={t('nav.board')} full>
-      <BoardView board={board} lang={lang()} kb={kb} notice={notice} say={say} open={open} dragging={dragging} over={over} side={side}
+      <BoardView board={shown} all={board.cards} repo={repo} lang={lang()} kb={kb} notice={notice} say={say} open={open} dragging={dragging} over={over} side={side}
         onMove={move} onOpen={openCard} menu={menu} onMenu={setMenu} onChoose={choose} onKey={onKey} onInit={init} onDrag={drag} onOver={setOver} />
     </Page>
   )
@@ -139,7 +143,7 @@ export default function Board({ srv, app }) {
 
 // What the board draws, from its data alone (the test renders it): the columns as they are, with a grabbed card
 // where it would land.
-export function BoardView({ board, lang: l, kb, notice = '', say = '', open = null, dragging = null, over = null, side = null,
+export function BoardView({ board, all = board.cards, repo = '', lang: l, kb, notice = '', say = '', open = null, dragging = null, over = null, side = null,
   onMove, onOpen, menu = false, onMenu = () => {}, onChoose = () => {}, onKey, onInit, onDrag, onOver }) {
   const writable = !!board.writable
   const toggle = useRef(null)
@@ -153,6 +157,12 @@ export function BoardView({ board, lang: l, kb, notice = '', say = '', open = nu
     document.addEventListener('mousedown', away)
     return () => { document.removeEventListener('keydown', esc); document.removeEventListener('mousedown', away) }
   }, [menu, onMenu])
+  const onMenuKey = (e) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+    const items = [...list.current.querySelectorAll('[role="menuitem"]')]
+    e.preventDefault()
+    items[menuStep(items.indexOf(document.activeElement), e.key, items.length)]?.focus()
+  }
   const readOnly = writable ? null : <Aviso tone="info" title={t('bd.readOnly')} />
   if (!board.enabled) {
     return (
@@ -165,7 +175,7 @@ export function BoardView({ board, lang: l, kb, notice = '', say = '', open = nu
       </>
     )
   }
-  const byId = new Map(board.cards.map((c) => [c.id, c]))
+  const byId = new Map(all.map((c) => [c.id, c]))
   const cols = columns(fit(board.cards, board.statuses), board.statuses)
   const drawn = placed(cols, kb)
 
@@ -190,7 +200,7 @@ export function BoardView({ board, lang: l, kb, notice = '', say = '', open = nu
         <Button variant="primary" disabled={!writable} aria-haspopup="menu" aria-expanded={menu} ref={toggle}
           onClick={() => onMenu(!menu)}>{t('bd.add')}</Button>
         {menu ? (
-          <div className="dk-bd-menu" role="menu" ref={list}>
+          <div className="dk-bd-menu" role="menu" ref={list} onKeyDown={onMenuKey}>
             {addChoices(board.types).map((c) => (
               <button key={c.type} type="button" role="menuitem" className="dk-bd-menuitem" onClick={() => onChoose(c)}>
                 <b>{known(`bd.type.${c.type}`, c.type)}</b>
@@ -199,9 +209,10 @@ export function BoardView({ board, lang: l, kb, notice = '', say = '', open = nu
           </div>
         ) : null}
       </div></div>
+      {repo ? <RepoChip repo={repo} clear="#/board" /> : null}
       {board.problems?.length ? <Aviso tone="warn" title={t('bd.problems')}>{board.problems.map((p) => `${p.path}: ${p.error}`).join(' · ')}</Aviso> : null}
       {notice ? <Aviso tone="error" title={t('bd.moveFailed')} detail={notice} /> : null}
-      {!board.cards.length ? <p className="muted">{t('bd.empty')}</p> : null}
+      {!board.cards.length ? <p className="muted">{repo ? t('bd.repoEmpty', { repo }) : t('bd.empty')}</p> : null}
       <p id="bd-help" className="muted small" data-tour="board-help">{t('bd.help')}</p>
       <div className={'dk-bd-wrap' + (side ? ' with-side' : '')}>
       <div className="dk-bd" data-tour="board-columns">

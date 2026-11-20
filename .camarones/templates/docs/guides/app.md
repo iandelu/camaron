@@ -29,7 +29,7 @@ Each project has its own window, served by that project's own local server (see
 |---|---|
 | Header | The brand (back to Flow), where you are (`project › section`), **View portal**, **Search or go to…** (<kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>⌘</kbd> <kbd>K</kbd>) and **⋯**. The header is the window's title bar: drag it to move the window |
 | Rail | One button per project of this machine, with its initials. Another project opens **in this window**: the app starts that project's server, moves the window to it and stops the old one. Stopping it ends the sessions open on its canvas, so when one is live the app asks first: *{n} sessions are open in this project: switching project ends them.* — **Cancel** or **Switch anyway**. A project that is not on disk is greyed out. **+** opens the start screen |
-| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
+| Sidebar | Four places: Flow (Summary and Plan), Board, Quality (Health, SonarQube and Libraries) and Docs (Read, Wikis, Decisions and Interviews); then, under **This app**, Settings (General, Tokens, Skills, Plugins, Trust and Kit), Guide and (only in a checkout of the kit) Kit dev. A place with views shows them as tabs under its title. Hover one to see its shortcut |
 | Main area | The section you are in |
 | Jobs panel and status bar | What runs now and the last jobs, with their output; the status bar shows the first running job and the kit's version |
 
@@ -127,7 +127,7 @@ this machine already has every repo and tool.
 
 ## Flow
 
-Where the project stands and what to run next (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Two tabs sit under the title: **Summary** and **Plan** (`#/flow/plan`).
+Where the project stands and what to run next (`#/flow`, <kbd>g</kbd> <kbd>f</kbd>). Two tabs sit under the title: **Summary** and **Plan** (`#/flow/plan`). A repo's own page (`#/flow/repo/<name>`) is a view, not a tab: it opens from a repo card.
 
 <!-- go:flow -->
 <!-- tour:flow -->
@@ -160,6 +160,33 @@ terminal, or uploaded since), and an unreachable repo once an upload has reached
 With no agent installed, the card says so and offers **Prepare the machine**. Below it: a warning when the last check
 found something missing on this machine or a kit file out of place (**See it in Quality**), and three figures: the
 plan (done of total), pages to review (linked to the portal's Review) and jobs running.
+
+**One card per repo** sits under them, read without AI and without a network call: the repo's state, its SonarQube
+quality gate and coverage (or **Estimated** and the coverage from a report in the repo, when no server was read),
+library vulnerabilities, the state of its wiki and its out-of-date pages (with none, the pages to check). A repo not
+cloned here says so in place of its SonarQube and library figures. A card opens the repo's page. **See all of Health**
+goes to Quality.
+
+### A repo's page
+
+One repo on one screen (`#/flow/repo/<name>`, from a repo card or from a repo link in Quality › Health). It is a
+bento of tiles; a repo that is not in the project answers "not found". Each tile opens its real window already
+filtered to the repo (`?repo=`):
+
+- **Header**: the stack, read from the repo's files without AI (language, framework, build, data, container, CI).
+- **SonarQube**: coverage, its trend over the last 8 health builds, the quality gate, bugs, code vulnerabilities and
+  debt; with no server read, the estimate (see [SonarQube](#sonarqube)); when the last health snapshot has no figures
+  for the repo, it says so. Opens Quality › SonarQube.
+- **Activity**: commits per week for 12 weeks, the people who committed and the last commit, from git.
+- **Libraries**: vulnerabilities by severity (one with no severity counts as unknown) and how many libraries have a
+  newer version. Opens Quality › Libraries.
+- **Documentation**: the repo's pages up to date, to check and out of date, and its wiki. Opens Docs › Wikis.
+- **Architecture**: a small C4 (what calls the repo, what it calls) and its code-graph nodes; the C4 and the graph open
+  in the portal.
+- **Work**: the repo's cards by column and the ADRs that name it. Open the Board and Docs › Decisions.
+
+The kit keeps the stack and the activity in `.cache/repos/` and refreshes them when the repo's HEAD, its branch, the
+week or its `stack` in `workspace.yaml` changes.
 
 ### Plan
 
@@ -298,7 +325,8 @@ A project without a board shows **Turn the board on** (`camaron board init`). Wi
 - **Open a card** to read its description, its acceptance criteria and its definition of done. A story lists its tasks
   and has **Add a task**. **Delete** takes the card off the board after asking: its file moves to
   `backlog/archive/tasks` (its tasks stay).
-- **Add ▾** (top) is a menu. **Story** opens the portal's Stories in your browser, where stories are written; **Task** and **Bug** open the form here: type, title, what it goes under (a task under an epic or a story; a story, bug or
+- **Filter by repo**: `?repo=<name>` (what a repo page's Work tile opens) shows a removable **Repo: <name>** chip and only that repo's cards.
+- **Add ▾** (top) is a menu, and the arrow keys move through its entries. **Story** opens the portal's Stories in your browser, where stories are written; **Task** and **Bug** open the form here: type, title, what it goes under (a task under an epic or a story; a story, bug or
   spike under an epic) and priority.
 
 Writing stories with their subtasks and waves happens in the [portal's Stories](portal.md#stories).
@@ -306,8 +334,8 @@ Writing stories with their subtasks and waves happens in the [portal's Stories](
 ## Quality
 
 The project's health in one board: this machine, the docs and the code (`#/quality`, <kbd>g</kbd> <kbd>q</kbd>). It
-reads `camaron health`, which needs no AI. Two views sit under the title: **Health**, the board, and **Libraries**
-(`#/quality/libs`, below); the old `#/libs` address still opens it.
+reads `camaron health`, which needs no AI. Three views sit under the title: **Health**, the board, **SonarQube**
+(`#/quality/sonar`, below) and **Libraries** (`#/quality/libs`, below); the old `#/libs` address still opens Libraries.
 
 <!-- go:quality -->
 <!-- tour:quality -->
@@ -319,7 +347,7 @@ and **Check everything** (`camaron health --refresh`). Then three areas, each wi
 |---|---|---|---|
 | Machine | Ready · Review · At risk | tools, missing | **Requirements and tools**: what is missing first, each with **Install** (`camaron doctor --install …`), **Install the pinned ones** (`camaron setup`), **Check again**, and kit files out of place with **Repair**. **Kit files**: each file or link that is off, with why; **Repair** puts back the kit's, checks again and says what it could not fix and why. A file of yours that the kit never replaces is listed as kept, not as something to fix |
 | Documentation | Up to date · Review · At risk | outdated pages, to review | **Outdated pages** (each with **Still holds**, or **Add a unit that refreshes them**), **Control questions (AI)** (confirm golden questions, ask them, or **Propose questions with {agent}**), **Context of each session** (the tokens every agent session loads against the budget), **Pages to review** (portal), **Generated blocks** (refresh them), **With and without cam-docs (AI)** (the same question asked twice), **Secret scan** (gitleaks over the docs and the wikis, `camaron check --secrets`: it runs when you open the row, lists each place it found — never the value — and says plainly when it could not run) and **Hooks for the agents** (the switch for the five Claude Code method hooks, `camaron hooks`, and what they saw: prompts that got docs, sessions that read the docs before their first code edit, edits stopped) |
-| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the portal's page for the repo). **Libraries** → the Libraries view |
+| Code | Healthy · Review · At risk | libraries, critical or high | **Repos**: per repo its SonarQube quality gate (Passed, Warning, Failed) or whether it uses Sonar, coverage (Sonar's, else its local reports) with its date, vulnerabilities by severity and technical debt, and **See full →** (the repo's page in the app). **Libraries** → the Libraries view |
 
 A repo that uses SonarQube but has no token saved shows **Connect SonarQube**, which opens Settings › Tokens with the
 server filled in. A figure that could not be read shows "—", never 0. Below the board: **See the KPIs** (portal) and
@@ -329,10 +357,24 @@ server filled in. A figure that could not be read shows "—", never 0. Below th
 <!-- cmd:check -->
 <!-- cmd:hooks -->
 
+### SonarQube
+
+One row per repo, from the figures the last health check read (`#/quality/sonar`).
+
+<!-- go:quality/sonar -->
+
+Each row shows its **source** (SonarQube, or Estimated), the quality gate, coverage (Sonar's, else the repo's report),
+bugs, code vulnerabilities, debt and **Open in SonarQube**. Filter by repo and by source; **Read again** builds the health
+snapshot again (`camaron health --refresh`). The server's figure always wins over an estimate. When the snapshot could
+not read the repos at all, the view says **Unread** with the reason.
+
+An **Estimated** row opens a panel with what the kit knows without a server (the coverage from the repo's report, its
+library vulnerabilities, its out-of-date pages), what it cannot know, and **Connect SonarQube** (Settings › Tokens).
+
 ### Libraries
 
-Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's second view
-(`#/quality/libs`).
+Every repo's dependencies, read from its manifests and lockfiles without AI: Quality's third view
+(`#/quality/libs`). `?repo=<name>` opens it with that repo's facet already set.
 
 <!-- go:quality/libs -->
 <!-- tour:libs -->
@@ -453,6 +495,8 @@ The wiki of each repo (`#/docs/wikis`).
   primary action that follows the state: **Generate the wiki** with no pages yet, **Update** when the code has changed
   since the pages were written, **Expand** when the wiki was written under an earlier scope, **Try again** when the last
   run failed and **View** when it is up to date. Once a wiki has pages, **View** opens it in the portal beside the action.
+- **Filtered by repo** (`?repo=<name>`, from a repo's page): that repo's card comes first and the others fold under
+  **The other wikis**.
 - **Generate the wiki** writes that repo's OpenWiki; when the repo was not chosen for a wiki, it chooses it, and when it
   has no brief yet, it writes a starter brief without AI first. **Update** and **Expand** run OpenWiki in update mode on
   the pages already there. While a wiki is being written its button reads **Generating…** with a running count of
@@ -474,6 +518,7 @@ The project's ADRs, made with the evidence in front of you and written down, wit
 `docs/.work/adr/<NNNN>.yaml`, which goes to git. The command guide has [every rule](tutorial.md#-decisions).
 
 
+- **Filtered by repo** (`?repo=<name>`): a removable chip and only the ADRs that name the repo.
 - **The list**: each ADR with its status (Running, In review, Proposed, Accepted, Superseded, Rejected…), filters and a
   search by title, number or repo. An ADR the kit did not write shows with its status and is not rewritten.
 - **New ADR**: a title, *new* or *retroactive*, and optionally the problem, drivers, constraints, candidate options and
@@ -557,7 +602,7 @@ says so. Below, **Optional packs** (ponytail, impeccable): **Add** copies one in
 <!-- go:settings/plugins -->
 
 The kit's (Gemini, Confluence, Notion) and the team's (`.camarones/plugins/`), with what each brings,
-whether it runs code or sends the docs out, and its state here. **Enable**/**Disable** only affect this machine.
+whether it runs code or sends the docs out, and its state here. With none installed, the tab says so. **Enable**/**Disable** only affect this machine.
 
 ### Trust
 

@@ -150,7 +150,7 @@ Activar el tablero** (`camaron board init`).
 por área y una fila por repo (puerta de calidad de SonarQube, cobertura, vulnerabilidades, deuda). **Comprobar todo** la
 recalcula (`camaron health --refresh`). Una herramienta que falta tiene ahí su botón **Instalar**.
 
-**Librerías** (la segunda vista de Calidad, `#/quality/libs`) lista cada dependencia con la versión que usan los repos. **Buscar vulnerabilidades** las compara con la
+**Librerías** (la tercera vista de Calidad, `#/quality/libs`) lista cada dependencia con la versión que usan los repos. **Buscar vulnerabilidades** las compara con la
 base de datos sin conexión de OSV (`camaron inventory --cves`; nada sale de tu máquina). **Buscar versiones nuevas**
 pregunta a los registros públicos la última versión estable de cada una (`camaron inventory --latest`; salen de tu
 máquina los nombres de las librerías, nunca las vuestras). **Actualizar ▾** propone la última versión, o la que corrige

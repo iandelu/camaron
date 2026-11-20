@@ -107,7 +107,11 @@ export function Plugins({ srv, jobs }) {
   useEffect(() => { list.run('plugins', { json: true }) }, [])
   const rows = list.job?.result
   const toggle = async (p) => { await act.run('plugins', { action: p.status === 'active' ? 'disable' : 'enable', target: p.name }); list.run('plugins', { json: true }) }
-  if (Array.isArray(rows) && !rows.length) return null
+  return <PluginsList rows={rows} list={list} act={act} toggle={toggle} />
+}
+
+export function PluginsList({ rows, list, act, toggle }) {
+  if (Array.isArray(rows) && !rows.length) return <Card className="dk-run" data-tour="team-plugins"><p className="muted small">{t('pl.empty')}</p></Card>
   return (
     <Card className="dk-run" data-tour="team-plugins">
       <span className="eyebrow">{t('tm.plugins')}</span>

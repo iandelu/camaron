@@ -141,7 +141,7 @@ the board on** (`camaron board init`).
 and a row per repo (SonarQube gate, coverage, vulnerabilities, debt). **Check everything** refreshes it
 (`camaron health --refresh`). A missing tool has its **Install** button there.
 
-**Libraries** (the second view of Quality, `#/quality/libs`) lists every dependency with the version the repos use. **Scan for vulnerabilities** checks them against
+**Libraries** (the third view of Quality, `#/quality/libs`) lists every dependency with the version the repos use. **Scan for vulnerabilities** checks them against
 OSV's offline database (`camaron inventory --cves`; nothing leaves your machine). **Look for newer versions** asks the
 public registries for each one's latest stable version (`camaron inventory --latest`; library names leave your
 machine, your own never). **Update ▾** proposes the latest version, or the one that fixes its advisories, and makes a

@@ -95,3 +95,48 @@ def test_the_newest_commit_of_a_repo_is_read(kit):
     from lib import history
     assert [c["subject"] for c in history.commits("web", 12)] == ["update stuff", "feat(cart): show order ORD-12", "initial"]
     assert history.mine(months=12)["repos"]["web"]["commits"] == 3
+
+
+def dated_commit(repo, author, msg, when):
+    env = {**os.environ, "GIT_AUTHOR_DATE": when, "GIT_COMMITTER_DATE": when}
+    (repo / f"{abs(hash((msg, when)))}.txt").write_text(msg, encoding="utf-8")
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "-c", f"user.name={author}", "-c", "user.email=x@example.com", "commit", "-q", "-m", msg],
+                   cwd=repo, check=True, capture_output=True, env=env)
+
+
+def test_weekly_buckets_by_iso_week_in_utc(kit):
+    from datetime import date, datetime, timezone
+    from lib import history
+
+    def at(s):
+        return int(datetime.fromisoformat(s).replace(tzinfo=timezone.utc).timestamp())
+
+    empty = history.weekly([], date(2026, 11, 18))
+    assert len(empty) == 12 and empty[-1] == {"start": "2026-11-16", "n": 0} and empty[0]["start"] == "2026-08-31"
+    got = history.weekly([at("2026-11-15T23:59:59"), at("2026-11-16T00:00:00"), at("2026-08-30T12:00:00")],
+                         date(2026, 11, 18))
+    by = {w["start"]: w["n"] for w in got}
+    assert by["2026-11-09"] == 1 and by["2026-11-16"] == 1 and sum(by.values()) == 2
+
+
+def test_activity_counts_humans_and_names_the_last_one(kit):
+    from datetime import date
+    from lib import history
+    api = kit.ws / "fresh"
+    api.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=api, check=True, capture_output=True)
+    dated_commit(api, "Cleo", "before the first week", "2026-08-30T12:00:00Z")
+    dated_commit(api, "Ana", "one", "2026-11-02T10:00:00Z")
+    dated_commit(api, "Bob", "two", "2026-11-09T10:00:00Z")
+    dated_commit(api, "Ana", "three", "2026-11-12T10:00:00Z")
+    dated_commit(api, "dependabot[bot]", "bump", "2026-11-13T10:00:00Z")
+    got = history.activity("fresh", today=date(2026, 11, 18))
+    assert got["total"] == 3 and got["people"] == 2 and len(got["weeks"]) == 12
+    assert got["last"]["subject"] == "three" and got["last"]["author"] == "Ana"
+
+
+def test_activity_of_a_folder_without_git_is_none(kit):
+    from lib import history
+    (kit.ws / "plain").mkdir()
+    assert history.activity("plain") is None

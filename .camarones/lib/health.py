@@ -16,6 +16,7 @@ actions and the verdict.
 """
 from __future__ import annotations
 
+import json
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter
@@ -204,6 +205,8 @@ def debt_items(repos: list[str]) -> dict[str, list[dict]]:
 # ---- the snapshot ----
 
 SNAPSHOT = CACHE / "health.json"
+HISTORY = CACHE / "health" / "history.jsonl"
+HISTORY_KEEP = 26
 VERSION = 1
 VULN_SCAN_MAX_DAYS = 30
 COVERAGE_MIN = 50
@@ -364,7 +367,39 @@ def build(log=print) -> dict:
             "debt_project": debt if _failed(debt) else debt.get("_project", [])}
     snap.update(areas(snap))
     save_json(SNAPSHOT, snap)
+    _guard(append_history, snap)
     return snap
+
+
+def append_history(snap: dict, keep: int = HISTORY_KEEP) -> None:
+    """One line per build with each cloned repo's coverage; the file keeps the last `keep` lines."""
+    repos = snap.get("repos")
+    if not _good(repos):
+        return
+    figures = {n: p for n, r in repos.items() if _good(r) and r.get("cloned") is not False and (p := _repo_percent(r)) is not None}
+    if not figures:
+        return
+    HISTORY.parent.mkdir(parents=True, exist_ok=True)
+    lines = HISTORY.read_text(encoding="utf-8").splitlines() if HISTORY.is_file() else []
+    lines.append(json.dumps({"at": snap.get("at"), "repos": figures}, ensure_ascii=False))
+    HISTORY.write_text("\n".join(lines[-keep:]) + "\n", encoding="utf-8", newline="\n")
+
+
+def history() -> list[dict]:
+    """Each build's coverage per repo, oldest first; a line that is not a JSON object is skipped."""
+    try:
+        lines = HISTORY.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    rows = []
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
 
 
 def load() -> dict | None:
