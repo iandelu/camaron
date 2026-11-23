@@ -2,7 +2,7 @@
 facts, freshness, the wikis, the C4 model, the board and the decisions."""
 from __future__ import annotations
 
-import importlib, json, shutil, threading, urllib.error, urllib.request
+import importlib, json, threading, urllib.error, urllib.request
 from http.server import ThreadingHTTPServer
 
 import pytest
@@ -100,13 +100,13 @@ def test_the_mini_c4_is_what_calls_it_and_what_it_calls(wired, dash, monkeypatch
 
 
 def test_a_repo_not_cloned(wired, dash):
-    shutil.rmtree(wired.ws / "worker")
+    importlib.import_module("lib.core.fsutil").rmtree(wired.ws / "worker")   # git objects are read-only on Windows
     r = dash.repo("worker")
     assert r["cloned"] is False and r["head"] is None and r["activity"] is None and r["stack"] == []
 
 
 def test_a_repo_not_cloned_claims_no_library_state(wired, dash):
-    shutil.rmtree(wired.ws / "worker")
+    importlib.import_module("lib.core.fsutil").rmtree(wired.ws / "worker")   # git objects are read-only on Windows
     snapshot(wired, {"api": {"cloned": True, "libraries": 3, "vulns": {"high": 1}},
                      "worker": {"cloned": False, "libraries": 0, "vulns": {}}}, inventory={"at": "x", "scanned": True})
     assert dash.repo("worker")["libs"] == {"total": None, "vulns": {}, "scanned": False, "outdated": None}
