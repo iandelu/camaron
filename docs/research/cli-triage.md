@@ -89,7 +89,7 @@ every command either way.
 | `status` | check |  |  | yes |
 | `translated` | team |  |  |  |
 
-## Cli only (13)
+## Cli only (14)
 
 | Command | Zone | AI | Destructive | --json |
 |---|---|---|---|---|
@@ -98,6 +98,7 @@ every command either way.
 | `catalog` | — |  |  | yes |
 | `change` | — |  |  | yes |
 | `diagrams` | — |  |  | yes |
+| `guard` | — |  |  | yes |
 | `help` | — |  |  |  |
 | `hook` | — |  |  |  |
 | `install` | — |  |  |  |

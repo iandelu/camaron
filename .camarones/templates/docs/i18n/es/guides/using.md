@@ -209,8 +209,9 @@ propia rama, `cam/<id>-<slug>`, en cada repo de servicio, y la documentación en
   apruebas tú, a una alta una especificación, un plan y una propuesta de partirla en elementos de tablero en borrador.
 - **Prueba primero y luego verificación.** El agente ejecuta el build, los tests y los linters del propio repo más
   `camaron check`.
-- **Guardarraíles e impacto.** Rutas prohibidas, gitleaks, páginas que el cambio deja desactualizadas
-  (`camaron pr fresh`) y reglas de confianza; después, el impacto en la documentación, los contratos y el tablero.
+- **Guardarraíles e impacto.** La puerta (`camaron guard gate`: rutas prohibidas, gitleaks, dependencias, Sonar), páginas
+  que el cambio deja desactualizadas (`camaron pr fresh`) y reglas de confianza; después, el impacto en la documentación,
+  los contratos y el tablero.
 - **Una sola pregunta.** «¿Abro las PR?» Si dices que sí, abre una PR de código en borrador por repo y una PR de
   documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
   fusiona. El agente mueve su propia tarjeta con los comandos del cambio: a In Progress con `camaron change start`, a
@@ -255,8 +256,31 @@ Para adaptar el flujo a tu equipo:
 - `camaron change close ID` comprueba con git que cada rama está fusionada en su base: la tarjeta pasa a **Done**.
   `--abandon` la devuelve a **Ready**. Los dos quitan el worktree de la documentación; las ramas se quedan.
 
-El ID se puede omitir dentro de la rama de un cambio o cuando solo hay uno abierto. Los guardarraíles y abrir las
-propias PR llegan en versiones posteriores.
+El ID se puede omitir dentro de la rama de un cambio o cuando solo hay uno abierto. Abrir las propias PR llega en una
+versión posterior.
+
+## Guardarraíles
+
+`camaron setup` (y `repair`) pone guardarraíles en cada repo del proyecto y en `cam-docs`, para que nada dependa de que
+la IA se acuerde de una regla. Viven en la configuración de git de cada repo y en los ajustes locales de Claude Code:
+no se escribe ningún fichero versionado en un repo de servicio.
+
+- **Git hooks.** Un mensaje de commit pierde el co-autor de una IA o la línea «Generated with Claude Code», un push que
+  aún lo lleve se rechaza y los secretos preparados para el commit lo detienen (gitleaks). Subir `cam-docs` ejecuta
+  `camaron check` y se para ante un error. Un repo que ya tiene hooks (husky, pre-commit, Git LFS) los conserva: se
+  ejecutan justo después de los del kit. Un falso positivo: `git commit --no-verify`.
+- **La atribución de Claude Code** está apagada en el `.claude/settings.local.json` de cada repo (fuera de git) y en el
+  de la carpeta del espacio de trabajo.
+- `camaron guard status` dice qué está activo; `camaron doctor` lista lo que está apagado y `camaron repair` lo repone;
+  `camaron guard uninstall` devuelve a los repos sus propios hooks. `guard: {install: false}` en `workspace.yaml` deja
+  el proyecto fuera de setup y repair.
+- `camaron guard gate [--repo NOMBRE] [--base REF] [--latest]` es la puerta que un cambio debe pasar, leída de sus
+  commits frente a la rama base: sin co-autor de una IA, sin secretos en los commits, sin rutas `.env*`, claves o
+  `secrets/`, sin vulnerabilidades altas o críticas **nuevas** en los lockfiles que toca, con la puerta de calidad de
+  Sonar en verde (si el repo tiene proyecto Sonar) y, con `--latest` o `guard: {outdated: true}`, sin una librería que
+  añada o suba una versión mayor por detrás (esa envía nombres de librerías a los registros públicos). Una comprobación
+  que no pudo ejecutarse (sin gitleaks, sin token de Sonar, sin OSV-Scanner) queda **sin ejecutar**, nunca en verde.
+  Salida 0 verde, 1 rojo, 3 nada falló pero una comprobación no se ejecutó.
 
 ## Costes y KPIs
 

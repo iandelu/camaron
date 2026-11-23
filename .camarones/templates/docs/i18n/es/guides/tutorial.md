@@ -469,6 +469,19 @@ Claude Code para la carpeta de cada repo, así que una sesión abierta en `<repo
 Vive en tu propia configuración de Claude Code (`~/.claude.json`), nunca en el repo; `doctor` avisa si a un repo le
 falta y `uninstall` lo quita.
 
+**Guardarraíles.** `setup` (y `repair`) instala además, en cada repo y en `cam-docs`, git hooks a través de la
+configuración local del propio repo (`core.hooksPath` → `~/.camarones/githooks/`; no se escribe nada versionado): un
+mensaje de commit pierde el co-autor de una IA o la línea «Generated with Claude Code», un push que aún lo lleve se
+rechaza, los secretos preparados detienen el commit (gitleaks) y subir `cam-docs` ejecuta `camaron check`. Un repo que ya
+tiene hooks (husky, pre-commit, Git LFS) los conserva: se ejecutan justo después de los del kit (`doctor` avisa cuando
+una herramienta como husky vuelve a apuntar el repo a otro sitio, y `repair` lo vuelve a encadenar). La atribución de
+Claude Code en commits y PR queda apagada en el `.claude/settings.local.json` local de cada repo (fuera de git) y en el
+de la carpeta del espacio de trabajo. `camaron guard status` lo muestra, `camaron guard uninstall` lo quita y
+`guard: {install: false}` en `workspace.yaml` deja un proyecto fuera. `camaron guard gate` comprueba un cambio frente a su
+rama base (co-autor de una IA, secretos en los commits, rutas `.env*`/claves/`secrets/`, vulnerabilidades altas o
+críticas nuevas en los lockfiles que toca, la puerta de calidad de Sonar y, con `--latest`, librerías que añade una
+versión mayor por detrás): salida 0 verde, 1 rojo, 3 una comprobación no pudo ejecutarse, que nunca es verde.
+
 **Hooks del método (opcionales).** `camaron hooks on` añade cinco hooks de Claude Code en `cam-docs/.claude/settings.json`,
 que son del kit (`trust` no pregunta por ellos): al empezar la sesión el agente recibe el estado del plan, el último
 relevo y las revisiones pendientes; con cada mensaje recibe las secciones de la doc, los elementos C4 y los nodos del
@@ -512,7 +525,7 @@ comprobado, los comandos ejecutados y la siguiente acción.
 `doctor --local` (propone un modelo local libre para este equipo, sin instalar nada), `doctor --context` (los tokens
 que carga cada sesión de un agente antes de leer una página, frente a `context.budget`), `autopilot`, `plugins [--json]`,
 `run`, `runs`, `kpis`, `eval`, `ab`, `pipeline show|validate`, `blocks [--force]`, `pages [--adopt] [--json]`, `diagrams [--json]`, `pr fresh <repo>` y
-`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes|enable|disable|add|remove` (las skills del kit, las copias del equipo, un interruptor por skill para el proyecto o, con `--machine`, para ti, y los packs opcionales; todas aceptan `--json`), `pr propose <url>`, `removed add`, `repair`, `export codetour <flujo>`,
+`plugins add|update|outdated|remove`, `skills list|fork|diff|reset|note|notes|enable|disable|add|remove` (las skills del kit, las copias del equipo, un interruptor por skill para el proyecto o, con `--machine`, para ti, y los packs opcionales; todas aceptan `--json`), `pr propose <url>`, `removed add`, `repair`, `guard install|status|gate|uninstall [--repo NOMBRE] [--base REF] [--latest] [--json]` (los guardarraíles; salida 0 verde, 1 rojo, 2 error de uso, 3 una comprobación no pudo ejecutarse), `export codetour <flujo>`,
 `adr list|new|show|pack|candidates|write|accept|reject` (las decisiones: plantear, reunir la
 evidencia, escribir, aceptar, rechazar; todos aceptan `--json`), `history [--months 12]` (puntos calientes, a quién preguntar en cada repo, ficheros que cambian juntos, leídos de git sin
 IA en `docs/overview/history.md`), `catalog [--json|--check]` (cada comando con dónde vive: portal, app de escritorio o

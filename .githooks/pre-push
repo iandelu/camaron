@@ -2,6 +2,7 @@
 # Refuse to push commits that still credit an AI as co-author: the ones commit-msg could not see (--no-verify,
 # rebase, cherry-pick, an old branch merged in). Only commits the remote lacks are checked. LC_ALL=C matches bytewise:
 # in a UTF-8 locale Git for Windows misses the emoji before "Generated with".
+# In cam-docs (`camaron guard install` sets camaron.check) the docs gate runs after that, before the push goes out.
 pattern='^[[:space:]]*co-authored-by:([[:space:]]*claude([^[:alpha:]]|$)|.*@anthropic\.com)|^[^[:alnum:]]*generated with \[?claude code'
 remote="$1"
 zero=$(git hash-object --stdin </dev/null | tr '0-9a-f' '0')
@@ -17,8 +18,27 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     [ -n "$bad" ] && found="$found$bad
 "
 done
-[ -z "$found" ] && exit 0
-echo "push refused: these commits credit an AI as co-author (Co-Authored-By: Claude / Generated with Claude Code):" >&2
-printf '%s' "$found" >&2
-echo "Reword them (git commit --amend, git rebase -i) and push again." >&2
+if [ -n "$found" ]; then
+    echo "push refused: these commits credit an AI as co-author (Co-Authored-By: Claude / Generated with Claude Code):" >&2
+    printf '%s' "$found" >&2
+    echo "Reword them (git commit --amend, git rebase -i) and push again." >&2
+    exit 1
+fi
+[ "$(git config --get camaron.check)" = "true" ] || exit 0
+# The kit's own share and push (camaron share, the app) say so in CAMARONES_SHARE: they ran their own gates.
+[ -z "$CAMARONES_SHARE" ] || exit 0
+# A linked worktree (.cw/<id>) reads another layout, so `camaron change` runs the check there.
+if [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]; then
+    echo "pre-push: docs check not run in a worktree (camaron change runs it)" >&2
+    exit 0
+fi
+kit="$(dirname "$0")/../kit-cmd"
+if [ ! -f "$kit" ]; then
+    echo "pre-push: docs check not run, the kit was not found (camaron repair puts it back)" >&2
+    exit 0
+fi
+if ( unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_PREFIX GIT_COMMON_DIR; eval "$(cat "$kit") check" </dev/null >&2 ); then
+    exit 0
+fi
+echo "push refused: camaron check found errors (above). Fix them and push again; a false positive: git push --no-verify." >&2
 exit 1

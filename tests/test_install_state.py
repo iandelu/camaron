@@ -114,7 +114,8 @@ def test_a_project_without_a_record_still_checks(wired, monkeypatch):
     from lib import install_state
     no_claude(wired, monkeypatch)
     install_state.forget()
-    assert install_state.drift() == [] and not install_state.store_path().exists()
+    guardrails = ("git hooks", "Claude Code attribution")                       # P3: set by setup and repair, tested in test_guard_setup.py
+    assert [d for d in install_state.drift() if d["what"] not in guardrails] == [] and not install_state.store_path().exists()
 
 
 def test_repair_names_a_file_of_the_person_s_it_leaves_alone(wired):

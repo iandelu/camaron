@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .common import CAM_LAYOUT, HOME, ROOT, WORKSPACE, VERSIONS, repo_dir, load_json, save_json
 from .core.process import run, which
-from .app import services
+from .app import guard, services
 
 STORE_DIR = HOME / ".camarones" / "install"
 AGENT_DIRS = (".claude", ".codex", ".agents")
@@ -123,6 +123,7 @@ def drift() -> list[dict]:
             d = repo_dir(r)
             if d.is_dir() and os.path.realpath(d / "openwiki") != os.path.realpath(ROOT / "wikis" / r):
                 out.append({"path": f"{r}/openwiki", "state": "not linked", "what": "repo wiki link"})
+    out += guard.drift()                                                  # git hooks and Claude Code attribution (P3)
     if "agents" in services.current().components.here() and which("claude"):
         out += [{"path": r, "state": "not registered", "what": "repo MCP (Claude Code)"} for r in services.current().workspace.repo_names()
                 if repo_dir(r).is_dir() and not services.current().agent_config.repo_mcp_registered(r)]
@@ -143,6 +144,7 @@ def repair(log=print) -> list[dict]:
     if "agents" in comps:
         for r in services.current().workspace.repo_names():
             services.current().agent_config.wire_repo_mcp(r, log)
+    guard.install(log)                                                    # git hooks and Claude Code attribution
     from . import kanban
     if kanban.enabled():                                  # a joined clone gets the board's merge driver here
         from .kanban import ops

@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 
 from lib import binaries
-from lib.app import components, services, templates, viewers
+from lib.app import components, guard, services, templates, viewers
 from lib.common import (CAM_DIR, CAM_LAYOUT, HOME, ROOT, VERSIONS, WORKSPACE, WS_FILE, cli_cmd, ensure_path,
                         load_json, out, repo_dir, run, save_json, sdkman_dir, uv, which)
 from lib.ports import Log
@@ -237,6 +237,7 @@ def wire_one(name: str, log: Log = print, comps: list[str] | None = None) -> Non
     wire_repo(name, log, comps)
     if services.current().workspace.workspace()["project"].get("repo_pointer"):
         add_repo_pointer(name)
+    guard.install(log, only=[name])
 
 
 def wire_umbrella(log: Log = print, comps: list[str] | None = None) -> None:
@@ -255,6 +256,7 @@ def wire_umbrella(log: Log = print, comps: list[str] | None = None) -> None:
         linked = link_workspace(log)
         if linked:
             log(f"✔ {WORKSPACE.name}/ → {CAM_DIR}/: {', '.join(linked)}")
+    guard.install(log, only=[CAM_DIR])
     log("✔ project folder ready for Claude Code / Codex")
 
 

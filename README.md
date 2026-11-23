@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.96.2-ff875f?style=flat-square" alt="Versión 4.96.2">
+  <img src="https://img.shields.io/badge/version-4.97.0-ff875f?style=flat-square" alt="Versión 4.97.0">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square" alt="Python 3.10 o superior">
   <img src="https://img.shields.io/badge/agentes-Claude_Code_%C2%B7_Codex-8bd5ca?style=flat-square" alt="Integración con Claude Code y Codex">
   <img src="https://img.shields.io/badge/macOS_%C2%B7_Windows_%C2%B7_Linux-182430?style=flat-square" alt="macOS, Windows y Linux">
@@ -276,7 +276,7 @@ paso apunta su fase (`camaron change phase`).
 2. **Dificultad**: baja (0–2), media (3–5) o alta (6+). En la alta propone partir el cambio en elementos de tablero
    en borrador.
 3. **Prueba primero**, y el agente verifica con el build, los tests y los linters del propio repo más `camaron check`.
-4. **Guardarraíles**: rutas prohibidas, gitleaks, páginas desactualizadas (`camaron pr fresh`) y reglas de confianza.
+4. **Guardarraíles**: la puerta del kit (`camaron guard gate`: rutas prohibidas, gitleaks, dependencias, Sonar), páginas desactualizadas (`camaron pr fresh`) y reglas de confianza.
 5. **Impacto y una sola pregunta**, «¿Abro las PR?»: si dices que sí, abre una PR de código en borrador por repo y una
    PR de documentación en borrador, enlazadas entre sí, y las apunta en el cambio (`camaron change link`). El kit nunca
    fusiona. El agente mueve su propia tarjeta con los comandos del cambio: *In Progress* con `camaron change start`,
@@ -320,8 +320,37 @@ camaron change close wi-42             # fusionado según git: tarjeta a Done; -
 `cam/<id>-<slug>` en cada repo (adopta una rama de trabajo limpia que ya tengas), abre el worktree `.cw/<id>`, mueve la
 tarjeta a *In Progress* y lista la documentación que leer, con su confianza. `close` quita el worktree; las ramas se
 quedan. El ID se omite dentro de la rama del cambio o si solo hay uno abierto. Todos aceptan `--json`. Los proyectos
-que ya existen reciben las skills en su próximo refresco; los guardarraíles y abrir las PR desde el kit llegarán más
-adelante.
+que ya existen reciben las skills en su próximo refresco; abrir las PR desde el kit llegará más adelante.
+
+### Guardarraíles que bloquean
+
+`camaron setup` (y `camaron repair`) instala los guardarraíles en cada repo del proyecto y en `cam-docs`, sin escribir
+ningún fichero versionado en los repos de servicio: viven en la configuración de git de cada repo y en los ajustes
+locales de Claude Code, y no dependen de que la IA se acuerde.
+
+- **Git hooks** (`core.hooksPath` → `~/.camarones/githooks/`): un mensaje de commit pierde el `Co-Authored-By` de una IA o
+  la línea «Generated with Claude Code»; un push que aún lo lleve se rechaza; los secretos preparados (gitleaks)
+  detienen el commit; subir `cam-docs` ejecuta `camaron check`. Si el repo ya tiene hooks (husky, pre-commit, Git LFS),
+  se conservan: se ejecutan justo después de los del kit. Un falso positivo: `--no-verify`.
+- **Atribución de Claude Code** apagada en el `.claude/settings.local.json` de cada repo (fuera de git) y en el de la
+  carpeta del espacio de trabajo.
+- `camaron doctor` avisa si algo se apagó (husky que vuelve a fijar `core.hooksPath`, por ejemplo) y `camaron repair` lo
+  repone; `camaron uninstall` deja los repos como estaban. `guard: {install: false}` en `workspace.yaml` deja un
+  proyecto fuera.
+
+```sh
+camaron guard status                          # qué está activo en cada repo
+camaron guard install | uninstall [--repo R]  # lo mismo que hacen setup y repair, a mano
+camaron guard gate [--repo R] [--base REF] [--latest] [--json]
+```
+
+`guard gate` lee el cambio como sus commits frente a la rama base (por defecto `origin/HEAD`) y **bloquea**: co-autor
+de una IA, secretos en los commits (gitleaks), rutas `.env*`, `*.pem`, `*.key`, `id_rsa*` o `secrets/`, vulnerabilidades
+altas o críticas **nuevas** en los lockfiles que toca (OSV-Scanner; lo que la base ya tenía no cuenta), la puerta de
+calidad de SonarQube en rojo (si el repo tiene proyecto Sonar y esta máquina un token) y, con `--latest` o
+`guard: {outdated: true}`, una librería que el cambio añade o sube y va una versión mayor por detrás (envía nombres de
+librerías a los registros públicos, por eso es opcional). Una comprobación que no pudo ejecutarse queda como **sin
+ejecutar** y nunca en verde. Salida 0 verde, 1 rojo, 3 nada falló pero algo no se ejecutó.
 
 ## La app de escritorio
 

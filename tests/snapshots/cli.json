@@ -1565,6 +1565,81 @@
     "exclusive_groups": [],
     "subparsers": null
    },
+   "guard": {
+    "aliases": [],
+    "args": [
+     {
+      "action": "_StoreAction",
+      "choices": [
+       "install",
+       "status",
+       "gate",
+       "uninstall"
+      ],
+      "const": null,
+      "default": null,
+      "dest": "action",
+      "nargs": null,
+      "options": [],
+      "required": null,
+      "type": null
+     },
+     {
+      "action": "_AppendAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "repo",
+      "nargs": null,
+      "options": [
+       "--repo"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreAction",
+      "choices": null,
+      "const": null,
+      "default": null,
+      "dest": "base",
+      "nargs": null,
+      "options": [
+       "--base"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "latest",
+      "nargs": 0,
+      "options": [
+       "--latest"
+      ],
+      "required": false,
+      "type": null
+     },
+     {
+      "action": "_StoreTrueAction",
+      "choices": null,
+      "const": true,
+      "default": false,
+      "dest": "json",
+      "nargs": 0,
+      "options": [
+       "--json"
+      ],
+      "required": false,
+      "type": null
+     }
+    ],
+    "exclusive_groups": [],
+    "subparsers": null
+   },
    "health": {
     "aliases": [],
     "args": [
